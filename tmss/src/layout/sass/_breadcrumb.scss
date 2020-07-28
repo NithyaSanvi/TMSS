@@ -62,3 +62,19 @@
 .layout-wrapper .layout-main .layout-breadcrumb .layout-breadcrumb-options button i {
   line-height: inherit;
 }
+.b-link {
+  font-size: 1.25rem;
+  color: #000;
+  cursor: pointer;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+.b-separator {
+  font-size: 1rem !important;
+  margin: 0 5px;
+}
+.b-home {
+  position: relative;
+  top: 2px;
+}

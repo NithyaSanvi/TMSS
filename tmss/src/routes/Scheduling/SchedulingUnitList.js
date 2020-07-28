@@ -21,7 +21,7 @@ class SchedulingUnitList extends Component{
         this.setState({ isLoading: true });
         getScheduling_Unit_Draft().then(scheduleunit =>{
             this.setState({
-                scheduleunit : scheduleunit.data ,isLoading: false
+                scheduleunit : scheduleunit.data || [] ,isLoading: false
             });
         })
     }

@@ -24,7 +24,7 @@ class ViewSchedulingUnit extends Component{
     componentDidMount(){
 	    
           this.setState({ isLoading: true });
-        let schedule_id = this.props.location.state.id;
+        let schedule_id = this.props.location.state && this.props.location.state.id;
 		
 		if (schedule_id) {
 			                
