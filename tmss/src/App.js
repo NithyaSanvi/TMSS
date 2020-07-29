@@ -44,9 +44,9 @@ class App extends Component {
         this.onMenuItemClick = this.onMenuItemClick.bind(this);
   
     this.menu = [
-      {label: 'Dashboard', icon: 'pi pi-fw pi-home', to:'/Dashboard'},
-      {label: 'Scheduling Units', icon: 'pi pi-fw pi-calendar', to:'/Scheduling'},
-      {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/Task'}
+      {label: 'Dashboard', icon: 'pi pi-fw pi-home', to:'/dashboard'},
+      {label: 'Scheduling Units', icon: 'pi pi-fw pi-calendar', to:'/scheduling'},
+      {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task'}
     ];
    
     // this.menuComponent = {'Dashboard': Dashboard}

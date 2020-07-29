@@ -15,7 +15,7 @@ class ViewSchedulingUnit extends Component{
             scheduleunit: null,
 			schedule_unit_task: [],
             paths: [{
-                "View": "/Task",
+                "View": "/task",
             }],
 			
         }

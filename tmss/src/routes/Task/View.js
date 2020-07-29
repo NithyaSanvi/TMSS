@@ -137,7 +137,7 @@ export class TaskView extends Component {
             <ul className="task-list">
             {list && list.map(item => (
                 <li key={item.id}>
-                    <Link to={ { pathname:'/Task', state: {taskId: item.id, taskType: item.draft?'blueprint':'draft'}}}>{item.name}</Link>
+                    <Link to={ { pathname:'/task', state: {taskId: item.id, taskType: item.draft?'blueprint':'draft'}}}>{item.name}</Link>
                 </li>
             ))}
             </ul>
@@ -150,7 +150,7 @@ export class TaskView extends Component {
                     </div>
                     <div className="p-col-2 p-lg-3 p-md-4">
                         {this.state.taskType === 'draft' &&
-                            <Link to={{ pathname: '/Task/Edit', state: {taskId: this.state.task?this.state.task.id:''}}} tooltip="Edit Task" >
+                            <Link to={{ pathname: '/task/edit', state: {taskId: this.state.task?this.state.task.id:''}}} tooltip="Edit Task" >
                                 <i className="fa fa-edit" style={{marginTop: "10px"}}></i>
                             </Link>
                         }

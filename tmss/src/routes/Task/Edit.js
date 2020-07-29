@@ -128,13 +128,13 @@ export class TaskEdit extends Component {
         TaskService.updateTask("draft", task)
         .then( (taskDraft) => {
             if (taskDraft) {
-                this.setState({redirect: '/Task/View'});
+                this.setState({redirect: '/task/view'});
             }
         });
     }
 
     cancelEdit() {
-        this.setState({redirect: '/Task/View'});
+        this.setState({redirect: '/task/view'});
     }
 
     componentDidMount() {
