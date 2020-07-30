@@ -94,6 +94,14 @@ p {
   color: #28289b;
 }
 
+.p-multiselect-label {
+  margin-bottom: 0px;
+}
+
+.resource-input-grid div {
+  margin-bottom: 1rem;
+}
+
 .fa {
   color: #005b9f;
 }
@@ -110,6 +118,42 @@ thead {
 
 .input-error {
   border-color: #dc3545 !important;
+}
+
+.pi-primary {
+  color: #007ad9;
+}
+
+.pi-warning {
+  color: #ffba01;
+}
+
+.pi-success {
+  color: #34A835;
+}
+
+.pi-info {
+  color: #008fba;
+}
+
+.pi-error {
+  color: #e91224;
+}
+
+.pi-small {
+  font-size: rem !important;
+}
+
+.pi-medium {
+  font-size: 1.5rem !important;
+}
+
+.pi-large {
+  font-size: 2rem !important;
+}
+
+.pi-x-large {
+  font-size: 3rem !important;
 }
 
 @keyframes App-logo-spin {

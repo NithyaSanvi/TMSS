@@ -1,4 +1,4 @@
-import {TaskEdit} from './Edit';
-import {TaskView} from './View';
+import {TaskEdit} from './edit';
+import {TaskView} from './view';
 
 export {TaskEdit, TaskView} ;

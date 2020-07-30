@@ -97,7 +97,7 @@ const IndeterminateCheckbox = React.forwardRef(
 )
 
 // Our table component
-function Table({ columns, data }) {
+function Table({ columns, data, showAllRows }) {
 
   const filterTypes = React.useMemo(
     () => ({
@@ -157,7 +157,7 @@ function Table({ columns, data }) {
     );
   }, [setHiddenColumns, columns]);
 
-  const firstPageRows = rows.slice(0, 10)
+  const firstPageRows = showAllRows ? rows : rows.slice(0, 10);
   let op = useRef(null);
 
   return (
@@ -333,7 +333,7 @@ function ViewTable(props) {
   return (
     <div  >
       
-        <Table columns={columns} data={tbldata} className="-striped -highlight" />
+        <Table columns={columns} data={tbldata} className="-striped -highlight" showAllRows={props.showAllRows}/>
       
     </div>
   )

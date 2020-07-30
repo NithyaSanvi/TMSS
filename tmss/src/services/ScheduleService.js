@@ -10,7 +10,6 @@ export async function getScheduling_Unit_Draft(){
       }  
     ).then(function(response) {
         res= response; 
-		
     }).catch(function(error) {
         console.log('Error on Authentication',error);
     });

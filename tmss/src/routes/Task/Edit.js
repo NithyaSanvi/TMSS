@@ -11,7 +11,6 @@ import { Button } from 'primereact/button';
 import Jeditor from '../../components/JSONEditor/JEditor';
 
 import TaskService from '../../services/task.services';
-import Loader from 'react-loader-spinner';
 
 export class TaskEdit extends Component {
     templateOutput = {};        // id: selectedTemplateId, output: values enetered in the editor form
@@ -30,8 +29,7 @@ export class TaskEdit extends Component {
             taskTemplates:[],
             validEditor: false,
             validForm: false,
-            errors: {},
-            isLoading: false
+            errors: {}
         };
         this.formRules = {
             name: {required: true, message: "Name can not be empty"},
@@ -85,15 +83,12 @@ export class TaskEdit extends Component {
      * @param {Number} templateId 
      */
     changeTaskTemplate(templateId) {
-		
         const template = _.find(this.state.taskTemplates, {'id': templateId});
         let task = this.state.task;
         task.specifications_template_id = templateId;
-		
         task.specifications_template = template.url;
         this.setState({taskSchema: null});
         this.setState({task: task, taskSchema: template.schema});
-		 
         this.state.editorFunction();
     }
 
@@ -138,43 +133,37 @@ export class TaskEdit extends Component {
     }
 
     componentDidMount() {
-        this.setState({ isLoading: true });
         TaskService.getTaskTemplates()
         .then((templates) => {
-            this.setState({taskTemplates: templates,isLoading: false});
+            this.setState({taskTemplates: templates});
         });
         TaskService.getTaskDetails("draft", this.props.taskId?this.props.taskId:this.props.location.state.taskId)
         .then((task) => {
             if (task) {
                 TaskService.getSchedulingUnit("draft", task.scheduling_unit_draft_id)
                 .then((schedulingUnit) => {
-                    this.setState({schedulingUnit: schedulingUnit,isLoading: false});
+                    this.setState({schedulingUnit: schedulingUnit});
                 });
                 
                 this.templateOutput[task.specifications_template_id] = task.specifications_doc;
                 TaskService.getTaskTemplate(task.specifications_template_id)
                 .then((taskTemplate) => {
-                    this.setState({task: task, taskSchema: taskTemplate.schema,isLoading: false});
+                    this.setState({task: task, taskSchema: taskTemplate.schema});
                 });
             }   else {
-                this.setState({redirect: "/Not-found"});
+                this.setState({redirect: "/not-found"});
             }
         });
     }
 
     render() {
-       
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect, 
                                     state: {id: this.state.task.id}} }></Redirect>
         }
-        const { isLoading } = this.state;
-        
         const taskSchema = this.state.taskSchema;
-        
         let jeditor = null;
         if (this.state.taskSchema) {
-		
             jeditor = React.createElement(Jeditor, {title: "Specification", 
                                                         schema: taskSchema,
                                                         //initValue: this.state.templateOutput[this.state.task.specifications_template_id], 
@@ -196,20 +185,7 @@ export class TaskEdit extends Component {
                         </Link>
                     </div>
                 </div>
-				
-								{isLoading ?  <div 
-					  style={{
-							   width: "100%",
-								height: "100",
-								display: "flex",
-							   justifyContent: "center",
-							   alignItems: "center"
-							  }}
-					  >
-					  <Loader type="ThreeDots" color="#004B93" height={80} width={80} />
-					  </div>:
                 <div>
-				
                     <div className="p-fluid">
                         <div className="p-field p-grid">
                             <label htmlFor="taskName" className="col-lg-2 col-md-2 col-sm-12">Name <span style={{color:'red'}}>*</span></label>
@@ -266,17 +242,12 @@ export class TaskEdit extends Component {
                         </div>
 
                     </div>
-				
                 </div>
-				}
-				
-				
                 <div className="p-fluid">
                     <div className="p-grid"><div className="p-col-12">
                         {this.state.taskSchema?jeditor:""}
                     </div></div>
                 </div>
-				
                 <div className="p-grid p-justify-start">
                     <div className="p-col-1">
                         <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.saveTask} disabled={!this.state.validEditor || !this.state.validForm} />

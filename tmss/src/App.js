@@ -7,22 +7,14 @@ import {AppMenu} from './layout/components/AppMenu';
 import { AppFooter } from './layout/components/AppFooter';
 import {RoutedContent} from './routes';
 
-
-import { AppBreadcrumb } from "./layout/components/AppBreadcrumb";
-import { withRouter } from 'react-router';
-
- //import {Dashboard} from './routes/dashboard/dashboard';
+// import {Dashboard} from './routes/dashboard/dashboard';
 
 import 'primeicons/primeicons.css';
 import 'primereact/resources/themes/nova-light/theme.css';
 import 'primereact/resources/primereact.css';
 import './layout/layout.scss';
-import 'primereact/resources/primereact.min.css';
-import 'primeflex/primeflex.css';
 import './App.scss';
 import './App.css';
-
-
 
 class App extends Component {
 
@@ -36,8 +28,6 @@ class App extends Component {
             overlayMenuActive: false,
             mobileMenuActive: false,
     };
-	
-	
 	this.onWrapperClick = this.onWrapperClick.bind(this);
         this.onToggleMenu = this.onToggleMenu.bind(this);
         this.onSidebarClick = this.onSidebarClick.bind(this);
@@ -46,14 +36,13 @@ class App extends Component {
     this.menu = [
       {label: 'Dashboard', icon: 'pi pi-fw pi-home', to:'/dashboard'},
       {label: 'Scheduling Units', icon: 'pi pi-fw pi-calendar', to:'/scheduling'},
-      {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task'}
+      {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task'},
+	  {label: 'Cycle', icon: 'pi pi-fw pi-spinner', to:'/cycle'}
     ];
-   
+
     // this.menuComponent = {'Dashboard': Dashboard}
   }
     
-	
-	
     onWrapperClick(event) {
         if (!this.menuClick) {
             this.setState({
@@ -94,11 +83,7 @@ class App extends Component {
         this.menuClick = true;
     }
   onMenuItemClick(event) {
-	 //  console.log(event.item.label,event.item.to);
-    //this.setState({currentMenu:[{ label: event.item.label,url:event.item.to }],currentPath: event.item.path});
-	 
-   this.setState({currentMenu:event.item.label, currentPath: event.item.path});
-   // this.setState({bmenu:{label:event.item.label, path: event.item.path}});
+    this.setState({currentMenu:event.item.label, currentPath: event.item.path});
   }
 		
 		isDesktop() {
@@ -106,50 +91,30 @@ class App extends Component {
     }
 	
   render() {
+	  
 			const wrapperClass = classNames('layout-wrapper', {
             'layout-overlay': this.state.layoutMode === 'overlay',
             'layout-static': this.state.layoutMode === 'static',
             'layout-static-sidebar-inactive': this.state.staticMenuInactive && this.state.layoutMode === 'static',
             'layout-overlay-sidebar-active': this.state.overlayMenuActive && this.state.layoutMode === 'overlay',
-            'layout-mobile-sidebar-active': this.state.mobileMenuActive			
-		
-
+            'layout-mobile-sidebar-active': this.state.mobileMenuActive
         });
-		
-		const AppBreadCrumbWithRouter = withRouter(AppBreadcrumb);
-		// const items = [
-          
-          
-         // { label: 'dashboard',url:'http://localhost:3001/Dashboard' },
-         // { label: 'scheduling unit' ,url:'/scheduling' },
-        //  { label: 'cycle', url: 'http://localhost:3001/cycle' }
-   //  ];
-        
-
-      // const home = { icon: 'pi pi-home', url: 'http://localhost:3001/Dashboard' }
-	   
-		
-         
     return (
       <React.Fragment>
-           <div className="App">
+      <div className="App">
            {/* <div className={wrapperClass} onClick={this.onWrapperClick}> */}
            <div className={wrapperClass}>
-            <AppTopbar onToggleMenu={this.onToggleMenu}></AppTopbar>
-            <Router basename={ this.state.currentPath }>
-			  <AppMenu model={this.menu} onMenuItemClick={this.onMenuItemClick} />
-              <div className="layout-main">
-			  
-			  <AppBreadCrumbWithRouter/>
-			  
-			  <RoutedContent />
-           </div>
-		   
-           </Router>
-		  <AppFooter></AppFooter>
-		  </div>
-		  </div>
-	   </React.Fragment>
+          <AppTopbar onToggleMenu={this.onToggleMenu}></AppTopbar>
+          <Router basename={ this.state.currentPath }>
+		      <AppMenu model={this.menu} onMenuItemClick={this.onMenuItemClick} />
+           <div className="layout-main">
+            <RoutedContent />
+            </div>
+            </Router>
+          <AppFooter></AppFooter>
+          </div>
+	  </div>
+      </React.Fragment>
     );
   }
 }

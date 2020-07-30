@@ -3,8 +3,6 @@ import {Link, Redirect} from 'react-router-dom'
 import moment from 'moment';
 
 import Jeditor from '../../components/JSONEditor/JEditor';
-import Loader from 'react-loader-spinner';
-
 
 import TaskService from '../../services/task.services';
 import { Chips } from 'primereact/chips';
@@ -14,7 +12,6 @@ export class TaskView extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            isLoading: false
         };
         this.setEditorFunction = this.setEditorFunction.bind(this);
         if (this.props.match.params.id) {
@@ -26,7 +23,6 @@ export class TaskView extends Component {
     }
 
     static getDerivedStateFromProps(nextProps, prevstate){
-		
         if (prevstate.task && nextProps.location.state && 
              (nextProps.location.state.taskId === prevstate.task.id ||
              nextProps.location.state.taskType === prevstate.taskType)) {
@@ -36,27 +32,21 @@ export class TaskView extends Component {
     }
 
     componentDidUpdate(prevProps, prevState) {
-	
         if (this.state.task && this.props.location.state &&
              (this.state.task.id !== this.props.location.state.taskId ||
              this.state.taskType !== this.props.location.state.taskType)) {
-				
              this.getTaskDetails(this.props.location.state.taskId, this.props.location.state.taskType);
-			  
         }
     }
 
     componentDidMount() {
-        
         const taskId = this.props.location.state?this.props.location.state.id:this.state.taskId;
         let taskType = this.props.location.state?this.props.location.state.type:this.state.taskType;
         taskType = taskType?taskType:'draft';
         if (taskId && taskType) {
-		this.setState({ isLoading: true });
             this.getTaskDetails(taskId, taskType);
         }   else {
-			
-            this.setState({redirect: "/Not-found"});
+            this.setState({redirect: "/not-found"});
         }
     }
 
@@ -65,7 +55,6 @@ export class TaskView extends Component {
      * @param {Function} editorFunction 
      */
     setEditorFunction(editorFunction) {
-		
         this.setState({editorFunction: editorFunction});
     }
 
@@ -74,66 +63,47 @@ export class TaskView extends Component {
      * @param {number} taskId 
      */
     getTaskDetails(taskId, taskType) {
-		 
         if (taskId) {
-         
             taskType = taskType?taskType:'draft';
-			
             TaskService.getTaskDetails(taskType, taskId)
-			
             .then((task) => {
-				
                 if (task) {
-					
                     TaskService.getSchedulingUnit(taskType, (taskType==='draft'?task.scheduling_unit_draft_id:task.scheduling_unit_blueprint_id))
                         .then((schedulingUnit) => {
-                       this.setState({schedulingUnit: schedulingUnit,isLoading:false});
+                            this.setState({schedulingUnit: schedulingUnit});
                         });
                         TaskService.getTaskTemplate(task.specifications_template_id)
                         .then((taskTemplate) => {
-                            
                             if (this.state.editorFunction) {
-								
                                 this.state.editorFunction();
                             }
-                           this.setState({task: task, taskTemplate: taskTemplate, taskType: taskType,isLoading:false});
+                            this.setState({task: task, taskTemplate: taskTemplate, taskType: taskType});
                         });
                     
                 }   else {
-                    this.setState({redirect: "/Not-found"});
+                    this.setState({redirect: "/not-found"});
                 }
             });
         }
     }
 
     render() {
-        const { isLoading } = this.state;
-       
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
         }
-        
         let jeditor = null
-        
-         
         if (this.state.taskTemplate) {
-            
-             
-            jeditor = React.createElement(Jeditor,  {title: "Specification", 
-                                                    schema: this.state.taskTemplate.schema,
+            jeditor = React.createElement(Jeditor, {title: "Specification", 
+                                                        schema: this.state.taskTemplate.schema,
                                                         initValue: this.state.task.specifications_doc,
                                                         disabled: true,
-                                                        
                                                         // callback: this.setEditorOutput,
-                                                        parentFunction: this.setEditorFunction,
-														
+                                                        parentFunction: this.setEditorFunction
                                                     });
         }
-        
 
         // Child component to render predecessors and successors list
         const TaskRelationList = ({ list }) => (
-		
             <ul className="task-list">
             {list && list.map(item => (
                 <li key={item.id}>
@@ -142,8 +112,8 @@ export class TaskView extends Component {
             ))}
             </ul>
           );
-        return ( 
-              <React.Fragment>
+        return (
+            <React.Fragment>
                 <div className="p-grid">
                     <div className="p-col-10 p-lg-3 p-md-4">
                         <h2>Task - Details </h2>
@@ -159,17 +129,7 @@ export class TaskView extends Component {
                         }
                     </div>
                 </div>
-                { isLoading ?  <div 
-      style={{
-               width: "100%",
-                height: "100",
-                display: "flex",
-               justifyContent: "center",
-               alignItems: "center"
-              }}
-      >
-      <Loader type="ThreeDots" color="#004B93" height={80} width={80} />
-      </div>:this.state.task &&
+                { this.state.task &&
                     <React.Fragment>
                         <div className="main-content">
                         <div className="p-grid">
