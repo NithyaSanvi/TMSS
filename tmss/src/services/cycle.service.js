@@ -12,7 +12,6 @@ const CycleService = {
     }).catch(function(error) {
         console.error('[cycle.services.getAllCycle]',error);
     });
-	console.log('res',res)
     return res;
     },
 	}
