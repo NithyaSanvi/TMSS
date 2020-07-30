@@ -1,0 +1,56 @@
+import React, {Component} from 'react';
+import {InputNumber} from 'primereact/inputnumber';
+
+/**
+ * Component to get input for Resource allocation while creating and editing Project
+ */
+export class ResourceInputList extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            list: props.list,
+            projectQuota: props.projectQuota
+        }
+        this.updateEnabled = this.props.list.length===0?true:false;
+        this.onInputChange = this.onInputChange.bind(this);
+    }
+
+    shouldComponentUpdate() {
+        return this.updateEnabled;
+    }
+
+    onInputChange(field, event) {
+        if (this.props.callback) {
+            this.props.callback(field, event);
+        }
+    }
+
+    removeInput(field) {
+        if (this.props.removeInputCallback) {
+            this.props.removeInputCallback(field);
+        }
+    }
+
+    render(){
+        return (
+            <>
+                {this.props.list.length>0 && this.props.list.map((item, index) => (
+                    <React.Fragment key={index+10}>
+                    <label key={'label1-'+ index} className="col-lg-3 col-md-3 col-sm-12">{item.name}</label>
+                    <div key={'div1-'+ index} className="col-lg-3 col-md-3 col-sm-12">
+                        <InputNumber key={'item1-'+ index} id={'item1-'+ index} name={'item1-'+ index}
+                            suffix={` ${this.props.unitMap[item.resourceUnit.name].display}`}
+                            placeholder={item.name}
+                            value={this.state.projectQuota[item.name]} 
+                            onBlur={(e) => this.onInputChange(item.name, e)}
+                            style={{width:"90%", marginRight: "5px"}}
+                        />
+                        <button className="p-link" data-testid={`${item.name}-btn`} onClick={(e) => this.removeInput(item.name)}>
+                            <i className="fa fa-trash pi-error"></i></button>
+                    </div>
+                    </React.Fragment>
+                ))}
+            </>
+        );
+    }
+}
