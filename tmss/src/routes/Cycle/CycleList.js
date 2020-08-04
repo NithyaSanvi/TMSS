@@ -10,28 +10,34 @@ class CycleList extends Component{
             cyclelist: [],
             paths: [{
                 "View": "/cycle",
-            }]
+            }],
+            projectCategory: ['regular', 'user_shared_support']
         }
     }
 	
 	 componentDidMount(){ 
-       CycleService.getAllCycle().then(cyclelist =>{
-            const results = cyclelist.data.results || [];
-            results.map(cycle => {
-                const timediff = new Date(cycle.stop).getTime() - new Date(cycle.start).getTime();
-                cycle.duration = timediff / (1000 * 3600 * 24);
-                cycle.totalProjects = cycle.projects ? cycle.projects.length : 0;
-                cycle.name = cycle.name ? cycle.name.split(' ').join('') : cycle.name;
-                return cycle;
-            });
-            this.setState({
-                cyclelist : results
-            });
-        })
+        const { projectCategory } = this.state;
+        CycleService.getProjects().then(projects => {
+            CycleService.getAllCycle().then(cyclelist =>{
+                const results = cyclelist.data.results || [];
+                results.map(cycle => {
+                    const regularProjects = projects.data.results.filter(project => project.cycles_ids.includes(cycle.name) && projectCategory.includes(project.project_category_value));
+                    const timediff = new Date(cycle.stop).getTime() - new Date(cycle.start).getTime();
+                    cycle.duration = timediff / (1000 * 3600 * 24);
+                    cycle.totalProjects = cycle.projects ? cycle.projects.length : 0;
+                    cycle.name = cycle.name ? cycle.name.split(' ').join('') : cycle.name;
+                    cycle.regularProjects = regularProjects.length;
+                    return cycle;
+                });
+                this.setState({
+                    cyclelist : results
+                });
+            })
+        })  
     }
 	
 	render(){
-        let defaultcolumns = [ {name:"Cycle Code",start:"Start Date",stop: "End Date", duration: "Duration", totalProjects: 'No.of Projects' }]
+        let defaultcolumns = [ {name:"Cycle Code",start:"Start Date",stop: "End Date", duration: "Duration", totalProjects: 'No.of Projects', regularProjects: 'No.of Regular' }]
         return (
             <>
                 {/*
@@ -41,14 +47,14 @@ class CycleList extends Component{
                     showaction - {true/false} -> to show the action column
                     paths - specify the path for navigation - Table will set "id" value for each row in action button
                 */}
-                {this.state.cyclelist && this.state.cyclelist.length &&
+                {(this.state.cyclelist && this.state.cyclelist.length) ?
                     <ViewTable 
                         data={this.state.cyclelist} 
                         defaultcolumns={defaultcolumns} 
                         showaction="false"
                         paths={this.state.paths}
                         showAllRows
-                    />
+                    /> : <></>
                  }  
             </>
         )
