@@ -23,6 +23,16 @@ const CycleService = {
             console.error('[cycle.services.project]',error);
         });
         return res;
+    },
+    getCycleQuota: async function() {
+        let res = [];
+        await axios.get('/api/cycle_quota/')
+        .then(response => {
+            res= response;
+        }).catch(function(error) {
+            console.error('[cycle.services.cycle_quota]',error);
+        });
+        return res;
     }
 }
 

@@ -14,10 +14,18 @@ class CycleList extends Component{
             projectCategory: ['regular', 'user_shared_support']
         }
     }
+
+    secondsToHours(d) {
+        d = Number(d);
+        return Math.floor(d / 3600);
+    }
 	
 	 componentDidMount(){ 
         const { projectCategory } = this.state;
-        CycleService.getProjects().then(projects => {
+        const promises = [CycleService.getProjects(), CycleService.getCycleQuota()]
+        Promise.all(promises).then(responses => {
+            const projects = responses[0];
+            const cycleQuota = responses[1];
             CycleService.getAllCycle().then(cyclelist =>{
                 const results = cyclelist.data.results || [];
                 results.map(cycle => {
@@ -25,8 +33,15 @@ class CycleList extends Component{
                     const timediff = new Date(cycle.stop).getTime() - new Date(cycle.start).getTime();
                     cycle.duration = timediff / (1000 * 3600 * 24);
                     cycle.totalProjects = cycle.projects ? cycle.projects.length : 0;
-                    cycle.name = cycle.name ? cycle.name.split(' ').join('') : cycle.name;
+                    cycle.id = cycle.name ? cycle.name.split(' ').join('') : cycle.name;
                     cycle.regularProjects = regularProjects.length;
+                    cycle.observingTime = this.secondsToHours((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time') || {value: 0}).value)
+                    cycle.processingTime = this.secondsToHours((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'cep_processing_time') || {value: 0}).value)
+                    cycle.ltaResources = this.secondsToHours((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'lta_storage') || {value: 0}).value)
+                    cycle.support = this.secondsToHours((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'support_time') || {value: 0}).value)
+                    cycle.observingTimeDDT = this.secondsToHours((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_commissioning') || {value: 0}).value)
+                    cycle.observingTimePrioA = this.secondsToHours((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_prio_a') || {value: 0}).value)
+                    cycle.observingTimePrioB = this.secondsToHours((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_prio_b') || {value: 0}).value)
                     return cycle;
                 });
                 this.setState({
@@ -37,7 +52,23 @@ class CycleList extends Component{
     }
 	
 	render(){
-        let defaultcolumns = [ {name:"Cycle Code",start:"Start Date",stop: "End Date", duration: "Duration", totalProjects: 'No.of Projects', regularProjects: 'No.of Regular' }]
+        let defaultcolumns = [
+            {
+                id:"Cycle Code",
+                start:"Start Date",
+                stop: "End Date",
+                duration: "Duration",
+                totalProjects: 'No.of Projects',
+                regularProjects: 'No.of Regular',
+                observingTime: 'Observing Time (hr)',
+                processingTime: 'Processing Time (hr)',
+                ltaResources: 'LTA Resources (hr)',
+                support: 'Support (hr)',
+                observingTimeDDT: 'Observing Time Commissioning (hr)',
+                observingTimePrioA: 'Observing Time Prio A (hr)',
+                observingTimePrioB: 'Observing Time Prio B (hr)'
+            }
+        ]
         return (
             <>
                 {/*
