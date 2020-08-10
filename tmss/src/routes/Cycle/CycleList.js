@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import 'primeflex/primeflex.css';
 import ViewTable from './../../components/ViewTable';
 import CycleService from '../../services/cycle.service';
+import UnitConversion from '../../utils/unit.converter';
 
 class CycleList extends Component{
 	 constructor(props){
@@ -15,17 +16,18 @@ class CycleList extends Component{
         }
     }
 
-    secondsToHours(d) {
-        d = Number(d);
-        return Math.floor(d / 3600);
+    conversion(d,type) {
+        const coversionType = this.state.resources.find(i => i.name === type).quantity_value;
+        return UnitConversion.getUIResourceUnit(coversionType,d)
     }
 	
 	 componentDidMount(){ 
         const { projectCategory } = this.state;
-        const promises = [CycleService.getProjects(), CycleService.getCycleQuota()]
+        const promises = [CycleService.getProjects(), CycleService.getCycleQuota(), CycleService.getResources()]
         Promise.all(promises).then(responses => {
             const projects = responses[0];
             const cycleQuota = responses[1];
+            this.setState({ resources: responses[2].data.results });
             CycleService.getAllCycle().then(cyclelist =>{
                 const results = cyclelist.data.results || [];
                 results.map(cycle => {
@@ -35,13 +37,13 @@ class CycleList extends Component{
                     cycle.totalProjects = cycle.projects ? cycle.projects.length : 0;
                     cycle.id = cycle.name ? cycle.name.split(' ').join('') : cycle.name;
                     cycle.regularProjects = regularProjects.length;
-                    cycle.observingTime = this.secondsToHours((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time') || {value: 0}).value)
-                    cycle.processingTime = this.secondsToHours((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'cep_processing_time') || {value: 0}).value)
-                    cycle.ltaResources = this.secondsToHours((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'lta_storage') || {value: 0}).value)
-                    cycle.support = this.secondsToHours((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'support_time') || {value: 0}).value)
-                    cycle.observingTimeDDT = this.secondsToHours((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_commissioning') || {value: 0}).value)
-                    cycle.observingTimePrioA = this.secondsToHours((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_prio_a') || {value: 0}).value)
-                    cycle.observingTimePrioB = this.secondsToHours((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_prio_b') || {value: 0}).value)
+                    cycle.observingTime = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time') || {value: 0}).value, 'observing_time')
+                    cycle.processingTime = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'cep_processing_time') || {value: 0}).value, 'cep_processing_time')
+                    cycle.ltaResources = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'lta_storage') || {value: 0}).value, 'lta_storage')
+                    cycle.support = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'support_time') || {value: 0}).value, 'support_time')
+                    cycle.observingTimeDDT = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_commissioning') || {value: 0}).value, 'observing_time_commissioning')
+                    cycle.observingTimePrioA = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_prio_a') || {value: 0}).value, 'observing_time_prio_a')
+                    cycle.observingTimePrioB = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_prio_b') || {value: 0}).value, 'observing_time_prio_b')
                     return cycle;
                 });
                 this.setState({

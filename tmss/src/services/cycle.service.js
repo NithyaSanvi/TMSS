@@ -33,6 +33,17 @@ const CycleService = {
             console.error('[cycle.services.cycle_quota]',error);
         });
         return res;
+    },
+    getResources: async function() {
+        let res = [];
+        await axios.get('/api/resource_type')
+        .then(response => {
+            res= response;
+        }).catch(function(error) {
+            console.error('[cycle.services.resource_type]',error);
+        });
+        return res;
+         
     }
 }
 
