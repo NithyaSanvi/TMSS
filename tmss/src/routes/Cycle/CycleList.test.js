@@ -3,15 +3,15 @@ import React from 'react';
 import { render, fireEvent } from '@testing-library/react';
 import CycleList from './CycleList';
 import mockData from '../../__mocks__/cycle.service.data';
+import Service from '../../services/cycle.service';
 
-jest.mock('../../services/cycle.service', () => {
-    return {
-        getProjects: () => Promise.resolve({ data: mockData.getProjects }),
-        getCycleQuota: () => Promise.resolve({ data: mockData.getCycleQuota }),
-        getAllCycle: () => Promise.resolve({ data: mockData.getAllCycle }),
-        getResources: () => Promise.resolve({ data: mockData.getresources })
-    }
-});
+jest.mock('../../services/cycle.service', () => jest.fn());
+
+
+Service.getProjects = () => Promise.resolve({ data: mockData.getProjects });
+Service.getCycleQuota = () => Promise.resolve({ data: mockData.getCycleQuota });
+Service.getAllCycle = () => Promise.resolve({ data: mockData.getAllCycle });
+Service.getResources = () => Promise.resolve({ data: mockData.getresources });
 
 const flushPromises = () => new Promise(setImmediate);
 
