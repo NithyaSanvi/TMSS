@@ -4,14 +4,16 @@ import moment from 'moment';
 
 import Jeditor from '../../components/JSONEditor/JEditor';
 
-import TaskService from '../../services/task.services';
+import TaskService from '../../services/task.service';
 import { Chips } from 'primereact/chips';
+import AppLoader from '../../layout/components/AppLoader';
 
 export class TaskView extends Component {
     DATE_FORMAT = 'YYYY-MMM-DD HH:mm:ss';
     constructor(props) {
         super(props);
         this.state = {
+            isLoading: true
         };
         this.setEditorFunction = this.setEditorFunction.bind(this);
         if (this.props.match.params.id) {
@@ -20,29 +22,38 @@ export class TaskView extends Component {
         if (this.props.match.params.type) {
             this.state.taskType = this.props.match.params.type;
         }
+        
     }
 
-    static getDerivedStateFromProps(nextProps, prevstate){
-        if (prevstate.task && nextProps.location.state && 
-             (nextProps.location.state.taskId === prevstate.task.id ||
-             nextProps.location.state.taskType === prevstate.taskType)) {
-            return {taskId: prevstate.task.id, taskType: prevstate.taskType}
-        }
-        return null;
-    }
+    // static getDerivedStateFromProps(nextProps, prevstate){
+    //     console.log("DERIVED STATE FROM PROPS");
+    //     console.log(nextProps);
+    //     console.log(prevstate);
+    //     if (prevstate.task && nextProps.match.params && 
+    //          (nextProps.match.params.id === prevstate.task.id ||
+    //          nextProps.match.params.type === prevstate.taskType)) {
+    //         return {taskId: prevstate.task.id, taskType: prevstate.taskType}
+    //     }
+    //     console.log("RETURNS NULL");
+    //     return null;
+    // }
 
     componentDidUpdate(prevProps, prevState) {
-        if (this.state.task && this.props.location.state &&
-             (this.state.task.id !== this.props.location.state.taskId ||
-             this.state.taskType !== this.props.location.state.taskType)) {
-             this.getTaskDetails(this.props.location.state.taskId, this.props.location.state.taskType);
-        }
+        if (this.state.task && this.props.match.params &&
+            (this.state.taskId !== this.props.match.params.id ||
+            this.state.taskType !== this.props.match.params.type)) {
+            this.getTaskDetails(this.props.match.params.id, this.props.match.params.type);
+       }
     }
 
     componentDidMount() {
-        const taskId = this.props.location.state?this.props.location.state.id:this.state.taskId;
-        let taskType = this.props.location.state?this.props.location.state.type:this.state.taskType;
-        taskType = taskType?taskType:'draft';
+        // const taskId = this.props.location.state?this.props.location.state.id:this.state.taskId;
+        // let taskType = this.props.location.state?this.props.location.state.type:this.state.taskType;
+        // taskType = taskType?taskType:'draft';
+        let {taskId, taskType} = this.state;
+        taskId = taskId?taskId:this.props.location.state.id;
+        taskType = taskType?taskType:this.props.location.state.type;
+
         if (taskId && taskType) {
             this.getTaskDetails(taskId, taskType);
         }   else {
@@ -77,7 +88,7 @@ export class TaskView extends Component {
                             if (this.state.editorFunction) {
                                 this.state.editorFunction();
                             }
-                            this.setState({task: task, taskTemplate: taskTemplate, taskType: taskType});
+                            this.setState({task: task, taskTemplate: taskTemplate, isLoading: false, taskId: taskId, taskType: taskType});
                         });
                     
                 }   else {
@@ -107,7 +118,8 @@ export class TaskView extends Component {
             <ul className="task-list">
             {list && list.map(item => (
                 <li key={item.id}>
-                    <Link to={ { pathname:'/task', state: {taskId: item.id, taskType: item.draft?'blueprint':'draft'}}}>{item.name}</Link>
+                    {/* <Link to={ { pathname:'/task/view', state: {id: item.id, type: item.draft?'blueprint':'draft'}}}>{item.name}</Link> */}
+                    <Link to={ { pathname:`/task/view/${item.draft?'blueprint':'draft'}/${item.id}`}}>{item.name}</Link>
                 </li>
             ))}
             </ul>
@@ -115,21 +127,28 @@ export class TaskView extends Component {
         return (
             <React.Fragment>
                 <div className="p-grid">
-                    <div className="p-col-10 p-lg-3 p-md-4">
+                    <div className="p-col-10 p-lg-10 p-md-10">
                         <h2>Task - Details </h2>
                     </div>
-                    <div className="p-col-2 p-lg-3 p-md-4">
+                    <div className="p-col-2 p-lg-2 p-md-2">
                         {this.state.taskType === 'draft' &&
-                            <Link to={{ pathname: '/task/edit', state: {taskId: this.state.task?this.state.task.id:''}}} tooltip="Edit Task" >
+                            <div>
+                            <Link to={{ pathname: '/task'}} tooltip="Edit Task" 
+                                style={{float: 'right'}}>
+                                <i className="fa fa-times" style={{marginLeft:"5px", marginTop: "10px"}}></i>
+                            </Link>
+                            <Link to={{ pathname: '/task/edit', state: {taskId: this.state.task?this.state.task.id:''}}} tooltip="Edit Task" 
+                                style={{float: 'right'}}>
                                 <i className="fa fa-edit" style={{marginTop: "10px"}}></i>
                             </Link>
+                            </div>
                         }
                         {this.state.taskType === 'blueprint' &&
-                            <i className="fa fa-lock" style={{marginTop: "10px"}}></i>
+                            <i className="fa fa-lock" style={{float:"right", marginTop: "10px"}}></i>
                         }
                     </div>
                 </div>
-                { this.state.task &&
+                { this.state.isLoading? <AppLoader /> : this.state.task &&
                     <React.Fragment>
                         <div className="main-content">
                         <div className="p-grid">
@@ -184,7 +203,8 @@ export class TaskView extends Component {
                                     <TaskRelationList list={this.state.task.blueprints} />
                                 }
                                 {this.state.taskType === 'blueprint' &&
-                                    <Link className="col-lg-4 col-md-4 col-sm-12" to={ { pathname:'/task', state: {taskId: this.state.task.draft_id, taskType: 'draft'}}}>{this.state.task.draftObject.name}</Link>
+                                    // <Link className="col-lg-4 col-md-4 col-sm-12" to={ { pathname:'/task/view', state: {id: this.state.task.draft_id, type: 'draft'}}}>{this.state.task.draftObject.name}</Link>
+                                    <Link className="col-lg-4 col-md-4 col-sm-12" to={ { pathname:`/task/view/draft/${this.state.task.draft_id}`}}>{this.state.task.draftObject.name}</Link>
                                 }
                             </div>
                         </div>

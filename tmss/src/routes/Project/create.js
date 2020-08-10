@@ -14,6 +14,7 @@ import {Growl} from 'primereact/components/growl/Growl';
 
 import {ResourceInputList} from './ResourceInputList';
 
+import AppLoader from '../../layout/components/AppLoader';
 import CycleService from '../../services/cycle.service';
 import ProjectService from '../../services/project.service';
 import UnitConverter from '../../utils/unit.converter';
@@ -25,11 +26,12 @@ export class ProjectCreate extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            isLoading: true,
             dialog: { header: '', detail: ''},      
             project: {
                 trigger_priority: 1000,
                 priority_rank: null,
-                project_quota: [],                   // Mandatory Field in the back end, so an empty array is passed
+                quota: [],                          // Mandatory Field in the back end, so an empty array is passed
                 can_trigger: false
             },
             projectQuota: {},                       // Resource Allocations
@@ -59,6 +61,7 @@ export class ProjectCreate extends Component {
         this.projectResourceDefaults = {};          // Default values for default resources
         this.resourceUnitMap = UnitConverter.resourceUnitMap;       // Resource unit conversion factor and constraints
         this.cycleOptionTemplate = this.cycleOptionTemplate.bind(this);         // Template for cycle multiselect
+        this.tooltipOptions = {position: 'left', event: 'hover', className:"p-tooltip-custom"};
 
         this.setProjectQuotaDefaults = this.setProjectQuotaDefaults.bind(this);
         this.setProjectParams = this.setProjectParams.bind(this);
@@ -93,7 +96,7 @@ export class ProjectCreate extends Component {
                 resourceList = _.sortBy(resourceList, "name");
                 const resources = _.remove(resourceList, function(resource) { return _.find(defaultResources, {'name': resource.name})!=null });
                 const projectQuota = this.setProjectQuotaDefaults(resources);
-                this.setState({resourceList: resourceList, resources: resources, projectQuota: projectQuota});
+                this.setState({resourceList: resourceList, resources: resources, projectQuota: projectQuota, isLoading: false});
             });
         // ProjectService.getProjects().then(projects => {
         //     console.log(projects);
@@ -118,7 +121,8 @@ export class ProjectCreate extends Component {
     setProjectQuotaDefaults(resources) {
         let projectQuota = this.state.projectQuota;
         for (const resource of resources) {
-            projectQuota[resource['name']] = this.projectResourceDefaults[resource.name]/this.resourceUnitMap[resource.resourceUnit.name].conversionFactor;
+            const conversionFactor = this.resourceUnitMap[resource.quantity_value]?this.resourceUnitMap[resource.quantity_value].conversionFactor:1;
+            projectQuota[resource['name']] = this.projectResourceDefaults[resource.name]/conversionFactor;
         }
         return projectQuota;
     }
@@ -156,9 +160,19 @@ export class ProjectCreate extends Component {
      * @param {string} key 
      * @param {any} value 
      */
-    setProjectParams(key, value) {
+    setProjectParams(key, value, type) {
         let project = this.state.project;
-        project[key] = value;
+        switch(type) {
+            case 'NUMBER': {
+                console.log("Parsing Number");
+                project[key] = value?parseInt(value):0;
+                break;
+            }
+            default: {
+                project[key] = value;
+                break;
+            }
+        }
         this.setState({project: project, validForm: this.validateForm(key)});
     }
 
@@ -168,19 +182,23 @@ export class ProjectCreate extends Component {
      * @param {InputEvent} event 
      */
     setProjectQuotaParams(key, event) {
+        let projectQuota = this.state.projectQuota;
         if (event.target.value) {
-            let projectQuota = this.state.projectQuota;
             let resource = _.find(this.state.resources, {'name': key});
-            const resourceUnit = resource?resource.resourceUnit:null;
-            // console.log(resourceUnit);
-            if (resourceUnit) {
-                projectQuota[key] = event.target.value.replace(this.resourceUnitMap[resourceUnit.name].display,'');
+            
+            let newValue = 0;
+            if (this.resourceUnitMap[resource.quantity_value] && 
+                event.target.value.toString().indexOf(this.resourceUnitMap[resource.quantity_value].display)>=0) {
+                newValue = event.target.value.replace(this.resourceUnitMap[resource.quantity_value].display,'');
             }   else {
-                projectQuota[key] = event.target.value;
+                newValue = event.target.value;
             }
-            // console.log(`${key} - ${event.target.value}`);
-            this.setState({projectQuota: projectQuota});
+            projectQuota[key] = (newValue==="NaN" || isNaN(newValue))?0:newValue;
+        }   else {
+            let projectQuota = this.state.projectQuota;
+            projectQuota[key] = 0;
         }
+        this.setState({projectQuota: projectQuota});
     }
 
     /**
@@ -238,7 +256,7 @@ export class ProjectCreate extends Component {
                 let resourceType = _.find(this.state.resources, {'name': resource});
                 let quota = { project: this.state.project.name,
                                 resource_type: resourceType['url'],
-                                value: this.state.projectQuota[resource] * this.resourceUnitMap[resourceType.resourceUnit.name].conversionFactor};
+                                value: this.state.projectQuota[resource] * (this.resourceUnitMap[resourceType.quantity_value]?this.resourceUnitMap[resourceType.quantity_value].conversionFactor:1)};
                 projectQuota.push(quota);
             }
             ProjectService.saveProject(this.state.project, this.defaultResourcesEnabled?projectQuota:[])
@@ -263,7 +281,7 @@ export class ProjectCreate extends Component {
      * Function to cancel form creation and navigate to other page/component
      */
     cancelCreate() {
-        this.setState({redirect: '/project/list'});
+        this.setState({redirect: '/project'});
     }
 
     /**
@@ -274,7 +292,6 @@ export class ProjectCreate extends Component {
             let prevResources = this.state.resources;
             let resourceList = [];
             let resources = [];
-            const defaultResources = this.defaultResources;
             if (resources) {
                 // const nonDefaultResources = _.remove(resources, function(resource) { return _.find(defaultResources, {'name': resource.name})==null });
                 // resourceList = nonDefaultResources.concat(this.state.resourceList);
@@ -317,15 +334,17 @@ export class ProjectCreate extends Component {
                 <div className="p-grid">
                     <Growl ref={(el) => this.growl = el} />
                 
-                    <div className="p-col-10 p-lg-3 p-md-4">
+                    <div className="p-col-10 p-lg-10 p-md-10">
                         <h2>Project - Add</h2>
                     </div>
-                    <div className="p-col-2 p-lg-3 p-md-4">
-                        <Link to={{ pathname: '/project'}} tooltip="Close Edit" >
+                    <div className="p-col-2 p-lg-2 p-md-2">
+                        <Link to={{ pathname: '/project'}} tite="Close Edit" style={{float: "right"}}>
                             <i className="fa fa-window-close" style={{marginTop: "10px"}}></i>
                         </Link>
                     </div>
                 </div>
+                { this.state.isLoading ? <AppLoader /> :
+                <>
                 <div>
                     <div className="p-fluid">
                         <div className="p-field p-grid" style={{display: 'none'}}>
@@ -338,21 +357,23 @@ export class ProjectCreate extends Component {
                             <label htmlFor="projectName" className="col-lg-2 col-md-2 col-sm-12">Name <span style={{color:'red'}}>*</span></label>
                             <div className="col-lg-4 col-md-4 col-sm-12">
                                 <InputText className={this.state.errors.name ?'input-error':''} id="projectName" data-testid="name" 
+                                            tooltip="Enter name of the project" tooltipOptions={this.tooltipOptions} maxLength="128"
                                             value={this.state.project.name} 
                                             onChange={(e) => this.setProjectParams('name', e.target.value)}
                                             onBlur={(e) => this.setProjectParams('name', e.target.value)}/>
-                                <label className="error">
-                                    {this.state.errors.name ? this.state.errors.name : ""}
+                                <label className={this.state.errors.name?"error":"info"}>
+                                    {this.state.errors.name ? this.state.errors.name : "Max 128 characters"}
                                 </label>
                             </div>
                             <label htmlFor="description" className="col-lg-2 col-md-2 col-sm-12">Description <span style={{color:'red'}}>*</span></label>
                             <div className="col-lg-4 col-md-4 col-sm-12">
                                 <InputTextarea className={this.state.errors.description ?'input-error':''} rows={3} cols={30} 
+                                            tooltip="Short description of the project" tooltipOptions={this.tooltipOptions} maxLength="128"
                                             data-testid="description" value={this.state.project.description} 
                                             onChange={(e) => this.setProjectParams('description', e.target.value)}
                                             onBlur={(e) => this.setProjectParams('description', e.target.value)}/>
-                                <label className="error">
-                                    {this.state.errors.description ? this.state.errors.description : ""}
+                                <label className={this.state.errors.description ?"error":"info"}>
+                                    {this.state.errors.description ? this.state.errors.description : "Max 255 characters"}
                                 </label>
                             </div>
                         </div>
@@ -360,9 +381,10 @@ export class ProjectCreate extends Component {
                             <label htmlFor="triggerPriority" className="col-lg-2 col-md-2 col-sm-12">Trigger Priority </label>
                             <div className="col-lg-4 col-md-4 col-sm-12" data-testid="trig_prio">
                                 <InputNumber inputId="trig_prio" name="trig_prio" value={this.state.project.trigger_priority} 
+                                        tooltip="Priority of this project w.r.t. triggers" tooltipOptions={this.tooltipOptions}
                                         mode="decimal" showButtons min={0} max={1001} step={10} useGrouping={false}
-                                        onChange={(e) => this.setProjectParams('trigger_priority', e.target.value)}
-                                        onBlur={(e) => this.setProjectParams('trigger_priority', e.target.value)} />
+                                        onChange={(e) => this.setProjectParams('trigger_priority', e.value)}
+                                        onBlur={(e) => this.setProjectParams('trigger_priority', e.target.value, 'NUMBER')} />
                                 
                                 <label className="error">
                                     {this.state.errors.trigger_priority ? this.state.errors.trigger_priority : ""}
@@ -370,13 +392,17 @@ export class ProjectCreate extends Component {
                             </div>
                             <label htmlFor="trigger" className="col-lg-2 col-md-2 col-sm-12">Allows Trigger Submission</label>
                             <div className="col-lg-4 col-md-4 col-sm-12" data-testid="trigger">
-                                <Checkbox inputId="trigger" role="trigger" checked={this.state.project.can_trigger} onChange={e => this.setProjectParams('can_trigger', e.target.checked)}></Checkbox>
+                                <Checkbox inputId="trigger" role="trigger" 
+                                        tooltip="Is this project allowed to supply observation requests on the fly, possibly interrupting currently running observations (responsive telescope)?" 
+                                        tooltipOptions={this.tooltipOptions}
+                                        checked={this.state.project.can_trigger} onChange={e => this.setProjectParams('can_trigger', e.target.checked)}></Checkbox>
                             </div>
                         </div>
                         <div className="p-field p-grid">
                             <label htmlFor="projCat" className="col-lg-2 col-md-2 col-sm-12">Project Category </label>
                             <div className="col-lg-4 col-md-4 col-sm-12" data-testid="projCat" >
-                                <Dropdown inputId="projCat" optionLabel="name" optionValue="id" 
+                                <Dropdown inputId="projCat" optionLabel="value" optionValue="url" 
+                                        tooltip="Project Category" tooltipOptions={this.tooltipOptions}
                                         value={this.state.project.project_category} 
                                         options={this.state.projectCategories} 
                                         onChange={(e) => {this.setProjectParams('project_category', e.value)}} 
@@ -384,7 +410,8 @@ export class ProjectCreate extends Component {
                             </div>
                             <label htmlFor="periodCategory" className="col-lg-2 col-md-2 col-sm-12">Period Category</label>
                             <div className="col-lg-4 col-md-4 col-sm-12">
-                                <Dropdown data-testid="period-cat" id="period-cat" optionLabel="name" optionValue="id" 
+                                <Dropdown data-testid="period-cat" id="period-cat" optionLabel="value" optionValue="url" 
+                                        tooltip="Period Category" tooltipOptions={this.tooltipOptions}
                                         value={this.state.project.period_category} 
                                         options={this.state.periodCategories} 
                                         onChange={(e) => {this.setProjectParams('period_category',e.value)}} 
@@ -395,6 +422,7 @@ export class ProjectCreate extends Component {
                             <label htmlFor="triggerPriority" className="col-lg-2 col-md-2 col-sm-12">Cycle(s)</label>
                             <div className="col-lg-4 col-md-4 col-sm-12">
                                 <MultiSelect data-testid="cycle" id="cycle" optionLabel="name" optionValue="url" filter={true}
+                                        tooltip="Cycle(s) to which this project belongs" tooltipOptions={this.tooltipOptions}
                                         value={this.state.project.cycles} 
                                         options={this.state.cycles} 
                                         onChange={(e) => {this.setProjectParams('cycles',e.value)}} 
@@ -404,9 +432,11 @@ export class ProjectCreate extends Component {
                             <label htmlFor="projRank" className="col-lg-2 col-md-2 col-sm-12">Project Rank <span style={{color:'red'}}>*</span></label>
                             <div className="col-lg-4 col-md-4 col-sm-12" data-testid="proj-rank" >
                                 <InputNumber inputId="proj-rank" name="rank" data-testid="rank" value={this.state.project.priority_rank} 
+                                        tooltip="Priority of this project w.r.t. other projects. Projects can interrupt observations of lower-priority projects." 
+                                        tooltipOptions={this.tooltipOptions}
                                         mode="decimal" showButtons min={0} max={100}
-                                        onChange={(e) => this.setProjectParams('priority_rank', e.target.value)}
-                                        onBlur={(e) => this.setProjectParams('priority_rank', e.target.value)} />
+                                        onChange={(e) => this.setProjectParams('priority_rank', e.value)}
+                                        onBlur={(e) => this.setProjectParams('priority_rank', e.target.value, 'NUMBER')} />
                                 <label className="error">
                                     {this.state.errors.priority_rank ? this.state.errors.priority_rank : ""}
                                 </label>
@@ -440,17 +470,19 @@ export class ProjectCreate extends Component {
                     </div>
                 </div>
                 <div className="p-grid p-justify-start">
-                    <div className="p-col-1">
+                    <div className="col-lg-1 col-md-2 col-sm-6">
                         <Button label="Save" className="p-button-primary" id="save-btn" data-testid="save-btn" icon="pi pi-check" onClick={this.saveProject} disabled={!this.state.validForm} />
                     </div>
-                    <div className="p-col-1">
+                    <div className="col-lg-1 col-md-2 col-sm-6">
                         <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.cancelCreate}  />
                     </div>
                 </div>
+                </>
+                }
 
                 {/* Dialog component to show messages and get input */}
                 <div className="p-grid" data-testid="confirm_dialog">
-                    <Dialog header={this.state.dialog.header} visible={this.state.dialogVisible} style={{width: '50vw'}} inputId="confirm_dialog"
+                    <Dialog header={this.state.dialog.header} visible={this.state.dialogVisible} style={{width: '25vw'}} inputId="confirm_dialog"
                             modal={true}  onHide={() => {this.setState({dialogVisible: false})}} 
                             footer={<div>
                                 <Button key="back" onClick={() => {this.setState({dialogVisible: false}); this.cancelCreate();}} label="No" />
@@ -458,7 +490,7 @@ export class ProjectCreate extends Component {
                                 </div>
                             } >
                             <div className="p-grid">
-                                <div className="col-lg-1 col-md-1 col-sm-2">
+                                <div className="col-lg-2 col-md-2 col-sm-2">
                                     <i className="pi pi-check-circle pi-large pi-success"></i>
                                 </div>
                                 <div className="col-lg-10 col-md-10 col-sm-10">

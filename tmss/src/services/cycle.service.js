@@ -4,17 +4,26 @@ const axios = require('axios');
 axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
 
 const CycleService = {
-    getAllCycle: async function (){
-        let res = [];
-        await axios.get('/api/cycle/')
-        .then(response => {
-            res= response;
-        }).catch(function(error) {
-            console.error('[cycle.services.getAllCycle]',error);
-        });
-        return res;
-    },
-    getProjects: async function() {
+    getAllCycles: async function() {
+        try {
+          const url = `/api/cycle`;
+          const response = await axios.get(url);
+          return response.data.results;
+        } catch (error) {
+          console.error(error);
+        }
+      },
+      getCycle: async function(id) {
+        try {
+          const url = `/api/cycle/${id}`;
+          const response = await axios.get(url);
+          return response.data.results;
+        } catch (error) {
+          console.error(error);
+        }
+      },
+      
+      getProjects: async function() {
         let res = [];
         await axios.get('/api/project/')
         .then(response => {
@@ -35,16 +44,16 @@ const CycleService = {
         return res;
     },
     getResources: async function() {
-        let res = [];
-        await axios.get('/api/resource_type')
-        .then(response => {
-            res= response;
-        }).catch(function(error) {
-            console.error('[cycle.services.resource_type]',error);
-        });
-        return res;
-         
-    }
+    let res = [];
+    await axios.get('/api/resource_type')
+    .then(response => {
+        res= response;
+    }).catch(function(error) {
+        console.error('[cycle.services.resource_type]',error);
+    });
+    return res;
+
+}
 }
 
 export default CycleService;

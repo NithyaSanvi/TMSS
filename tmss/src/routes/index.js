@@ -2,34 +2,84 @@ import React from 'react';
 import {
     Route,
     Switch,
-    Redirect
+    Redirect,
 } from 'react-router-dom';
 
 import {NotFound} from '../layout/components/NotFound';
-import {ProjectCreate, ProjectEdit} from './Project';
+import {ProjectList, ProjectCreate, ProjectView, ProjectEdit} from './Project';
 import {Dashboard} from './Dashboard';
 import {Scheduling} from './Scheduling';
 import {TaskEdit, TaskView} from './Task';
-import {Cycle} from './Cycle';
+import {list} from './Cycle';
 import ViewSchedulingUnit from './Scheduling/ViewSchedulingUnit'
+import CycleList from './Cycle/list';
+
+export const routes = [
+    {
+        path: "/not-found",
+        component: NotFound
+    },{
+        path: "/dashboard",
+        component: Dashboard,
+        name: 'Dashboard'
+    },{
+        path: "/schedulingunit",
+        component: Scheduling,
+        name: 'Scheduling Unit'
+    },{
+        path: "/task",
+        component: TaskView,
+        name: 'Task'
+    },{
+        path: "/task/view",
+        component: TaskView,
+        name: 'Task'
+    },{
+        path: "/task/view/:type/:id",
+        component: TaskView,
+        name: 'Task Details'
+    },{
+        path: "/task/edit",
+        component: TaskEdit,
+        name: 'Task Edit'
+    },{
+        path: "/schedulingunit/view",
+        component: ViewSchedulingUnit,
+        name: 'Scheduling View'
+    },{
+        path: "/project",
+        component: ProjectList,
+        name: 'Project List'
+    },{
+        path: "/project/create",
+        component: ProjectCreate,
+        name: 'Project Add'
+    },{
+        path: "/project/view",
+        component: ProjectView,
+        name: 'Project View'
+    },{
+        path: "/project/view/:id",
+        component: ProjectView,
+        name: 'Project View'
+    },{
+        path: "/project/edit/:id",
+        component: ProjectEdit,
+        name: 'Project Edit'
+    },
+    {
+        path: "/cycle",
+        component: CycleList,
+        name: 'Cycle List'
+    },
+];
 
 export const RoutedContent = () => {
     return (
+	     
         <Switch>
             <Redirect from="/" to="/" exact />
-            <Route path="/not-found" exact component= {NotFound} />
-            <Route path="/dashboard" exact component={Dashboard} />
-            <Route path="/project" exact component={NotFound} />
-            <Route path="/project/create" exact component={ProjectCreate} />
-            <Route path="/project/edit" exact component={ProjectEdit} />
-            <Route path="/project/edit/:id" exact component={ProjectEdit} />
-            <Route path="/scheduling" exact component={Scheduling} />
-            <Route path="/task" exact component={TaskView} />
-            <Route path="/task/view" exact component={TaskView} />
-            <Route path="/task/view/:type/:id" exact component={TaskView} />
-            <Route path="/task/edit" exact component={TaskEdit} />
-            <Route path="/schedulingunit/view" exact component={ViewSchedulingUnit} />
-			 <Route path="/cycle" exact component={Cycle} />
+			{routes.map(routeProps => <Route {...routeProps} exact key={routeProps.path} />)}
         </Switch>
     );
 }

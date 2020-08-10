@@ -37,8 +37,19 @@ label {
   margin-bottom: 10px;
 }
 
-.main-content span,a{
+h2, .h2 {
+  font-size: 1.5rem;
+}
+
+h3, .h3 {
+  font-size: 1.25rem;
+}
+
+a{
   margin-bottom: 10px;
+}
+
+.main-content span,a{
   font-size: 14px;
 }
 
@@ -102,8 +113,9 @@ p {
   margin-bottom: 1rem;
 }
 
-.fa {
+.layout-main .fa {
   color: #005b9f;
+  font-size: 20px;
 }
 
 thead {
@@ -116,8 +128,22 @@ thead {
   font-weight: 400;
 }
 
+.info {
+  color: #b4b2b2;
+  font-size: 80%;
+  font-weight: 400;
+}
+
 .input-error {
   border-color: #dc3545 !important;
+}
+
+.p-tooltip-custom .p-tooltip-text {
+  /* background-color: #49b0ff !important; */
+}
+
+.p-link:focus {
+  box-shadow: none !important;
 }
 
 .pi-primary {

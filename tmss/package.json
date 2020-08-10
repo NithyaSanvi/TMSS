@@ -5,7 +5,6 @@
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.13.1",
     "@json-editor/json-editor": "^2.3.0",
-    "@tds/core-breadcrumbs": "^2.2.4",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
@@ -27,16 +26,14 @@
     "react-app-polyfill": "^1.0.6",
     "react-bootstrap": "^1.0.1",
     "react-bootstrap-datetimepicker": "0.0.22",
-    "react-breadcrumbs": "^2.1.7",
     "react-dom": "^16.13.1",
     "react-frame-component": "^4.1.2",
-    "react-helmet": "^6.1.0",
     "react-json-view": "^1.19.1",
     "react-loader-spinner": "^3.1.14",
     "react-router-dom": "^5.2.0",
     "react-scripts": "3.4.1",
     "react-table": "^7.2.1",
-    "react-transition-group": "^1.2.1",
+    "react-transition-group": "^2.5.1",
     "reactstrap": "^8.5.1",
     "styled-components": "^5.1.1",
     "typescript": "^3.9.5",
@@ -48,7 +45,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  "proxy": "http://127.0.0.1:8008/",
+  "proxy": "http://127.0.0.1:8008",
   "eslintConfig": {
     "extends": "react-app"
   },
@@ -65,6 +62,8 @@
     ]
   },
   "devDependencies": {
+    "customize-cra": "^0.9.1",
+    "react-app-rewired": "^1.6.2",
     "babel-polyfill": "^6.26.0"
   }
 }

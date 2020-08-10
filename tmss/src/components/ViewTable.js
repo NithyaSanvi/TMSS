@@ -1,5 +1,4 @@
 import React, {useRef } from "react";
-import styled from 'styled-components'
 import { useSortBy, useTable, useFilters, useGlobalFilter, useAsyncDebounce } from 'react-table'
 import matchSorter from 'match-sorter'
 import _ from 'lodash';
@@ -7,35 +6,10 @@ import moment from 'moment';
 import { useHistory } from "react-router-dom";
 import {OverlayPanel} from 'primereact/overlaypanel';
 
-const Styles = styled.div`
-  padding: 1rem;
-  table {
-    border-spacing: 0;
-     
-    th {
-      vertical-align: middle!important;
-      color: #7e8286;
-      font-size: 14px;
-      border-bottom: 1px solid lightgray;
-      border-top: 1px solid lightgray;
-      padding: .65rem;
-    }  
-    
-    td {
-      padding: .65rem;
-      border-bottom: 1px solid lightgray;
-    } 
 
-    thead>tr>:nth-child(1){
-      div {
-        display: none;
-      } 
-     }
-  }
-`
-let dataheader = [] ;
 let tbldata =[];
- 
+let isunittest = false;
+let columnclassname =[];
 // Define a default UI for filtering
 function GlobalFilter({
     preGlobalFilteredRows,
@@ -43,12 +17,10 @@ function GlobalFilter({
     setGlobalFilter,
   }) {
      
-    const [value, setValue] = React.useState(globalFilter)
-    const onChange = useAsyncDebounce(value => {setGlobalFilter(value || undefined)}, 200)
-
+  const [value, setValue] = React.useState(globalFilter)
+  const onChange = useAsyncDebounce(value => {setGlobalFilter(value || undefined)}, 200)
   return (
     <span>
-      
       <input
         value={value || ""}
         onChange={e => {
@@ -64,7 +36,6 @@ function GlobalFilter({
 function DefaultColumnFilter({
   column: { filterValue, preFilteredRows, setFilter },
 }) {
-
   return (
     <input
       value={filterValue || ''}
@@ -74,7 +45,6 @@ function DefaultColumnFilter({
     />
   )
 }
- 
 
 function fuzzyTextFilterFn(rows, id, filterValue) {
   return matchSorter(rows, filterValue, { keys: [row => row.values[id]] })
@@ -87,18 +57,15 @@ const IndeterminateCheckbox = React.forwardRef(
   ({ indeterminate, ...rest }, ref) => {
     const defaultRef = React.useRef()
     const resolvedRef = ref || defaultRef
-
     React.useEffect(() => {
       resolvedRef.current.indeterminate = indeterminate
     }, [resolvedRef, indeterminate])
-
     return <input type="checkbox" ref={resolvedRef} {...rest} />
   }
 )
 
 // Our table component
-function Table({ columns, data, showAllRows }) {
-
+function Table({ columns, data, defaultheader, optionalheader }) {
   const filterTypes = React.useMemo(
     () => ({
       // Add a new fuzzyTextFilterFn filter type.
@@ -140,16 +107,16 @@ function Table({ columns, data, showAllRows }) {
     setGlobalFilter,
     setHiddenColumns,
   } = useTable(
-    {
-      columns,
-      data,
-      defaultColumn,
-      filterTypes,
-    },
-    useFilters,
-    useGlobalFilter,
-    useSortBy,   
-  )
+      {
+        columns,
+        data,
+        defaultColumn,
+        filterTypes,
+      },
+      useFilters,
+      useGlobalFilter,
+      useSortBy,   
+    )
 
   React.useEffect(() => {
     setHiddenColumns(
@@ -157,7 +124,7 @@ function Table({ columns, data, showAllRows }) {
     );
   }, [setHiddenColumns, columns]);
 
-  const firstPageRows = showAllRows ? rows : rows.slice(0, 10);
+  const firstPageRows = rows.slice(0, 10)
   let op = useRef(null);
 
   return (
@@ -177,8 +144,8 @@ function Table({ columns, data, showAllRows }) {
                             <IndeterminateCheckbox {...getToggleHideAllColumnsProps()} /> Select All
                           </div>
                           {allColumns.map(column => (
-                            <div key={column.id}>
-                              <input type="checkbox" {...column.getToggleHiddenProps()} />{' '} {_.startCase(column.id)}
+                            <div key={column.id} style={{'display':column.id !== 'actionpath'?'block':'none'}}> 
+                                <input type="checkbox" {...column.getToggleHiddenProps()}  /> {(defaultheader[column.id])?defaultheader[column.id]:(optionalheader[column.id]?optionalheader[column.id]:column.id)}
                             </div>
                           ))}
                           <br />
@@ -188,31 +155,36 @@ function Table({ columns, data, showAllRows }) {
                   </div>
                 </OverlayPanel>
             </div> 
-          <div  style={{textAlign:'right'}}>
-            {tbldata.length>0 &&
-                  <GlobalFilter
-                    preGlobalFilteredRows={preGlobalFilteredRows}
-                    globalFilter={state.globalFilter}
-                    setGlobalFilter={setGlobalFilter}
-                  />
-                }
+                
+        <div  style={{textAlign:'right'}}>
+        {tbldata.length>0 && !isunittest && 
+              <GlobalFilter
+                preGlobalFilteredRows={preGlobalFilteredRows}
+                globalFilter={state.globalFilter}
+                setGlobalFilter={setGlobalFilter}
+              />
+            }
         </div>
-         
 </div>
-      <Styles style={{overflow: 'auto', padding: '0.75em',}}>
-      <table {...getTableProps()} style={{width:'100%'}}>
+
+      <div style={{overflow: 'auto', padding: '0.75em',}}>
+      
+      <table {...getTableProps()} style={{width:'100%'}} data-testid="viewtable" className="viewtable" >
         <thead>
-          {headerGroups.map(headerGroup => (
+          {headerGroups.map(headerGroup =>  (
             <tr {...headerGroup.getHeaderGroupProps()}>
               {headerGroup.headers.map(column => (
-               <th {...column.getHeaderProps(column.getSortByToggleProps())}>
-                  {column.render('Header')}
-                  <span>
-                  {column.isSorted ? (column.isSortedDesc ? <i className="fa fa-sort-desc" aria-hidden="true"></i> : <i className="fa fa-sort-asc" aria-hidden="true"></i>) : ""}
-                </span>
-                  {/* Render the columns filter UI */}
-                  <div>{column.canFilter ? column.render('Filter') : null}</div>
-                </th>
+                 <th {...column.getHeaderProps(column.getSortByToggleProps())}  > 
+                    {column.Header !== 'actionpath' && column.render('Header')}
+                    {/* {column.Header !== 'Action'? 
+                      column.isSorted ? (column.isSortedDesc ? <i className="pi pi-sort-down" aria-hidden="true"></i> : <i className="pi pi-sort-up" aria-hidden="true"></i>) : <i className="pi pi-sort" aria-hidden="true"></i>
+                      : ""
+                    } */}
+                    {/* Render the columns filter UI */} 
+                    {column.Header !== 'actionpath' &&
+                      <div className={columnclassname[0][column.Header]}  > {column.canFilter && column.Header !== 'Action' ? column.render('Filter') : null}</div>
+                    }
+                  </th> 
               ))}
             </tr>
           ))}
@@ -220,21 +192,24 @@ function Table({ columns, data, showAllRows }) {
         </thead>
         <tbody {...getTableBodyProps()}>
           {firstPageRows.map((row, i) => {
+            
             prepareRow(row)
             return (
               <tr {...row.getRowProps()}>
-                {row.cells.map(cell => {
-                  return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                {row.cells.map(cell => { 
+                  if(cell.column.id !== 'actionpath')
+                   return <td {...cell.getCellProps()}  >{cell.render('Cell')}</td>
                 })}
               </tr>
             )
           })}
         </tbody>
       </table>
-      </Styles>
+      </div>
     </>
   )
 }
+ 
 
 // Define a custom filter filter function!
 function filterGreaterThan(rows, id, filterValue) {
@@ -251,90 +226,103 @@ function filterGreaterThan(rows, id, filterValue) {
 filterGreaterThan.autoRemove = val => typeof val !== 'number'
 
 function ViewTable(props) {
-
     const history = useHistory();
     // Data to show in table
     tbldata = props.data; 
+    isunittest = props.unittest;
+    columnclassname = props.columnclassname;
+     
     // Default Header to show in table and other columns header will not show until user action on UI
     let defaultheader = props.defaultcolumns;
+    let optionalheader = props.optionalcolumns;
+    
     let columns = [];   
     let defaultdataheader =  Object.keys(defaultheader[0]);
+    let optionaldataheader =  Object.keys(optionalheader[0]);
+    
     if(props.showaction === 'true'){
       columns.push({
           Header: 'Action',
-          id:'action',
-          accessor: 'id',
-          Cell: props => <button className='p-link'  onClick={navigateTo(props.value)} ><i className="fa fa-edit" style={{cursor: 'pointer'}}></i></button>,
+          id:'Action',
+          accessor: props.keyaccessor,
+          Cell: props => <button className='p-link'  onClick={navigateTo(props)} ><i className="fa fa-edit" style={{cursor: 'pointer'}}></i></button>,
           disableFilters: true,
           disableSortBy: true,
-          isVisible: defaultdataheader.includes('id'),
+          isVisible: defaultdataheader.includes(props.keyaccessor),
         })
      }
 
+     const navigateTo = (props) => () => {
+       if(props.cell.row.values['actionpath']){
+        return history.push({
+          pathname: props.cell.row.values['actionpath'],
+          state: { 
+            "id": props.value,
+          }
+        })
+       }
+     // Object.entries(props.paths[0]).map(([key,value]) =>{})
+       
+      
+    }
+
+  //Default Columns
     defaultdataheader.forEach(header =>{
         columns.push({
         Header: defaultheader[0][header],
+        id: defaultheader[0][header],
         accessor: header,
         filter: 'fuzzyText',
         isVisible: true,
-        Cell: props => <div> {dateformat(props.value)} </div>,
-        minWidth: 20,
+        Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
        })
     })
 
-    dataheader =  Object.keys(tbldata[0]);
-    dataheader.forEach(header => {
-      if(!defaultdataheader.includes(header)){
-      var text = _.startCase(header);
-      columns.push({
-         Header: text,
-         accessor: header,
-         filter: 'fuzzyText',
-         isVisible: defaultheader.includes(header),
-         Cell: props => <div> {dateformat(props.value)} </div>,
-         minWidth: 20,
-        })
-      }
+    //Optional Columns
+    optionaldataheader.forEach(header => {
+        columns.push({
+          Header: optionalheader[0][header],
+          id: header,
+          accessor: header,
+          filter: 'fuzzyText',
+          isVisible: false,
+          Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
+          })
     }); 
-
-    function dateformat(date){
+     
+    function updatedCellvalue(key, value){
       try{
-        if(date && date.length===26){
-          var result = moment(date).format("YYYY-MM-DD HH:mm:SS")
-          if(result === 'Invalid date'){
-              return date;
-          }else{
-            return result;
-          }
-        }
+        if(key === 'blueprint_draft' && _.includes(value,'/task_draft/')){
+            //  'task_draft/' -> len = 12
+            var taskid = _.replace(value.substring((value.indexOf('/task_draft/')+12), value.length),'/','');
+            return  <a href={'/task/view/draft/'+taskid}>{' '+taskid+' '}</a>
+        }else if(key === 'blueprint_draft'){
+          var retval= [];
+          value.forEach((link, index) =>{
+            //  'task_blueprint/' -> len = 16
+            if(_.includes(link,'/task_blueprint/')){
+              var bpid = _.replace(link.substring((link.indexOf('/task_blueprint/')+16), link.length),'/','');
+              retval.push( <a href={'/task/view/blueprint/'+bpid} key={bpid+index} >{'  '+bpid+'  '}</a> )
+            }
+          })
+          return  retval;
+        }else if(typeof value == "string"){
+          const dateval = moment(value, moment.ISO_8601).format("YYYY-MMM-DD HH:mm:SS");
+          if(dateval !== 'Invalid date'){
+            return dateval;
+          } 
+        } 
       }catch(err){
-        console.err('Error',err)
+        console.error('Error',err)
       }
-      return date;
+      return value;
     }
-
-  //  if(columns.length>0 && props.showaction === 'true'){
-  //   columns.push(
-  //     {
-  //       Header: 'Action',
-  //       Cell: row =>  
-  //               <a  onClick={navigateTo} href ><i className="pi pi-pencil" style={{cursor: 'pointer'}}></i></a>,
-  const navigateTo = (id) => () => {
-    Object.entries(props.paths[0]).map(([key,value]) =>{
-     return history.push({
-        pathname: value,
-        state: { 
-          "id": id,
-        }
-      })
-    })
-  }
+ 
+  
    
   return (
-    <div  >
-      
-        <Table columns={columns} data={tbldata} className="-striped -highlight" showAllRows={props.showAllRows}/>
-      
+    <div>
+        <Table columns={columns} data={tbldata} defaultheader={defaultheader[0]} optionalheader={optionalheader[0]} />
     </div>
   )
 }

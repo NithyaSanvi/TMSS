@@ -1,4 +1,6 @@
 import {ProjectCreate} from './create';
+import {ProjectView} from './view';
 import {ProjectEdit} from './edit';
+import {ProjectList} from './list';
 
-export {ProjectCreate, ProjectEdit} ;
+export {ProjectList, ProjectCreate, ProjectView, ProjectEdit} ;

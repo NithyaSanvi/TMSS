@@ -27,9 +27,9 @@ afterEach(() => {
  */
 const setMockSpy = (() => {
     projectCategoriesSpy = jest.spyOn(ProjectService, 'getProjectCategories');
-    projectCategoriesSpy.mockImplementation(() => { return Promise.resolve([{id: 1, name: 'Regular'}])});
+    projectCategoriesSpy.mockImplementation(() => { return Promise.resolve(ProjectServiceMock.project_categories)});
     periodCategoriesSpy = jest.spyOn(ProjectService, 'getPeriodCategories');
-    periodCategoriesSpy.mockImplementation(() => { return Promise.resolve([{id: 1, name: 'Single Cycle'}])});
+    periodCategoriesSpy.mockImplementation(() => { return Promise.resolve(ProjectServiceMock.period_categories)});
     allCycleSpy = jest.spyOn(CycleService, 'getAllCycles');
     allCycleSpy.mockImplementation(() => { 
         return Promise.resolve([{url: "http://localhost:3000/api/cycle/Cycle-0", name: 'Cycle-0'},
@@ -143,7 +143,7 @@ it("renders Save button enabled when all data entered", async () => {
         // Before selecting Project Category
         expect(content.queryAllByText('Select Project Category').length).toBe(2);
         expect(content.queryAllByText('Regular').length).toBe(1);
-        expect(content.getAllByRole("listbox")[0].children.length).toBe(1);
+        expect(content.getAllByRole("listbox")[0].children.length).toBe(2);
         fireEvent.click(projCatInput);
         // After selecting Project Category
         expect(content.queryAllByText('Select Project Category').length).toBe(1);
@@ -152,7 +152,7 @@ it("renders Save button enabled when all data entered", async () => {
         // Before selecting Period Category
         expect(content.queryAllByText('Select Period Category').length).toBe(2);
         expect(content.queryAllByText('Single Cycle').length).toBe(1);
-        expect(content.getAllByRole("listbox")[1].children.length).toBe(1);
+        expect(content.getAllByRole("listbox")[1].children.length).toBe(2);
         fireEvent.click(projPeriodInput);
         // After selecting Period Category
         expect(content.queryAllByText('Select Period Category').length).toBe(1);

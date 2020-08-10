@@ -1,0 +1,37 @@
+
+body .p-breadcrumb{
+    background-color: #F1F1F1;
+    padding: 0em;
+    padding-left: 5px;
+    padding-top: 5px;
+    margin-bottom: 5px;
+    box-shadow: 2px 2px #d6d9d9;
+    border: none;
+}
+.p-breadcrumb .pi{
+  color: #535252;
+  font-size : large;
+}
+
+.b-link {
+  font-size: 14px;
+  color:#007bff;
+  cursor: pointer;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.b-text {
+  font-size: 14px;
+  columns: #464748;
+}
+
+.b-separator {
+  font-size: 0.9rem !important;
+  margin: 0 5px;
+}
+.b-home {
+  position: relative;
+  top: 2px;  
+}

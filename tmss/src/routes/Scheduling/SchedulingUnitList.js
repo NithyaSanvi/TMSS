@@ -1,7 +1,11 @@
 import React, { Component } from 'react'
 import 'primeflex/primeflex.css';
+
+import AppLoader from "./../../layout/components/AppLoader";
 import ViewTable from './../../components/ViewTable';
-import {getScheduling_Unit_Draft} from '../../services/ScheduleService'
+
+import ScheduleService from '../../services/schedule.service';
+ 
 
 class SchedulingUnitList extends Component{
      
@@ -11,43 +15,71 @@ class SchedulingUnitList extends Component{
             scheduleunit: [],
             paths: [{
                 "View": "/schedulingunit/view",
+            }],
+            isLoading: true,
+            defaultcolumns: [ {
+                "name":"Name",
+                "description":"Description",
+                "created_at":"Created Date",
+                "updated_at":"Updated Date",
+                "requirements_template_id": "Template",
+                "start_time":"Start Time",
+                "stop_time":"End time",
+                "duration":"Duration"
+                }],
+            optionalcolumns:  [{
+                "actionpath":"actionpath",
+            }],
+            columnclassname: [{
+                "Template":"filter-input-50",
+                "Duration":"filter-input-50",
             }]
         }
     }
 
     componentDidMount(){ 
-        getScheduling_Unit_Draft().then(scheduleunit =>{
+        ScheduleService.getSchedulingUnitDraft().then(scheduleunit =>{
+            console.log(scheduleunit)
+            var scheduleunits = scheduleunit.data.results;
+        
+            for( const scheduleunit  of scheduleunits){
+                scheduleunit['actionpath']='/schedulingunit/view'
+            }
             this.setState({
-                scheduleunit : scheduleunit.data 
+                scheduleunit : scheduleunit.data ,isLoading: false
             });
         })
     }
 
     render(){
-         
-        if(this.state.scheduleunit.results){
-            this.state.scheduleunit.results.forEach(item =>{
-                delete item['requirements_doc']
-            })
+        if (this.state.isLoading) {
+            return <AppLoader/>
         }
-        // The default table column value and header to show in UI
-        // let defaultcolumns = [ {"name":"Name","description":"Description","created_at":"Created Date","updated_at":"Updated Date","requirements_template_id": "Requirement Temp","scheduling_set_id":" Scheduling Unit"}]
-        let defaultcolumns = [ {"name":"Name","description":"Description","created_at":"Created Date","updated_at":"Updated Date","requirements_template_id": "Template"}]
         return(
             <>
-                {/*
+            
+                {
+                
+                /*
                     * Call View table to show table data, the parameters are,
                     data - Pass API data
-                    defaultcolumns - This colum will be populate by default in table with header mentioned
+                    defaultcolumns - These columns will be populate by default in table with header mentioned
+                    optionalcolumns - These columns will not appear in the table by default, but user can toggle the columns using toggle menu
                     showaction - {true/false} -> to show the action column
+                    keyaccessor - This is id column for Action item
                     paths - specify the path for navigation - Table will set "id" value for each row in action button
+                    
                 */}
                 {this.state.scheduleunit.results &&
                     <ViewTable 
                         data={this.state.scheduleunit.results} 
-                        defaultcolumns={defaultcolumns} 
+                        defaultcolumns={this.state.defaultcolumns} 
+                        optionalcolumns={this.state.optionalcolumns}
+                        columnclassname={this.state.columnclassname}
                         showaction="true"
+                        keyaccessor="id"
                         paths={this.state.paths}
+                        unittest={this.state.unittest}
                     />
                  }  
             </>

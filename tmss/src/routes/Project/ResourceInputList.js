@@ -16,7 +16,7 @@ export class ResourceInputList extends Component {
     }
 
     shouldComponentUpdate() {
-        return this.updateEnabled;
+        return true;
     }
 
     onInputChange(field, event) {
@@ -39,9 +39,10 @@ export class ResourceInputList extends Component {
                     <label key={'label1-'+ index} className="col-lg-3 col-md-3 col-sm-12">{item.name}</label>
                     <div key={'div1-'+ index} className="col-lg-3 col-md-3 col-sm-12">
                         <InputNumber key={'item1-'+ index} id={'item1-'+ index} name={'item1-'+ index}
-                            suffix={` ${this.props.unitMap[item.resourceUnit.name].display}`}
-                            placeholder={item.name}
+                            suffix={` ${this.props.unitMap[item.quantity_value]?this.props.unitMap[item.quantity_value].display:''}`}
+                            placeholder={` ${this.props.unitMap[item.quantity_value]?this.props.unitMap[item.quantity_value].display:item.name}`} min={0} useGrouping={false}
                             value={this.state.projectQuota[item.name]} 
+                            onChange={(e) => this.onInputChange(item.name, e)}
                             onBlur={(e) => this.onInputChange(item.name, e)}
                             style={{width:"90%", marginRight: "5px"}}
                         />

@@ -10,7 +10,9 @@ import { Button } from 'primereact/button';
 
 import Jeditor from '../../components/JSONEditor/JEditor';
 
-import TaskService from '../../services/task.services';
+import TaskService from '../../services/task.service';
+import AppLoader from "./../../layout/components/AppLoader";
+
 
 export class TaskEdit extends Component {
     templateOutput = {};        // id: selectedTemplateId, output: values enetered in the editor form
@@ -29,7 +31,8 @@ export class TaskEdit extends Component {
             taskTemplates:[],
             validEditor: false,
             validForm: false,
-            errors: {}
+            errors: {},
+            isLoading: true
         };
         this.formRules = {
             name: {required: true, message: "Name can not be empty"},
@@ -83,12 +86,15 @@ export class TaskEdit extends Component {
      * @param {Number} templateId 
      */
     changeTaskTemplate(templateId) {
+		
         const template = _.find(this.state.taskTemplates, {'id': templateId});
         let task = this.state.task;
         task.specifications_template_id = templateId;
+		
         task.specifications_template = template.url;
         this.setState({taskSchema: null});
         this.setState({task: task, taskSchema: template.schema});
+		 
         this.state.editorFunction();
     }
 
@@ -133,6 +139,7 @@ export class TaskEdit extends Component {
     }
 
     componentDidMount() {
+        this.setState({ isLoading: true });
         TaskService.getTaskTemplates()
         .then((templates) => {
             this.setState({taskTemplates: templates});
@@ -142,13 +149,13 @@ export class TaskEdit extends Component {
             if (task) {
                 TaskService.getSchedulingUnit("draft", task.scheduling_unit_draft_id)
                 .then((schedulingUnit) => {
-                    this.setState({schedulingUnit: schedulingUnit});
+                    this.setState({schedulingUnit: schedulingUnit,isLoading: false});
                 });
                 
                 this.templateOutput[task.specifications_template_id] = task.specifications_doc;
                 TaskService.getTaskTemplate(task.specifications_template_id)
                 .then((taskTemplate) => {
-                    this.setState({task: task, taskSchema: taskTemplate.schema});
+                    this.setState({task: task, taskSchema: taskTemplate.schema, isLoading: false});
                 });
             }   else {
                 this.setState({redirect: "/not-found"});
@@ -157,13 +164,18 @@ export class TaskEdit extends Component {
     }
 
     render() {
+       
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect, 
                                     state: {id: this.state.task.id}} }></Redirect>
         }
+        const { isLoading } = this.state;
+        
         const taskSchema = this.state.taskSchema;
+        
         let jeditor = null;
         if (this.state.taskSchema) {
+		
             jeditor = React.createElement(Jeditor, {title: "Specification", 
                                                         schema: taskSchema,
                                                         //initValue: this.state.templateOutput[this.state.task.specifications_template_id], 
@@ -176,85 +188,90 @@ export class TaskEdit extends Component {
         return (
             <React.Fragment>
                 <div className="p-grid">
-                    <div className="p-col-10 p-lg-3 p-md-4">
+                    <div className="p-col-10 p-lg-10 p-md-10">
                         <h2>Task - Edit</h2>
                     </div>
-                    <div className="p-col-2 p-lg-3 p-md-4">
-                        <Link to={{ pathname: '/task', state: {id: this.state.task?this.state.task.id:''}}} tooltip="Close Edit" >
+                    <div className="p-col-2 p-lg-2 p-md-2">
+                        <Link to={{ pathname: `/task/view/draft/${this.state.task?this.state.task.id:''}`}} title="Close Edit"
+                                style={{float: "right"}} >
                             <i className="fa fa-window-close" style={{marginTop: "10px"}}></i>
                         </Link>
                     </div>
                 </div>
+				
+				{isLoading ? <AppLoader/> :
                 <div>
-                    <div className="p-fluid">
-                        <div className="p-field p-grid">
-                            <label htmlFor="taskName" className="col-lg-2 col-md-2 col-sm-12">Name <span style={{color:'red'}}>*</span></label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
-                                <InputText className={this.state.errors.name ?'input-error':''} id="taskName" type="text" value={this.state.task.name} onChange={(e) => this.setTaskParams('name', e.target.value)}/>
-                                <label className="error">
-                                    {this.state.errors.name ? this.state.errors.name : ""}
-                                </label>
-                            </div>
-                            <label htmlFor="description" className="col-lg-2 col-md-2 col-sm-12">Description <span style={{color:'red'}}>*</span></label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
-                                <InputTextarea className={this.state.errors.description ?'input-error':''} rows={3} cols={30} value={this.state.task.description} onChange={(e) => this.setTaskParams('description', e.target.value)}/>
-                                <label className="error">
-                                    {this.state.errors.description ? this.state.errors.description : ""}
-                                </label>
-                            </div>
-                        </div>
-                        {/* <div className="p-field p-grid">
-                            <label htmlFor="createdAt" className="col-lg-2 col-md-2 col-sm-12">Created At</label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
-                                <Calendar showTime={true} hourFormat="24" value={created_at} onChange={(e) => this.setState({date2: e.value})}></Calendar>
-                            </div>
-                            <label htmlFor="updatedAt" className="col-lg-2 col-md-2 col-sm-12">Updated At</label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
-                                <Calendar showTime={true} hourFormat="24" value={updated_at} onChange={(e) => this.setState({date2: e.value})}></Calendar>
-                            </div>
-                        </div> */}
-                        <div className="p-field p-grid">
-                            <label htmlFor="tags" className="col-lg-2 col-md-2 col-sm-12">Tags</label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
-                                <Chips value={this.state.task.tags?this.state.task.tags:[]} onChange={(e) => this.setTaskParams('tags', e.value)}></Chips>
-                            </div>
-                            {/* <label htmlFor="doCancel" className="col-lg-2 col-md-2 col-sm-12">Do Cancel</label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
-                                <Checkbox onChange={e => this.setTaskParams('do_cancel', e.checked)} checked={this.state.task.do_cancel}></Checkbox>
-                            </div> */}
-                            {this.state.schedulingUnit &&
-                            <>
-                                <label className="col-lg-2 col-md-2 col-sm-12">Scheduling Unit</label>
-                                <Link className="col-lg-4 col-md-4 col-sm-12" to={ { pathname:'/schedulingunit/view', state: {id: this.state.schedulingUnit.id}}}>{this.state.schedulingUnit?this.state.schedulingUnit.name:''}</Link>
-                            </>
-                            }
-                        </div>
-                        <div className="p-field p-grid">
-                            <label htmlFor="tags" className="col-lg-2 col-md-2 col-sm-12">Template</label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
-                                <Dropdown optionLabel="name" optionValue="id" 
-                                        value={this.state.task.specifications_template_id} 
-                                        options={this.state.taskTemplates} 
-                                        onChange={(e) => {this.changeTaskTemplate(e.value)}} 
-                                        placeholder="Select Task Template"/>
-                            </div>
-                            
-                        </div>
-
+			        <div className="p-fluid">
+                    <div className="p-field p-grid">
+                    <label htmlFor="taskName" className="col-lg-2 col-md-2 col-sm-12">Name <span style={{color:'red'}}>*</span></label>
+                    <div className="col-lg-4 col-md-4 col-sm-12">
+                        <InputText className={this.state.errors.name ?'input-error':''} id="taskName" type="text" value={this.state.task.name} onChange={(e) => this.setTaskParams('name', e.target.value)}/>
+                        <label className="error">
+                            {this.state.errors.name ? this.state.errors.name : ""}
+                        </label>
                     </div>
-                </div>
+                    <label htmlFor="description" className="col-lg-2 col-md-2 col-sm-12">Description <span style={{color:'red'}}>*</span></label>
+                    <div className="col-lg-4 col-md-4 col-sm-12">
+                        <InputTextarea className={this.state.errors.description ?'input-error':''} rows={3} cols={30} value={this.state.task.description} onChange={(e) => this.setTaskParams('description', e.target.value)}/>
+                        <label className="error">
+                            {this.state.errors.description ? this.state.errors.description : ""}
+                        </label>
+                    </div>
+                    </div>
+                    {/* <div className="p-field p-grid">
+                        <label htmlFor="createdAt" className="col-lg-2 col-md-2 col-sm-12">Created At</label>
+                        <div className="col-lg-4 col-md-4 col-sm-12">
+                            <Calendar showTime={true} hourFormat="24" value={created_at} onChange={(e) => this.setState({date2: e.value})}></Calendar>
+                        </div>
+                        <label htmlFor="updatedAt" className="col-lg-2 col-md-2 col-sm-12">Updated At</label>
+                        <div className="col-lg-4 col-md-4 col-sm-12">
+                            <Calendar showTime={true} hourFormat="24" value={updated_at} onChange={(e) => this.setState({date2: e.value})}></Calendar>
+                        </div>
+                        </div> 
+                    */}
+                    <div className="p-field p-grid">
+                    <label htmlFor="tags" className="col-lg-2 col-md-2 col-sm-12">Tags</label>
+                    <div className="col-lg-4 col-md-4 col-sm-12">
+                        <Chips value={this.state.task.tags?this.state.task.tags:[]} onChange={(e) => this.setTaskParams('tags', e.value)}></Chips>
+                    </div>
+                    {/* <label htmlFor="doCancel" className="col-lg-2 col-md-2 col-sm-12">Do Cancel</label>
+                    <div className="col-lg-4 col-md-4 col-sm-12">
+                        <Checkbox onChange={e => this.setTaskParams('do_cancel', e.checked)} checked={this.state.task.do_cancel}></Checkbox>
+                    </div> */}
+                    {this.state.schedulingUnit &&
+                    <>
+                        <label className="col-lg-2 col-md-2 col-sm-12">Scheduling Unit</label>
+                        <Link className="col-lg-4 col-md-4 col-sm-12" to={ { pathname:'/schedulingunit/view', state: {id: this.state.schedulingUnit.id}}}>{this.state.schedulingUnit?this.state.schedulingUnit.name:''}</Link>
+                    </>
+                    }
+                    </div>
+                    <div className="p-field p-grid">
+                        <label htmlFor="tags" className="col-lg-2 col-md-2 col-sm-12">Template</label>
+                        <div className="col-lg-4 col-md-4 col-sm-12">
+                            <Dropdown optionLabel="name" optionValue="id" 
+                            value={this.state.task.specifications_template_id} 
+                            options={this.state.taskTemplates} 
+                            onChange={(e) => {this.changeTaskTemplate(e.value)}} 
+                            placeholder="Select Task Template"/>
+                        </div>
+                    </div>
+                    </div>
+				    </div>
+                }
                 <div className="p-fluid">
-                    <div className="p-grid"><div className="p-col-12">
-                        {this.state.taskSchema?jeditor:""}
-                    </div></div>
+                <div className="p-grid"><div className="p-col-12">
+                    {this.state.taskSchema?jeditor:""}
                 </div>
+                </div>
+                </div>
+            
                 <div className="p-grid p-justify-start">
-                    <div className="p-col-1">
-                        <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.saveTask} disabled={!this.state.validEditor || !this.state.validForm} />
-                    </div>
-                    <div className="p-col-1">
-                        <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.cancelEdit}  />
-                    </div>
+                <div className="p-col-1">
+                    <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.saveTask} disabled={!this.state.validEditor || !this.state.validForm} />
+                </div>
+                <div className="p-col-1">
+                    <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.cancelEdit}  />
+                </div>
                 </div>
             </React.Fragment>
         );

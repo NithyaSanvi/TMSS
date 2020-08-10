@@ -1,5 +1,7 @@
 import _ from 'lodash';
 
+import UnitConverter from './../utils/unit.converter'
+
 const axios = require('axios');
 
 axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
@@ -7,47 +9,23 @@ axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
 const ProjectService = {
     getProjectCategories: async function() {
         try {
-          const url = `/api/cycle`;
+          const url = `/api/project_category/`;
           const response = await axios.get(url);
-          //return response.data.results;
-          return [
-                    {id: 1, name: "Regular"},
-                    {id: 2, name: "User Shared Support"},
-                    {id: 3, name: "Commissioning"},
-                    {id: 4, name: "DDT"},
-                    {id: 5, name: "Test"}
-                 ];
+          return response.data.results;
         } catch (error) {
           console.error(error);
         }
     },
     getPeriodCategories: async function() {
         try {
-          const url = `/api/cycle`;
+          const url = `/api/period_category/`;
           const response = await axios.get(url);
-        //   return response.data.results;
-            return [
-                {id: 1, name: "Single Cycle"},
-                {id: 2, name: "Long Term"},
-                {id: 3, name: "Unbounded"}
-            ];
+          return response.data.results;
         } catch (error) {
           console.error(error);
         }
     },
     getResources: async function() {
-        return this.getResourceTypes()
-            .then(resourceTypes => {
-                return this.getResourceUnits()
-                    .then(resourceUnits => {
-                        for (let resourceType of resourceTypes) {
-                            resourceType.resourceUnit = _.find(resourceUnits, ['name', resourceType.resource_unit_id]);
-                        }
-                        return resourceTypes;
-                    })
-            })
-    },
-    getResourceTypes: async function() {
         try {
             // const url = `/api/resource_type/?ordering=name`;
             const url = `/api/resource_type`;
@@ -58,28 +36,15 @@ const ProjectService = {
             console.error(error);
           }
     },
-    getResourceUnits: async function() {
-        try {
-            const url = `/api/resource_unit`;
-            const response = await axios.get(url);
-            // console.log(response);
-            return response.data.results;
-          } catch (error) {
-            console.error(error);
-          }
-    },
     getDefaultProjectResources: async function() {
         try {
-          const url = `/api/resource_unit`;
-          const response = await axios.get(url);
-          // return response.data.results;
-          return {'LOFAR Observing Time': 3600, 
+          return Promise.resolve({'LOFAR Observing Time': 3600, 
                     'LOFAR Observing Time prio A': 3600, 
                     'LOFAR Observing Time prio B': 3600,
                     'CEP Processing Time': 3600,
                     'LTA Storage': 1024*1024*1024*1024,
                     'Number of triggers': 1,
-                    'LOFAR Support Time': 3600};
+                    'LOFAR Support Time': 3600});
         } catch (error) {
           console.error(error);
         }
@@ -99,10 +64,38 @@ const ProjectService = {
         return error.response.data;
       }
     },
+    updateProject: async function(id, project) {
+      try {
+        const response = await axios.put((`/api/project/${id}/`), project);
+        return response.data;
+      } catch (error) {
+        // console.log(error);
+        console.log(error.response.data);
+        return error.response.data;
+      }
+    },
     saveProjectQuota: async function(projectQuota) {
       try {
         const response = await axios.post(('/api/project_quota/'), projectQuota);
         return response.data;
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
+    },
+    updateProjectQuota: async function(projectQuota) {
+      try {
+        const response = await axios.put(`/api/project_quota/${projectQuota.id}/`, projectQuota);
+        return response.data;
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
+    },
+    deleteProjectQuota: async function(projectQuota) {
+      try {
+        const response = await axios.delete(`/api/project_quota/${projectQuota.id}/`);
+        return response.status===204?{message: 'deleted'}:null;
       } catch (error) {
         console.error(error);
         return null;
@@ -123,6 +116,16 @@ const ProjectService = {
         return response.data.results;
       } catch (error) {
         console.error(error);
+        return [];
+      }
+    },
+    getProjectDetails: async function(id) {
+      try {
+        const response = await axios.get((`/api/project/${id}`));
+        let project = response.data;
+        return project;
+      } catch(error) {
+        console.error(error);
         return null;
       }
     },
@@ -134,7 +137,63 @@ const ProjectService = {
         console.error(error);
         return null;
       }
-    }
+    },
+    getProjectList: async function() {
+      try {
+        const response = await axios.get('/api/project/');
+        return response.data.results;
+      } catch (error) {
+        console.error('[project.services.getProjectList]',error);
+      }
+    },
+
+    getResourceUnitType: async function(resource_type_id, resourceTypes){
+      let res_unit_type = '';
+      try{
+        await resourceTypes.forEach(resourcetype => {
+          if(resourcetype.name === resource_type_id){
+            res_unit_type = resourcetype.quantity_value;
+            return res_unit_type;
+          }
+        });
+      } catch (error) {
+        console.error('[project.services.getResourceUnitType]',error);
+      }
+      return res_unit_type;
+    },
+  
+    getUpdatedProjectQuota: async function(projects) {
+      let results = {};
+      try{
+        if(projects){
+          await this.getResources()
+          .then(resourcetypes =>{
+              results.resourcetypes = resourcetypes;
+          })
+          .then( async ()=>{
+            for(const project of projects){
+              for(const  id of project.quota_ids){
+                await ProjectService.getProjectQuota(id).then(async quota =>{
+                    const resourceType = _.find(results.resourcetypes, ["name", quota.resource_type_id]);
+                    project[quota.resource_type_id] = UnitConverter.getUIResourceUnit(resourceType.quantity_value, quota.value);
+                  })
+              }
+              projects.map((pro,index) => {
+                if(pro.name === project.name){
+                  project['actionpath']= '/project/view';
+                  projects[index] = project;
+                }
+              })
+            }
+          });
+          results.projects = projects;
+          return results.projects;
+        }
+      } catch (error) {
+        console.error('[project.services.getUpdatedProjectQuota]',error);
+      }
+      return results;
+    },
 }
 
 export default ProjectService;

@@ -1,0 +1,49 @@
+ .viewtable{
+  overflow: auto !important;
+  padding: 0.75em;
+ }
+  
+.viewtable th {
+    color: #7e8286;
+    font-size: 14px;
+    border-bottom: 1px solid lightgray;
+    border-top: 1px solid lightgray;
+    padding: .65rem;
+    vertical-align:bottom; 
+  }  
+    
+.viewtable th>div {
+  vertical-align: text-bottom;
+}
+
+.viewtable  td {
+  font-size: 14px;
+  padding: .65rem;
+  border-bottom: 1px solid lightgray;
+  overflow-wrap: anywhere;
+} 
+    
+.filter-input input{
+  max-width: 150px;
+}
+
+.filter-input-50 input{
+  width: 50px;
+}
+
+.filter-input-55 input{
+  width: 55px;
+}
+
+.filter-input-70 input{
+  width: 70px;
+}
+
+.filter-input-100 input{
+  width: 100px;
+}
+
+.filter-input-150 input{
+width: 150px;
+}
+ 
