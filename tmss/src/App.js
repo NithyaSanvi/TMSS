@@ -24,13 +24,15 @@ class App extends Component {
       currentMenu: '',
       currentPath: '/',
 	  staticMenuInactive: false,
-            overlayMenuActive: false,
-            mobileMenuActive: false,
+        overlayMenuActive: false,
+        mobileMenuActive: false,
+        currentPageName: ''
     };
 	    this.onWrapperClick = this.onWrapperClick.bind(this);
         this.onToggleMenu = this.onToggleMenu.bind(this);
         this.onSidebarClick = this.onSidebarClick.bind(this);
         this.onMenuItemClick = this.onMenuItemClick.bind(this);
+        this.setCurrentPageName = this.setCurrentPageName.bind(this);
   
       this.menu = [
       {label: 'Dashboard', icon: 'pi pi-fw pi-home', to:'/dashboard'},
@@ -88,6 +90,12 @@ class App extends Component {
 	isDesktop() {
         return window.innerWidth > 1024;
     }
+
+    setCurrentPageName(currentPageName) {
+        if (currentPageName !== this.state.currentPageName) {
+            this.setState({ currentPageName })
+        }
+    }
 	
   render() {
 			const wrapperClass = classNames('layout-wrapper', {
@@ -108,7 +116,9 @@ class App extends Component {
             <Router basename={ this.state.currentPath }>
 			  <AppMenu model={this.menu} onMenuItemClick={this.onMenuItemClick} />
               <div className="layout-main">
-			  <AppBreadCrumbWithRouter/>
+			  <AppBreadCrumbWithRouter setCurrentPageName={this.setCurrentPageName} />
+              {/* Display current pagename */}
+              <h2>{this.state.currentPageName}</h2>
 			  <RoutedContent />
               </div>
             </Router>
