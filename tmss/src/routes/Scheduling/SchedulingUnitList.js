@@ -40,16 +40,20 @@ class SchedulingUnitList extends Component{
     async getSchedulingUnitList () {
         const bluePrint = await ScheduleService.getSchedulingUnitBlueprint();
         ScheduleService.getSchedulingUnitDraft().then(scheduleunit =>{
+            const output = [];
             var scheduleunits = scheduleunit.data.results;
             for( const scheduleunit  of scheduleunits){
-                const blueprintdata = bluePrint.data.results.find(i => i.draft_id === scheduleunit.id);
+                const blueprintdata = bluePrint.data.results.filter(i => i.draft_id === scheduleunit.id);
+                blueprintdata.map(blueP => { blueP.duration = moment(blueP.duration).format('H:mm:ss'); return blueP; });
+                output.push(...blueprintdata);
                 scheduleunit['actionpath']='/schedulingunit/view';
-                scheduleunit['start_time'] = blueprintdata.start_time;
-                scheduleunit['stop_time'] = blueprintdata.stop_time;
+                // scheduleunit['start_time'] = blueprintdata.start_time;
+                // scheduleunit['stop_time'] = blueprintdata.stop_time;
                 scheduleunit['duration'] = moment(scheduleunit.duration).format('H:mm:ss');
+                output.push(scheduleunit);
             }
             this.setState({
-                scheduleunit : scheduleunit.data ,isLoading:false
+                scheduleunit: output, isLoading:false
             });
         })
     }
@@ -78,9 +82,9 @@ class SchedulingUnitList extends Component{
                     paths - specify the path for navigation - Table will set "id" value for each row in action button
                     
                 */}
-                {this.state.scheduleunit.results &&
+                {this.state.scheduleunit &&
                     <ViewTable 
-                        data={this.state.scheduleunit.results} 
+                        data={this.state.scheduleunit} 
                         defaultcolumns={this.state.defaultcolumns} 
                         optionalcolumns={this.state.optionalcolumns}
                         columnclassname={this.state.columnclassname}
