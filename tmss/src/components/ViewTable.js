@@ -6,6 +6,7 @@ import moment from 'moment';
 import { useHistory } from "react-router-dom";
 import {OverlayPanel} from 'primereact/overlaypanel';
 import {InputSwitch} from 'primereact/inputswitch';
+import { Calendar } from 'primereact/calendar';
 
 
 let tbldata =[];
@@ -117,8 +118,7 @@ function SliderColumnFilter({
 }
 
 // This is a custom filter UI that uses a
-// slider to set the filter value between a column's
-// min and max values
+// switch to set the value
 function BooleanColumnFilter({
   column: { setFilter},
 }) {
@@ -128,6 +128,22 @@ function BooleanColumnFilter({
   return (
     <>
       <InputSwitch checked={value} onChange={() => { setValue(!value); setFilter(!value); }} />
+      <button onClick={() => setFilter(undefined)}>Off</button>
+    </>
+  )
+}
+
+// This is a custom filter UI that uses a
+// calendar to set the value
+function CalendarColumnFilter({
+  column: { setFilter},
+}) {
+  // Calculate the min and max
+  // using the preFilteredRows
+  const [value, setValue] = useState('');
+  return (
+    <>
+      <Calendar value={value} onChange={(e) => { setValue(e.value); setFilter(e.value); }} showIcon></Calendar>
       <button onClick={() => setFilter(undefined)}>Off</button>
     </>
   )
@@ -309,7 +325,7 @@ function Table({ columns, data, defaultheader, optionalheader }) {
         </div>
 </div>
 
-      <div style={{overflow: 'auto', padding: '0.75em',}}>
+      <div style={{overflow: 'auto', padding: '0.75em',}}  className="tmss-table">
       
       <table {...getTableProps()} style={{width:'100%'}} data-testid="viewtable" className="viewtable" >
         <thead>

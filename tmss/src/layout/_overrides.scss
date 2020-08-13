@@ -23,3 +23,9 @@
     border-top: none;
    }
 }
+.tmss-table .p-datepicker table td {
+    overflow-wrap: unset;
+}
+.tmss-table .p-calendar.p-calendar-w-btn .p-datepicker-trigger.p-button {
+    right: 0;
+}
