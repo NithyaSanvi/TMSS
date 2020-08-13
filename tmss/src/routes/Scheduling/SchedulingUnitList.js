@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import 'primeflex/primeflex.css';
-
+import moment from 'moment';
 import AppLoader from "./../../layout/components/AppLoader";
 import ViewTable from './../../components/ViewTable';
 
@@ -25,7 +25,7 @@ class SchedulingUnitList extends Component{
                 "requirements_template_id": "Template",
                 "start_time":"Start Time",
                 "stop_time":"End time",
-                "duration":"Duration"
+                "duration":"Duration (H:mm:ss)"
                 }],
             optionalcolumns:  [{
                 "actionpath":"actionpath",
@@ -37,19 +37,27 @@ class SchedulingUnitList extends Component{
         }
     }
 
-    componentDidMount(){ 
+    async getSchedulingUnitList () {
+        const bluePrint = await ScheduleService.getSchedulingUnitBlueprint();
         ScheduleService.getSchedulingUnitDraft().then(scheduleunit =>{
-            console.log(scheduleunit)
             var scheduleunits = scheduleunit.data.results;
-        
             for( const scheduleunit  of scheduleunits){
-                scheduleunit['actionpath']='/schedulingunit/view'
+                const blueprintdata = bluePrint.data.results.find(i => i.draft_id === scheduleunit.id);
+                scheduleunit['actionpath']='/schedulingunit/view';
+                scheduleunit['start_time'] = blueprintdata.start_time;
+                scheduleunit['stop_time'] = blueprintdata.stop_time;
+                scheduleunit['duration'] = moment(scheduleunit.duration).format('H:mm:ss');
             }
             this.setState({
-                scheduleunit : scheduleunit.data ,isLoading: false
+                scheduleunit : scheduleunit.data ,isLoading:false
             });
         })
     }
+    
+     componentDidMount(){ 
+       this.getSchedulingUnitList();
+        
+    } 
 
     render(){
         if (this.state.isLoading) {

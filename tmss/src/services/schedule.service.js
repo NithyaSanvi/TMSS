@@ -69,6 +69,16 @@ const ScheduleService = {
         });
         return scheduletasklist;
     },
+    getSchedulingUnitBlueprint: async function (){
+        let res = [];
+        await axios.get('/api/scheduling_unit_blueprint/?ordering=id')
+        .then(response => {
+            res= response; 
+        }).catch(function(error) {
+            console.error('[schedule.services.getSchedulingUnitBlueprint]',error);
+        });
+        return res;
+    }, 
     getTaskBlueprints: async function (){
         let res=[];
         await axios.get('/api/task_blueprint/?ordering=id')
