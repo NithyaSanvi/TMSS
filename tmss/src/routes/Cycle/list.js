@@ -74,7 +74,7 @@ class CycleList extends Component{
                 const projects = responses[index];
                 const regularProjects = projects.filter(project => projectCategory.includes(project.project_category_value));
                 const longterm = projects.filter(project => periodCategory.includes(project.period_category_value));
-                cycle.duration = Math.floor(cycle.duration / (3600*24));
+                cycle.duration = UnitConversion.getUIResourceUnit('days', cycle.duration);
                 cycle.totalProjects = cycle.projects ? cycle.projects.length : 0;
                 cycle.id = cycle.name ? cycle.name.split(' ').join('') : cycle.name;
                 cycle.regularProjects = regularProjects.length;
