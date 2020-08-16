@@ -63,40 +63,47 @@ class CycleList extends Component{
         return UnitConversion.getUIResourceUnit(coversionType,d)
     }
 
-        componentDidMount(){ 
+    getCycles(cycles = [], cycleQuota) {
         const { projectCategory} = this.state;
         const { periodCategory} = this.state;
+        const promises = [];
+        cycles.map(cycle => promises.push(CycleService.getCycleById(cycle.name)));
+        Promise.all(promises).then(responses => {
+            const results = cycles;
+            results.map(async (cycle, index) => {
+                const projects = responses[index];
+                const regularProjects = projects.filter(project => projectCategory.includes(project.project_category_value));
+                const longterm = projects.filter(project => periodCategory.includes(project.period_category_value));
+                cycle.duration = Math.floor(cycle.duration / (3600*24));
+                cycle.totalProjects = cycle.projects ? cycle.projects.length : 0;
+                cycle.id = cycle.name ? cycle.name.split(' ').join('') : cycle.name;
+                cycle.regularProjects = regularProjects.length;
+                cycle.longterm = longterm.length;
+                cycle.observingTime = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time') || {value: 0}).value, 'observing_time')
+                cycle.processingTime = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'cep_processing_time') || {value: 0}).value, 'cep_processing_time')
+                cycle.ltaResources = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'lta_storage') || {value: 0}).value, 'lta_storage')
+                cycle.support = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'support_time') || {value: 0}).value, 'support_time')
+                cycle.observingTimeDDT = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_commissioning') || {value: 0}).value, 'observing_time_commissioning')
+                cycle.observingTimePrioA = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_prio_a') || {value: 0}).value, 'observing_time_prio_a')
+                cycle.observingTimePrioB = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_prio_b') || {value: 0}).value, 'observing_time_prio_b')
+                cycle.actionpath = "/cycle";
+                return cycle;
+            });
+            this.setState({
+                cyclelist : results,
+                isprocessed: true,
+                isLoading: false
+            });
+        });
+    }
 
+    componentDidMount(){ 
         const promises = [CycleService.getCycleQuota(), CycleService.getResources()]
         Promise.all(promises).then(responses => {
             const cycleQuota = responses[0];
             this.setState({ resources: responses[1].data.results });
             CycleService.getAllCycles().then(cyclelist => {
-                const results = cyclelist || [];
-                results.map(async (cycle) => {
-                    const projects = await CycleService.getCycleById(cycle.name);
-                    const regularProjects = projects.filter(project => projectCategory.includes(project.project_category_value));
-                    const longterm = projects.data.results.filter(project => periodCategory.includes(project.period_category_value));
-                    cycle.duration = cycle.duration / (1000 * 3600 * 24);
-                    cycle.totalProjects = cycle.projects ? cycle.projects.length : 0;
-                    cycle.id = cycle.name ? cycle.name.split(' ').join('') : cycle.name;
-                    cycle.regularProjects = regularProjects.length;
-                    cycle.longterm = longterm.length;
-                    cycle.observingTime = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time') || {value: 0}).value, 'observing_time')
-                    cycle.processingTime = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'cep_processing_time') || {value: 0}).value, 'cep_processing_time')
-                    cycle.ltaResources = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'lta_storage') || {value: 0}).value, 'lta_storage')
-                    cycle.support = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'support_time') || {value: 0}).value, 'support_time')
-                    cycle.observingTimeDDT = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_commissioning') || {value: 0}).value, 'observing_time_commissioning')
-                    cycle.observingTimePrioA = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_prio_a') || {value: 0}).value, 'observing_time_prio_a')
-                    cycle.observingTimePrioB = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_prio_b') || {value: 0}).value, 'observing_time_prio_b')
-                    cycle.actionpath = "/cycle";
-                    return cycle;
-                });
-                this.setState({
-                    cyclelist : results,
-                    isprocessed: true,
-                    isLoading: false
-                });
+                this.getCycles(cyclelist, cycleQuota)
             });
         });  
     }
