@@ -22,7 +22,15 @@ const CycleService = {
           console.error(error);
         }
       },
-      
+      getCycleById: async function(id) {
+        try {
+          const url = `/api/cycle/${id}/project`;
+          const response = await axios.get(url);
+          return response.data.results;
+        } catch (error) {
+          console.error(error);
+        }
+      },
       getProjects: async function() {
         let res = [];
         await axios.get('/api/project/')

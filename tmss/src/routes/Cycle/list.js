@@ -67,18 +67,17 @@ class CycleList extends Component{
         const { projectCategory} = this.state;
         const { periodCategory} = this.state;
 
-        const promises = [CycleService.getProjects(), CycleService.getCycleQuota(),CycleService.getResources()]
+        const promises = [CycleService.getCycleQuota(), CycleService.getResources()]
         Promise.all(promises).then(responses => {
-            const projects = responses[0];
-            const cycleQuota = responses[1];
-            this.setState({ resources: responses[2].data.results });
-            CycleService.getAllCycles().then(cyclelist =>{
+            const cycleQuota = responses[0];
+            this.setState({ resources: responses[1].data.results });
+            CycleService.getAllCycles().then(cyclelist => {
                 const results = cyclelist || [];
-                results.map(cycle => {
-                    const regularProjects = projects.data.results.filter(project => project.cycles_ids.includes(cycle.name) && projectCategory.includes(project.project_category_value));
-                    const longterm = projects.data.results.filter(project => project.cycles_ids.includes(cycle.name) && periodCategory.includes(project.period_category_value));
-                    const timediff = new Date(cycle.stop).getTime() - new Date(cycle.start).getTime();
-                    cycle.duration = timediff / (1000 * 3600 * 24);
+                results.map(async (cycle) => {
+                    const projects = await CycleService.getCycleById(cycle.name);
+                    const regularProjects = projects.filter(project => projectCategory.includes(project.project_category_value));
+                    const longterm = projects.data.results.filter(project => periodCategory.includes(project.period_category_value));
+                    cycle.duration = cycle.duration / (1000 * 3600 * 24);
                     cycle.totalProjects = cycle.projects ? cycle.projects.length : 0;
                     cycle.id = cycle.name ? cycle.name.split(' ').join('') : cycle.name;
                     cycle.regularProjects = regularProjects.length;
@@ -98,8 +97,8 @@ class CycleList extends Component{
                     isprocessed: true,
                     isLoading: false
                 });
-            })
-        })  
+            });
+        });  
     }
 	
 	render(){

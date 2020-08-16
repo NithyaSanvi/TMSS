@@ -18,6 +18,7 @@ class SchedulingUnitList extends Component{
             }],
             isLoading: true,
             defaultcolumns: [ {
+                "type":"Type",
                 "name":"Name",
                 "description":"Description",
                 "created_at":"Created Date",
@@ -44,10 +45,14 @@ class SchedulingUnitList extends Component{
             var scheduleunits = scheduleunit.data.results;
             for( const scheduleunit  of scheduleunits){
                 const blueprintdata = bluePrint.data.results.filter(i => i.draft_id === scheduleunit.id);
-                blueprintdata.map(blueP => { blueP.duration = moment(blueP.duration).format('H:mm:ss'); return blueP; });
+                blueprintdata.map(blueP => { 
+                    blueP.duration = moment(blueP.duration).format('H:mm:ss'); 
+                    blueP.type="Blueprint"; 
+                    return blueP; 
+                });
                 output.push(...blueprintdata);
                 scheduleunit['actionpath']='/schedulingunit/view';
-                // scheduleunit['start_time'] = blueprintdata.start_time;
+                scheduleunit['type'] = 'Scheduling Unit';
                 // scheduleunit['stop_time'] = blueprintdata.stop_time;
                 scheduleunit['duration'] = moment(scheduleunit.duration).format('H:mm:ss');
                 output.push(scheduleunit);
