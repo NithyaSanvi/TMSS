@@ -19,7 +19,10 @@ class CycleList extends Component{
             defaultcolumns : [
                 {
                     id:"Cycle Code",
-                    start:"Start Date",
+                    start: {
+                        name: "Start Date",
+                        filter: 'date'
+                    },
                     stop: "End Date",
                     duration: "Duration",
                     totalProjects: 'No.of Projects',
