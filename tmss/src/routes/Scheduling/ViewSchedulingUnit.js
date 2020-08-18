@@ -22,10 +22,16 @@ class ViewSchedulingUnit extends Component{
 
             defaultcolumns: [ {
                 "tasktype":"Task Type",
-                "id":"ID",
+                "id": { 
+                    name: "ID",
+                    filter: 'slider'
+                },
                 "name":"Name",
                 "description":"Description",
-                "created_at":"Created at",
+                "created_at":{
+                    name: "Created at",
+                    filter: 'date'
+            },
                 "updated_at":"Updated at",
                 "do_cancel":"Cancelled",
                 "start_time":"Start Time",

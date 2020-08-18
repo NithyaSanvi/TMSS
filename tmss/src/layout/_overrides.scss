@@ -23,6 +23,9 @@
     border-top: none;
    }
 }
+.tmss-table {
+    overflow: unset !important;
+}
 .tmss-table .p-datepicker table td {
     overflow-wrap: unset;
 }

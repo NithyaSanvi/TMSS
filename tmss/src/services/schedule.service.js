@@ -1,5 +1,6 @@
 import axios from 'axios'
 import _ from 'lodash';
+import moment from 'moment';
 
 axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
 
@@ -44,6 +45,7 @@ const ScheduleService = {
                 for(const key of commonkeys){
                     scheduletask[key] = task[key];
                 }
+                scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:SS")
 
                //Fetch blueprint details for Task Draft
                 let filteredblueprints =  _.filter(taskblueprints, function(o) {
@@ -58,6 +60,7 @@ const ScheduleService = {
                     for(const key of commonkeys){
                         taskblueprint[key] = blueprint[key];
                     }
+                    taskblueprint['created_at'] = moment(blueprint['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:SS")
                     //Add Blue print details to array
                     scheduletasklist.push(taskblueprint);
                 }

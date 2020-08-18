@@ -143,7 +143,10 @@ function CalendarColumnFilter({
   const [value, setValue] = useState('');
   return (
     <>
-      <Calendar value={value} onChange={(e) => { setValue(e.value); setFilter(e.value); }} showIcon></Calendar>
+      <Calendar showTime={true} hourFormat="24" value={value} onChange={(e) => {
+        const value = moment(e.value, moment.ISO_8601).format("YYYY-MMM-DD HH:mm:SS")
+          setValue(value); setFilter(value); 
+        }} showIcon></Calendar>
       <button onClick={() => setFilter(undefined)}>Off</button>
     </>
   )
