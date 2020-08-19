@@ -1,5 +1,5 @@
 import React, {useRef, useState } from "react";
-import { useSortBy, useTable, useFilters, useGlobalFilter, useAsyncDebounce } from 'react-table'
+import { useSortBy, useTable, useFilters, useGlobalFilter, useAsyncDebounce, usePagination } from 'react-table'
 import matchSorter from 'match-sorter'
 import _ from 'lodash';
 import moment from 'moment';
@@ -143,8 +143,8 @@ function CalendarColumnFilter({
   const [value, setValue] = useState('');
   return (
     <>
-      <Calendar showTime={true} hourFormat="24" value={value} onChange={(e) => {
-        const value = moment(e.value, moment.ISO_8601).format("YYYY-MMM-DD HH:mm:SS")
+      <Calendar value={value} onChange={(e) => {
+        const value = moment(e.value, moment.ISO_8601).format("YYYY-MMM-DD")
           setValue(value); setFilter(value); 
         }} showIcon></Calendar>
       <button onClick={() => setFilter(undefined)}>Off</button>
@@ -272,19 +272,31 @@ function Table({ columns, data, defaultheader, optionalheader }) {
     allColumns,
     getToggleHideAllColumnsProps,
     state,
+    page,
     preGlobalFilteredRows,
     setGlobalFilter,
     setHiddenColumns,
+    canPreviousPage,
+    canNextPage,
+    pageOptions,
+    pageCount,
+    gotoPage,
+    nextPage,
+    previousPage,
+    setPageSize,
+    state: { pageIndex, pageSize },
   } = useTable(
       {
         columns,
         data,
         defaultColumn,
         filterTypes,
+        initialState: { pageIndex: 0 }
       },
       useFilters,
       useGlobalFilter,
       useSortBy,   
+      usePagination
     )
 
   React.useEffect(() => {
@@ -293,7 +305,6 @@ function Table({ columns, data, defaultheader, optionalheader }) {
     );
   }, [setHiddenColumns, columns]);
 
-  const firstPageRows = rows.slice(0, 10)
   let op = useRef(null);
 
   return (
@@ -361,20 +372,50 @@ function Table({ columns, data, defaultheader, optionalheader }) {
          
         </thead>
         <tbody {...getTableBodyProps()}>
-          {firstPageRows.map((row, i) => {
-            
+        {page.map((row, i) => {
             prepareRow(row)
             return (
               <tr {...row.getRowProps()}>
-                {row.cells.map(cell => { 
-                  if(cell.column.id !== 'actionpath')
-                   return <td {...cell.getCellProps()}  >{cell.render('Cell')}</td>
+                {row.cells.map(cell => {
+                  return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
                 })}
               </tr>
             )
           })}
         </tbody>
       </table>
+      <div className="pagination">
+        <button onClick={() => gotoPage(0)} disabled={!canPreviousPage}>
+          {'<<'}
+        </button>{' '}
+        <button onClick={() => previousPage()} disabled={!canPreviousPage}>
+          {'<'}
+        </button>{' '}
+        <button onClick={() => nextPage()} disabled={!canNextPage}>
+          {'>'}
+        </button>{' '}
+        <button onClick={() => gotoPage(pageCount - 1)} disabled={!canNextPage}>
+          {'>>'}
+        </button>{' '}
+        <span>
+          Page{' '}
+          <strong>
+            {pageIndex + 1} of {pageOptions.length}
+          </strong>{' '}
+        </span>
+        <select
+          value={pageSize}
+          onChange={e => {
+            setPageSize(Number(e.target.value))
+          }}
+        >
+          {[10, 20, 30, 40, 50].map(pageSize => (
+            <option key={pageSize} value={pageSize}>
+              Show {pageSize}
+            </option>
+          ))}
+        </select>
+      </div>
       </div>
     </>
   )
@@ -443,7 +484,7 @@ function ViewTable(props) {
         Header: isString ? defaultheader[0][header] : defaultheader[0][header].name,
         id: isString ? defaultheader[0][header] : defaultheader[0][header].name,
         accessor: header,
-        filter: 'fuzzyText',
+        filter: (!isString && defaultheader[0][header].filter=== 'date') ? 'includes' : 'fuzzyText',
         Filter: isString ? DefaultColumnFilter : (filterTypes[defaultheader[0][header].filter] ? filterTypes[defaultheader[0][header].filter] : DefaultColumnFilter),
         isVisible: true,
         Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
@@ -455,9 +496,9 @@ function ViewTable(props) {
       const isString = typeof optionalheader[0][header] === 'string';
         columns.push({
           Header: isString ? optionalheader[0][header] : optionalheader[0][header].name,
-          id: header,
+          id: isString ? optionalheader[0][header] : optionalheader[0][header].name,
           accessor: header,
-          filter: 'fuzzyText',
+          filter: (!isString && optionalheader[0][header].filter=== 'date') ? 'includes' : 'fuzzyText',
           Filter: isString ? DefaultColumnFilter : (filterTypes[optionalheader[0][header].filter] ? filterTypes[optionalheader[0][header].filter] : DefaultColumnFilter),
           isVisible: false,
           Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
