@@ -7,6 +7,7 @@ import { useHistory } from "react-router-dom";
 import {OverlayPanel} from 'primereact/overlaypanel';
 import {InputSwitch} from 'primereact/inputswitch';
 import { Calendar } from 'primereact/calendar';
+import {Paginator} from 'primereact/paginator';
 
 
 let tbldata =[];
@@ -307,6 +308,8 @@ function Table({ columns, data, defaultheader, optionalheader }) {
 
   let op = useRef(null);
 
+  const [currentpage, setcurrentPage] = React.useState(0);
+
   return (
     <>
      <div id="block_container" style={{ display: 'flex',  verticalAlign: 'middle', marginTop:'20px'}}> 
@@ -385,36 +388,7 @@ function Table({ columns, data, defaultheader, optionalheader }) {
         </tbody>
       </table>
       <div className="pagination">
-        <button onClick={() => gotoPage(0)} disabled={!canPreviousPage}>
-          {'<<'}
-        </button>{' '}
-        <button onClick={() => previousPage()} disabled={!canPreviousPage}>
-          {'<'}
-        </button>{' '}
-        <button onClick={() => nextPage()} disabled={!canNextPage}>
-          {'>'}
-        </button>{' '}
-        <button onClick={() => gotoPage(pageCount - 1)} disabled={!canNextPage}>
-          {'>>'}
-        </button>{' '}
-        <span>
-          Page{' '}
-          <strong>
-            {pageIndex + 1} of {pageOptions.length}
-          </strong>{' '}
-        </span>
-        <select
-          value={pageSize}
-          onChange={e => {
-            setPageSize(Number(e.target.value))
-          }}
-        >
-          {[10, 20, 30, 40, 50].map(pageSize => (
-            <option key={pageSize} value={pageSize}>
-              Show {pageSize}
-            </option>
-          ))}
-        </select>
+        <Paginator first={currentpage} rows={10} totalRecords={rows.length} onPageChange={(e) =>{ gotoPage(e.page); setcurrentPage(e.first) }}></Paginator>
       </div>
       </div>
     </>
