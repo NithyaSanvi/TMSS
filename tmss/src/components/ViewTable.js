@@ -309,6 +309,14 @@ function Table({ columns, data, defaultheader, optionalheader }) {
   let op = useRef(null);
 
   const [currentpage, setcurrentPage] = React.useState(0);
+  const [currentrows, setcurrentRows] = React.useState(10);
+
+  const onPagination = (e) => {
+    gotoPage(e.page);
+    setcurrentPage(e.first);
+    setcurrentRows(e.rows);
+    setPageSize(e.rows)
+  };
 
   return (
     <>
@@ -388,7 +396,7 @@ function Table({ columns, data, defaultheader, optionalheader }) {
         </tbody>
       </table>
       <div className="pagination">
-        <Paginator first={currentpage} rows={10} totalRecords={rows.length} onPageChange={(e) =>{ gotoPage(e.page); setcurrentPage(e.first) }}></Paginator>
+        <Paginator rowsPerPageOptions={[10,20,30, 40, 50]} first={currentpage} rows={currentrows} totalRecords={rows.length} onPageChange={onPagination}></Paginator>
       </div>
       </div>
     </>
