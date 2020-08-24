@@ -29,7 +29,7 @@ export default (props) => {
             </div>
             <div className="app-header-actions">
                 {(props.actions || []).map(action => (
-                    <Link to={{ pathname: action.link }}>
+                    <Link to={{ ...action.props }}>
                         <i className={`fa ${action.name}`}></i>
                     </Link>
                 ))}

@@ -71,7 +71,7 @@ export class ProjectList extends Component{
     render(){
         return(
             <>
-                <AppHeader location={this.props.location} actions={[{name: 'fa-plus-square', link: '/project/create' }]}/>
+                <AppHeader location={this.props.location} actions={[ { name: 'fa-plus-square', props: { pathname: '/project/create'} } ]}/>
                 {this.state.isLoading? <AppLoader /> : this.state.isprocessed &&
                     <ViewTable 
                         data={this.state.projectlist} 
