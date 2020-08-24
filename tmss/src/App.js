@@ -118,7 +118,7 @@ class App extends Component {
               <div className="layout-main">
 			  <AppBreadCrumbWithRouter setCurrentPageName={this.setCurrentPageName} />
               {/* Display current pagename */}
-              <h2>{this.state.currentPageName}</h2>
+              {/* <h2>{this.state.currentPage.name}</h2> */}
 			  <RoutedContent />
               </div>
             </Router>
