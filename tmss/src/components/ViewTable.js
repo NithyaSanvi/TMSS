@@ -143,13 +143,13 @@ function CalendarColumnFilter({
   // using the preFilteredRows
   const [value, setValue] = useState('');
   return (
-    <>
+    <div className="calendar-filter">
       <Calendar value={value} onChange={(e) => {
         const value = moment(e.value, moment.ISO_8601).format("YYYY-MMM-DD")
           setValue(value); setFilter(value); 
         }} showIcon></Calendar>
-      <button onClick={() => {setFilter(undefined); setValue('') }}>Off</button>
-    </>
+        {value && <i onClick={() => {setFilter(undefined); setValue('') }} className="table-reset fa fa-times" />}
+    </div>
   )
 }
 
