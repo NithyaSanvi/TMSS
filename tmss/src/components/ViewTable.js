@@ -8,6 +8,7 @@ import {OverlayPanel} from 'primereact/overlaypanel';
 import {InputSwitch} from 'primereact/inputswitch';
 import { Calendar } from 'primereact/calendar';
 import {Paginator} from 'primereact/paginator';
+import {TriStateCheckbox} from 'primereact/tristatecheckbox';
 
 
 let tbldata =[];
@@ -128,8 +129,7 @@ function BooleanColumnFilter({
   const [value, setValue] = useState(true);
   return (
     <>
-      <InputSwitch checked={value} onChange={() => { setValue(!value); setFilter(!value); }} />
-      <button onClick={() => setFilter(undefined)}>Off</button>
+      <TriStateCheckbox value={value} onChange={(e) => { setValue(e.value); setFilter(e.value === null ? undefined : e.value); }} />
     </>
   )
 }
@@ -148,7 +148,7 @@ function CalendarColumnFilter({
         const value = moment(e.value, moment.ISO_8601).format("YYYY-MMM-DD")
           setValue(value); setFilter(value); 
         }} showIcon></Calendar>
-      <button onClick={() => setFilter(undefined)}>Off</button>
+      <button onClick={() => {setFilter(undefined); setValue('') }}>Off</button>
     </>
   )
 }
