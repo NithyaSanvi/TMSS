@@ -47,6 +47,7 @@ class SchedulingUnitList extends Component{
                 const blueprintdata = bluePrint.data.results.filter(i => i.draft_id === scheduleunit.id);
                 blueprintdata.map(blueP => { 
                     blueP.duration = moment(blueP.duration).format('H:mm:ss'); 
+                    blueP['created_at'] = moment(blueP['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:SS");
                     blueP.type="Blueprint"; 
                     return blueP; 
                 });
@@ -55,6 +56,7 @@ class SchedulingUnitList extends Component{
                 scheduleunit['type'] = 'Scheduling Unit';
                 // scheduleunit['stop_time'] = blueprintdata.stop_time;
                 scheduleunit['duration'] = moment(scheduleunit.duration).format('H:mm:ss');
+                scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:SS");
                 output.push(scheduleunit);
             }
             this.setState({

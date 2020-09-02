@@ -43,11 +43,20 @@
 .app-header .app-header-actions i {
     margin-left: 20px;
 }
-.calendar-filter {
+.table-filter{
     position: relative;
 }
-.table-reset {
+.tb-cal-reset {
     position: absolute;
     right: 40px;
     top: 8px;
+}
+.table-reset {
+    position: absolute;
+    right: 8px;
+    top: 3px;
+}
+.table-slider {
+    margin-top: 10px;
+    margin-bottom: 10px;
 }

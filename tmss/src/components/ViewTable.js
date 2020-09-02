@@ -5,7 +5,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import { useHistory } from "react-router-dom";
 import {OverlayPanel} from 'primereact/overlaypanel';
-import {InputSwitch} from 'primereact/inputswitch';
+import { Slider } from 'primereact/slider';
 import { Calendar } from 'primereact/calendar';
 import {Paginator} from 'primereact/paginator';
 import {TriStateCheckbox} from 'primereact/tristatecheckbox';
@@ -40,13 +40,19 @@ function GlobalFilter({
 function DefaultColumnFilter({
   column: { filterValue, preFilteredRows, setFilter },
 }) {
+  const [value, setValue] = useState('');
+
   return (
-    <input
-      value={filterValue || ''}
-      onChange={e => {
-        setFilter(e.target.value || undefined) // Set undefined to remove the filter entirely
-      }}
-    />
+    <div className="table-filter" onClick={e => { e.stopPropagation() }}>
+      <input
+        value={value}
+        onChange={e => {
+          setValue(e.target.value);
+          setFilter(e.target.value || undefined) // Set undefined to remove the filter entirely
+        }}
+      />
+      {value && <i onClick={() => {setFilter(undefined); setValue('') }} className="table-reset fa fa-times" />}
+    </div>
   )
 }
 
@@ -68,19 +74,21 @@ function SelectColumnFilter({
 
   // Render a multi-select box
   return (
-    <select
-      value={filterValue}
-      onChange={e => {
-        setFilter(e.target.value || undefined)
-      }}
-    >
-      <option value="">All</option>
-      {options.map((option, i) => (
-        <option key={i} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
+    <div onClick={e => { e.stopPropagation() }}>
+      <select
+        value={filterValue}
+        onChange={e => {
+          setFilter(e.target.value || undefined)
+        }}
+      >
+        <option value="">All</option>
+        {options.map((option, i) => (
+          <option key={i} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </div>
   )
 }
 
@@ -92,6 +100,7 @@ function SliderColumnFilter({
 }) {
   // Calculate the min and max
   // using the preFilteredRows
+  const [value, setValue] = useState(0);
 
   const [min, max] = React.useMemo(() => {
     let min = preFilteredRows.length ? preFilteredRows[0].values[id] : 0
@@ -104,18 +113,9 @@ function SliderColumnFilter({
   }, [id, preFilteredRows])
 
   return (
-    <>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        value={filterValue || min}
-        onChange={e => {
-          setFilter(parseInt(e.target.value, 10))
-        }}
-      />
-      <button onClick={() => setFilter(undefined)}>Off</button>
-    </>
+    <div onClick={e => { e.stopPropagation() }} className="table-slider">
+      <Slider value={value} onChange={(e) => { setFilter(e.value);setValue(e.value)}} />
+    </div>
   )
 }
 
@@ -128,9 +128,9 @@ function BooleanColumnFilter({
   // using the preFilteredRows
   const [value, setValue] = useState(true);
   return (
-    <>
+    <div onClick={e => { e.stopPropagation() }}>
       <TriStateCheckbox value={value} onChange={(e) => { setValue(e.value); setFilter(e.value === null ? undefined : e.value); }} />
-    </>
+    </div>
   )
 }
 
@@ -143,12 +143,12 @@ function CalendarColumnFilter({
   // using the preFilteredRows
   const [value, setValue] = useState('');
   return (
-    <div className="calendar-filter">
+    <div className="table-filter" onClick={e => { e.stopPropagation() }}>
       <Calendar value={value} onChange={(e) => {
         const value = moment(e.value, moment.ISO_8601).format("YYYY-MMM-DD")
           setValue(value); setFilter(value); 
         }} showIcon></Calendar>
-        {value && <i onClick={() => {setFilter(undefined); setValue('') }} className="table-reset fa fa-times" />}
+        {value && <i onClick={() => {setFilter(undefined); setValue('') }} className="tb-cal-reset fa fa-times" />}
     </div>
   )
 }
