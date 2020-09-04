@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import { Link, Redirect } from 'react-router-dom';
+import { Redirect } from 'react-router-dom';
 import _ from 'lodash';
 import $RefParser from "@apidevtools/json-schema-ref-parser";
 
@@ -7,7 +7,6 @@ import {InputText} from 'primereact/inputtext';
 import {InputTextarea} from 'primereact/inputtextarea';
 import {Dropdown} from 'primereact/dropdown';
 import { Button } from 'primereact/button';
-import {Dialog} from 'primereact/components/dialog/Dialog';
 
 
 import AppLoader from '../../layout/components/AppLoader';
@@ -32,7 +31,6 @@ export class EditSchedulingUnit extends Component {
             errors: [],                             // Form Validation errors
             schedulingSets: [],                     // Scheduling set of the selected project
             schedulingUnit: {
-                project: (props.match?props.match.params.project:null) || null,
             },
             projectDisabled: (props.match?(props.match.params.project? true:false):false),      // Disable project selection if 
             observStrategy: {},                     // Selected strategy to create SU
@@ -54,7 +52,6 @@ export class EditSchedulingUnit extends Component {
         };
  
         this.setEditorOutput = this.setEditorOutput.bind(this);
-        this.changeProject = this.changeProject.bind(this);
         this.changeStrategy = this.changeStrategy.bind(this);
         this.setSchedUnitParams = this.setSchedUnitParams.bind(this);
         this.validateForm = this.validateForm.bind(this);
@@ -65,35 +62,7 @@ export class EditSchedulingUnit extends Component {
         this.reset = this.reset.bind(this);
     }
 
-    componentDidMount() {
-        const promises = [  ProjectService.getProjectList(), 
-                            ScheduleService.getSchedulingSets(),
-                            ScheduleService.getObservationStrategies(),
-                            TaskService.getTaskTemplates()]
-        Promise.all(promises).then(responses => {
-            this.projects = responses[0];
-            this.schedulingSets = responses[1];
-            this.observStrategies = responses[2];
-            this.taskTemplates = responses[3];
-            if (this.state.schedulingUnit.project) {
-                const projectSchedSets = _.filter(this.schedulingSets, {'project_id': this.state.schedulingUnit.project});
-                this.setState({isLoading: false, schedulingSets: projectSchedSets});
-            }   else {
-                this.setState({isLoading: false});
-            }
-        }); 
-    }
-
-    /**
-     * Function to call on change of project and reload scheduling set dropdown
-     * @param {string} projectName 
-     */
-    changeProject(projectName) {
-        const projectSchedSets = _.filter(this.schedulingSets, {'project_id': projectName});
-        let schedulingUnit = this.state.schedulingUnit;
-        schedulingUnit.project = projectName;
-        this.setState({schedulingUnit: schedulingUnit, schedulingSets: projectSchedSets, validForm: this.validateForm('project')});
-    }
+    
 
     /**
      * Function called when observation strategy template is changed. 
@@ -151,6 +120,30 @@ export class EditSchedulingUnit extends Component {
         if (this.state.editorFunction) {
             this.state.editorFunction();
         }
+    }
+
+    componentDidMount() {
+        const promises = [  ProjectService.getProjectList(), 
+                            ScheduleService.getSchedulingSets(),
+                            ScheduleService.getObservationStrategies(),
+                            TaskService.getTaskTemplates(),
+                            ScheduleService.getSchedulingUnitDraftById(this.props.match.params.id)
+                        ];
+        Promise.all(promises).then(responses => {
+            this.projects = responses[0];
+            this.schedulingSets = responses[1];
+            this.observStrategies = responses[2];
+            this.taskTemplates = responses[3];
+            responses[4].project = this.schedulingSets.find(i => i.id === responses[4].scheduling_set_id).project_id;
+            this.setState({ schedulingUnit: responses[4] });
+            this.changeStrategy(responses[4].observation_strategy_template_id);
+            if (this.state.schedulingUnit.project) {
+                const projectSchedSets = _.filter(this.schedulingSets, {'project_id': this.state.schedulingUnit.project});
+                this.setState({isLoading: false, schedulingSets: projectSchedSets});
+            }   else {
+                this.setState({isLoading: false});
+            }
+        }); 
     }
 
     /**
@@ -249,7 +242,7 @@ export class EditSchedulingUnit extends Component {
             $refs.set(observStrategy.template.parameters[index]['refs'][0], this.state.paramsOutput['param_' + index]);
         });
         
-        const schedulingUnit = await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit);
+        const schedulingUnit = await ScheduleService.editUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit);
         if (schedulingUnit) {
             // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks created successfully!'});
             const dialog = {header: 'Success', detail: 'Scheduling Unit and Tasks are created successfully. Do you want to create another Scheduling Unit?'};
@@ -263,32 +256,7 @@ export class EditSchedulingUnit extends Component {
      * Cancel SU creation and redirect
      */
     cancelCreate() {
-        this.setState({redirect: '/schedulingunit'})
-    }
-
-    /**
-     * Reset function to be called when user wants to create new SU
-     */
-    reset() {
-        const schedulingSets = this.state.schedulingSets;
-        this.nameInput.element.focus();
-        this.setState({
-            dialogVisible: false,
-            dialog: { header: '', detail: ''},      
-            errors: [],
-            schedulingSets: this.props.match.params.project?schedulingSets:[],
-            schedulingUnit: {
-                name: '',
-                description: '',
-                project: this.props.match.params.project || null,
-            },
-            projectDisabled: (this.props.match.params.project? true:false),
-            observStrategy: {},
-            paramsOutput: null,
-            validEditor: false,
-            validFields: {}
-        });
-        this.state.editorFunction();
+        this.setState({redirect: `/schedulingunit/view/draft/${this.props.match.params.id}`})
     }
 
     render() {
@@ -309,18 +277,6 @@ export class EditSchedulingUnit extends Component {
         }
         return (
             <React.Fragment>
-               {/*} <div className="p-grid">
-                    <Growl ref={(el) => this.growl = el} />
-                
-                    <div className="p-col-10 p-lg-10 p-md-10">
-                        <h2>Scheduling Unit - Edit</h2>
-                    </div>
-                    <div className="p-col-2 p-lg-2 p-md-2">
-                         <Link to={{ pathname: '/schedulingunit'}} tite="Close" style={{float: "right"}}>
-                            <i className="fa fa-window-close" style={{marginTop: "10px"}}></i>
-                        </Link>
-                    </div>
-                </div> */}
                 <PageHeader location={this.props.location} title={'Scheduling Unit - Edit'} 
                             actions={[{icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', props : { pathname: '/schedulingunit/view'}}]}/>
                 { this.state.isLoading ? <AppLoader /> :
@@ -358,12 +314,9 @@ export class EditSchedulingUnit extends Component {
                             <div className="col-lg-3 col-md-3 col-sm-12" data-testid="project" >
                                 <Dropdown inputId="project" optionLabel="name" optionValue="name" 
                                         tooltip="Project" tooltipOptions={this.tooltipOptions}
-                                        value={this.state.project} disabled={this.state.projectDisabled}
-                                      //  onChange={(e) => {this.changeProject(e.value)}} 
+                                        value={this.state.schedulingUnit.project} disabled={this.state.schedulingUnit.project}
+                                        options={this.projects} 
                                         placeholder="Select Project" />
-                                <label className={this.state.errors.project ?"error":"info"}>
-                                    {this.state.errors.project ? this.state.errors.project : "Select Project to get Scheduling Sets"}
-                                </label>
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="schedSet" className="col-lg-2 col-md-2 col-sm-12">Scheduling Set <span style={{color:'red'}}>*</span></label>
@@ -372,11 +325,8 @@ export class EditSchedulingUnit extends Component {
                                         tooltip="Scheduling set of the project" tooltipOptions={this.tooltipOptions}
                                         value={this.state.schedulingUnit.scheduling_set_id} 
                                         options={this.state.schedulingSets} 
-                                        onChange={(e) => {this.setSchedUnitParams('scheduling_set_id',e.value)}} 
+                                        disabled={this.state.schedulingUnit.scheduling_set_id}
                                         placeholder="Select Scheduling Set" />
-                                <label className={this.state.errors.scheduling_set_id ?"error":"info"}>
-                                    {this.state.errors.scheduling_set_id ? this.state.errors.scheduling_set_id : "Scheduling Set of the Project"}
-                                </label>
                             </div>
                         </div>
                         <div className="p-field p-grid">
@@ -384,7 +334,8 @@ export class EditSchedulingUnit extends Component {
                             <div className="col-lg-3 col-md-3 col-sm-12" data-testid="observStrategy" >
                                 <Dropdown inputId="observStrategy" optionLabel="name" optionValue="id" 
                                         tooltip="Observation Strategy Template to be used to create the Scheduling Unit and Tasks" tooltipOptions={this.tooltipOptions}
-                                        value={this.state.observStrategy.id} 
+                                        value={this.state.schedulingUnit.observation_strategy_template_id} 
+                                        disabled={this.state.schedulingUnit.observation_strategy_template_id} 
                                         options={this.observStrategies} 
                                         onChange={(e) => {this.changeStrategy(e.value)}} 
                                         placeholder="Select Strategy" />
@@ -415,25 +366,6 @@ export class EditSchedulingUnit extends Component {
                 </>
                 }
 
-                {/* Dialog component to show messages and get input */}
-                <div className="p-grid" data-testid="confirm_dialog">
-                    <Dialog header={this.state.dialog.header} visible={this.state.dialogVisible} style={{width: '25vw'}} inputId="confirm_dialog"
-                            modal={true}  onHide={() => {this.setState({dialogVisible: false})}} 
-                            footer={<div>
-                                <Button key="back" onClick={() => {this.setState({dialogVisible: false, redirect: `/schedulingunit/view/draft/${this.state.schedulingUnit.id}`});}} label="No" />
-                                <Button key="submit" type="primary" onClick={this.reset} label="Yes" />
-                                </div>
-                            } >
-                            <div className="p-grid">
-                                <div className="col-lg-2 col-md-2 col-sm-2" style={{margin: 'auto'}}>
-                                    <i className="pi pi-check-circle pi-large pi-success"></i>
-                                </div>
-                                <div className="col-lg-10 col-md-10 col-sm-10">
-                                    {this.state.dialog.detail}
-                                </div>
-                            </div>
-                    </Dialog>
-                </div>
             </React.Fragment>
         );
     }

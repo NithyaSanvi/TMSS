@@ -210,6 +210,33 @@ const ScheduleService = {
             return null;
         };
     },
+    // TODO: Steps need to discuss for edit....
+    editUDraftFromObservStrategy: async function(observStrategy, schedulingUnit) {
+        try {
+            // Create the scheduling unit draft with observation strategy and scheduling set
+            const url = `/api/scheduling_unit_observing_strategy_template/${observStrategy.id}/create_scheduling_unit/?scheduling_set_id=${schedulingUnit.scheduling_set_id}&name=${schedulingUnit.name}&description=${schedulingUnit.description}`
+            const suObsResponse = await axios.get(url);
+            schedulingUnit = suObsResponse.data;
+            if (schedulingUnit && schedulingUnit.id) {
+                // Update the newly created SU draft requirement_doc with captured parameter values
+                schedulingUnit.requirements_doc = observStrategy.template;
+                delete schedulingUnit['duration'];
+                schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
+                if (!schedulingUnit || !schedulingUnit.id) {
+                    return null;
+                }
+                // Create task drafts with updated requirement_doc
+                schedulingUnit = await this.createSUTaskDrafts(schedulingUnit);
+                if (schedulingUnit && schedulingUnit.task_drafts.length > 0) {
+                    return schedulingUnit;
+                }
+            }
+            return null;
+        }   catch(error) {
+            console.error(error);
+            return null;
+        };
+    },
     updateSchedulingUnitDraft: async function(schedulingUnit) {
         try {
             const suUpdateResponse = await axios.put(`/api/scheduling_unit_draft/${schedulingUnit.id}/`, schedulingUnit);

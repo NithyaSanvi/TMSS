@@ -60,7 +60,7 @@ export const routes = [
         name: 'Scheduling View',
         title: 'Scheduling Unit - Details'
     },{
-        path: "/schedulingunit/edit",
+        path: "/schedulingunit/edit/:id",
         component: EditSchedulingUnit,
         name: 'Scheduling Edit',
         title: 'Scheduling Unit - Edit'
