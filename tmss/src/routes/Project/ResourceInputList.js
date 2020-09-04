@@ -36,11 +36,12 @@ export class ResourceInputList extends Component {
             <>
                 {this.props.list.length>0 && this.props.list.map((item, index) => (
                     <React.Fragment key={index+10}>
-                    <label key={'label1-'+ index} className="col-lg-3 col-md-3 col-sm-12">{item.name}</label>
+                    <label key={'label1-'+ index} className="col-lg-2 col-md-2 col-sm-12">{item.name}</label>
                     <div key={'div1-'+ index} className="col-lg-3 col-md-3 col-sm-12">
                         <InputNumber key={'item1-'+ index} id={'item1-'+ index} name={'item1-'+ index}
                             suffix={` ${this.props.unitMap[item.quantity_value]?this.props.unitMap[item.quantity_value].display:''}`}
-                            placeholder={` ${this.props.unitMap[item.quantity_value]?this.props.unitMap[item.quantity_value].display:item.name}`} min={0} useGrouping={false}
+                            placeholder={` ${this.props.unitMap[item.quantity_value]?this.props.unitMap[item.quantity_value].display:item.name}`}
+                            inputId={`${item.name}`} min={0} useGrouping={false}
                             value={this.state.projectQuota[item.name]} 
                             onChange={(e) => this.onInputChange(item.name, e)}
                             onBlur={(e) => this.onInputChange(item.name, e)}
@@ -49,6 +50,7 @@ export class ResourceInputList extends Component {
                         <button className="p-link" data-testid={`${item.name}-btn`} onClick={(e) => this.removeInput(item.name)}>
                             <i className="fa fa-trash pi-error"></i></button>
                     </div>
+                    <div className="col-lg-1 col-md-1 col-sm-12"></div>
                     </React.Fragment>
                 ))}
             </>

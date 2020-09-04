@@ -45,8 +45,16 @@ h3, .h3 {
   font-size: 1.25rem;
 }
 
+h5, .h5 {
+  font-size: 15px !important;
+}
+
 a{
   margin-bottom: 10px;
+}
+
+.main-content {
+  margin-top:20px;
 }
 
 .main-content span,a{
@@ -84,6 +92,32 @@ p {
 
 .btn-group {
   margin-bottom: 5px;
+}
+
+.main-content .p-grid span {
+  margin-bottom: 10px;
+}
+
+.p-chips-token,.p-inputnumber span {
+  margin-bottom: 0px;
+}
+
+.p-chips-token .p-chips-token-label {
+  margin-bottom: 0px !important;
+}
+
+.p-field {
+  margin-bottom: 0.5rem;
+}
+
+.p-inputtext {
+  padding-top: 0.25em !important;
+  padding-bottom: 0.25em !important;
+  padding-left: 0.25em !important;
+}
+
+.act-btn-grp {
+  margin-top: 20px;
 }
 
 .task-list {

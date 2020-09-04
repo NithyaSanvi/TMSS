@@ -1,0 +1,24 @@
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+}
+.page-title {
+    margin-bottom: 0;
+}
+.page-subtitle {
+    color: #b4b2b2;
+    font-size: 100%;
+    font-weight: 400;
+    margin-bottom: 0px;
+}
+.page-action-menu i {
+    margin-left: 5px;
+}
+
+.page-header .fa {
+    font-size: 25px !important;
+}

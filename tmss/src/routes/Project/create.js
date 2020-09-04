@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import { Link, Redirect } from 'react-router-dom';
+import { Redirect } from 'react-router-dom';
 import _ from 'lodash';
 
 import {InputText} from 'primereact/inputtext';
@@ -15,9 +15,11 @@ import {Growl} from 'primereact/components/growl/Growl';
 import {ResourceInputList} from './ResourceInputList';
 
 import AppLoader from '../../layout/components/AppLoader';
+import PageHeader from '../../layout/components/PageHeader';
 import CycleService from '../../services/cycle.service';
 import ProjectService from '../../services/project.service';
 import UnitConverter from '../../utils/unit.converter';
+import UIConstants from '../../utils/ui.constants';
 
 /**
  * Component to create a new Project
@@ -61,7 +63,7 @@ export class ProjectCreate extends Component {
         this.projectResourceDefaults = {};          // Default values for default resources
         this.resourceUnitMap = UnitConverter.resourceUnitMap;       // Resource unit conversion factor and constraints
         this.cycleOptionTemplate = this.cycleOptionTemplate.bind(this);         // Template for cycle multiselect
-        this.tooltipOptions = {position: 'left', event: 'hover', className:"p-tooltip-custom"};
+        this.tooltipOptions = UIConstants.tooltipOptions;
 
         this.setProjectQuotaDefaults = this.setProjectQuotaDefaults.bind(this);
         this.setProjectParams = this.setProjectParams.bind(this);
@@ -254,10 +256,12 @@ export class ProjectCreate extends Component {
             let projectQuota = [];
             for (const resource in this.state.projectQuota) {
                 let resourceType = _.find(this.state.resources, {'name': resource});
-                let quota = { project: this.state.project.name,
-                                resource_type: resourceType['url'],
-                                value: this.state.projectQuota[resource] * (this.resourceUnitMap[resourceType.quantity_value]?this.resourceUnitMap[resourceType.quantity_value].conversionFactor:1)};
-                projectQuota.push(quota);
+                if(resourceType){
+                    let quota = { project: this.state.project.name,
+                                    resource_type: resourceType['url'],
+                                    value: this.state.projectQuota[resource] * (this.resourceUnitMap[resourceType.quantity_value]?this.resourceUnitMap[resourceType.quantity_value].conversionFactor:1)};
+                    projectQuota.push(quota);
+                }
             }
             ProjectService.saveProject(this.state.project, this.defaultResourcesEnabled?projectQuota:[])
                 .then(project => {
@@ -305,11 +309,12 @@ export class ProjectCreate extends Component {
             this.setState({
                 dialog: { header: '', detail: ''},
                 project: {
+                    url: '',
                     name: '',
                     description: '',
                     trigger_priority: 1000,
                     priority_rank: null,
-                    project_quota: []
+                    quota: []
                 },
                 projectQuota: projectQuota,
                 validFields: {},
@@ -331,9 +336,9 @@ export class ProjectCreate extends Component {
         
         return (
             <React.Fragment>
-                <div className="p-grid">
-                    <Growl ref={(el) => this.growl = el} />
-                
+                <Growl ref={(el) => this.growl = el} />
+                { /* <div className="p-grid">
+                    
                     <div className="p-col-10 p-lg-10 p-md-10">
                         <h2>Project - Add</h2>
                     </div>
@@ -342,20 +347,21 @@ export class ProjectCreate extends Component {
                             <i className="fa fa-window-close" style={{marginTop: "10px"}}></i>
                         </Link>
                     </div>
-                </div>
+                 </div> */ }
+                 <PageHeader location={this.props.location} title={'Project - Add'} actions={[{icon:'fa-window-close',title:'Click to Close Project', props:{ pathname: '/project'}}]}/>
                 { this.state.isLoading ? <AppLoader /> :
                 <>
                 <div>
                     <div className="p-fluid">
                         <div className="p-field p-grid" style={{display: 'none'}}>
                             <label htmlFor="projectId" className="col-lg-2 col-md-2 col-sm-12">URL </label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
+                            <div className="col-lg-3 col-md-3 col-sm-12">
                                 <input id="projectId" data-testid="projectId" value={this.state.project.url} />
                             </div>
                         </div>
                         <div className="p-field p-grid">
                             <label htmlFor="projectName" className="col-lg-2 col-md-2 col-sm-12">Name <span style={{color:'red'}}>*</span></label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
+                            <div className="col-lg-3 col-md-3 col-sm-12">
                                 <InputText className={this.state.errors.name ?'input-error':''} id="projectName" data-testid="name" 
                                             tooltip="Enter name of the project" tooltipOptions={this.tooltipOptions} maxLength="128"
                                             value={this.state.project.name} 
@@ -365,8 +371,9 @@ export class ProjectCreate extends Component {
                                     {this.state.errors.name ? this.state.errors.name : "Max 128 characters"}
                                 </label>
                             </div>
+                            <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="description" className="col-lg-2 col-md-2 col-sm-12">Description <span style={{color:'red'}}>*</span></label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
+                            <div className="col-lg-3 col-md-3 col-sm-12">
                                 <InputTextarea className={this.state.errors.description ?'input-error':''} rows={3} cols={30} 
                                             tooltip="Short description of the project" tooltipOptions={this.tooltipOptions} maxLength="128"
                                             data-testid="description" value={this.state.project.description} 
@@ -379,9 +386,9 @@ export class ProjectCreate extends Component {
                         </div>
                         <div className="p-field p-grid">
                             <label htmlFor="triggerPriority" className="col-lg-2 col-md-2 col-sm-12">Trigger Priority </label>
-                            <div className="col-lg-4 col-md-4 col-sm-12" data-testid="trig_prio">
+                            <div className="col-lg-3 col-md-3 col-sm-12" data-testid="trig_prio">
                                 <InputNumber inputId="trig_prio" name="trig_prio" value={this.state.project.trigger_priority} 
-                                        tooltip="Priority of this project w.r.t. triggers" tooltipOptions={this.tooltipOptions}
+                                        tooltip="Priority of this project with respect to triggers" tooltipOptions={this.tooltipOptions}
                                         mode="decimal" showButtons min={0} max={1001} step={10} useGrouping={false}
                                         onChange={(e) => this.setProjectParams('trigger_priority', e.value)}
                                         onBlur={(e) => this.setProjectParams('trigger_priority', e.target.value, 'NUMBER')} />
@@ -390,8 +397,9 @@ export class ProjectCreate extends Component {
                                     {this.state.errors.trigger_priority ? this.state.errors.trigger_priority : ""}
                                 </label>
                             </div>
+                            <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="trigger" className="col-lg-2 col-md-2 col-sm-12">Allows Trigger Submission</label>
-                            <div className="col-lg-4 col-md-4 col-sm-12" data-testid="trigger">
+                            <div className="col-lg-3 col-md-3 col-sm-12" data-testid="trigger">
                                 <Checkbox inputId="trigger" role="trigger" 
                                         tooltip="Is this project allowed to supply observation requests on the fly, possibly interrupting currently running observations (responsive telescope)?" 
                                         tooltipOptions={this.tooltipOptions}
@@ -400,7 +408,7 @@ export class ProjectCreate extends Component {
                         </div>
                         <div className="p-field p-grid">
                             <label htmlFor="projCat" className="col-lg-2 col-md-2 col-sm-12">Project Category </label>
-                            <div className="col-lg-4 col-md-4 col-sm-12" data-testid="projCat" >
+                            <div className="col-lg-3 col-md-3 col-sm-12" data-testid="projCat" >
                                 <Dropdown inputId="projCat" optionLabel="value" optionValue="url" 
                                         tooltip="Project Category" tooltipOptions={this.tooltipOptions}
                                         value={this.state.project.project_category} 
@@ -408,8 +416,9 @@ export class ProjectCreate extends Component {
                                         onChange={(e) => {this.setProjectParams('project_category', e.value)}} 
                                         placeholder="Select Project Category" />
                             </div>
+                            <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="periodCategory" className="col-lg-2 col-md-2 col-sm-12">Period Category</label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
+                            <div className="col-lg-3 col-md-3 col-sm-12">
                                 <Dropdown data-testid="period-cat" id="period-cat" optionLabel="value" optionValue="url" 
                                         tooltip="Period Category" tooltipOptions={this.tooltipOptions}
                                         value={this.state.project.period_category} 
@@ -420,7 +429,7 @@ export class ProjectCreate extends Component {
                         </div>
                         <div className="p-field p-grid">
                             <label htmlFor="triggerPriority" className="col-lg-2 col-md-2 col-sm-12">Cycle(s)</label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
+                            <div className="col-lg-3 col-md-3 col-sm-12">
                                 <MultiSelect data-testid="cycle" id="cycle" optionLabel="name" optionValue="url" filter={true}
                                         tooltip="Cycle(s) to which this project belongs" tooltipOptions={this.tooltipOptions}
                                         value={this.state.project.cycles} 
@@ -429,10 +438,11 @@ export class ProjectCreate extends Component {
                                         
                                 />
                             </div>
+                            <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="projRank" className="col-lg-2 col-md-2 col-sm-12">Project Rank <span style={{color:'red'}}>*</span></label>
-                            <div className="col-lg-4 col-md-4 col-sm-12" data-testid="proj-rank" >
+                            <div className="col-lg-3 col-md-3 col-sm-12" data-testid="proj-rank" >
                                 <InputNumber inputId="proj-rank" name="rank" data-testid="rank" value={this.state.project.priority_rank} 
-                                        tooltip="Priority of this project w.r.t. other projects. Projects can interrupt observations of lower-priority projects." 
+                                        tooltip="Priority of this project with respect to other projects. Projects can interrupt observations of lower-priority projects." 
                                         tooltipOptions={this.tooltipOptions}
                                         mode="decimal" showButtons min={0} max={100}
                                         onChange={(e) => this.setProjectParams('priority_rank', e.value)}
@@ -446,18 +456,20 @@ export class ProjectCreate extends Component {
                         {this.defaultResourcesEnabled && this.state.resourceList &&
                             <div className="p-fluid">
                                 <div className="p-field p-grid">
-                                    <div className="col-lg-3 col-md-3 col-sm-112">
+                                    <div className="col-lg-2 col-md-2 col-sm-112">
                                         <h5 data-testid="resource_alloc">Resource Allocations</h5>
                                     </div>
                                     <div className="col-lg-3 col-md-3 col-sm-10">
                                         <Dropdown optionLabel="name" optionValue="name" 
+                                            tooltip="Resources to be allotted for the project" 
+                                            tooltipOptions={this.tooltipOptions}
                                             value={this.state.newResource} 
                                             options={this.state.resourceList} 
                                             onChange={(e) => {this.setState({'newResource': e.value})}}
                                             placeholder="Add Resources" />
                                     </div>
                                     <div className="col-lg-2 col-md-2 col-sm-2">
-                                    <Button label="" className="p-button-primary" icon="pi pi-plus" onClick={this.addNewResource} data-testid="add_res_btn" />
+                                    <Button label="" className="p-button-primary" icon="pi pi-plus" onClick={this.addNewResource} disabled={!this.state.newResource} data-testid="add_res_btn" />
                                     </div>
                                 </div>
                                 <div className="p-field p-grid resource-input-grid">
@@ -469,7 +481,7 @@ export class ProjectCreate extends Component {
                         }
                     </div>
                 </div>
-                <div className="p-grid p-justify-start">
+                <div className="p-grid p-justify-start act-btn-grp">
                     <div className="col-lg-1 col-md-2 col-sm-6">
                         <Button label="Save" className="p-button-primary" id="save-btn" data-testid="save-btn" icon="pi pi-check" onClick={this.saveProject} disabled={!this.state.validForm} />
                     </div>

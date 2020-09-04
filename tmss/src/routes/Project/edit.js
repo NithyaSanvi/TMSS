@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import { Link, Redirect } from 'react-router-dom';
+import { Redirect } from 'react-router-dom';
 import _ from 'lodash';
 
 import {InputText} from 'primereact/inputtext';
@@ -10,14 +10,16 @@ import {Dropdown} from 'primereact/dropdown';
 import {MultiSelect} from 'primereact/multiselect';
 import { Button } from 'primereact/button';
 import {Dialog} from 'primereact/components/dialog/Dialog';
-import {Growl} from 'primereact/components/growl/Growl';
+//import {Growl} from 'primereact/components/growl/Growl';
 
 import {ResourceInputList} from './ResourceInputList';
 
 import AppLoader from '../../layout/components/AppLoader';
+import PageHeader from '../../layout/components/PageHeader';
 import CycleService from '../../services/cycle.service';
 import ProjectService from '../../services/project.service';
 import UnitConverter from '../../utils/unit.converter';
+import UIConstants from '../../utils/ui.constants';
 
 export class ProjectEdit extends Component {
     constructor(props) {
@@ -57,6 +59,7 @@ export class ProjectEdit extends Component {
                                     {name:'LOFAR Support hours'} ];
         this.projectResourceDefaults = {};
         this.resourceUnitMap = UnitConverter.resourceUnitMap;
+        this.tooltipOptions = UIConstants.tooltipOptions;
 
         this.getProjectDetails = this.getProjectDetails.bind(this);
         this.cycleOptionTemplate = this.cycleOptionTemplate.bind(this);
@@ -156,8 +159,9 @@ export class ProjectEdit extends Component {
         if (this.state.newResource) {
             let resourceList = this.state.resourceList;
             const newResource = _.remove(resourceList, {'name': this.state.newResource});
-            let resources = this.state.resources;
+            let resources = this.state.resources?this.state.resources:[];
             resources.push(newResource[0]);
+            console.log(resources);
             this.setState({resources: resources, resourceList: resourceList, newResource: null});
         }
     }
@@ -353,7 +357,7 @@ export class ProjectEdit extends Component {
         
         return (
             <React.Fragment>
-                <div className="p-grid">
+                {/*} <div className="p-grid">
                     <Growl ref={(el) => this.growl = el} />
                 
                     <div className="p-col-10 p-lg-10 p-md-10">
@@ -364,7 +368,8 @@ export class ProjectEdit extends Component {
                             <i className="fa fa-window-close" style={{marginTop: "10px"}}></i>
                         </Link>
                     </div>
-                </div>
+                  </div> */}
+                 <PageHeader location={this.props.location} title={'Project - Edit'} actions={[{icon:'fa-window-close',title:'Click to Close Project Edit Page', props : { pathname: `/project/view/${this.state.project.name}`}}]}/>
 
                 { this.state.isLoading ? <AppLoader/> :
                 <>
@@ -372,30 +377,34 @@ export class ProjectEdit extends Component {
                     <div className="p-fluid">
                         <div className="p-field p-grid">
                             <label htmlFor="projectName" className="col-lg-2 col-md-2 col-sm-12">Name <span style={{color:'red'}}>*</span></label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
+                            <div className="col-lg-3 col-md-3 col-sm-12">
                                 <InputText className={this.state.errors.name ?'input-error':''} id="projectName" data-testid="name"
+                                            tooltip="Enter name of the project" tooltipOptions={this.tooltipOptions} maxLength="128"
                                             value={this.state.project.name} 
                                             onChange={(e) => this.setProjectParams('name', e.target.value)}
                                             onBlur={(e) => this.setProjectParams('name', e.target.value)}/>
-                                <label className="error">
-                                    {this.state.errors.name ? this.state.errors.name : ""}
+                                <label className={this.state.errors.name?"error":"info"}>
+                                    {this.state.errors.name ? this.state.errors.name : "Max 128 characters"}
                                 </label>
                             </div>
+                            <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="description" className="col-lg-2 col-md-2 col-sm-12">Description <span style={{color:'red'}}>*</span></label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
+                            <div className="col-lg-3 col-md-3 col-sm-12">
                                 <InputTextarea className={this.state.errors.description ?'input-error':''} rows={3} cols={30} 
+                                            tooltip="Short description of the project" tooltipOptions={this.tooltipOptions} maxLength="128"
                                             data-testid="description" value={this.state.project.description} 
                                             onChange={(e) => this.setProjectParams('description', e.target.value)}
                                             onBlur={(e) => this.setProjectParams('description', e.target.value)}/>
-                                <label className="error">
-                                    {this.state.errors.description ? this.state.errors.description : ""}
+                                <label className={this.state.errors.description ?"error":"info"}>
+                                    {this.state.errors.description ? this.state.errors.description : "Max 255 characters"}
                                 </label>
                             </div>
                         </div>
                         <div className="p-field p-grid">
                             <label htmlFor="triggerPriority" className="col-lg-2 col-md-2 col-sm-12">Trigger Priority </label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
+                            <div className="col-lg-3 col-md-3 col-sm-12">
                                 <InputNumber inputId="trig_prio" name="trig_prio" className={this.state.errors.name ?'input-error':''} 
+                                            tooltip="Priority of this project with respect to triggers" tooltipOptions={this.tooltipOptions}
                                             value={this.state.project.trigger_priority} showButtons 
                                             min={0} max={1001} step={10} useGrouping={false}
                                             onChange={(e) => this.setProjectParams('trigger_priority', e.value)}
@@ -404,23 +413,30 @@ export class ProjectEdit extends Component {
                                     {this.state.errors.trigger_priority ? this.state.errors.trigger_priority : ""}
                                 </label>
                             </div>
+                            <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="trigger" className="col-lg-2 col-md-2 col-sm-12">Allows Trigger Submission</label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
-                                <Checkbox inputId="trigger" role="trigger" checked={this.state.project.can_trigger} onChange={e => this.setProjectParams('can_trigger', e.target.checked)}></Checkbox>
+                            <div className="col-lg-3 col-md-3 col-sm-12">
+                                <Checkbox inputId="trigger" role="trigger" 
+                                        tooltip="Is this project allowed to supply observation requests on the fly, possibly interrupting currently running observations (responsive telescope)?" 
+                                        tooltipOptions={this.tooltipOptions}
+                                        checked={this.state.project.can_trigger} onChange={e => this.setProjectParams('can_trigger', e.target.checked)}></Checkbox>
                             </div>
                         </div>
                         <div className="p-field p-grid">
                             <label htmlFor="projCategory" className="col-lg-2 col-md-2 col-sm-12">Project Category </label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
+                            <div className="col-lg-3 col-md-3 col-sm-12">
                                 <Dropdown inputId="projCat" optionLabel="value" optionValue="url" 
+                                        tooltip="Project Category" tooltipOptions={this.tooltipOptions}
                                         value={this.state.project.project_category} 
                                         options={this.state.projectCategories} 
                                         onChange={(e) => {this.setProjectParams('project_category', e.value)}} 
                                         placeholder="Select Project Category" />
                             </div>
+                            <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="periodCategory" className="col-lg-2 col-md-2 col-sm-12">Period Category</label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
+                            <div className="col-lg-3 col-md-3 col-sm-12">
                                 <Dropdown data-testid="period-cat" id="period-cat" optionLabel="value" optionValue="url" 
+                                        tooltip="Period Category" tooltipOptions={this.tooltipOptions}
                                         value={this.state.project.period_category} 
                                         options={this.state.periodCategories} 
                                         onChange={(e) => {this.setProjectParams('period_category',e.value)}} 
@@ -429,17 +445,21 @@ export class ProjectEdit extends Component {
                         </div>
                         <div className="p-field p-grid">
                             <label htmlFor="triggerPriority" className="col-lg-2 col-md-2 col-sm-12">Cycle(s)</label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
+                            <div className="col-lg-3 col-md-3 col-sm-12">
                                 <MultiSelect data-testid="cycle" id="cycle" optionLabel="name" optionValue="url" filter={true}
+                                        tooltip="Cycle(s) to which this project belongs" tooltipOptions={this.tooltipOptions}
                                         value={this.state.project.cycles} 
                                         options={this.state.cycles} 
                                         onChange={(e) => {this.setProjectParams('cycles',e.value)}} 
                                         
                                 />
                             </div>
+                            <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="projRank" className="col-lg-2 col-md-2 col-sm-12">Project Rank <span style={{color:'red'}}>*</span></label>
-                            <div className="col-lg-4 col-md-4 col-sm-12">
+                            <div className="col-lg-3 col-md-3 col-sm-12">
                                 <InputNumber inputId="proj-rank" name="rank" data-testid="rank" value={this.state.project.priority_rank} 
+                                        tooltip="Priority of this project with respect to other projects. Projects can interrupt observations of lower-priority projects." 
+                                        tooltipOptions={this.tooltipOptions}
                                         mode="decimal" showButtons min={0} max={100}
                                         onChange={(e) => this.setProjectParams('priority_rank', e.value)}
                                         onBlur={(e) => this.setProjectParams('priority_rank', e.target.value, 'NUMBER')} />
@@ -451,32 +471,34 @@ export class ProjectEdit extends Component {
                         {this.state.resourceList &&
                             <div className="p-fluid">
                                 <div className="p-field p-grid">
-                                    <div className="col-lg-3 col-md-3 col-sm-112">
+                                    <div className="col-lg-2 col-md-2 col-sm-12">
                                         <h5>Resource Allocations:</h5>
                                     </div>
                                     <div className="col-lg-3 col-md-3 col-sm-10">
                                         <Dropdown optionLabel="name" optionValue="name" 
+                                            tooltip="Resources to be allotted for the project" 
+                                            tooltipOptions={this.tooltipOptions}
                                             value={this.state.newResource} 
                                             options={_.sortBy(this.state.resourceList, ['name'])} 
                                             onChange={(e) => {this.setState({'newResource': e.value})}}
                                             placeholder="Add Resources" />
                                     </div>
                                     <div className="col-lg-2 col-md-2 col-sm-2">
-                                    <Button label="" className="p-button-primary" icon="pi pi-plus" onClick={this.addNewResource} data-testid="add_res_btn" />
+                                    <Button label="" className="p-button-primary" icon="pi pi-plus" onClick={this.addNewResource} disabled={!this.state.newResource} data-testid="add_res_btn" />
                                     </div>
                                 </div>
-                                {_.keys(this.state.projectQuota).length>0 &&
+                                {/* {_.keys(this.state.projectQuota).length>0 && */}
                                     <div className="p-field p-grid resource-input-grid">
                                         <ResourceInputList list={this.state.resources} unitMap={this.resourceUnitMap} 
                                                         projectQuota={this.state.projectQuota} callback={this.setProjectQuotaParams} 
                                                         removeInputCallback={this.removeResource} />
                                     </div>
-                                }
+                                {/* } */}
                             </div>
                         }
                     </div>
                 </div>
-                <div className="p-grid p-justify-start">
+                <div className="p-grid p-justify-start act-btn-grp">
                     <div className="p-col-1">
                         <Button label="Save" className="p-button-primary" id="save-btn" data-testid="save-btn" icon="pi pi-check" onClick={this.saveProject} disabled={!this.state.validForm} />
                     </div>

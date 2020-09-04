@@ -23,23 +23,25 @@ class App extends Component {
 	  layoutMode: 'static',
       currentMenu: '',
       currentPath: '/',
+      PageTitle:'',
 	  staticMenuInactive: false,
-        overlayMenuActive: false,
-        mobileMenuActive: false,
-        currentPageName: ''
+            overlayMenuActive: false,
+            mobileMenuActive: false,
     };
 	    this.onWrapperClick = this.onWrapperClick.bind(this);
         this.onToggleMenu = this.onToggleMenu.bind(this);
         this.onSidebarClick = this.onSidebarClick.bind(this);
         this.onMenuItemClick = this.onMenuItemClick.bind(this);
-        this.setCurrentPageName = this.setCurrentPageName.bind(this);
+        this.setPageTitle = this.setPageTitle.bind(this);
   
       this.menu = [
       {label: 'Dashboard', icon: 'pi pi-fw pi-home', to:'/dashboard'},
-      {label: 'Cycle', icon: 'pi pi-fw pi-spinner', to:'/cycle'},
+      {label: 'Cycle', icon:'pi pi-fw pi-spinner', to:'/cycle'},
+      {label: 'Project', icon: 'fab fa-fw fa-wpexplorer', to:'/project'},
       {label: 'Scheduling Units', icon: 'pi pi-fw pi-calendar', to:'/schedulingunit'},
-      {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task'},
-      {label: 'Project', icon: 'fa fa-fw fa-binoculars', to:'/project'}
+    //   {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task'},
+      
+      
     ];
 
     // this.menuComponent = {'Dashboard': Dashboard}
@@ -91,11 +93,11 @@ class App extends Component {
         return window.innerWidth > 1024;
     }
 
-    setCurrentPageName(currentPageName) {
-        if (currentPageName !== this.state.currentPageName) {
-            this.setState({ currentPageName })
+    setPageTitle(PageTitle) {
+        if (PageTitle !== this.state.PageTitle) {
+            this.setState({ PageTitle })
         }
-    }
+    } 
 	
   render() {
 			const wrapperClass = classNames('layout-wrapper', {
@@ -105,7 +107,8 @@ class App extends Component {
             'layout-overlay-sidebar-active': this.state.overlayMenuActive && this.state.layoutMode === 'overlay',
             'layout-mobile-sidebar-active': this.state.mobileMenuActive			
 		});
-		const AppBreadCrumbWithRouter = withRouter(AppBreadcrumb);
+        const AppBreadCrumbWithRouter = withRouter(AppBreadcrumb);
+       
 		
      return (
       <React.Fragment>
@@ -114,12 +117,10 @@ class App extends Component {
            <div className={wrapperClass}>
             <AppTopbar onToggleMenu={this.onToggleMenu}></AppTopbar>
             <Router basename={ this.state.currentPath }>
-			  <AppMenu model={this.menu} onMenuItemClick={this.onMenuItemClick} />
+              <AppMenu model={this.menu} onMenuItemClick={this.onMenuItemClick} />
               <div className="layout-main">
-			  <AppBreadCrumbWithRouter setCurrentPageName={this.setCurrentPageName} />
-              {/* Display current pagename */}
-              {/* <h2>{this.state.currentPage.name}</h2> */}
-			  <RoutedContent />
+			  <AppBreadCrumbWithRouter setPageTitle={this.setPageTitle} />
+              <RoutedContent />
               </div>
             </Router>
             <AppFooter></AppFooter>

@@ -4,14 +4,14 @@ import { MemoryRouter } from 'react-router-dom';
 import { render, fireEvent } from '@testing-library/react';
 import CycleList from './list';
 import UnitConversion from '../../utils/unit.converter';
-import mockData from '../../__mocks__/cycle.service.data';
+import CycleServiceMock from '../../__mocks__/cycle.service.data';
 
 jest.mock('../../services/cycle.service', () => {
     return {
-        getProjects: () => Promise.resolve({ data: mockData.getProjects }),
-        getCycleQuota: () => Promise.resolve({ data: mockData.getCycleQuota }),
-        getAllCycles: () => Promise.resolve(mockData.getAllCycle.results ),
-        getResources: () => Promise.resolve({ data: mockData.getresources })
+        getProjects: () => Promise.resolve({ data: CycleServiceMock.getProjects }),
+        getCycleQuota: () => Promise.resolve({ data: CycleServiceMock.getCycleQuota }),
+        getAllCycles: () => Promise.resolve(CycleServiceMock.getAllCycle.results ),
+        getResources: () => Promise.resolve({ data: CycleServiceMock.getresources })
     }
 });
 
@@ -45,14 +45,14 @@ describe('<CycleList />', () => {
     test('render observing time in hours', async () => {
         const { container } = render(<MemoryRouter><CycleList /></MemoryRouter>);
         await flushPromises();
-        const observing_time = Math.floor(Number(mockData.getCycleQuota.results[0].value) / 3600);
+        const observing_time = Math.floor(Number(CycleServiceMock.getCycleQuota.results[0].value) / 3600);
         expect(container.querySelectorAll('tr')[1].innerHTML.includes(observing_time)).toBeTruthy();
     });
 
     test('render commissioning time in hours', async () => {
         const { container } = render(<MemoryRouter><CycleList /></MemoryRouter>);
         await flushPromises();
-        const commissioning_time = UnitConversion.getUIResourceUnit('bytes',Number(mockData.getCycleQuota.results[1].value));
+        const commissioning_time = UnitConversion.getUIResourceUnit('bytes',Number(CycleServiceMock.getCycleQuota.results[1].value));
         expect(container.querySelectorAll('tr')[1].innerHTML.includes(commissioning_time)).toBeTruthy();
     });
 

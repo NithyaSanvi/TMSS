@@ -26,7 +26,7 @@ class SchedulingUnitList extends Component{
                 "requirements_template_id": "Template",
                 "start_time":"Start Time",
                 "stop_time":"End time",
-                "duration":"Duration (H:mm:ss)"
+                "duration":"Duration (HH:mm:ss)"
                 }],
             optionalcolumns:  [{
                 "actionpath":"actionpath",
@@ -34,9 +34,13 @@ class SchedulingUnitList extends Component{
             columnclassname: [{
                 "Template":"filter-input-50",
                 "Duration":"filter-input-50",
-            }]
+                "Type": "filter-input-75"
+            }],
+            defaultSortColumn: [{id: "Name", desc: false}],
         }
     }
+    
+     
 
     async getSchedulingUnitList () {
         const bluePrint = await ScheduleService.getSchedulingUnitBlueprint();
@@ -46,29 +50,26 @@ class SchedulingUnitList extends Component{
             for( const scheduleunit  of scheduleunits){
                 const blueprintdata = bluePrint.data.results.filter(i => i.draft_id === scheduleunit.id);
                 blueprintdata.map(blueP => { 
-                    blueP.duration = moment(blueP.duration).format('H:mm:ss'); 
-                    blueP['created_at'] = moment(blueP['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:SS");
+                    blueP.duration = moment.utc(blueP.duration*1000).format('HH:mm:ss'); 
                     blueP.type="Blueprint"; 
+                    blueP['actionpath'] = '/schedulingunit/view/blueprint/'+blueP.id;
                     return blueP; 
                 });
                 output.push(...blueprintdata);
-                scheduleunit['actionpath']='/schedulingunit/view';
-                scheduleunit['type'] = 'Scheduling Unit';
-                // scheduleunit['stop_time'] = blueprintdata.stop_time;
-                scheduleunit['duration'] = moment(scheduleunit.duration).format('H:mm:ss');
-                scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:SS");
+                scheduleunit['actionpath']='/schedulingunit/view/draft/'+scheduleunit.id;
+                scheduleunit['type'] = 'Draft';
+                scheduleunit['duration'] = moment.utc(scheduleunit.duration*1000).format('HH:mm:ss');
                 output.push(scheduleunit);
             }
             this.setState({
-                scheduleunit: output, isLoading:false
+                scheduleunit: output, isLoading: false
             });
         })
     }
     
-     componentDidMount(){ 
+    componentDidMount(){ 
        this.getSchedulingUnitList();
-        
-    } 
+    }
 
     render(){
         if (this.state.isLoading) {
@@ -76,9 +77,7 @@ class SchedulingUnitList extends Component{
         }
         return(
             <>
-            
-                {
-                
+               {
                 /*
                     * Call View table to show table data, the parameters are,
                     data - Pass API data
@@ -95,6 +94,7 @@ class SchedulingUnitList extends Component{
                         defaultcolumns={this.state.defaultcolumns} 
                         optionalcolumns={this.state.optionalcolumns}
                         columnclassname={this.state.columnclassname}
+                        defaultSortColumn={this.state.defaultSortColumn}
                         showaction="true"
                         keyaccessor="id"
                         paths={this.state.paths}

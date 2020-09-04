@@ -1,3 +1,6 @@
-import Cyclelist from './list';
+import CycleList from './list';
+import {CycleCreate} from './create';
+import {CycleView} from './view';
+import {CycleEdit} from './edit';
 
-export {Cyclelist};
+export {CycleList, CycleCreate, CycleView, CycleEdit};

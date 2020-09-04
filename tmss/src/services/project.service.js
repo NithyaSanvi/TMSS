@@ -183,7 +183,8 @@ const ProjectService = {
                   project['actionpath']= '/project/view';
                   projects[index] = project;
                 }
-              })
+                return pro;
+              });
             }
           });
           results.projects = projects;

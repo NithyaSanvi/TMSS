@@ -1,10 +1,13 @@
 import React, { Component } from 'react'
 import 'primeflex/primeflex.css';
-import { Link } from 'react-router-dom/cjs/react-router-dom.min';
+// import { Link } from 'react-router-dom/cjs/react-router-dom.min';
+import _ from 'lodash';
+
 import ViewTable from '../../components/ViewTable';
 import CycleService from '../../services/cycle.service';
 import UnitConversion from '../../utils/unit.converter';
 import AppLoader from '../../layout/components/AppLoader';
+import PageHeader from '../../layout/components/PageHeader';
 
 class CycleList extends Component{
 	 constructor(props){
@@ -12,99 +15,94 @@ class CycleList extends Component{
         this.state = {
             cyclelist: [],
             paths: [{
-                "View": "/cycle",
+                "View": "/cycle/view",
             }],
-            projectCategory: ['regular', 'user_shared_support'],
-            periodCategory: ['long_term'],
-            defaultcolumns : [
-                {
-                    id:"Cycle Code",
-                    start: {
-                        name: "Start Date",
-                        filter: 'date'
-                    },
-                    stop: "End Date",
-                    duration: "Duration",
-                    totalProjects: 'No.of Projects',
-                    observingTime: 'Lofar Observing Time (hr)',
-                    processingTime: 'Lofar Processing Time (hr)',
-                    ltaResources: 'Lofar LTA Resources(TB)',
-                    support: 'Lofar Support (hr)',
-                    longterm : 'LongTerm'
-                     
-                }
-            ],
-            optionalcolumns : [{
-                regularProjects: 'No.of Regular',
-                observingTimeDDT: 'Lofar Observing Time Commissioning (hr)',
-                observingTimePrioA: 'Lofar Observing Time Prio A (hr)',
-                observingTimePrioB: 'Lofar Observing Time Prio B (hr)'
-
-            }],
-
-            columnclassname: [{
-                "Cycle Code":"filter-input-50",
-                "Duration" : "filter-input-55",
-                "No.of Projects" : "filter-input-55",
-                "Lofar Observing Time (hr)" : "filter-input-70",
-                "Lofar Processing Time (hr)" : "filter-input-70",
-                "Lofar LTA Resources(TB)" : "filter-input-70",
-                "Lofar Support (hr)" : "filter-input-50",
-                "LongTerm" : "filter-input-50",
-                "No.of Regular" : "filter-input-50",
-                "Lofar Observing Time Commissioning (hr)" : "filter-input-50",
-                "Lofar Observing Time Prio A (hr)" : "filter-input-50",
-                "Lofar Observing Time Prio B (hr)" : "filter-input-50"
-            }],
-            isprocessed: false,
             isLoading: true
         }
+        this.projectCategory = ['regular', 'user_shared_support'];
+        this.periodCategory = ['long_term'];
+        this.defaultcolumns = [ {   id:"Cycle Code",
+                                    start:"Start Date",
+                                    stop: "End Date",
+                                    duration: "Duration (Days)",
+                                    totalProjects: 'No.of Projects',
+                                    observingTime: 'Lofar Observing Time (Hrs)',
+                                    processingTime: 'Lofar Processing Time (Hrs)',
+                                    ltaResources: 'Lofar LTA Resources(TB)',
+                                    support: 'Lofar Support (Hrs)',
+                                    longterm : 'Long Term Projects' } ];
+        this.optionalcolumns = [{   regularProjects: 'No.of Regular Projects',
+                                    observingTimeDDT: 'Lofar Observing Time Commissioning (Hrs)',
+                                    observingTimePrioA: 'Lofar Observing Time Prio A (Hrs)',
+                                    observingTimePrioB: 'Lofar Observing Time Prio B (Hrs)',
+                                    actionpath: "actionpath", }];
+
+        this.columnclassname = [{   "Cycle Code":"filter-input-75",
+                                    "Duration (Days)" : "filter-input-50",
+                                    "No.of Projects" : "filter-input-50",
+                                    "Lofar Observing Time (Hrs)" : "filter-input-75",
+                                    "Lofar Processing Time (Hrs)" : "filter-input-75",
+                                    "Lofar LTA Resources(TB)" : "filter-input-75",
+                                    "Lofar Support (Hrs)" : "filter-input-50",
+                                    "Long Term Projects" : "filter-input-50",
+                                    "No.of Regular Projects" : "filter-input-50",
+                                    "Lofar Observing Time Commissioning (Hrs)" : "filter-input-75",
+                                    "Lofar Observing Time Prio A (Hrs)" : "filter-input-75",
+                                    "Lofar Observing Time Prio B (Hrs)" : "filter-input-75" }];
+                                     
+        this.defaultSortColumn = [{id: "Cycle Code", desc: false}];                          
     }
 
-    conversion(d,type) {
-        const coversionType = this.state.resources.find(i => i.name === type).quantity_value;
-        return UnitConversion.getUIResourceUnit(coversionType,d)
+    getUnitConvertedQuotaValue(cycle, cycleQuota, resourceName) {
+        const quota = _.find(cycleQuota, {'cycle_id': cycle.name, 'resource_type_id': resourceName});
+        const unitQuantity = this.state.resources.find(i => i.name === resourceName).quantity_value;
+        return UnitConversion.getUIResourceUnit(unitQuantity, quota?quota.value:0);
     }
 
     getCycles(cycles = [], cycleQuota) {
-        const { projectCategory} = this.state;
-        const { periodCategory} = this.state;
         const promises = [];
         cycles.map(cycle => promises.push(CycleService.getCycleById(cycle.name)));
         Promise.all(promises).then(responses => {
             const results = cycles;
             results.map(async (cycle, index) => {
                 const projects = responses[index];
-                const regularProjects = projects.filter(project => projectCategory.includes(project.project_category_value));
-                const longterm = projects.filter(project => periodCategory.includes(project.period_category_value));
+                const regularProjects = projects.filter(project => this.projectCategory.includes(project.project_category_value));
+                const longterm = projects.filter(project => this.periodCategory.includes(project.period_category_value));
                 cycle.duration = UnitConversion.getUIResourceUnit('days', cycle.duration);
                 cycle.totalProjects = cycle.projects ? cycle.projects.length : 0;
-                cycle.id = cycle.name ? cycle.name.split(' ').join('') : cycle.name;
+                cycle.id = cycle.name ;
                 cycle.regularProjects = regularProjects.length;
                 cycle.longterm = longterm.length;
-                cycle.observingTime = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time') || {value: 0}).value, 'observing_time')
-                cycle.processingTime = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'cep_processing_time') || {value: 0}).value, 'cep_processing_time')
-                cycle.ltaResources = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'lta_storage') || {value: 0}).value, 'lta_storage')
-                cycle.support = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'support_time') || {value: 0}).value, 'support_time')
-                cycle.observingTimeDDT = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_commissioning') || {value: 0}).value, 'observing_time_commissioning')
-                cycle.observingTimePrioA = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_prio_a') || {value: 0}).value, 'observing_time_prio_a')
-                cycle.observingTimePrioB = this.conversion((cycleQuota.data.results.find(quota => quota.cycle_id === cycle.name && quota.resource_type_id === 'observing_time_prio_b') || {value: 0}).value, 'observing_time_prio_b')
-                cycle.actionpath = "/cycle";
+                // cycle.observingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'observing_time');
+                // cycle.processingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'cep_processing_time');
+                // cycle.ltaResources = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'lta_storage');
+                // cycle.support = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'support_time');
+                // cycle.observingTimeDDT = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'observing_time_commissioning');
+                // cycle.observingTimePrioA = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'observing_time_prio_a');
+                // cycle.observingTimePrioB = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'observing_time_prio_b');
+                cycle.observingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'LOFAR Observing Time');
+                cycle.processingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'CEP Processing Time');
+                cycle.ltaResources = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'LTA Storage');
+                cycle.support = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'LOFAR Support Time');
+                cycle.observingTimeDDT = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'LOFAR Observing Time Commissioning');
+                cycle.observingTimePrioA = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'LOFAR Observing Time prio A');
+                cycle.observingTimePrioB = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'LOFAR Observing Time prio B');
+                
+                cycle['actionpath'] = `/cycle/view/${cycle.id}`;
                 return cycle;
             });
             this.setState({
                 cyclelist : results,
-                isprocessed: true,
                 isLoading: false
             });
         });
     }
 
     componentDidMount(){ 
-        const promises = [CycleService.getCycleQuota(), CycleService.getResources()]
+        const promises = [CycleService.getAllCycleQuotas(), CycleService.getResources()]
         Promise.all(promises).then(responses => {
             const cycleQuota = responses[0];
-            this.setState({ resources: responses[1].data.results });
+            this.setState({ resources: responses[1] });
             CycleService.getAllCycles().then(cyclelist => {
                 this.getCycles(cyclelist, cycleQuota)
             });
@@ -114,16 +112,24 @@ class CycleList extends Component{
 	render(){
         return (
             <>
-            <div className="p-grid">
+           { /*<div className="p-grid">
                     <div className="p-col-10 p-lg-10 p-md-10">
                         <h2>Cycle - List </h2>
                     </div>
                     <div className="p-col-2 p-lg-2 p-md-2">
-                        <Link to={{ pathname: '/cycle'}} title="Add New Cycle" style={{float: "right"}}>
+                        <Link to={{ pathname: '/cycle/create'}} title="Add New Cycle" style={{float: "right"}}>
                             <i className="fa fa-plus-square" style={{marginTop: "10px"}}></i>
                         </Link>
                     </div>
-                </div>
+                </div> */}
+                {/*
+                    * Call View table to show table data, the parameters are,
+                    data - Pass API data
+                    defaultcolumns - This colum will be populate by default in table with header mentioned
+                    showaction - {true/false} -> to show the action column
+                    paths - specify the path for navigation - Table will set "id" value for each row in action button
+                */}
+                <PageHeader location={this.props.location} title={'Cycle - List'} actions={[{icon:'fa-plus-square',title:'Click to Add Cycle', props:{ pathname: '/cycle/create'}}]}/>
                 {/*
                     * Call View table to show table data, the parameters are,
                     data - Pass API data
@@ -132,13 +138,14 @@ class CycleList extends Component{
                     paths - specify the path for navigation - Table will set "id" value for each row in action button
                 */}
                  
-                {this.state.isLoading? <AppLoader /> : this.state.isprocessed &&(this.state.cyclelist && this.state.cyclelist.length) ?
+                {this.state.isLoading? <AppLoader /> : (this.state.cyclelist && this.state.cyclelist.length) ?
                 
                     <ViewTable 
                         data={this.state.cyclelist} 
-                        defaultcolumns={this.state.defaultcolumns} 
-                        optionalcolumns={this.state.optionalcolumns}
-                        columnclassname = {this.state.columnclassname}
+                        defaultcolumns={this.defaultcolumns} 
+                        optionalcolumns={this.optionalcolumns}
+                        columnclassname = {this.columnclassname}
+                        defaultSortColumn= {this.defaultSortColumn}
                         showaction="true"
                         paths={this.state.paths}
                  />  : <></>
@@ -152,3 +159,4 @@ class CycleList extends Component{
 }
 
 export default CycleList
+

@@ -13,12 +13,13 @@ const JSONEditor = require("@json-editor/json-editor").JSONEditor;
 function Jeditor(props) {
     // console.log("In JEditor");
     const editorRef = useRef(null);
+    let pointingProps = useRef(null);
     let editor = null;
     useEffect(() => {
         const element = document.getElementById('editor_holder');
         let schema = {};
         Object.assign(schema, props.schema?props.schema:{});
-        
+        pointingProps = [];
         // Customize the pointing property to capture angle1 and angle2 to specified format
         for (const definitionKey in schema.definitions) {
             if (definitionKey === 'pointing') {
@@ -42,7 +43,6 @@ function Jeditor(props) {
         
         // Customize datatype of certain properties like subbands, duration, etc.,
         getCustomProperties(schema.properties);
-
         schema.title = props.title;
         const subbandValidator = validateSubbandOutput;
         const timeValidator = validateTime;
@@ -89,6 +89,7 @@ function Jeditor(props) {
             disable_edit_json: true,
             disable_properties: true,
             disable_collapse: true,
+            show_errors: props.errorsOn?props.errorsOn:'change',        // Can be 'interaction', 'change', 'always', 'never'
             compact: true
         };
         // Set Initial value to the editor
@@ -290,6 +291,9 @@ function Jeditor(props) {
                     options.grid_columns = 9;
                     propertyValue.options = options;
                 }
+                if (propertyValue['$ref'] && propertyValue['$ref'].endsWith("/pointing")) {
+                    pointingProps.push(propertyKey);
+                }
                 getCustomProperties(propertyValue);
             }
         }
@@ -303,7 +307,7 @@ function Jeditor(props) {
         for (const inputKey in editorInput) {
             const inputValue = editorInput[inputKey];
             if (inputValue instanceof Object) {
-                if (inputKey.endsWith('pointing')) {
+                if (_.indexOf(pointingProps, inputKey) >= 0) {
                     inputValue.angle1 = getAngleInput(inputValue.angle1);
                     inputValue.angle2 = getAngleInput(inputValue.angle2, true);
                 }  else if (inputKey === 'subbands') {
@@ -327,7 +331,7 @@ function Jeditor(props) {
         for (const outputKey in editorOutput) {
             let outputValue = editorOutput[outputKey];
             if (outputValue instanceof Object) {
-                if (outputKey.endsWith('pointing')) {
+                if (_.indexOf(pointingProps, outputKey) >= 0) {
                     outputValue.angle1 = getAngleOutput(outputValue.angle1, false);
                     outputValue.angle2 = getAngleOutput(outputValue.angle2, true);
                 } else {
@@ -355,21 +359,11 @@ function Jeditor(props) {
             const dd = Math.floor(prpInput * 180 / Math.PI);
             const mm = Math.floor((degrees-dd) * 60);
             const ss = +((degrees-dd-(mm/60)) * 3600).toFixed(0);
-            /*return {
-                dd: dd,
-                mm: mm,
-                ss: ss
-            }*/
             return (dd<10?`0${dd}`:`${dd}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`);
         }   else {
             const hh = Math.floor(degrees/15);
             const mm = Math.floor((degrees - (hh*15))/15 * 60 );
             const ss = +((degrees -(hh*15)-(mm*15/60))/15 * 3600).toFixed(0);
-            /*return {
-                hh: hh,
-                mm: mm,
-                ss: ss
-            }*/
             return (hh<10?`0${hh}`:`${hh}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`);
         }
     }
@@ -439,6 +433,9 @@ function Jeditor(props) {
         if (splitOutput.length < 3) {
             return false;
         }   else {
+            if (parseInt(splitOutput[0]) > 23 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59) {
+                return false;
+            }
             const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(splitOutput[2]);
             if (timeValue >= 86400) {
                 return false;
@@ -456,6 +453,9 @@ function Jeditor(props) {
         if (splitOutput.length < 3) {
             return false;
         }   else {
+            if (parseInt(splitOutput[0]) > 90 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59) {
+                return false;
+            }
             const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(splitOutput[2]);
             if (timeValue > 324000) {
                 return false;

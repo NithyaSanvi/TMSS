@@ -1,9 +1,9 @@
 import React, {Component} from 'react';
 import ProjectService from '../../services/project.service';
 import ViewTable from '../../components/ViewTable';
-import { Link } from 'react-router-dom/cjs/react-router-dom.min';
+// import { Link } from 'react-router-dom/cjs/react-router-dom.min';
 import AppLoader from '../../layout/components/AppLoader';
-import AppHeader from '../../layout/components/AppHeader';
+import PageHeader from '../../layout/components/PageHeader';
 
 export class ProjectList extends Component{
     constructor(props){
@@ -47,6 +47,7 @@ export class ProjectList extends Component{
                 "Category of Period":"filter-input-50",
                 "Cycles":"filter-input-100",
             }],
+            defaultSortColumn: [{id: "Name / Project Code", desc: false}],
             isprocessed: false,
             isLoading: true
         }
@@ -71,13 +72,24 @@ export class ProjectList extends Component{
     render(){
         return(
             <>
-                <AppHeader location={this.props.location} actions={[ { name: 'fa-plus-square', props: { pathname: '/project/create'} } ]}/>
+               {/*<div className="p-grid">
+                    <div className="p-col-10 p-lg-10 p-md-10">
+                        <h2>Project - List </h2>
+                    </div>
+                    <div className="p-col-2 p-lg-2 p-md-2">
+                        <Link to={{ pathname: '/project/create'}} title="Add New Project" style={{float: "right"}}>
+                            <i className="fa fa-plus-square" style={{marginTop: "10px"}}></i>
+                        </Link>
+                    </div>
+                </div> */}
+                <PageHeader location={this.props.location} title={'Project - List'} actions={[{icon: 'fa-plus-square',title:'Click to Add Project', props:{pathname: '/project/create' }}]}/>
                 {this.state.isLoading? <AppLoader /> : this.state.isprocessed &&
                     <ViewTable 
                         data={this.state.projectlist} 
                         defaultcolumns={this.state.defaultcolumns} 
                         optionalcolumns={this.state.optionalcolumns}
                         columnclassname={this.state.columnclassname}
+                        defaultSortColumn={this.state.defaultSortColumn}
                         showaction="true"
                         paths={this.state.paths}
                         keyaccessor="name"

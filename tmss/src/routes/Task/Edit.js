@@ -12,6 +12,7 @@ import Jeditor from '../../components/JSONEditor/JEditor';
 
 import TaskService from '../../services/task.service';
 import AppLoader from "./../../layout/components/AppLoader";
+import PageHeader from '../../layout/components/PageHeader';
 
 
 export class TaskEdit extends Component {
@@ -38,6 +39,7 @@ export class TaskEdit extends Component {
             name: {required: true, message: "Name can not be empty"},
             description: {required: true, message: "Description can not be empty"}
         };
+        this.readOnlyProperties = ['duration', 'relative_start_time', 'relative_stop_time'];
         this.setEditorOutput = this.setEditorOutput.bind(this);
         this.setTaskParams = this.setTaskParams.bind(this);
         this.changeTaskTemplate = this.changeTaskTemplate.bind(this);
@@ -126,16 +128,18 @@ export class TaskEdit extends Component {
     saveTask() {
         let task = this.state.task;
         task.specifications_doc = this.templateOutput[task.specifications_template_id];
+        // Remove read only properties from the object before sending to API
+        this.readOnlyProperties.forEach(property => { delete task[property]});
         TaskService.updateTask("draft", task)
         .then( (taskDraft) => {
             if (taskDraft) {
-                this.setState({redirect: '/task/view'});
+                this.setState({redirect: '/task/view/draft/' + task.id});
             }
         });
     }
 
     cancelEdit() {
-        this.setState({redirect: '/task/view'});
+        this.setState({redirect: '/task/view/draft/' + this.state.task.id});
     }
 
     componentDidMount() {
@@ -187,7 +191,7 @@ export class TaskEdit extends Component {
         
         return (
             <React.Fragment>
-                <div className="p-grid">
+                {/*} <div className="p-grid">
                     <div className="p-col-10 p-lg-10 p-md-10">
                         <h2>Task - Edit</h2>
                     </div>
@@ -197,8 +201,8 @@ export class TaskEdit extends Component {
                             <i className="fa fa-window-close" style={{marginTop: "10px"}}></i>
                         </Link>
                     </div>
-                </div>
-				
+                    </div> */}
+				<PageHeader location={this.props.location} title={'Task - Edit'} actions={[{icon: 'fa-window-close',title:'Click to Close Task Edit Page' ,props : { pathname:  `/task/view/draft/${this.state.task?this.state.task.id:''}`}}]}/>
 				{isLoading ? <AppLoader/> :
                 <div>
 			        <div className="p-fluid">

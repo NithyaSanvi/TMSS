@@ -5,11 +5,9 @@ import _ from 'lodash';
 import moment from 'moment';
 import { useHistory } from "react-router-dom";
 import {OverlayPanel} from 'primereact/overlaypanel';
-import { Slider } from 'primereact/slider';
+import {InputSwitch} from 'primereact/inputswitch';
 import { Calendar } from 'primereact/calendar';
 import {Paginator} from 'primereact/paginator';
-import {TriStateCheckbox} from 'primereact/tristatecheckbox';
-
 
 let tbldata =[];
 let isunittest = false;
@@ -20,7 +18,6 @@ function GlobalFilter({
     globalFilter,
     setGlobalFilter,
   }) {
-     
   const [value, setValue] = React.useState(globalFilter)
   const onChange = useAsyncDebounce(value => {setGlobalFilter(value || undefined)}, 200)
   return (
@@ -40,19 +37,13 @@ function GlobalFilter({
 function DefaultColumnFilter({
   column: { filterValue, preFilteredRows, setFilter },
 }) {
-  const [value, setValue] = useState('');
-
   return (
-    <div className="table-filter" onClick={e => { e.stopPropagation() }}>
-      <input
-        value={value}
-        onChange={e => {
-          setValue(e.target.value);
-          setFilter(e.target.value || undefined) // Set undefined to remove the filter entirely
-        }}
-      />
-      {value && <i onClick={() => {setFilter(undefined); setValue('') }} className="table-reset fa fa-times" />}
-    </div>
+    <input
+      value={filterValue || ''}
+      onChange={e => {
+        setFilter(e.target.value || undefined) // Set undefined to remove the filter entirely
+      }}
+    />
   )
 }
 
@@ -74,21 +65,19 @@ function SelectColumnFilter({
 
   // Render a multi-select box
   return (
-    <div onClick={e => { e.stopPropagation() }}>
-      <select
-        value={filterValue}
-        onChange={e => {
-          setFilter(e.target.value || undefined)
-        }}
-      >
-        <option value="">All</option>
-        {options.map((option, i) => (
-          <option key={i} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </div>
+    <select
+      value={filterValue}
+      onChange={e => {
+        setFilter(e.target.value || undefined)
+      }}
+    >
+      <option value="">All</option>
+      {options.map((option, i) => (
+        <option key={i} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
   )
 }
 
@@ -100,7 +89,6 @@ function SliderColumnFilter({
 }) {
   // Calculate the min and max
   // using the preFilteredRows
-  const [value, setValue] = useState(0);
 
   const [min, max] = React.useMemo(() => {
     let min = preFilteredRows.length ? preFilteredRows[0].values[id] : 0
@@ -113,9 +101,18 @@ function SliderColumnFilter({
   }, [id, preFilteredRows])
 
   return (
-    <div onClick={e => { e.stopPropagation() }} className="table-slider">
-      <Slider value={value} onChange={(e) => { setFilter(e.value);setValue(e.value)}} />
-    </div>
+    <>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        value={filterValue || min}
+        onChange={e => {
+          setFilter(parseInt(e.target.value, 10))
+        }}
+      />
+      <button onClick={() => setFilter(undefined)}>Off</button>
+    </>
   )
 }
 
@@ -124,13 +121,12 @@ function SliderColumnFilter({
 function BooleanColumnFilter({
   column: { setFilter},
 }) {
-  // Calculate the min and max
-  // using the preFilteredRows
   const [value, setValue] = useState(true);
   return (
-    <div onClick={e => { e.stopPropagation() }}>
-      <TriStateCheckbox value={value} onChange={(e) => { setValue(e.value); setFilter(e.value === null ? undefined : e.value); }} />
-    </div>
+    <>
+      <InputSwitch checked={value} onChange={() => { setValue(!value); setFilter(!value); }} />
+      <button onClick={() => setFilter(undefined)}>Off</button>
+    </>
   )
 }
 
@@ -139,17 +135,15 @@ function BooleanColumnFilter({
 function CalendarColumnFilter({
   column: { setFilter},
 }) {
-  // Calculate the min and max
-  // using the preFilteredRows
   const [value, setValue] = useState('');
   return (
-    <div className="table-filter" onClick={e => { e.stopPropagation() }}>
+    <>
       <Calendar value={value} onChange={(e) => {
         const value = moment(e.value, moment.ISO_8601).format("YYYY-MMM-DD")
           setValue(value); setFilter(value); 
         }} showIcon></Calendar>
-        {value && <i onClick={() => {setFilter(undefined); setValue('') }} className="tb-cal-reset fa fa-times" />}
-    </div>
+      <button onClick={() => setFilter(undefined)}>Off</button>
+    </>
   )
 }
 
@@ -235,7 +229,7 @@ const IndeterminateCheckbox = React.forwardRef(
 )
 
 // Our table component
-function Table({ columns, data, defaultheader, optionalheader }) {
+function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn }) {
   const filterTypes = React.useMemo(
     () => ({
       // Add a new fuzzyTextFilterFn filter type.
@@ -277,22 +271,17 @@ function Table({ columns, data, defaultheader, optionalheader }) {
     preGlobalFilteredRows,
     setGlobalFilter,
     setHiddenColumns,
-    canPreviousPage,
-    canNextPage,
-    pageOptions,
-    pageCount,
     gotoPage,
-    nextPage,
-    previousPage,
     setPageSize,
-    state: { pageIndex, pageSize },
+    
   } = useTable(
       {
         columns,
         data,
         defaultColumn,
         filterTypes,
-        initialState: { pageIndex: 0 }
+        initialState: { pageIndex: 0,
+          sortBy: defaultSortColumn }
       },
       useFilters,
       useGlobalFilter,
@@ -320,7 +309,7 @@ function Table({ columns, data, defaultheader, optionalheader }) {
 
   return (
     <>
-     <div id="block_container" style={{ display: 'flex',  verticalAlign: 'middle', marginTop:'20px'}}> 
+     <div id="block_container"> 
           <div   style={{textAlign:'left', marginRight:'30px'}}>
                 <i className="fa fa-columns col-filter-btn" label="Toggle Columns" onClick={(e) => op.current.toggle(e)}  />
                 <OverlayPanel ref={op} id="overlay_panel" showCloseIcon={false} >
@@ -359,24 +348,29 @@ function Table({ columns, data, defaultheader, optionalheader }) {
         </div>
 </div>
 
-      <div style={{overflow: 'auto', padding: '0.75em',}}  className="tmss-table">
-      
-      <table {...getTableProps()} style={{width:'100%'}} data-testid="viewtable" className="viewtable" >
+      <div className="table_container">
+      <table {...getTableProps()} data-testid="viewtable" className="viewtable" >
         <thead>
           {headerGroups.map(headerGroup =>  (
             <tr {...headerGroup.getHeaderGroupProps()}>
               {headerGroup.headers.map(column => (
-                 <th {...column.getHeaderProps(column.getSortByToggleProps())}  > 
+                <th> 
+                  <div {...column.getHeaderProps(column.getSortByToggleProps())}>
                     {column.Header !== 'actionpath' && column.render('Header')}
-                    {/* {column.Header !== 'Action'? 
-                      column.isSorted ? (column.isSortedDesc ? <i className="pi pi-sort-down" aria-hidden="true"></i> : <i className="pi pi-sort-up" aria-hidden="true"></i>) : <i className="pi pi-sort" aria-hidden="true"></i>
+                    {column.Header !== 'Action'? 
+                      column.isSorted ? (column.isSortedDesc ? <i className="pi pi-sort-down" aria-hidden="true"></i> : <i className="pi pi-sort-up" aria-hidden="true"></i>) : ""
                       : ""
-                    } */}
-                    {/* Render the columns filter UI */} 
-                    {column.Header !== 'actionpath' &&
-                      <div className={columnclassname[0][column.Header]}  > {column.canFilter && column.Header !== 'Action' ? column.render('Filter') : null}</div>
                     }
-                  </th> 
+                  </div>
+                  
+                  {/* Render the columns filter UI */} 
+                    {column.Header !== 'actionpath' &&
+                      <div className={columnclassname[0][column.Header]}  > 
+                        {column.canFilter && column.Header !== 'Action' ? column.render('Filter') : null}
+                        
+                      </div>
+                    }
+                </th> 
               ))}
             </tr>
           ))}
@@ -395,9 +389,9 @@ function Table({ columns, data, defaultheader, optionalheader }) {
           })}
         </tbody>
       </table>
-      <div className="pagination">
-        <Paginator rowsPerPageOptions={[10,20,30, 40, 50]} first={currentpage} rows={currentrows} totalRecords={rows.length} onPageChange={onPagination}></Paginator>
       </div>
+      <div className="pagination">
+        <Paginator rowsPerPageOptions={[10,25,50,100]} first={currentpage} rows={currentrows} totalRecords={rows.length} onPageChange={onPagination}></Paginator>
       </div>
     </>
   )
@@ -428,7 +422,11 @@ function ViewTable(props) {
     // Default Header to show in table and other columns header will not show until user action on UI
     let defaultheader = props.defaultcolumns;
     let optionalheader = props.optionalcolumns;
-    
+    let defaultSortColumn = props.defaultSortColumn;
+    if(!defaultSortColumn){
+      defaultSortColumn =[{}];
+    }
+
     let columns = [];   
     let defaultdataheader =  Object.keys(defaultheader[0]);
     let optionaldataheader =  Object.keys(optionalheader[0]);
@@ -455,8 +453,6 @@ function ViewTable(props) {
         })
        }
      // Object.entries(props.paths[0]).map(([key,value]) =>{})
-       
-      
     }
 
   //Default Columns
@@ -504,7 +500,7 @@ function ViewTable(props) {
           })
           return  retval;
         }else if(typeof value == "string"){
-          const dateval = moment(value, moment.ISO_8601).format("YYYY-MMM-DD HH:mm:SS");
+          const dateval = moment(value, moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
           if(dateval !== 'Invalid date'){
             return dateval;
           } 
@@ -515,11 +511,10 @@ function ViewTable(props) {
       return value;
     }
  
-  
-   
   return (
     <div>
-        <Table columns={columns} data={tbldata} defaultheader={defaultheader[0]} optionalheader={optionalheader[0]} />
+        <Table columns={columns} data={tbldata} defaultheader={defaultheader[0]} optionalheader={optionalheader[0]} 
+        defaultSortColumn={defaultSortColumn} />
     </div>
   )
 }
