@@ -213,23 +213,15 @@ const ScheduleService = {
     // TODO: Steps need to discuss for edit....
     updateDraftFromObservStrategy: async function(observStrategy, schedulingUnit,task) {
         try {
-            // Create the scheduling unit draft with observation strategy and scheduling set
-           
-                // Update the newly created SU draft requirement_doc with captured parameter values
-             delete schedulingUnit['duration'];
+            debugger
+            delete schedulingUnit['duration'];
             schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
-            if (!schedulingUnit || !schedulingUnit.id) {
-                return null;
-            }
-
-            task =await this.updateTask(task);
-
-         // Create task drafts with updated requirement_doc
-          schedulingUnit = await this.createSUTaskDrafts(schedulingUnit);
-            if (schedulingUnit && schedulingUnit.task_drafts.length > 0) {
-                return schedulingUnit;
-            }
-           
+            task.specifications_doc = observStrategy.template.tasks['Target Observation'].specifications_doc;
+            delete task['duration'];
+            delete task['relative_start_time'];
+            delete task['relative_stop_time'];
+            task = await this.updateTask(task);
+            return task;
         }   catch(error) {
             console.error(error);
             return null;
@@ -256,7 +248,6 @@ const ScheduleService = {
     },
     updateTask: async function(task) {
         try {
-            console.log(task);
           const response = await axios.put(('/api/task_draft/' + task.id + "/"), task);
           return response.data;
         } catch (error) {
