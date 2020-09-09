@@ -123,7 +123,7 @@ class ViewSchedulingUnit extends Component{
                 </div> */}
                 <PageHeader location={this.props.location} title={'Scheduling Unit - Details'} 
                             actions={[{icon: 'fa-edit',title:'Click to Edit Scheduling Unit View', type:'link',
-                            props : { pathname: `/schedulingunit/edit`}},
+                            props : { pathname: `/schedulingunit/edit/${this.props.match.params.id}` }},
                                     {icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', props : { pathname: '/schedulingunit'}}]}/>
 				{ this.state.isLoading ? <AppLoader/> :this.state.scheduleunit &&
 			    <>

@@ -210,12 +210,38 @@ const ScheduleService = {
             return null;
         };
     },
+    // TODO: Steps need to discuss for edit....
+    updateDraftFromObservStrategy: async function(observStrategy, schedulingUnit,task) {
+        try {
+            // Create the scheduling unit draft with observation strategy and scheduling set
+           
+                // Update the newly created SU draft requirement_doc with captured parameter values
+             delete schedulingUnit['duration'];
+            schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
+            if (!schedulingUnit || !schedulingUnit.id) {
+                return null;
+            }
+
+            task =await this.updateTask(task);
+
+         // Create task drafts with updated requirement_doc
+          schedulingUnit = await this.createSUTaskDrafts(schedulingUnit);
+            if (schedulingUnit && schedulingUnit.task_drafts.length > 0) {
+                return schedulingUnit;
+            }
+           
+        }   catch(error) {
+            console.error(error);
+            return null;
+        };
+    },
     updateSchedulingUnitDraft: async function(schedulingUnit) {
         try {
+            console.log(schedulingUnit);
             const suUpdateResponse = await axios.put(`/api/scheduling_unit_draft/${schedulingUnit.id}/`, schedulingUnit);
             return suUpdateResponse.data;
         }   catch(error) {
-            console.error(error);
+            console.error("Mistake",error);
             return null
         }
     },
@@ -227,7 +253,19 @@ const ScheduleService = {
             console.error(error);
             return null;
         }
-    }
+    },
+    updateTask: async function(task) {
+        try {
+            console.log(task);
+          const response = await axios.put(('/api/task_draft/' + task.id + "/"), task);
+          return response.data;
+        } catch (error) {
+          console.error(error);
+          return null;
+        }
+      }
+
 }
+
 
 export default ScheduleService;
