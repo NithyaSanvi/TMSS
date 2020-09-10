@@ -404,8 +404,8 @@ export class ProjectEdit extends Component {
                                 <InputText className={this.state.errors.name ?'input-error':''} id="projectName" data-testid="name"
                                             tooltip="Enter name of the project" tooltipOptions={this.tooltipOptions} maxLength="128"
                                             value={this.state.project.name} 
-                                            onChange={(e) => this.setProjectParams('name', e.target.value)}
-                                            onBlur={(e) => this.setProjectParams('name', e.target.value)}/>
+                                            onChange={(e) => this.setProjectParams('name', e.target.value, 'PROJECT_NAME')}
+                                            onBlur={(e) => this.setProjectParams('name', e.target.value, 'PROJECT_NAME')}/>
                                 <label className={this.state.errors.name?"error":"info"}>
                                     {this.state.errors.name ? this.state.errors.name : "Max 128 characters"}
                                 </label>
