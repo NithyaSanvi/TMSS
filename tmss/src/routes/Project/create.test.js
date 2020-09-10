@@ -3,7 +3,6 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import { act } from "react-dom/test-utils";
 import { render, cleanup, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
-import _ from 'lodash';
 
 import {ProjectCreate} from './create';
 import ProjectService from '../../services/project.service';
@@ -66,7 +65,6 @@ it("renders without crashing with all back-end data loaded", async () => {
     await act(async () => {
         content = render(<Router><ProjectCreate /></Router>);
     });
-    const spinButtons = content.queryAllByRole("spinbutton");
     
     expect(content.queryByText('Project - Add')).not.toBe(null);        // Page loaded successfully
     expect(projectCategoriesSpy).toHaveBeenCalled();                    // Mock Spy called successfully
@@ -75,8 +73,8 @@ it("renders without crashing with all back-end data loaded", async () => {
     expect(content.queryByText('Cycle-0')).toBeInTheDocument();         // Cycle multi-select loaded successfully
     expect(content.queryAllByText('Add Resources').length).toBe(2);     // Resource Dropdown loaded successfully
     expect(content.queryByText('Support hours')).toBeInTheDocument();         // Resources other than Default Resources listed in dropdown
-    expect(_.filter(spinButtons, {"id": "Support hours"}).length).toBe(0);       // No resources other than Default Resources listed to get input
-    expect(_.filter(spinButtons, {"id": "LOFAR Observing Time"})[0].value).toBe('1 Hours');         // Default Resource Listed with default value
+    expect(content.queryByPlaceholderText('Support Hours')).toBe(null);       // No resources other than Default Resources listed to get input
+    expect(content.queryByPlaceholderText('LOFAR Observing Time').value).toBe('1 Hours');         // Default Resource Listed with default value
 });
 
 it("Save button disabled initially when no data entered", async () => {
@@ -224,31 +222,31 @@ it("save project with default resources", async () => {
     expect(content.queryByTestId('projectId').value).toBe("");
     expect(content.queryByText("Success")).toBe(null);
     
-    const lofarObsTimeInput = _.filter(spinButtons, {"id": "LOFAR Observing Time"})[0];
+    const lofarObsTimeInput = content.queryByPlaceholderText('LOFAR Observing Time');
     fireEvent.change(lofarObsTimeInput, { target: { value: 10 } });
     expect(lofarObsTimeInput.value).toBe('10');
     
-    const lofarObsTimeAInput = _.filter(spinButtons, {"id": "LOFAR Observing Time prio A"})[0];
+    const lofarObsTimeAInput = content.queryByPlaceholderText('LOFAR Observing Time prio A');
     fireEvent.change(lofarObsTimeAInput, { target: { value: 15 } });
     expect(lofarObsTimeAInput.value).toBe('15');
     
-    const lofarObsTimeBInput = _.filter(spinButtons, {"id": "LOFAR Observing Time prio B"})[0];
+    const lofarObsTimeBInput = content.queryByPlaceholderText('LOFAR Observing Time prio B');
     fireEvent.change(lofarObsTimeBInput, { target: { value: 20 } });
     expect(lofarObsTimeBInput.value).toBe('20');
     
-    const cepProcTimeInput = _.filter(spinButtons, {"id": "CEP Processing Time"})[0];
+    const cepProcTimeInput = content.queryByPlaceholderText('CEP Processing Time');
     fireEvent.change(cepProcTimeInput, { target: { value: 5 } });
     expect(cepProcTimeInput.value).toBe('5');
     
-    const ltaStorageInput = _.filter(spinButtons, {"id": "LTA Storage"})[0];
+    const ltaStorageInput = content.queryByPlaceholderText('LTA Storage');
     fireEvent.change(ltaStorageInput, { target: { value: 2 } });
     expect(ltaStorageInput.value).toBe('2');
     
-    const noOfTriggerInput = _.filter(spinButtons, {"id": "Number of triggers"})[0];
+    const noOfTriggerInput = content.queryByPlaceholderText('Number of triggers');
     fireEvent.change(noOfTriggerInput, { target: { value: 3 } });
     expect(noOfTriggerInput.value).toBe('3');
     
-    const lofarSupTimeInput = _.filter(spinButtons, {"id": "LOFAR Support Time"})[0];
+    const lofarSupTimeInput = content.queryByPlaceholderText('LOFAR Support Time');
     fireEvent.change(lofarSupTimeInput, { target: { value: 25 } });
     expect(lofarSupTimeInput.value).toBe('25');
     
@@ -270,7 +268,7 @@ it("save project with added resources", async () => {
 
     const nameInput = content.queryByTestId('name');
     const descInput = content.queryByTestId('description');
-    let spinButtons = content.queryAllByRole("spinbutton");
+    const spinButtons = content.queryAllByRole("spinbutton");
     const rankInput = spinButtons.filter(function(element) { return element.id==="proj-rank"})[0];
 
     fireEvent.change(nameInput, { target: { value: 'OSR' } });
@@ -283,31 +281,31 @@ it("save project with added resources", async () => {
     expect(content.queryByTestId('projectId').value).toBe("");
     expect(content.queryByText("Success")).toBe(null);
     
-    const lofarObsTimeInput = _.filter(spinButtons, {"id": "LOFAR Observing Time"})[0];
+    const lofarObsTimeInput = content.queryByPlaceholderText('LOFAR Observing Time');
     fireEvent.change(lofarObsTimeInput, { target: { value: 10 } });
     expect(lofarObsTimeInput.value).toBe('10');
     
-    const lofarObsTimeAInput = _.filter(spinButtons, {"id": "LOFAR Observing Time prio A"})[0];
+    const lofarObsTimeAInput = content.queryByPlaceholderText('LOFAR Observing Time prio A');
     fireEvent.change(lofarObsTimeAInput, { target: { value: 15 } });
     expect(lofarObsTimeAInput.value).toBe('15');
     
-    const lofarObsTimeBInput = _.filter(spinButtons, {"id": "LOFAR Observing Time prio B"})[0];
+    const lofarObsTimeBInput = content.queryByPlaceholderText('LOFAR Observing Time prio B');
     fireEvent.change(lofarObsTimeBInput, { target: { value: 20 } });
     expect(lofarObsTimeBInput.value).toBe('20');
     
-    const cepProcTimeInput = _.filter(spinButtons, {"id": "CEP Processing Time"})[0];
+    const cepProcTimeInput = content.queryByPlaceholderText('CEP Processing Time');
     fireEvent.change(cepProcTimeInput, { target: { value: 5 } });
     expect(cepProcTimeInput.value).toBe('5');
     
-    const ltaStorageInput = _.filter(spinButtons, {"id": "LTA Storage"})[0];
+    const ltaStorageInput = content.queryByPlaceholderText('LTA Storage');
     fireEvent.change(ltaStorageInput, { target: { value: 2 } });
     expect(ltaStorageInput.value).toBe('2');
     
-    const noOfTriggerInput = _.filter(spinButtons, {"id": "Number of triggers"})[0];
+    const noOfTriggerInput = content.queryByPlaceholderText('Number of triggers');
     fireEvent.change(noOfTriggerInput, { target: { value: 3 } });
     expect(noOfTriggerInput.value).toBe('3');
     
-    const lofarSupTimeInput = _.filter(spinButtons, {"id": "LOFAR Support Time"})[0];
+    const lofarSupTimeInput = content.queryByPlaceholderText('LOFAR Support Time');
     fireEvent.change(lofarSupTimeInput, { target: { value: 25 } });
     expect(lofarSupTimeInput.value).toBe('25');
     
@@ -315,7 +313,7 @@ it("save project with added resources", async () => {
     expect(content.queryAllByText('Add Resources').length).toBe(2);
     expect(content.queryAllByText('Support hours').length).toBe(1);
     expect(content.getAllByRole("listbox")[3].children.length).toBe(2);
-    expect(_.filter(spinButtons, {"id": "Support hours"}).length).toBe(0);
+    expect(content.queryByPlaceholderText('Support hours')).toBe(null);
     const addResourceInput = content.getAllByRole("listbox")[3].children[1] ;
     fireEvent.click(addResourceInput);
     // After selecting New Resource
@@ -325,10 +323,9 @@ it("save project with added resources", async () => {
     const addResourceBtn = content.queryByTestId('add_res_btn');
     fireEvent.click(addResourceBtn);
     expect(content.queryAllByText('Add Resources').length).toBe(2);
-    spinButtons = content.queryAllByRole("spinbutton");
+    expect(content.queryByPlaceholderText('Support hours')).not.toBe(null);
 
-    const newResourceInput = _.filter(spinButtons, {"id": "Support hours"})[0];
-    expect(newResourceInput).not.toBe(null);
+    const newResourceInput = content.queryByPlaceholderText('Support hours');
     fireEvent.change(newResourceInput, { target: { value: 30 } });
     expect(newResourceInput.value).toBe('30');
     
@@ -363,18 +360,15 @@ it("remove default resource and added resource", async () => {
     const addResourceBtn = content.queryByTestId('add_res_btn');
     fireEvent.click(addResourceBtn);
     expect(content.queryAllByText('Add Resources').length).toBe(2);
+    expect(content.queryByPlaceholderText('Support hours')).not.toBe(null);
 
-    const spinButtons = content.queryAllByRole("spinbutton");
-    
-    expect(_.filter(spinButtons, {"id": "Support hours"})[0]).not.toBe(null);
-
-    expect(_.filter(spinButtons, {"id": "CEP Processing Time"})[0]).not.toBe(null);
+    expect(content.queryByPlaceholderText('CEP Processing Time')).not.toBe(null);
     expect(content.queryByTestId('CEP Processing Time-btn')).not.toBe(null);
     const removeDefResBtn = content.queryByTestId('CEP Processing Time-btn');
     await act(async () => {
         fireEvent.click(content.queryByTestId('CEP Processing Time-btn'));
     });
-    expect(_.filter(spinButtons, {"id": "CEP Processing Time"}).length).toBe(0);
+    expect(content.queryByPlaceholderText('CEP Processing Time')).toBe(null);
     expect(content.queryByTestId('CEP Processing Time-btn')).toBe(null);
 
     const removeResourceBtn = content.queryByTestId('Support hours-btn');

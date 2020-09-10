@@ -1,13 +1,12 @@
 import React, { Component } from 'react'
 import 'primeflex/primeflex.css';
-// import { Link } from 'react-router-dom/cjs/react-router-dom.min';
+import { Link } from 'react-router-dom/cjs/react-router-dom.min';
 import _ from 'lodash';
 
 import ViewTable from '../../components/ViewTable';
 import CycleService from '../../services/cycle.service';
 import UnitConversion from '../../utils/unit.converter';
 import AppLoader from '../../layout/components/AppLoader';
-import PageHeader from '../../layout/components/PageHeader';
 
 class CycleList extends Component{
 	 constructor(props){
@@ -49,8 +48,6 @@ class CycleList extends Component{
                                     "Lofar Observing Time Commissioning (Hrs)" : "filter-input-75",
                                     "Lofar Observing Time Prio A (Hrs)" : "filter-input-75",
                                     "Lofar Observing Time Prio B (Hrs)" : "filter-input-75" }];
-                                     
-        this.defaultSortColumn = [{id: "Cycle Code", desc: false}];                          
     }
 
     getUnitConvertedQuotaValue(cycle, cycleQuota, resourceName) {
@@ -112,7 +109,7 @@ class CycleList extends Component{
 	render(){
         return (
             <>
-           { /*<div className="p-grid">
+            <div className="p-grid">
                     <div className="p-col-10 p-lg-10 p-md-10">
                         <h2>Cycle - List </h2>
                     </div>
@@ -121,15 +118,7 @@ class CycleList extends Component{
                             <i className="fa fa-plus-square" style={{marginTop: "10px"}}></i>
                         </Link>
                     </div>
-                </div> */}
-                {/*
-                    * Call View table to show table data, the parameters are,
-                    data - Pass API data
-                    defaultcolumns - This colum will be populate by default in table with header mentioned
-                    showaction - {true/false} -> to show the action column
-                    paths - specify the path for navigation - Table will set "id" value for each row in action button
-                */}
-                <PageHeader location={this.props.location} title={'Cycle - List'} actions={[{icon:'fa-plus-square',title:'Click to Add Cycle', props:{ pathname: '/cycle/create'}}]}/>
+                </div>
                 {/*
                     * Call View table to show table data, the parameters are,
                     data - Pass API data
@@ -145,7 +134,6 @@ class CycleList extends Component{
                         defaultcolumns={this.defaultcolumns} 
                         optionalcolumns={this.optionalcolumns}
                         columnclassname = {this.columnclassname}
-                        defaultSortColumn= {this.defaultSortColumn}
                         showaction="true"
                         paths={this.state.paths}
                  />  : <></>

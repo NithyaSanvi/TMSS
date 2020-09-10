@@ -27,13 +27,11 @@ export class AppBreadcrumb extends Component {
 
     onRoute() {
         const { breadcrumbs } = this.state;
-        const { setPageTitle } = this.props;
         const currentRoute = routes.find(route => matchPath(this.props.location.pathname, {path: route.path, exact: true, strict: true}));
 		//for intial route ,there wont be any route object so it failed 
 		if(!currentRoute){
 			return;
-        }
-        setPageTitle(currentRoute.pageTitle);
+		}
         if (!breadcrumbs.length) {
             this.setState({ breadcrumbs: [{...this.props.location, name: currentRoute.name}] });
             return;

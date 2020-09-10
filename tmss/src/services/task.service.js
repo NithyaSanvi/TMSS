@@ -49,8 +49,7 @@ const TaskService = {
     },
     getSchedulingUnit: async function(type, id) {
       try {
-        const url = `/api/scheduling_unit_${type}/${id}`;
-        const response = await axios.get(url);
+        const response = await axios.get('/api/scheduling_unit_draft/' + id);
         return response.data;
       } catch (error) {
         console.error(error);

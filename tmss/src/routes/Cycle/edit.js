@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import { Redirect } from 'react-router-dom';
+import { Link, Redirect } from 'react-router-dom';
 import _ from 'lodash';
 import moment from 'moment'
 
@@ -14,7 +14,6 @@ import {Growl} from 'primereact/components/growl/Growl';
 import {ResourceInputList} from './ResourceInputList';
 
 import AppLoader from '../../layout/components/AppLoader';
-import PageHeader from '../../layout/components/PageHeader';
 import CycleService from '../../services/cycle.service';
 import UnitConverter from '../../utils/unit.converter';
 import UIConstants from '../../utils/ui.constants';
@@ -361,9 +360,9 @@ export class CycleEdit extends Component {
         }
         return (
             <React.Fragment>
-                <Growl ref={(el) => this.growl = el} />
-                {/*} <div className="p-grid">
-                    
+                <div className="p-grid">
+                    <Growl ref={(el) => this.growl = el} />
+                
                     <div className="p-col-10 p-lg-10 p-md-10">
                         <h2>Cycle - Edit</h2>
                     </div>
@@ -372,8 +371,7 @@ export class CycleEdit extends Component {
                             <i className="fa fa-window-close" style={{marginTop: "10px"}}></i>
                         </Link>
                     </div>
-                </div> */}
-                <PageHeader location={this.props.location} title={'Cycle - Edit'} actions={[{icon:'fa-window-close',title:'Click to Close Cycle-Edit', props:{ pathname: `/cycle/view/${this.state.cycle.name}`}}]}/>
+                </div>
 
                 { this.state.isLoading ? <AppLoader/> :
                 <>

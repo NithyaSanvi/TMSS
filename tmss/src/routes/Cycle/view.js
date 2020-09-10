@@ -8,7 +8,6 @@ import { Chips } from 'primereact/chips';
 import ResourceDisplayList from './ResourceDisplayList';
 
 import AppLoader from '../../layout/components/AppLoader';
-import PageHeader from '../../layout/components/PageHeader';
 import CycleService from '../../services/cycle.service';
 import UnitConverter from '../../utils/unit.converter';
 
@@ -21,7 +20,6 @@ export class CycleView extends Component {
         super(props);
         this.state = {
             isLoading: true,
-            cycle:'',
         };
         if (this.props.match.params.id) {
             this.state.cycleId  = this.props.match.params.id;
@@ -77,7 +75,7 @@ export class CycleView extends Component {
         
         return (
             <React.Fragment>
-               {/* <div className="p-grid">
+                <div className="p-grid">
                     <div className="p-col-10 p-lg-10 p-md-10">
                         <h2>Cycle - Details </h2>
                     </div>
@@ -92,11 +90,7 @@ export class CycleView extends Component {
                         </Link>
                     </div>
                     }
-                </div> */ }
-                <PageHeader location={this.props.location} title={'Cycle - Details'} 
-                            actions={[ {icon:'fa-edit', title:'Click to Edit Cycle', props:{ pathname: `/cycle/edit/${this.state.cycle.name}`, 
-                                        state: {id: this.state.cycle?this.state.cycle.name:''}}},
-                                        {icon: 'fa-window-close',props:{ pathname: `/cycle`}}]}/>
+                </div>
                 { this.state.isLoading && <AppLoader /> }
                 { this.state.cycle &&
                     <React.Fragment>

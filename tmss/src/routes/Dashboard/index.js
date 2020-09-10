@@ -1,14 +1,16 @@
 import React, {Component} from 'react';
-import PageHeader from '../../layout/components/PageHeader';
 
 
 export class Dashboard extends Component {
 
+    constructor(props){
+        super(props)
+        console.log(this.props)
+    }
     render() {
-       
         return (
-            <PageHeader location={this.props.location} title={'Dashboard'} />
-        )
+            <h1>Dashboard</h1>
+        );
     }
 }
 

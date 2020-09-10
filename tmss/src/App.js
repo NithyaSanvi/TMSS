@@ -23,7 +23,6 @@ class App extends Component {
 	  layoutMode: 'static',
       currentMenu: '',
       currentPath: '/',
-      PageTitle:'',
 	  staticMenuInactive: false,
             overlayMenuActive: false,
             mobileMenuActive: false,
@@ -32,7 +31,6 @@ class App extends Component {
         this.onToggleMenu = this.onToggleMenu.bind(this);
         this.onSidebarClick = this.onSidebarClick.bind(this);
         this.onMenuItemClick = this.onMenuItemClick.bind(this);
-        this.setPageTitle = this.setPageTitle.bind(this);
   
       this.menu = [
       {label: 'Dashboard', icon: 'pi pi-fw pi-home', to:'/dashboard'},
@@ -92,12 +90,6 @@ class App extends Component {
 	isDesktop() {
         return window.innerWidth > 1024;
     }
-
-    setPageTitle(PageTitle) {
-        if (PageTitle !== this.state.PageTitle) {
-            this.setState({ PageTitle })
-        }
-    } 
 	
   render() {
 			const wrapperClass = classNames('layout-wrapper', {
@@ -107,8 +99,7 @@ class App extends Component {
             'layout-overlay-sidebar-active': this.state.overlayMenuActive && this.state.layoutMode === 'overlay',
             'layout-mobile-sidebar-active': this.state.mobileMenuActive			
 		});
-        const AppBreadCrumbWithRouter = withRouter(AppBreadcrumb);
-       
+		const AppBreadCrumbWithRouter = withRouter(AppBreadcrumb);
 		
      return (
       <React.Fragment>
@@ -117,10 +108,10 @@ class App extends Component {
            <div className={wrapperClass}>
             <AppTopbar onToggleMenu={this.onToggleMenu}></AppTopbar>
             <Router basename={ this.state.currentPath }>
-              <AppMenu model={this.menu} onMenuItemClick={this.onMenuItemClick} />
+			  <AppMenu model={this.menu} onMenuItemClick={this.onMenuItemClick} />
               <div className="layout-main">
-			  <AppBreadCrumbWithRouter setPageTitle={this.setPageTitle} />
-              <RoutedContent />
+			  <AppBreadCrumbWithRouter/>
+			  <RoutedContent />
               </div>
             </Router>
             <AppFooter></AppFooter>

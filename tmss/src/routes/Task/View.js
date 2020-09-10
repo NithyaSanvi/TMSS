@@ -1,13 +1,12 @@
 import React, {Component} from 'react';
 import {Link, Redirect} from 'react-router-dom'
 import moment from 'moment';
-import _ from 'lodash';
+
 import Jeditor from '../../components/JSONEditor/JEditor';
 
 import TaskService from '../../services/task.service';
 import { Chips } from 'primereact/chips';
 import AppLoader from '../../layout/components/AppLoader';
-import PageHeader from '../../layout/components/PageHeader';
 
 export class TaskView extends Component {
     DATE_FORMAT = 'YYYY-MMM-DD HH:mm:ss';
@@ -81,9 +80,8 @@ export class TaskView extends Component {
             .then((task) => {
                 if (task) {
                     TaskService.getSchedulingUnit(taskType, (taskType==='draft'?task.scheduling_unit_draft_id:task.scheduling_unit_blueprint_id))
-                        .then((schedulingUnit) => {console.log('schedulingUnit' ,schedulingUnit)
-                            let path = _.join(['/schedulingunit','view',((this.state.taskType === "draft")?'draft':'blueprint'),schedulingUnit.id], '/');
-                            this.setState({schedulingUnit: schedulingUnit, supath:path});
+                        .then((schedulingUnit) => {
+                            this.setState({schedulingUnit: schedulingUnit});
                         });
                         TaskService.getTaskTemplate(task.specifications_template_id)
                         .then((taskTemplate) => {
@@ -115,22 +113,6 @@ export class TaskView extends Component {
                                                     });
         }
 
-        let actions = [ ];
-        if (this.state.taskType === 'draft') {
-            actions = [{   icon: 'fa-edit',
-                            title:'Click to Edit Task', 
-                            props : { pathname:'/task/edit',
-                                        state: {taskId: this.state.task?this.state.task.id:''} 
-                                    } 
-                        },
-                        {   icon: 'fa-window-close',
-                            title:'Click to Close Task', 
-                            props : { pathname:'/task' }}];
-        }   else {
-            actions = [{    icon: 'fa-lock',
-                            title: 'Cannot edit blueprint'}];
-        }
-
         // Child component to render predecessors and successors list
         const TaskRelationList = ({ list }) => (
             <ul className="task-list">
@@ -144,7 +126,7 @@ export class TaskView extends Component {
           );
         return (
             <React.Fragment>
-                {/* <div className="p-grid">
+                <div className="p-grid">
                     <div className="p-col-10 p-lg-10 p-md-10">
                         <h2>Task - Details </h2>
                     </div>
@@ -165,9 +147,7 @@ export class TaskView extends Component {
                             <i className="fa fa-lock" style={{float:"right", marginTop: "10px"}}></i>
                         }
                     </div>
-                    </div> */}
-                <PageHeader location={this.props.location} title={'Task - View'} 
-                            actions={actions}/>
+                </div>
                 { this.state.isLoading? <AppLoader /> : this.state.task &&
                     <React.Fragment>
                         <div className="main-content">
@@ -201,7 +181,7 @@ export class TaskView extends Component {
                             {this.state.schedulingUnit &&
                             <>
                                 <label className="col-lg-2 col-md-2 col-sm-12">Scheduling Unit</label>
-                                <Link className="col-lg-4 col-md-4 col-sm-12" to={ { pathname:this.state.supath, state: {id: this.state.schedulingUnit.id}}}>{this.state.schedulingUnit?this.state.schedulingUnit.name:''}</Link>
+                                <Link className="col-lg-4 col-md-4 col-sm-12" to={ { pathname:'/schedulingunit/view', state: {id: this.state.schedulingUnit.id}}}>{this.state.schedulingUnit?this.state.schedulingUnit.name:''}</Link>
                             </>}
                         </div>
                         <div className="p-grid">
@@ -224,7 +204,7 @@ export class TaskView extends Component {
                                 }
                                 {this.state.taskType === 'blueprint' &&
                                     // <Link className="col-lg-4 col-md-4 col-sm-12" to={ { pathname:'/task/view', state: {id: this.state.task.draft_id, type: 'draft'}}}>{this.state.task.draftObject.name}</Link>
-                                    <Link to={ { pathname:`/task/view/draft/${this.state.task.draft_id}`}}>{this.state.task.draftObject.name}</Link>
+                                    <Link className="col-lg-4 col-md-4 col-sm-12" to={ { pathname:`/task/view/draft/${this.state.task.draft_id}`}}>{this.state.task.draftObject.name}</Link>
                                 }
                             </div>
                         </div>

@@ -4,13 +4,12 @@ import moment from 'moment';
 import _ from 'lodash';
 
 import { Chips } from 'primereact/chips';
-import { TieredMenu } from 'primereact/tieredmenu';
 
 import ResourceDisplayList from './ResourceDisplayList';
 
 import AppLoader from '../../layout/components/AppLoader';
-import PageHeader from '../../layout/components/PageHeader';
 import ProjectService from '../../services/project.service';
+import ProjectServices from '../../services/project.services';
 import UnitConverter from '../../utils/unit.converter';
 
 /**
@@ -21,8 +20,8 @@ export class ProjectView extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            ltaStorage: [],
             isLoading: true,
-            project:'',
         };
         if (this.props.match.params.id) {
             this.state.projectId  = this.props.match.params.id;
@@ -31,11 +30,6 @@ export class ProjectView extends Component {
         }
         this.state.redirect = this.state.projectId?"":'/project'         // If no project id is passed, redirect to Project list page
         this.resourceUnitMap = UnitConverter.resourceUnitMap;       // Resource unit conversion factor and constraints
-        this.optionsMenu = React.createRef();
-        this.menuOptions = [ {label:'Add Scheduling Unit', icon: "fa fa-", command: () => {this.selectOptionMenu('Add SU')}} ];
-        
-        this.showOptionMenu = this.showOptionMenu.bind(this);
-        this.selectOptionMenu = this.selectOptionMenu.bind(this);
     }
 
     componentDidMount() {
@@ -45,6 +39,17 @@ export class ProjectView extends Component {
         }   else {
             this.setState({redirect: "/not-found"});
         }
+        Promise.all([ProjectServices.getFileSystem(), ProjectServices.getCluster()]).then(response => {
+            const options = [];
+            response[0].map(i => {
+                const cluster =  response[1].filter(j => j.id === i.cluster_id && j.archive_site);
+                if (cluster.length) {
+                    i.label =`${cluster[0].name} - ${i.name}`
+                    options.push(i);
+                }
+            });
+            this.setState({archive_location: response[0], ltaStorage: options, cluster: response[1] });
+        });
     }
 
     /**
@@ -76,22 +81,6 @@ export class ProjectView extends Component {
         
     }
 
-    showOptionMenu(event) {
-        this.optionsMenu.toggle(event);
-    }
-    
-    selectOptionMenu(menuName) {
-        switch(menuName) {
-            case 'Add SU': {
-                this.setState({redirect: `/project/${this.state.project.name}/schedulingunit/create`});
-                break;
-            }
-            default: {
-                break;
-            }
-        }
-    }
-
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -99,7 +88,7 @@ export class ProjectView extends Component {
         
         return (
             <React.Fragment>
-                { /*}  <div className="p-grid">
+                <div className="p-grid">
                     <div className="p-col-10 p-lg-10 p-md-10">
                         <h2>Project - Details </h2>
                     </div>
@@ -110,27 +99,11 @@ export class ProjectView extends Component {
                         </Link>
                         <Link to={{ pathname: `/project/edit/${this.state.project.name}`, state: {id: this.state.project?this.state.project.name:''}}} title="Edit Project" 
                                  style={{float: "right"}}>
-                            <i className="fa fa-edit" style={{marginTop: "10px", marginLeft: "5px"}}></i>
+                            <i className="fa fa-edit" style={{marginTop: "10px"}}></i>
                         </Link>
-                        <TieredMenu model={this.menuOptions} popup ref={el => this.optionsMenu = el} />
-                        <button className="p-link" style={{float: "right"}}>
-                            <i className="fa fa-bars" label="Toggle Columns" style={{marginTop: "10px", marginLeft: "5px"}} 
-                                onMouseOver={(e) => this.optionsMenu.toggle(e)} />
-                        </button>
-                        
                     </div>
                     }
-                </div> */}
-                <TieredMenu model={this.menuOptions} popup ref={el => this.optionsMenu = el} />
-                <PageHeader location={this.props.location} title={'Project - View'} 
-                            actions={[  {icon:'fa-bars',title: '', type:'button',
-                                         actOn:'mouseOver', props : { callback: this.showOptionMenu}},
-                                        {icon: 'fa-edit',title:'Click to Edit Project', type:'link',
-                                         props : { pathname: `/project/edit/${this.state.project.name}`, 
-                                                   state: {id: this.state.project?this.state.project.name:''&& this.state.project}}},
-                                        {icon:'fa-window-close',title: 'Click to Close Project View', type:'link',
-                                         props : { pathname: `/project`}},
-                                        ]}/>
+                </div>
                 { this.state.isLoading && <AppLoader /> }
                 { this.state.project &&
                     <React.Fragment>
@@ -164,6 +137,12 @@ export class ProjectView extends Component {
                                 <Chips className="col-lg-4 col-md-4 col-sm-12 chips-readonly" disabled value={this.state.project.cycles_ids}></Chips>
                                 <label className="col-lg-2 col-md-2 col-sm-12">Project Rank</label>
                                 <span className="col-lg-4 col-md-4 col-sm-12">{this.state.project.priority_rank}</span>
+                            </div>
+                            <div className="p-grid">
+                                <label className="col-lg-2 col-md-2 col-sm-12">Archieve Location</label>
+                                <span className="col-lg-4 col-md-4 col-sm-12">{this.state.ltaStorage}</span>
+                                <label className="col-lg-2 col-md-2 col-sm-12">Archieve SubDirectory</label>
+                                <span className="col-lg-4 col-md-4 col-sm-12">{this.state.project.archive_subdirectory	}</span>
                             </div>
                             <div className="p-fluid">
                                 <div className="p-field p-grid">

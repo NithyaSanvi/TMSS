@@ -35,8 +35,7 @@ class SchedulingUnitList extends Component{
                 "Template":"filter-input-50",
                 "Duration":"filter-input-50",
                 "Type": "filter-input-75"
-            }],
-            defaultSortColumn: [{id: "Name", desc: false}],
+            }]
         }
     }
     
@@ -52,17 +51,17 @@ class SchedulingUnitList extends Component{
                 blueprintdata.map(blueP => { 
                     blueP.duration = moment.utc(blueP.duration*1000).format('HH:mm:ss'); 
                     blueP.type="Blueprint"; 
-                    blueP['actionpath'] = '/schedulingunit/view/blueprint/'+blueP.id;
+                    blueP['actionpath'] = '/task/view/type/id';
                     return blueP; 
                 });
                 output.push(...blueprintdata);
-                scheduleunit['actionpath']='/schedulingunit/view/draft/'+scheduleunit.id;
+                scheduleunit['actionpath']='/schedulingunit/view';
                 scheduleunit['type'] = 'Draft';
                 scheduleunit['duration'] = moment.utc(scheduleunit.duration*1000).format('HH:mm:ss');
                 output.push(scheduleunit);
             }
             this.setState({
-                scheduleunit: output, isLoading: false
+                scheduleunit: output, isLoading:false
             });
         })
     }
@@ -94,7 +93,6 @@ class SchedulingUnitList extends Component{
                         defaultcolumns={this.state.defaultcolumns} 
                         optionalcolumns={this.state.optionalcolumns}
                         columnclassname={this.state.columnclassname}
-                        defaultSortColumn={this.state.defaultSortColumn}
                         showaction="true"
                         keyaccessor="id"
                         paths={this.state.paths}

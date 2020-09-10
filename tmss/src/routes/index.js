@@ -10,121 +10,82 @@ import {ProjectList, ProjectCreate, ProjectView, ProjectEdit} from './Project';
 import {Dashboard} from './Dashboard';
 import {Scheduling} from './Scheduling';
 import {TaskEdit, TaskView} from './Task';
-import ViewSchedulingUnit from './Scheduling/ViewSchedulingUnit';
-import SchedulingUnitCreate from './Scheduling/create';
-import EditSchedulingUnit from './Scheduling/edit';
+import ViewSchedulingUnit from './Scheduling/ViewSchedulingUnit'
 import { CycleList, CycleCreate, CycleView, CycleEdit } from './Cycle';
 
 export const routes = [
     {
         path: "/not-found",
-        component: NotFound,
-        
+        component: NotFound
     },{
         path: "/dashboard",
         component: Dashboard,
-        name: 'Dashboard',
-        title: 'Dashboard'
+        name: 'Dashboard'
     },{
         path: "/schedulingunit",
         component: Scheduling,
-        name: 'Scheduling Unit',
-        title: 'Scheduling Unit - List'
-    },{
-        path: "/schedulingunit/create",
-        component: SchedulingUnitCreate,
-        name: 'Scheduling Unit Add'
+        name: 'Scheduling Unit'
     },{
         path: "/task",
         component: TaskView,
-        name: 'Task',
-        title: 'Task-View'
+        name: 'Task'
     },{
         path: "/task/view",
         component: TaskView,
-        name: 'Task',
-        title: 'Task View'
+        name: 'Task'
     },{
         path: "/task/view/:type/:id",
         component: TaskView,
-        name: 'Task Details',
-        title: 'Task Details'
+        name: 'Task Details'
     },{
         path: "/task/edit",
         component: TaskEdit,
-        name: 'Task Edit',
-        title: 'Task-Edit'
+        name: 'Task Edit'
     },{
         path: "/schedulingunit/view",
-        component: ViewSchedulingUnit,
-        name: 'Scheduling View',
-        title: 'Scheduling Unit - Details'
-    },{
-        path: "/schedulingunit/edit/:id",
-        component: EditSchedulingUnit,
-        name: 'Scheduling Edit',
-        title: 'Scheduling Unit - Edit'
-    },{
-        path: "/schedulingunit/view/:type/:id",
         component: ViewSchedulingUnit,
         name: 'Scheduling View'
     },{
         path: "/project",
         component: ProjectList,
-        name: 'Project List',
-        title: 'Project - List'
+        name: 'Project List'
     },{
         path: "/project/create",
         component: ProjectCreate,
-        name: 'Project Add',
-        title: 'Project - Add'
+        name: 'Project Add'
     },{
         path: "/project/view",
         component: ProjectView,
-        name: 'Project View',
-        title: 'Project - Details '
+        name: 'Project View'
     },{
         path: "/project/view/:id",
         component: ProjectView,
-        name: 'Project View',
-        title: 'Project - View'
-    },
-    {
+        name: 'Project View'
+    },{
         path: "/project/edit/:id",
         component: ProjectEdit,
-        name: 'Project Edit',
-        title: 'Project Edit'
-    },{
-        path: "/project/:project/schedulingunit/create",
-        component: SchedulingUnitCreate,
-        name: 'Scheduling Unit Add',
-        title: 'Scheduling Unit - Add'
+        name: 'Project Edit'
     },{
         path: "/cycle/edit/:id",
         component: CycleEdit,
-        name: 'Cycle Edit',
-        title:'Cycle-Edit'
+        name: 'Cycle Edit'
     },{
         path: "/cycle/view",
         component: CycleView,
-        name: 'Cycle View',
-        title:'Cycle-View'
+        name: 'Cycle View'
     },{
         path: "/cycle/view/:id",
         component: CycleView,
-        name: 'Cycle View',
-        title:'Cycle-View'
+        name: 'Cycle View'
     }, {
         path: "/cycle/create",
         component: CycleCreate,
-        name: 'Cycle Add',
-        title:'Cycle-Add'
+        name: 'Cycle Add'
     },
     {
         path: "/cycle",
         component: CycleList,
-        name: 'Cycle List',
-        title:'Cycle-List'
+        name: 'Cycle List'
     },
 ];
 
