@@ -140,7 +140,7 @@ export class ProjectView extends Component {
                             </div>
                             <div className="p-grid">
                                 <label className="col-lg-2 col-md-2 col-sm-12">Archieve Location</label>
-                                <span className="col-lg-4 col-md-4 col-sm-12">{this.state.ltaStorage}</span>
+                                <span className="col-lg-4 col-md-4 col-sm-12">{this.state.project.ltaStorage}</span>
                                 <label className="col-lg-2 col-md-2 col-sm-12">Archieve SubDirectory</label>
                                 <span className="col-lg-4 col-md-4 col-sm-12">{this.state.project.archive_subdirectory	}</span>
                             </div>
