@@ -78,7 +78,7 @@ export class EditSchedulingUnit extends Component {
         let schema = { type: 'object', additionalProperties: false, 
                         properties: {}, definitions:{}
                      };
-
+        observStrategy.template.tasks['Target Observation'].specifications_doc = this.state.taskDraft.specifications_doc;
         for (const taskName in tasks)  {
             const task = tasks[taskName];
             //Resolve task from the strategy template
