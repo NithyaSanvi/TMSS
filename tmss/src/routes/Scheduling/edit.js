@@ -37,7 +37,8 @@ export class EditSchedulingUnit extends Component {
             observStrategy: {},                     // Selected strategy to create SU
             paramsSchema: null,                     // JSON Schema to be generated from strategy template to pass to JSOn editor
             validEditor: false,                     // For JSON editor validation
-            validFields: {},                        // For Form Validation
+            validFields: {},  
+            taskDraft: {}                      // For Form Validation
         }
         this.projects = [];                         // All projects to load project dropdown
         this.schedulingSets = [];                   // All scheduling sets to be filtered for project
@@ -77,7 +78,7 @@ export class EditSchedulingUnit extends Component {
         let schema = { type: 'object', additionalProperties: false, 
                         properties: {}, definitions:{}
                      };
-
+        observStrategy.template.tasks['Target Observation'].specifications_doc = this.state.taskDraft.specifications_doc;
         for (const taskName in tasks)  {
             const task = tasks[taskName];
             //Resolve task from the strategy template
@@ -128,13 +129,15 @@ export class EditSchedulingUnit extends Component {
                             ScheduleService.getSchedulingSets(),
                             ScheduleService.getObservationStrategies(),
                             TaskService.getTaskTemplates(),
-                            ScheduleService.getSchedulingUnitDraftById(this.props.match.params.id)
+                            ScheduleService.getSchedulingUnitDraftById(this.props.match.params.id),
+                            ScheduleService.getTasksDraftBySchedulingUnitId(this.props.match.params.id)
                         ];
         Promise.all(promises).then(responses => {
             this.projects = responses[0];
             this.schedulingSets = responses[1];
             this.observStrategies = responses[2];
             this.taskTemplates = responses[3];
+            this.setState({ taskDraft: responses[5].data.results.find(task => task.name === 'Target Observation') });
             responses[4].project = this.schedulingSets.find(i => i.id === responses[4].scheduling_set_id).project_id;
             this.setState({ schedulingUnit: responses[4] });
             this.changeStrategy(responses[4].observation_strategy_template_id);
@@ -243,11 +246,14 @@ export class EditSchedulingUnit extends Component {
             $refs.set(observStrategy.template.parameters[index]['refs'][0], this.state.paramsOutput['param_' + index]);
         });
         
-        const schedulingUnit = await ScheduleService.updateDraftFromObservStrategy(observStrategy, this.state.schedulingUnit);
+        const schedulingUnit = await ScheduleService.updateDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, this.state.taskDraft);
         if (schedulingUnit) {
             // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks created successfully!'});
             const dialog = {header: 'Success', detail: 'Scheduling Unit and Tasks are Edited successfully.'};
             this.setState({schedulingUnit: schedulingUnit, dialogVisible: true, dialog: dialog})
+            this.props.history.push({
+                pathname: `/schedulingunit/view/draft/${this.props.match.params.id}`,
+            });
         } {/*  else {
             this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to save Scheduling Unit/Tasks'});
         } */}
@@ -356,7 +362,7 @@ export class EditSchedulingUnit extends Component {
                     <div className="p-grid p-justify-start">
                         <div className="p-col-1">
                             <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.saveSchedulingUnit} 
-                                    disabled={!this.state.validEditor || !this.state.validForm} data-testid="save-btn" />
+                                    isabled={!this.state.validEditor || !this.state.validForm} data-testid="save-btn" />
                         </div>
                         <div className="p-col-1">
                             <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.cancelCreate}  />
