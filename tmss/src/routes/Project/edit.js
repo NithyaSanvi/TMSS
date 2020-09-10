@@ -494,9 +494,9 @@ export class ProjectEdit extends Component {
                         <div className="p-field p-grid">
                             <label htmlFor="ltaStorage" className="col-lg-2 col-md-2 col-sm-12">LTA Storage Location</label>
                                 <div className="col-lg-3 col-md-3 col-sm-12" >
-                                    <Dropdown inputId="ltaStore" optionValue="url" 
+                                    <Dropdown inputId="ltaStore" optionValue="url" disabled
                                             tooltip="LTA Storage" tooltipOptions={this.tooltipOptions}
-                                            value={this.state.project.ltaStorage}
+                                            value={this.state.project.archive_location}
                                             options={this.state.ltaStorage}
                                             onChange={(e) => {this.setProjectParams('ltaStorage', e.value)}} 
                                             placeholder="Select LTA Storage" />

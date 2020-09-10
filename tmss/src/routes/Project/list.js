@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import ProjectService from '../../services/project.service';
+import ProjectServices from '../../services/project.services';
 import ViewTable from '../../components/ViewTable';
 import { Link } from 'react-router-dom/cjs/react-router-dom.min';
 import AppLoader from '../../layout/components/AppLoader';
@@ -17,7 +18,7 @@ export class ProjectList extends Component{
                 "status":"Status" , 
                 "project_category_value":"Category of Project",
                 "description":"Description",
-                "archive_location":"Archieve Location",
+                "archive_location_label":"Archieve Location",
                 "archive_subdirectory":"Archieve Subdirectory"
             }],
             optionalcolumns:  [{
@@ -60,17 +61,34 @@ export class ProjectList extends Component{
     componentDidMount(){  
         // for Unit test, Table data
         this.unittestDataProvider();
-        ProjectService.getProjectList()
-        .then(async (projects) => {
-             await ProjectService.getUpdatedProjectQuota(projects)
-             .then( async projlist => {
-                this.setState({
-                    projectlist: projlist,
-                    isprocessed: true,
-                    isLoading: false
+        Promise.all([ProjectServices.getFileSystem(), ProjectServices.getCluster()]).then(response => {
+            const options = {};
+            response[0].map(i => {
+                const cluster =  response[1].filter(j => j.id === i.cluster_id && j.archive_site);
+                if (cluster.length) {
+                    i.label =`${cluster[0].name} - ${i.name}`
+                    options[i.url] = i;
+                }
+            });
+            ProjectService.getProjectList()
+            .then(async (projects) => {
+                await ProjectService.getUpdatedProjectQuota(projects)
+                .then( async projlist => {
+                    let list = projlist.map(i => {
+                        i.archive_location_label = (options[i.archive_location] || {}).label;
+                        return i
+                    })
+                    this.setState({
+                        projectlist: list,
+                        isprocessed: true,
+                        isLoading: false
+                    })
                 })
-            })
+            });
+            this.setState({ltaStorage: options });
         });
+        
+            
     }
    
     render(){

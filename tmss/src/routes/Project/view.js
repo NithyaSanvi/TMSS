@@ -40,12 +40,11 @@ export class ProjectView extends Component {
             this.setState({redirect: "/not-found"});
         }
         Promise.all([ProjectServices.getFileSystem(), ProjectServices.getCluster()]).then(response => {
-            const options = [];
+            const options = {};
             response[0].map(i => {
                 const cluster =  response[1].filter(j => j.id === i.cluster_id && j.archive_site);
                 if (cluster.length) {
-                    i.label =`${cluster[0].name} - ${i.name}`
-                    options.push(i);
+                    options[i.url] = `${cluster[0].name} - ${i.name}`
                 }
             });
             this.setState({archive_location: response[0], ltaStorage: options, cluster: response[1] });
@@ -140,7 +139,7 @@ export class ProjectView extends Component {
                             </div>
                             <div className="p-grid">
                                 <label className="col-lg-2 col-md-2 col-sm-12">Archieve Location</label>
-                                <span className="col-lg-4 col-md-4 col-sm-12">{this.state.project.ltaStorage}</span>
+                                <span className="col-lg-4 col-md-4 col-sm-12">{this.state.ltaStorage[this.state.project.archive_location]}</span>
                                 <label className="col-lg-2 col-md-2 col-sm-12">Archieve SubDirectory</label>
                                 <span className="col-lg-4 col-md-4 col-sm-12">{this.state.project.archive_subdirectory	}</span>
                             </div>

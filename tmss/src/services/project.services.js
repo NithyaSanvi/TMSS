@@ -87,7 +87,7 @@ const ProjectServices = {
                 },
                 {
                   "id": 7,
-                  "url": "http://localhost:3000/api/filesystem/6",
+                  "url": "http://localhost:3000/api/filesystem/1",
                   "capacity": 360000000000000,
                   "cluster": "http://localhost:3000/api/cluster/3",
                   "cluster_id": 3,
@@ -99,7 +99,7 @@ const ProjectServices = {
                 },
                 {
                   "id": 8,
-                  "url": "http://localhost:3000/api/filesystem/6",
+                  "url": "http://localhost:3000/api/filesystem/1",
                   "capacity": 360000000000000,
                   "cluster": "http://localhost:3000/api/cluster/3",
                   "cluster_id": 3,
