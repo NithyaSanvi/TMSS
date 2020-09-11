@@ -211,11 +211,11 @@ const ScheduleService = {
         };
     },
     
-    updateSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit,task) {
+    updateSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit,task, taskName) {
         try {
             delete schedulingUnit['duration'];
             schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
-            task.specifications_doc = observStrategy.template.tasks['Target Observation'].specifications_doc;
+            task.specifications_doc = observStrategy.template.tasks[taskName].specifications_doc;
             delete task['duration'];
             delete task['relative_start_time'];
             delete task['relative_stop_time'];

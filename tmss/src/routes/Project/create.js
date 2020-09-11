@@ -451,11 +451,6 @@ export class ProjectCreate extends Component {
                                     {this.state.errors.priority_rank ? this.state.errors.priority_rank : ""}
                                 </label>
                             </div>
-<<<<<<< HEAD
-                        </div>
-                        
-                        {this.defaultResourcesEnabled && this.state.resourceList &&
-=======
                             </div>
                             <div className="p-field p-grid">
                             <label htmlFor="ltaStorage" className="col-lg-2 col-md-2 col-sm-12">LTA Storage Location</label>
@@ -483,7 +478,6 @@ export class ProjectCreate extends Component {
                                 </div>
                             </div>
                             {this.defaultResourcesEnabled && this.state.resourceList &&
->>>>>>> 1b7c98598ec7a517cf081d7e79be678aeca8cd9f
                             <div className="p-fluid">
                                 <div className="p-field p-grid">
                                     <div className="col-lg-2 col-md-2 col-sm-112">

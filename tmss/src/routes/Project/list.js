@@ -18,13 +18,9 @@ export class ProjectList extends Component{
                 "name":"Name / Project Code",
                 "status":"Status" , 
                 "project_category_value":"Category of Project",
-<<<<<<< HEAD
-                "description":"Description"
-=======
                 "description":"Description",
                 "archive_location_label":"Archieve Location",
                 "archive_subdirectory":"Archieve Subdirectory"
->>>>>>> 1b7c98598ec7a517cf081d7e79be678aeca8cd9f
             }],
             optionalcolumns:  [{
                 "priority_rank":"Project Priority", 

@@ -70,15 +70,19 @@ export class EditSchedulingUnit extends Component {
      * @param {number} strategyId 
      */
     async changeStrategy (strategyId) {
+        let taskDraftName;
         const observStrategy = _.find(this.observStrategies, {'id': strategyId});
         const tasks = observStrategy.template.tasks;    
         let paramsOutput = {};
         let schema = { type: 'object', additionalProperties: false, 
                         properties: {}, definitions:{}
                      };
-        observStrategy.template.tasks['Target Observation'].specifications_doc = this.state.taskDraft.specifications_doc;
         for (const taskName in tasks)  {
             const task = tasks[taskName];
+            const taskDraft = this.state.taskDrafts.find(taskD => taskD.name === taskName);
+            if (taskDraft) {
+                task.specifications_doc = taskDraft.specifications_doc;
+            }
             //Resolve task from the strategy template
             const $taskRefs = await $RefParser.resolve(task);
 
@@ -88,6 +92,7 @@ export class EditSchedulingUnit extends Component {
             schema['$schema'] = taskTemplate.schema['$schema'];
             observStrategy.template.parameters.forEach(async(param, index) => {
                 if (param.refs[0].indexOf(`/tasks/${taskName}`) > 0) {
+                    taskDraftName = taskName;
                     // Resolve the identified template
                     const $templateRefs = await $RefParser.resolve(taskTemplate);
                     let property = { };
@@ -114,7 +119,7 @@ export class EditSchedulingUnit extends Component {
                 }
             });
         }
-        this.setState({observStrategy: observStrategy, paramsSchema: schema, paramsOutput: paramsOutput});
+        this.setState({observStrategy: observStrategy, paramsSchema: schema, paramsOutput: paramsOutput, taskDraft: taskDraftName});
 
         // Function called to clear the JSON Editor fields and reload with new schema
         if (this.state.editorFunction) {
@@ -135,7 +140,7 @@ export class EditSchedulingUnit extends Component {
             this.schedulingSets = responses[1];
             this.observStrategies = responses[2];
             this.taskTemplates = responses[3];
-            this.setState({ taskDraft: responses[5].data.results.find(task => task.name === 'Target Observation') });
+            this.setState({ taskDrafts: responses[5].data.results });
             responses[4].project = this.schedulingSets.find(i => i.id === responses[4].scheduling_set_id).project_id;
             this.setState({ schedulingUnit: responses[4] });
             this.changeStrategy(responses[4].observation_strategy_template_id);
@@ -243,8 +248,8 @@ export class EditSchedulingUnit extends Component {
         observStrategy.template.parameters.forEach(async(param, index) => {
             $refs.set(observStrategy.template.parameters[index]['refs'][0], this.state.paramsOutput['param_' + index]);
         });
-        
-        const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, this.state.taskDraft);
+        const task = this.state.taskDrafts.find(draft => draft.name === this.state.taskDraft);
+        const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, task, this.state.taskDraft);
         if (schedulingUnit) {
            this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks edited successfully!'});
             this.props.history.push({

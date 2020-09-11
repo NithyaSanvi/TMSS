@@ -468,8 +468,6 @@ export class ProjectEdit extends Component {
                                 </label>
                             </div>
                         </div>
-<<<<<<< HEAD
-=======
                         <div className="p-field p-grid">
                             <label htmlFor="ltaStorage" className="col-lg-2 col-md-2 col-sm-12">LTA Storage Location</label>
                                 <div className="col-lg-3 col-md-3 col-sm-12" >
@@ -494,7 +492,6 @@ export class ProjectEdit extends Component {
                                     </label>
                            </div>
                         </div>
->>>>>>> 1b7c98598ec7a517cf081d7e79be678aeca8cd9f
                         {this.state.resourceList &&
                             <div className="p-fluid">
                                 <div className="p-field p-grid">
