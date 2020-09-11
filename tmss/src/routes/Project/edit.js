@@ -381,8 +381,8 @@ export class ProjectEdit extends Component {
                                 <InputText className={this.state.errors.name ?'input-error':''} id="projectName" data-testid="name"
                                             tooltip="Enter name of the project" tooltipOptions={this.tooltipOptions} maxLength="128"
                                             value={this.state.project.name} 
-                                            onChange={(e) => this.setProjectParams('name', e.target.value)}
-                                            onBlur={(e) => this.setProjectParams('name', e.target.value)}/>
+                                            onChange={(e) => this.setProjectParams('name', e.target.value, 'PROJECT_NAME')}
+                                            onBlur={(e) => this.setProjectParams('name', e.target.value, 'PROJECT_NAME')}/>
                                 <label className={this.state.errors.name?"error":"info"}>
                                     {this.state.errors.name ? this.state.errors.name : "Max 128 characters"}
                                 </label>
@@ -468,6 +468,33 @@ export class ProjectEdit extends Component {
                                 </label>
                             </div>
                         </div>
+<<<<<<< HEAD
+=======
+                        <div className="p-field p-grid">
+                            <label htmlFor="ltaStorage" className="col-lg-2 col-md-2 col-sm-12">LTA Storage Location</label>
+                                <div className="col-lg-3 col-md-3 col-sm-12" >
+                                    <Dropdown inputId="ltaStore" optionValue="url" disabled
+                                            tooltip="LTA Storage" tooltipOptions={this.tooltipOptions}
+                                            value={this.state.project.archive_location}
+                                            options={this.state.ltaStorage}
+                                            onChange={(e) => {this.setProjectParams('ltaStorage', e.value)}} 
+                                            placeholder="Select LTA Storage" />
+                                </div>
+
+                            <div className="col-lg-1 col-md-1 col-sm-12"></div>
+                            <label htmlFor="ltastoragepath" className="col-lg-2 col-md-2 col-sm-12">LTA Storage Path </label>
+                                <div className="col-lg-3 col-md-3 col-sm-12">
+                                    <InputText disabled={!this.state.ltaStorageEnable} className={this.state.errors.archive_subdirectory ?'input-error':''} id="StoragePath" data-testid="name" 
+                                                tooltip="Enter storage relative path" tooltipOptions={this.tooltipOptions} maxLength="128"
+                                                value={this.state.project.archive_subdirectory} 
+                                                onChange={(e) => this.setProjectParams('archive_subdirectory', e.target.value, 'SUB-DIRECTORY')}
+                                                onBlur={(e) => this.setProjectParams('archive_subdirectory', e.target.value,'SUB-DIRECTORY')}/>
+                                    <label className={this.state.errors.archieve_subdirectory?"error":"info"}>
+                                        {this.state.errors.archieve_subdirectory? this.state.archieve_subdirectory : "Max 128 characters"}
+                                    </label>
+                           </div>
+                        </div>
+>>>>>>> 1b7c98598ec7a517cf081d7e79be678aeca8cd9f
                         {this.state.resourceList &&
                             <div className="p-fluid">
                                 <div className="p-field p-grid">

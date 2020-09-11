@@ -451,9 +451,39 @@ export class ProjectCreate extends Component {
                                     {this.state.errors.priority_rank ? this.state.errors.priority_rank : ""}
                                 </label>
                             </div>
+<<<<<<< HEAD
                         </div>
                         
                         {this.defaultResourcesEnabled && this.state.resourceList &&
+=======
+                            </div>
+                            <div className="p-field p-grid">
+                            <label htmlFor="ltaStorage" className="col-lg-2 col-md-2 col-sm-12">LTA Storage Location</label>
+                                <div className="col-lg-3 col-md-3 col-sm-12" >
+                                    <Dropdown inputId="ltaStore"
+                                            optionValue="url" // Need to pass key name from object whatever we need to pass to api
+                                            tooltip="LTA Storage" tooltipOptions={this.tooltipOptions}
+                                            value={this.state.project.archive_location}
+                                            options={this.state.ltaStorage}
+                                            onChange={(e) => this.setProjectParams('archive_location', e.target.value)}
+                                            placeholder="Select LTA Storage" />
+                                </div>
+                            
+                            <div className="col-lg-1 col-md-1 col-sm-12"></div>
+                            <label htmlFor="ltastoragepath" className="col-lg-2 col-md-2 col-sm-12">LTA Storage Path </label>
+                                <div className="col-lg-3 col-md-3 col-sm-12">
+                                    <InputText className={this.state.errors.archive_subdirectory ?'input-error':''} id="StoragePath" data-testid="name" 
+                                                tooltip="Enter storage relative path" tooltipOptions={this.tooltipOptions} maxLength="128"
+                                                value={this.state.project.archieve_subdirectory} 
+                                                onChange={(e) => this.setProjectParams('archive_subdirectory', e.target.value, 'SUB-DIRECTORY')}
+                                                onBlur={(e) => this.setProjectParams('archive_subdirectory', e.target.value,'SUB-DIRECTORY')}/>
+                                    <label className={this.state.errors.archieve_subdirectory?"error":"info"}>
+                                        {this.state.errors.archieve_subdirectory? this.state.archieve_subdirectory : "Max 128 characters"}
+                                    </label>
+                                </div>
+                            </div>
+                            {this.defaultResourcesEnabled && this.state.resourceList &&
+>>>>>>> 1b7c98598ec7a517cf081d7e79be678aeca8cd9f
                             <div className="p-fluid">
                                 <div className="p-field p-grid">
                                     <div className="col-lg-2 col-md-2 col-sm-112">

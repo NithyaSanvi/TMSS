@@ -45,6 +45,19 @@ export class ProjectView extends Component {
         }   else {
             this.setState({redirect: "/not-found"});
         }
+<<<<<<< HEAD
+=======
+        Promise.all([ProjectServices.getFileSystem(), ProjectServices.getCluster()]).then(response => {
+            const options = {};
+            response[0].map(i => {
+                const cluster =  response[1].filter(j => j.id === i.cluster_id && j.archive_site);
+                if (cluster.length) {
+                    options[i.url] = `${cluster[0].name} - ${i.name}`
+                }
+            });
+            this.setState({archive_location: response[0], ltaStorage: options, cluster: response[1] });
+        });
+>>>>>>> 1b7c98598ec7a517cf081d7e79be678aeca8cd9f
     }
 
     /**
@@ -165,6 +178,15 @@ export class ProjectView extends Component {
                                 <label className="col-lg-2 col-md-2 col-sm-12">Project Rank</label>
                                 <span className="col-lg-4 col-md-4 col-sm-12">{this.state.project.priority_rank}</span>
                             </div>
+<<<<<<< HEAD
+=======
+                            <div className="p-grid">
+                                <label className="col-lg-2 col-md-2 col-sm-12">Archieve Location</label>
+                                <span className="col-lg-4 col-md-4 col-sm-12">{this.state.ltaStorage[this.state.project.archive_location]}</span>
+                                <label className="col-lg-2 col-md-2 col-sm-12">Archieve SubDirectory</label>
+                                <span className="col-lg-4 col-md-4 col-sm-12">{this.state.project.archive_subdirectory	}</span>
+                            </div>
+>>>>>>> 1b7c98598ec7a517cf081d7e79be678aeca8cd9f
                             <div className="p-fluid">
                                 <div className="p-field p-grid">
                                     <div className="col-lg-3 col-md-3 col-sm-12">
