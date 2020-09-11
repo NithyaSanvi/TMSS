@@ -25,24 +25,6 @@ const ProjectService = {
           console.error(error);
         }
     },
-    getFileSystem: async function(){
-      try {
-        const url = `/api/filesystem/`;
-        const response = await axios.get(url);
-        return response.data.results;
-      } catch (error) {
-        console.error(error);
-      } 
-      },
-    getCluster:async function(){
-     try {
-        const url = `/api/cluster/`;
-        const response = await axios.get(url);
-        return response.data.results;
-      } catch (error) {
-        console.error(error);
-      } 
-    },
     getResources: async function() {
         try {
             // const url = `/api/resource_type/?ordering=name`;

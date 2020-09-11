@@ -66,7 +66,7 @@ it("renders Project details if found", async () => {
     expect(content.queryByText("50 Hours")).not.toBe(null);
     expect(content.queryByText("6 TB")).not.toBe(null);
     expect(content.queryByText("7 Numbers")).not.toBe(null);
-    expect(content.queryByText("8")).not.toBe(null);
+    expect(content.queryByText("9 Hours")).not.toBe(null);
 
 });
 

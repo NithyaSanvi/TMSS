@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import SchedulingUnitList from './SchedulingUnitList';
+import PageHeader from '../../layout/components/PageHeader';
 
 export class Scheduling extends Component {
     constructor(props){
@@ -14,7 +15,9 @@ export class Scheduling extends Component {
     render() {
 		   return (
             <>
-                <h2>Scheduling Unit - List</h2>
+                <PageHeader location={this.props.location} title={'Scheduling Unit - List'}
+                            actions={[{icon: 'fa fa-plus-square', title: 'Add New Scheduling Unit', 
+                                        props: {pathname: '/schedulingunit/create'}}]} />
                 {this.state.scheduleunit && 
 				<SchedulingUnitList /> }
 		    </>

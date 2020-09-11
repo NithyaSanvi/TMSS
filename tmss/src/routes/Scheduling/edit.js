@@ -19,34 +19,32 @@ import ScheduleService from '../../services/schedule.service';
 import TaskService from '../../services/task.service';
 import UIConstants from '../../utils/ui.constants';
 
-/**
- * Component to create a new SchedulingUnit from Observation strategy template
- */
+
 export class EditSchedulingUnit extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            isLoading: true,                        // Flag for loading spinner
-            dialog: { header: '', detail: ''},      // Dialog properties
-            redirect: null,                         // URL to redirect
-            errors: [],                             // Form Validation errors
-            schedulingSets: [],                     // Scheduling set of the selected project
+            isLoading: true,                        
+            dialog: { header: '', detail: ''},      
+            redirect: null,                         
+            errors: [],                             
+            schedulingSets: [],                     
             schedulingUnit: {
             },
-            projectDisabled: (props.match?(props.match.params.project? true:false):false),      // Disable project selection if 
-            observStrategy: {},                     // Selected strategy to create SU
-            paramsSchema: null,                     // JSON Schema to be generated from strategy template to pass to JSOn editor
-            validEditor: false,                     // For JSON editor validation
+            projectDisabled: (props.match?(props.match.params.project? true:false):false),      
+            observStrategy: {},                     
+            paramsSchema: null,                     
+            validEditor: false,                     
             validFields: {},  
-            taskDraft: {}                      // For Form Validation
+            taskDraft: {}                     
         }
-        this.projects = [];                         // All projects to load project dropdown
-        this.schedulingSets = [];                   // All scheduling sets to be filtered for project
-        this.observStrategies = [];                 // All Observing strategy templates
-        this.taskTemplates = [];                    // All task templates to be filtered based on tasks in selected strategy template
+        this.projects = [];                         
+        this.schedulingSets = [];                   
+        this.observStrategies = [];                 
+        this.taskTemplates = [];                    
         this.tooltipOptions = UIConstants.tooltipOptions;
-        this.nameInput = React.createRef();         // Ref to Name field for auto focus
-        this.formRules = {                          // Form validation rules
+        this.nameInput = React.createRef();         
+        this.formRules = {                          
             name: {required: true, message: "Name can not be empty"},
             description: {required: true, message: "Description can not be empty"},
             project: {required: true, message: "Select project to get Scheduling Sets"},
@@ -246,17 +244,15 @@ export class EditSchedulingUnit extends Component {
             $refs.set(observStrategy.template.parameters[index]['refs'][0], this.state.paramsOutput['param_' + index]);
         });
         
-        const schedulingUnit = await ScheduleService.updateDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, this.state.taskDraft);
+        const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, this.state.taskDraft);
         if (schedulingUnit) {
-            // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks created successfully!'});
-            const dialog = {header: 'Success', detail: 'Scheduling Unit and Tasks are Edited successfully.'};
-            this.setState({schedulingUnit: schedulingUnit, dialogVisible: true, dialog: dialog})
+           this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks edited successfully!'});
             this.props.history.push({
                 pathname: `/schedulingunit/view/draft/${this.props.match.params.id}`,
-            });
-        } {/*  else {
-            this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to save Scheduling Unit/Tasks'});
-        } */}
+            }); 
+        } else {
+            this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to update Scheduling Unit/Tasks'});
+        } 
     }
 
     /**
@@ -284,8 +280,9 @@ export class EditSchedulingUnit extends Component {
         }
         return (
             <React.Fragment>
+                <Growl ref={el => (this.growl = el)} />
                 <PageHeader location={this.props.location} title={'Scheduling Unit - Edit'} 
-                            actions={[{icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', props : { pathname: '/schedulingunit/view'}}]}/>
+                            actions={[{icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', props : { pathname: `/schedulingunit/view/draft/${this.props.match.params.id}`}}]}/>
                 { this.state.isLoading ? <AppLoader /> :
                 <>
                 <div>

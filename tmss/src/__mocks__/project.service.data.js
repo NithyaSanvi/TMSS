@@ -1,5 +1,4 @@
 
-
 const ProjectServiceMock= {
     project_categories: [{url: "Regular", value: 'Regular'}, {url: "User Shared Support", value: 'User Shared Support'}],
     period_categories: [{url: "Single Cycle", value: 'Single Cycle'}, {url: "Long Term", value: 'Long Term'}],
@@ -8,180 +7,90 @@ const ProjectServiceMock= {
         "url": "http://localhost:3000/api/resource_type/LOFAR%20Observing%20Time/",
         "created_at": "2020-07-29T07:31:21.708296",
         "description": "LOFAR Observing Time",
-        "resource_unit": "http://localhost:3000/api/resource_unit/second/",
-        "resource_unit_id": "second",
         "tags": [
         ],
         "updated_at": "2020-07-29T07:31:21.708316",
-        "resourceUnit": {
-            "name": "second",
-            "url": "http://localhost:3000/api/resource_unit/second/",
-            "created_at": "2020-07-29T07:31:21.070088",
-            "description": "Unit of time or duration",
-            "tags": [
-            ],
-            "updated_at": "2020-07-29T07:31:21.070114"
-        }
+        "quantity_value": "time"
     },
     {
         "name": "LOFAR Observing Time prio A",
         "url": "http://localhost:3000/api/resource_type/LOFAR%20Observing%20Time%20prio%20A/",
         "created_at": "2020-07-29T07:31:21.827537",
         "description": "LOFAR Observing Time prio A",
-        "resource_unit": "http://localhost:3000/api/resource_unit/second/",
-        "resource_unit_id": "second",
         "tags": [
         ],
         "updated_at": "2020-07-29T07:31:21.827675",
-        "resourceUnit": {
-            "name": "second",
-            "url": "http://localhost:3000/api/resource_unit/second/",
-            "created_at": "2020-07-29T07:31:21.070088",
-            "description": "Unit of time or duration",
-            "tags": [
-            ],
-            "updated_at": "2020-07-29T07:31:21.070114"
-        }
+        "quantity_value": "time"
     },
     {
         "name": "LOFAR Observing Time prio B",
         "url": "http://localhost:3000/api/resource_type/LOFAR%20Observing%20Time%20prio%20B/",
         "created_at": "2020-07-29T07:31:21.950948",
         "description": "LOFAR Observing Time prio B",
-        "resource_unit": "http://localhost:3000/api/resource_unit/second/",
-        "resource_unit_id": "second",
         "tags": [
         ],
         "updated_at": "2020-07-29T07:31:21.950968",
-        "resourceUnit": {
-            "name": "second",
-            "url": "http://localhost:3000/api/resource_unit/second/",
-            "created_at": "2020-07-29T07:31:21.070088",
-            "description": "Unit of time or duration",
-            "tags": [
-            ],
-            "updated_at": "2020-07-29T07:31:21.070114"
-        }
+        "quantity_value": "time"
     },
     {
         "name": "CEP Processing Time",
         "url": "http://localhost:3000/api/resource_type/CEP%20Processing%20Time/",
         "created_at": "2020-07-29T07:31:22.097916",
         "description": "CEP Processing Time",
-        "resource_unit": "http://localhost:3000/api/resource_unit/second/",
-        "resource_unit_id": "second",
         "tags": [
         ],
         "updated_at": "2020-07-29T07:31:22.097941",
-        "resourceUnit": {
-            "name": "second",
-            "url": "http://localhost:3000/api/resource_unit/second/",
-            "created_at": "2020-07-29T07:31:21.070088",
-            "description": "Unit of time or duration",
-            "tags": [
-            ],
-            "updated_at": "2020-07-29T07:31:21.070114"
-        }
+        "quantity_value": "time"
     },
     {
         "name": "LTA Storage",
         "url": "http://localhost:3000/api/resource_type/LTA%20Storage/",
         "created_at": "2020-07-29T07:31:22.210071",
         "description": "LTA Storage",
-        "resource_unit": "http://localhost:3000/api/resource_unit/byte/",
-        "resource_unit_id": "byte",
         "tags": [
         ],
         "updated_at": "2020-07-29T07:31:22.210091",
-        "resourceUnit": {
-            "name": "byte",
-            "url": "http://localhost:3000/api/resource_unit/byte/",
-            "created_at": "2020-07-29T07:31:21.500997",
-            "description": "Unit of data storage",
-            "tags": [
-            ],
-            "updated_at": "2020-07-29T07:31:21.501028"
-        }
+        "quantity_value": "bytes"
     },
     {
         "name": "Number of triggers",
         "url": "http://localhost:3000/api/resource_type/Number%20of%20triggers/",
         "created_at": "2020-07-29T07:31:22.317313",
         "description": "Number of triggers",
-        "resource_unit": "http://localhost:3000/api/resource_unit/number/",
-        "resource_unit_id": "number",
         "tags": [
         ],
         "updated_at": "2020-07-29T07:31:22.317341",
-        "resourceUnit": {
-            "name": "number",
-            "url": "http://localhost:3000/api/resource_unit/number/",
-            "created_at": "2020-07-29T07:31:21.596364",
-            "description": "Unit of count",
-            "tags": [
-            ],
-            "updated_at": "2020-07-29T07:31:21.596385"
-        }
+        "quantity_value": "number"
     },
     {
         "name": "LOFAR Support Time",
         "url": "http://localhost:3000/api/resource_type/LOFAR%20Support%20Time/",
         "created_at": "2020-07-29T07:31:22.437945",
         "description": "LOFAR Support Time",
-        "resource_unit": "http://localhost:3000/api/resource_unit/second/",
-        "resource_unit_id": "second",
         "tags": [
         ],
         "updated_at": "2020-07-29T07:31:22.437964",
-        "resourceUnit": {
-            "name": "second",
-            "url": "http://localhost:3000/api/resource_unit/second/",
-            "created_at": "2020-07-29T07:31:21.070088",
-            "description": "Unit of time or duration",
-            "tags": [
-            ],
-            "updated_at": "2020-07-29T07:31:21.070114"
-        }
+        "quantity_value": "time"
     },
     {
         "name": "LOFAR Support hours",
         "url": "http://localhost:3000/api/resource_type/LOFAR%20Support%20hours/",
         "created_at": "2020-07-29T07:31:22.571850",
         "description": "LOFAR Support hours",
-        "resource_unit": "http://localhost:3000/api/resource_unit/second/",
-        "resource_unit_id": "second",
         "tags": [
         ],
         "updated_at": "2020-07-29T07:31:22.571869",
-        "resourceUnit": {
-            "name": "second",
-            "url": "http://localhost:3000/api/resource_unit/second/",
-            "created_at": "2020-07-29T07:31:21.070088",
-            "description": "Unit of time or duration",
-            "tags": [
-            ],
-            "updated_at": "2020-07-29T07:31:21.070114"
-        }
+        "quantity_value": "time"
     },
     {
         "name": "Support hours",
         "url": "http://localhost:3000/api/resource_type/Support%20hours/",
         "created_at": "2020-07-29T07:31:22.694438",
         "description": "Support hours",
-        "resource_unit": "http://localhost:3000/api/resource_unit/second/",
-        "resource_unit_id": "second",
         "tags": [
         ],
         "updated_at": "2020-07-29T07:31:22.694514",
-        "resourceUnit": {
-            "name": "second",
-            "url": "http://localhost:3000/api/resource_unit/second/",
-            "created_at": "2020-07-29T07:31:21.070088",
-            "description": "Unit of time or duration",
-            "tags": [
-            ],
-            "updated_at": "2020-07-29T07:31:21.070114"
-        }
+        "quantity_value": "time"
     }
     ],
     projectResourceDefaults: {
@@ -213,7 +122,7 @@ const ProjectServiceMock= {
         "private_data": true,
         "project_category": "Regular",
         "project_category_value": "Regular",
-        "project_quota": [
+        "quota": [
           "http://192.168.99.100:8008/api/project_quota/70/",
           "http://192.168.99.100:8008/api/project_quota/71/",
           "http://192.168.99.100:8008/api/project_quota/72/",
@@ -223,7 +132,7 @@ const ProjectServiceMock= {
           "http://192.168.99.100:8008/api/project_quota/76/",
           "http://192.168.99.100:8008/api/project_quota/77/"
         ],
-        "project_quota_ids": [
+        "quota_ids": [
           70,
           71,
           72,
@@ -308,142 +217,117 @@ const ProjectServiceMock= {
           "project_id": "OSR-11",
           "resource_type": "http://192.168.99.100:8008/api/resource_type/Support%20hours/",
           "resource_type_id": "Support hours",
-          "value": 8
+          "value": 32400
         }
       ],
-      filesystem: [
-        {
-              "id": 1,
-              "url": "http://localhost:3000/api/filesystem/1",
-              "capacity": 3600000000000000,
-              "cluster": "http://localhost:3000/api/cluster/1",
-              "cluster_id": 1,
-              "created_at": "2020-08-26T08:40:24.880194",
-              "description": "",
-              "name": "LustreFS",
-              "tags": [],
-              "updated_at": "2020-08-26T08:40:24.880239"
-            },
-            {
-              "id": 2,
-              "url": "http://localhost:3000/api/filesystem/2",
-              "capacity": 360000000000000,
-              "cluster": "http://localhost:3000/api/cluster/1",
-              "cluster_id": 1,
-              "created_at": "2020-08-26T13:06:20.442543",
-              "description": "new storage",
-              "name": "Lofar Storage (SARA)",
-              "tags": [],
-              "updated_at": "2020-08-26T13:06:20.442591"
-            },
-            {
-              "id": 3,
-              "url": "http://localhost:3000/api/filesystem/3",
-              "capacity": 360000000000000,
-              "cluster": "http://localhost:3000/api/cluster/1",
-              "cluster_id": 1,
-              "created_at": "2020-08-26T13:06:21.060517",
-              "description": "new storage",
-              "name": "Lofar Test Storage (SARA)",
-              "tags": [],
-              "updated_at": "2020-08-26T13:06:21.060545"
-            },
-            {
-              "id": 4,
-              "url": "http://localhost:3000/api/filesystem/4",
-              "capacity": 360000000000000,
-              "cluster": "http://localhost:3000/api/cluster/1",
-              "cluster_id": 1,
-              "created_at": "2020-08-26T13:06:22.776714",
-              "description": "new storage",
-              "name": "Sara",
-              "tags": [],
-              "updated_at": "2020-08-26T13:06:22.776760"
-            },
-            {
-              "id": 5,
-              "url": "http://localhost:3000/api/filesystem/5",
-              "capacity": 360000000000000,
-              "cluster": "http://localhost:3000/api/cluster/1",
-              "cluster_id": 1,
-              "created_at": "2020-08-26T13:12:22.651907",
-              "description": "new storage",
-              "name": "Lofar Storage (Jülich)",
-              "tags": [],
-              "updated_at": "2020-08-26T13:12:22.651953"
-            },
-            {
-              "id": 6,
-              "url": "http://localhost:3000/api/filesystem/6",
-              "capacity": 360000000000000,
-              "cluster": "http://localhost:3000/api/cluster/1",
-              "cluster_id": 1,
-              "created_at": "2020-08-26T13:12:24.505652",
-              "description": "new storage",
-              "name": "Lofar User Disk Storage (SARA)",
-              "tags": [],
-              "updated_at": "2020-08-26T13:12:24.505701"
-            },
-            {
-              "id": 7,
-              "url": "http://localhost:3000/api/filesystem/6",
-              "capacity": 360000000000000,
-              "cluster": "http://localhost:3000/api/cluster/3",
-              "cluster_id": 3,
-              "created_at": "2020-08-26T13:12:24.505652",
-              "description": "new storage",
-              "name": "Lofar Storage (Poznan)",
-              "tags": [],
-              "updated_at": "2020-08-26T13:12:24.505701"
-            },
-            {
-              "id": 8,
-              "url": "http://localhost:3000/api/filesystem/6",
-              "capacity": 360000000000000,
-              "cluster": "http://localhost:3000/api/cluster/3",
-              "cluster_id": 3,
-              "created_at": "2020-08-26T13:12:24.505652",
-              "description": "new storage",
-              "name": "Lofar (Poznan)",
-              "tags": [],
-              "updated_at": "2020-08-26T13:12:24.505701"
-            }
-          ],
-          cluster:[{
-            "id": 1,
-            "url": "http://localhost:3000/api/cluster/1",
-            "created_at": "2020-08-26T08:40:24.876529",
-            "description": "",
-            "location": "CIT",
-            "name": "CEP4",
-            "tags": [],
-            "archieve_site":"false",
-            "updated_at": "2020-08-26T08:40:24.876560"
-          },
-          {
-            "id": 2,
-            "url": "http://localhost:3000/api/cluster/2",
-            "created_at": "2020-08-26T08:40:24.876529",
-            "description": "",
-            "location": "CSK",
-            "name": "CEP4",
-            "tags": [],
-            "archieve_site":"false",
-            "updated_at": "2020-08-26T08:40:24.876560"
-          },
-          {
-            "id": 3,
-            "url": "http://localhost:3000/api/cluster/3",
-            "created_at": "2020-08-26T08:40:24.876529",
-            "description": "",
-            "location": "CSK",
-            "name": "ABC",
-            "tags": [],
-            "archieve_site":"true",
-            "updated_at": "2020-08-26T08:40:24.876560"
-          }
-
-        ]
-     
+    projectList: [
+      {
+        "name": "OSR-01",
+        "url": "http://192.168.99.100:8008/api/project/OSR-01",
+        "can_trigger": false,
+        "created_at": "2020-08-25T14:29:04.881620",
+        "cycles": [
+          "http://192.168.99.100:8008/api/cycle/Cycle%2014"
+        ],
+        "cycles_ids": [
+          "Cycle 14"
+        ],
+        "description": "OSR-01",
+        "expert": false,
+        "filler": false,
+        "period_category": "http://192.168.99.100:8008/api/period_category/single_cycle",
+        "period_category_value": "single_cycle",
+        "priority_rank": 1,
+        "private_data": true,
+        "project_category": "http://192.168.99.100:8008/api/project_category/regular",
+        "project_category_value": "regular",
+        "quota": [
+          "http://192.168.99.100:8008/api/project_quota/1",
+          "http://192.168.99.100:8008/api/project_quota/2",
+          "http://192.168.99.100:8008/api/project_quota/3",
+          "http://192.168.99.100:8008/api/project_quota/4",
+          "http://192.168.99.100:8008/api/project_quota/5",
+          "http://192.168.99.100:8008/api/project_quota/6",
+          "http://192.168.99.100:8008/api/project_quota/7"
+        ],
+        "quota_ids": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "tags": [],
+        "trigger_priority": 1000,
+        "updated_at": "2020-08-25T14:29:04.881640"
+      },
+      {
+        "name": "OSR-02",
+        "url": "http://192.168.99.100:8008/api/project/OSR-02",
+        "can_trigger": false,
+        "created_at": "2020-08-28T07:52:07.411136",
+        "cycles": [],
+        "cycles_ids": [],
+        "description": "OSR-02",
+        "expert": false,
+        "filler": false,
+        "period_category": null,
+        "period_category_value": null,
+        "priority_rank": 1,
+        "private_data": true,
+        "project_category": null,
+        "project_category_value": null,
+        "quota": [
+          "http://192.168.99.100:8008/api/project_quota/8",
+          "http://192.168.99.100:8008/api/project_quota/9",
+          "http://192.168.99.100:8008/api/project_quota/10",
+          "http://192.168.99.100:8008/api/project_quota/11",
+          "http://192.168.99.100:8008/api/project_quota/12",
+          "http://192.168.99.100:8008/api/project_quota/13",
+          "http://192.168.99.100:8008/api/project_quota/14"
+        ],
+        "quota_ids": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14
+        ],
+        "tags": [],
+        "trigger_priority": 1000,
+        "updated_at": "2020-08-28T07:52:07.411167"
+      },
+      {
+        "name": "TMSS-Commissioning",
+        "url": "http://192.168.99.100:8008/api/project/TMSS-Commissioning",
+        "can_trigger": false,
+        "created_at": "2020-08-25T13:28:34.760707",
+        "cycles": [
+          "http://192.168.99.100:8008/api/cycle/Cycle%2014"
+        ],
+        "cycles_ids": [
+          "Cycle 14"
+        ],
+        "description": "Project for all TMSS tests and commissioning",
+        "expert": true,
+        "filler": false,
+        "period_category": null,
+        "period_category_value": null,
+        "priority_rank": 1,
+        "private_data": true,
+        "project_category": null,
+        "project_category_value": null,
+        "quota": [],
+        "quota_ids": [],
+        "tags": [],
+        "trigger_priority": 1000,
+        "updated_at": "2020-08-25T13:28:34.760729"
+      }
+    ]
 }
+
 export default ProjectServiceMock;

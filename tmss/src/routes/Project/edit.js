@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import { Link, Redirect } from 'react-router-dom';
+import { Redirect } from 'react-router-dom';
 import _ from 'lodash';
 
 import {InputText} from 'primereact/inputtext';
@@ -10,14 +10,14 @@ import {Dropdown} from 'primereact/dropdown';
 import {MultiSelect} from 'primereact/multiselect';
 import { Button } from 'primereact/button';
 import {Dialog} from 'primereact/components/dialog/Dialog';
-import {Growl} from 'primereact/components/growl/Growl';
+//import {Growl} from 'primereact/components/growl/Growl';
 
 import {ResourceInputList} from './ResourceInputList';
 
 import AppLoader from '../../layout/components/AppLoader';
+import PageHeader from '../../layout/components/PageHeader';
 import CycleService from '../../services/cycle.service';
 import ProjectService from '../../services/project.service';
-import ProjectServices from '../../services/project.services';
 import UnitConverter from '../../utils/unit.converter';
 import UIConstants from '../../utils/ui.constants';
 
@@ -26,7 +26,6 @@ export class ProjectEdit extends Component {
         super(props);
         this.state = {
             isLoading: true,
-            ltaStorage: [],
             dialog: { header: '', detail: ''},
             project: {
                 trigger_priority: 1000,
@@ -91,17 +90,6 @@ export class ProjectEdit extends Component {
             .then(categories => {
                 this.setState({periodCategories: categories});
             });
-        Promise.all([ProjectServices.getFileSystem(),  ProjectServices.getCluster()]).then(response => {
-            const options = [];
-            response[0].map(i => {
-                const cluster =  response[1].filter(j => j.id === i.cluster_id && j.archive_site);
-                if (cluster.length) {
-                    i.label =`${cluster[0].name} - ${i.name}`
-                    options.push(i);
-                }
-            });
-            this.setState({archive_location: response[0], ltaStorage: options, cluster: response[1] });
-        });
         ProjectService.getResources()
             .then(resourceList => {
                 this.setState({resourceList: resourceList});
@@ -203,18 +191,6 @@ export class ProjectEdit extends Component {
             case 'NUMBER': {
                 console.log("Parsing Number");
                 project[key] = value?parseInt(value):0;
-                break;
-            }
-            case 'SUB-DIRECTORY': {
-                const directory = value.split(' ').join('_');
-                project[key] = directory.substr(-1) === '/' ? directory : `${directory}/`;
-                break;
-            }
-            case 'PROJECT_NAME': {
-                project[key] = value;
-                const directory = value.split(' ').join('_');
-                project['archive_subdirectory'] = (directory.substr(-1) === '/' ? directory : `${directory}/`).toLowerCase();
-                this.setState({ ltaStorageEnable: true });
                 break;
             }
             default: {
@@ -381,7 +357,7 @@ export class ProjectEdit extends Component {
         
         return (
             <React.Fragment>
-                <div className="p-grid">
+                {/*} <div className="p-grid">
                     <Growl ref={(el) => this.growl = el} />
                 
                     <div className="p-col-10 p-lg-10 p-md-10">
@@ -392,7 +368,8 @@ export class ProjectEdit extends Component {
                             <i className="fa fa-window-close" style={{marginTop: "10px"}}></i>
                         </Link>
                     </div>
-                </div>
+                  </div> */}
+                 <PageHeader location={this.props.location} title={'Project - Edit'} actions={[{icon:'fa-window-close',title:'Click to Close Project Edit Page', props : { pathname: `/project/view/${this.state.project.name}`}}]}/>
 
                 { this.state.isLoading ? <AppLoader/> :
                 <>
@@ -490,30 +467,6 @@ export class ProjectEdit extends Component {
                                     {this.state.errors.priority_rank ? this.state.errors.priority_rank : ""}
                                 </label>
                             </div>
-                        </div>
-                        <div className="p-field p-grid">
-                            <label htmlFor="ltaStorage" className="col-lg-2 col-md-2 col-sm-12">LTA Storage Location</label>
-                                <div className="col-lg-3 col-md-3 col-sm-12" >
-                                    <Dropdown inputId="ltaStore" optionValue="url" 
-                                            tooltip="LTA Storage" tooltipOptions={this.tooltipOptions}
-                                            value={this.state.project.ltaStorage}
-                                            options={this.state.ltaStorage}
-                                            onChange={(e) => {this.setProjectParams('ltaStorage', e.value)}} 
-                                            placeholder="Select LTA Storage" />
-                                </div>
-
-                            <div className="col-lg-1 col-md-1 col-sm-12"></div>
-                            <label htmlFor="ltastoragepath" className="col-lg-2 col-md-2 col-sm-12">LTA Storage Path </label>
-                                <div className="col-lg-3 col-md-3 col-sm-12">
-                                    <InputText disabled={!this.state.ltaStorageEnable} className={this.state.errors.archive_subdirectory ?'input-error':''} id="StoragePath" data-testid="name" 
-                                                tooltip="Enter storage relative path" tooltipOptions={this.tooltipOptions} maxLength="128"
-                                                value={this.state.project.archive_subdirectory} 
-                                                onChange={(e) => this.setProjectParams('archive_subdirectory', e.target.value, 'SUB-DIRECTORY')}
-                                                onBlur={(e) => this.setProjectParams('archive_subdirectory', e.target.value,'SUB-DIRECTORY')}/>
-                                    <label className={this.state.errors.archieve_subdirectory?"error":"info"}>
-                                        {this.state.errors.archieve_subdirectory? this.state.archieve_subdirectory : "Max 128 characters"}
-                                    </label>
-                           </div>
                         </div>
                         {this.state.resourceList &&
                             <div className="p-fluid">

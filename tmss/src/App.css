@@ -53,6 +53,10 @@ a{
   margin-bottom: 10px;
 }
 
+.main-content {
+  margin-top:20px;
+}
+
 .main-content span,a{
   font-size: 14px;
 }
@@ -88,6 +92,18 @@ p {
 
 .btn-group {
   margin-bottom: 5px;
+}
+
+.main-content .p-grid span {
+  margin-bottom: 10px;
+}
+
+.p-chips-token,.p-inputnumber span {
+  margin-bottom: 0px;
+}
+
+.p-chips-token .p-chips-token-label {
+  margin-bottom: 0px !important;
 }
 
 .p-field {

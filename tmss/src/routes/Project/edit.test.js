@@ -112,10 +112,10 @@ it("renders input fields with Project details if found", async () => {
     expect(content.queryByTestId("name").value).toBe('OSR-11');
 
     const spinButtons = content.queryAllByRole("spinbutton");
-    const trigPrioInput = spinButtons.filter(function(element) { return element.id==="trig_prio"})[0];
+    const trigPrioInput = _.filter(spinButtons, {"id": "trig_prio"})[0];
     expect(trigPrioInput.value).toBe("990"); 
     
-    const rankInput = spinButtons.filter(function(element) { return element.id==="proj-rank"})[0];
+    const rankInput = _.filter(spinButtons, {"id": "proj-rank"})[0];
     expect(rankInput.value).toBe("5"); 
 
     const trigger = content.getAllByLabelText(/trigger/i).filter((element) => { return element.id==="trigger"})[0];
@@ -132,15 +132,15 @@ it("renders input fields with Project details if found", async () => {
     const cycleInput = content.getAllByRole("listbox")[2] ;
     expect(content.queryAllByText('Cycle 0').length).toBe(2);
 
-    expect(content.queryByPlaceholderText("CEP Processing Time").value).toBe("10 Hours");
-    expect(content.queryByPlaceholderText("LOFAR Observing Time").value).toBe("20 Hours");
-    expect(content.queryByPlaceholderText("LOFAR Observing Time prio A").value).toBe("30 Hours");
-    expect(content.queryByPlaceholderText("LOFAR Observing Time prio B").value).toBe("40 Hours");
-    expect(content.queryByPlaceholderText("LOFAR Support Time").value).toBe("50 Hours");
-    expect(content.queryByPlaceholderText("LTA Storage").value).toBe("6 TB");
-    expect(content.queryByPlaceholderText("Number of triggers").value).toBe("7 Numbers");
-    expect(content.queryByPlaceholderText("Support hours").value).toBe("8 ");
-
+    expect(_.filter(spinButtons, {"id": "CEP Processing Time"})[0].value).toBe("10 Hours");
+    expect(_.filter(spinButtons, {"id": "LOFAR Observing Time"})[0].value).toBe("20 Hours");
+    expect(_.filter(spinButtons, {"id": "LOFAR Observing Time prio A"})[0].value).toBe("30 Hours");
+    expect(_.filter(spinButtons, {"id": "LOFAR Observing Time prio B"})[0].value).toBe("40 Hours");
+    expect(_.filter(spinButtons, {"id": "LOFAR Support Time"})[0].value).toBe("50 Hours");
+    expect(_.filter(spinButtons, {"id": "LTA Storage"})[0].value).toBe("6 TB");
+    expect(_.filter(spinButtons, {"id": "Number of triggers"})[0].value).toBe("7 Numbers");
+    expect(_.filter(spinButtons, {"id": "Support hours"})[0].value).toBe("9 Hours");
+    
     expect(content.queryByTestId('save-btn').hasAttribute("disabled")).toBeFalsy();
 
 });
@@ -157,11 +157,11 @@ it("save Project after editing fields", async () => {
     expect(content.queryByTestId("name").value).toBe('OSR-11');
 
     const spinButtons = content.queryAllByRole("spinbutton");
-    const trigPrioInput = spinButtons.filter(function(element) { return element.id==="trig_prio"})[0];
+    const trigPrioInput = _.filter(spinButtons, {"id": "trig_prio"})[0];
     fireEvent.blur(trigPrioInput, { target: { value: 900 } });
     expect(trigPrioInput.value).toBe("900"); 
     
-    const rankInput = spinButtons.filter(function(element) { return element.id==="proj-rank"})[0];
+    const rankInput = _.filter(spinButtons, {"id": "proj-rank"})[0];
     fireEvent.blur(rankInput, { target: { value: 2 } });
     expect(rankInput.value).toBe("2");
 
@@ -190,19 +190,19 @@ it("save Project after editing fields", async () => {
     expect(content.queryAllByText('Cycle-0').length).toBe(2);
     expect(content.queryAllByText('Cycle 0').length).toBe(1);
 
-    const lofarObsTimeInput = content.queryByPlaceholderText('LOFAR Observing Time');
+    const lofarObsTimeInput = _.filter(spinButtons, {"id": "LOFAR Observing Time"})[0];
     fireEvent.blur(lofarObsTimeInput, { target: { value: 10 } });
     expect(lofarObsTimeInput.value).toBe('10 Hours');
     
-    const cepProcTimeInput = content.queryByPlaceholderText('CEP Processing Time');
+    const cepProcTimeInput = _.filter(spinButtons, {"id": "CEP Processing Time"})[0];
     fireEvent.blur(cepProcTimeInput, { target: { value: 5 } });
     expect(cepProcTimeInput.value).toBe('5 Hours');
     
-    const ltaStorageInput = content.queryByPlaceholderText('LTA Storage');
+    const ltaStorageInput = _.filter(spinButtons, {"id": "LTA Storage"})[0];
     fireEvent.blur(ltaStorageInput, { target: { value: 2 } });
     expect(ltaStorageInput.value).toBe('2 TB');
     
-    const noOfTriggerInput = content.queryByPlaceholderText('Number of triggers');
+    const noOfTriggerInput = _.filter(spinButtons, {"id": "Number of triggers"})[0];
     fireEvent.blur(noOfTriggerInput, { target: { value: 3 } });
     expect(noOfTriggerInput.value).toBe('3 Numbers');
     
@@ -238,13 +238,15 @@ it("save Project after adding, modifying and deleting resources", async () => {
     const addResourceBtn = content.queryByTestId('add_res_btn');
     fireEvent.click(addResourceBtn);
     expect(content.queryAllByText('Add Resources').length).toBe(2);
-    expect(content.queryByPlaceholderText('LOFAR Support hours')).not.toBe(null);
-    const lofarSupHrsInput = content.queryByPlaceholderText('LOFAR Support hours');
+    
+    const spinButtons = content.queryAllByRole("spinbutton");
+    const lofarSupHrsInput = _.filter(spinButtons, {"id": "LOFAR Support hours"})[0];
+    expect(lofarSupHrsInput).not.toBe(null);
     fireEvent.blur(lofarSupHrsInput, { target: { value: 100 } });
-    expect(lofarSupHrsInput.value).toBe('100 ');
+    expect(lofarSupHrsInput.value).toBe('100 Hours');
 
     // Editing existing resource
-    const lofarObsTimeInput = content.queryByPlaceholderText('LOFAR Observing Time');
+    const lofarObsTimeInput = _.filter(spinButtons, {"id": "LOFAR Observing Time"})[0];
     fireEvent.blur(lofarObsTimeInput, { target: { value: 10 } });
     expect(lofarObsTimeInput.value).toBe('10 Hours');
     

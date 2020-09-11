@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import { Link, Redirect } from 'react-router-dom';
+import { Redirect } from 'react-router-dom';
 import {InputText} from 'primereact/inputtext';
 import {Calendar} from 'primereact/calendar';
 import {InputTextarea} from 'primereact/inputtextarea';
@@ -12,6 +12,7 @@ import moment from 'moment'
 import _ from 'lodash';
 
 import AppLoader from '../../layout/components/AppLoader';
+import PageHeader from '../../layout/components/PageHeader';
 import CycleService from '../../services/cycle.service';
 import UnitConverter from '../../utils/unit.converter';
 import UIConstants from '../../utils/ui.constants';
@@ -326,9 +327,8 @@ export class CycleCreate extends Component {
         
         return (
             <React.Fragment>
-                <div className="p-grid">
-                    <Growl ref={(el) => this.growl = el} />
-                
+                <Growl ref={(el) => this.growl = el} />
+               { /*<div className="p-grid">
                     <div className="p-col-10 p-lg-10 p-md-10">
                         <h2>Cycle - Add</h2>
                     </div>
@@ -337,7 +337,9 @@ export class CycleCreate extends Component {
                             <i className="fa fa-window-close" style={{marginTop: "10px"}}></i>
                         </Link>
                     </div>
-                </div>
+                </div> */ }
+                
+                <PageHeader location={this.props.location} title={'Cycle - Add'} actions={[{icon:'fa-window-close',title:'Click to Close Add Cycle',props:{pathname: '/cycle' }}]}/>
                 { this.state.isLoading ? <AppLoader /> :
                 <>
                 <div>

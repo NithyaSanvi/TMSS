@@ -1,7 +1,19 @@
- .viewtable{
+#block_container { 
+  display: flex;
+  vertical-align: middle;
+  margin-top: 20px
+}
+
+.table_container {
+  overflow: auto;
+  padding: 0.75em 0;
+}
+
+.viewtable{
   overflow: auto !important;
   padding: 0.75em;
- }
+  width: 100%;
+}
   
 .viewtable th {
     color: #7e8286;
@@ -21,7 +33,41 @@
   padding: .65rem;
   border-bottom: 1px solid lightgray;
   overflow-wrap: anywhere;
-} 
+}
+
+.pagination {
+  display: block !important;
+}
+
+body .p-paginator {
+  background-color: #ebeaea;
+  border: none;
+  border-bottom: 1px solid lightgray;
+  border-top: 1px solid lightgray;
+}
+
+.p-paginator .p-paginator-icon {
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1em;
+  height: 1em;
+  margin-top: -.5em;
+  margin-left: -.5em;
+  border-color: black;
+  color: #007ad9;
+}
+
+.p-dropdown .p-dropdown-trigger .p-dropdown-trigger-icon {
+  top: 50%;
+  left: 50%;
+  margin-top: -.5em;
+  margin-left: -.5em;
+  position: absolute;
+  border-color: black;
+  border: black;
+}
     
 .filter-input input{
   max-width: 175px;
@@ -51,7 +97,11 @@
   width: 175px;
 }
  
-.pagination button {
+.table_container .pi {
+  padding-left: 3px;
+}
+
+/* }.pagination button {
   margin-left: 3px;
   background-color: #005b9f;
   border: 1px solid #005b9f;
@@ -66,5 +116,5 @@
   border: 1px solid #c8c9c9;
   border-radius: 4px;
   color: white;
-}
+} */
 
