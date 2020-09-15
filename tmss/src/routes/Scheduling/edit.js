@@ -19,7 +19,9 @@ import ScheduleService from '../../services/schedule.service';
 import TaskService from '../../services/task.service';
 import UIConstants from '../../utils/ui.constants';
 
-
+/**
+ * Compoenent to edit scheduling unit draft
+ */
 export class EditSchedulingUnit extends Component {
     constructor(props) {
         super(props);
@@ -36,7 +38,7 @@ export class EditSchedulingUnit extends Component {
             paramsSchema: null,                     
             validEditor: false,                     
             validFields: {},  
-            taskDraft: {}                     
+            observStrategyVisible: false                     
         }
         this.projects = [];                         
         this.schedulingSets = [];                   
@@ -47,8 +49,6 @@ export class EditSchedulingUnit extends Component {
         this.formRules = {                          
             name: {required: true, message: "Name can not be empty"},
             description: {required: true, message: "Description can not be empty"},
-            project: {required: true, message: "Select project to get Scheduling Sets"},
-            scheduling_set_id: {required: true, message: "Select the Scheduling Set"},
         };
  
         this.setEditorOutput = this.setEditorOutput.bind(this);
@@ -70,7 +70,7 @@ export class EditSchedulingUnit extends Component {
      * @param {number} strategyId 
      */
     async changeStrategy (strategyId) {
-        let taskDraftName;
+        let tasksToUpdate = {};
         const observStrategy = _.find(this.observStrategies, {'id': strategyId});
         const tasks = observStrategy.template.tasks;    
         let paramsOutput = {};
@@ -92,7 +92,7 @@ export class EditSchedulingUnit extends Component {
             schema['$schema'] = taskTemplate.schema['$schema'];
             observStrategy.template.parameters.forEach(async(param, index) => {
                 if (param.refs[0].indexOf(`/tasks/${taskName}`) > 0) {
-                    taskDraftName = taskName;
+                    tasksToUpdate[taskName] = taskName;
                     // Resolve the identified template
                     const $templateRefs = await $RefParser.resolve(taskTemplate);
                     let property = { };
@@ -119,7 +119,7 @@ export class EditSchedulingUnit extends Component {
                 }
             });
         }
-        this.setState({observStrategy: observStrategy, paramsSchema: schema, paramsOutput: paramsOutput, taskDraft: taskDraftName});
+        this.setState({observStrategy: observStrategy, paramsSchema: schema, paramsOutput: paramsOutput, tasksToUpdate: tasksToUpdate});
 
         // Function called to clear the JSON Editor fields and reload with new schema
         if (this.state.editorFunction) {
@@ -140,10 +140,12 @@ export class EditSchedulingUnit extends Component {
             this.schedulingSets = responses[1];
             this.observStrategies = responses[2];
             this.taskTemplates = responses[3];
-            this.setState({ taskDrafts: responses[5].data.results });
             responses[4].project = this.schedulingSets.find(i => i.id === responses[4].scheduling_set_id).project_id;
-            this.setState({ schedulingUnit: responses[4] });
-            this.changeStrategy(responses[4].observation_strategy_template_id);
+            this.setState({ schedulingUnit: responses[4], taskDrafts: responses[5].data.results,
+                            observStrategyVisible: responses[4].observation_strategy_template_id?true:false });
+            if (responses[4].observation_strategy_template_id) {
+                this.changeStrategy(responses[4].observation_strategy_template_id);
+            }
             if (this.state.schedulingUnit.project) {
                 const projectSchedSets = _.filter(this.schedulingSets, {'project_id': this.state.schedulingUnit.project});
                 this.setState({isLoading: false, schedulingSets: projectSchedSets});
@@ -243,21 +245,24 @@ export class EditSchedulingUnit extends Component {
      * Function to create Scheduling unit
      */
     async saveSchedulingUnit() {
-        let observStrategy = _.cloneDeep(this.state.observStrategy);
-        const $refs = await $RefParser.resolve(observStrategy.template);
-        observStrategy.template.parameters.forEach(async(param, index) => {
-            $refs.set(observStrategy.template.parameters[index]['refs'][0], this.state.paramsOutput['param_' + index]);
-        });
-        const task = this.state.taskDrafts.find(draft => draft.name === this.state.taskDraft);
-        const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, task, this.state.taskDraft);
-        if (schedulingUnit) {
-           this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks edited successfully!'});
-            this.props.history.push({
-                pathname: `/schedulingunit/view/draft/${this.props.match.params.id}`,
-            }); 
-        } else {
-            this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to update Scheduling Unit/Tasks'});
-        } 
+        if (this.state.schedulingUnit.observation_strategy_template_id) {
+            let observStrategy = _.cloneDeep(this.state.observStrategy);
+            const $refs = await $RefParser.resolve(observStrategy.template);
+            observStrategy.template.parameters.forEach(async(param, index) => {
+                $refs.set(observStrategy.template.parameters[index]['refs'][0], this.state.paramsOutput['param_' + index]);
+            });
+            const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, this.state.taskDrafts, this.state.tasksToUpdate);
+            if (schedulingUnit) {
+                // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks edited successfully!'});
+                this.props.history.push({
+                    pathname: `/schedulingunit/view/draft/${this.props.match.params.id}`,
+                }); 
+            } else {
+                this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to update Scheduling Unit/Tasks'});
+            } 
+        }   else {
+            this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Template Missing.'});
+        }
     }
 
     /**
@@ -287,7 +292,7 @@ export class EditSchedulingUnit extends Component {
             <React.Fragment>
                 <Growl ref={el => (this.growl = el)} />
                 <PageHeader location={this.props.location} title={'Scheduling Unit - Edit'} 
-                            actions={[{icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', props : { pathname: `/schedulingunit/view/draft/${this.props.match.params.id}`}}]}/>
+                           actions={[{icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', props : { pathname: `/schedulingunit/view/draft/${this.props.match.params.id}`}}]}/>
                 { this.state.isLoading ? <AppLoader /> :
                 <>
                 <div>
@@ -319,36 +324,40 @@ export class EditSchedulingUnit extends Component {
                             </div>
                         </div>
                         <div className="p-field p-grid">
-                            <label htmlFor="project" className="col-lg-2 col-md-2 col-sm-12">Project <span style={{color:'red'}}>*</span></label>
+                            <label htmlFor="project" className="col-lg-2 col-md-2 col-sm-12">Project </label>
                             <div className="col-lg-3 col-md-3 col-sm-12" data-testid="project" >
                                 <Dropdown inputId="project" optionLabel="name" optionValue="name" 
                                         tooltip="Project" tooltipOptions={this.tooltipOptions}
-                                        value={this.state.schedulingUnit.project} disabled={this.state.schedulingUnit.project}
+                                        value={this.state.schedulingUnit.project} disabled={this.state.schedulingUnit.project?true:false}
                                         options={this.projects} 
                                         placeholder="Select Project" />
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
-                            <label htmlFor="schedSet" className="col-lg-2 col-md-2 col-sm-12">Scheduling Set <span style={{color:'red'}}>*</span></label>
+                            <label htmlFor="schedSet" className="col-lg-2 col-md-2 col-sm-12">Scheduling Set </label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
                                 <Dropdown data-testid="schedSet" id="schedSet" optionLabel="name" optionValue="id" 
                                         tooltip="Scheduling set of the project" tooltipOptions={this.tooltipOptions}
                                         value={this.state.schedulingUnit.scheduling_set_id} 
                                         options={this.state.schedulingSets} 
-                                        disabled={this.state.schedulingUnit.scheduling_set_id}
+                                        disabled={this.state.schedulingUnit.scheduling_set_id?true:false}
                                         placeholder="Select Scheduling Set" />
                             </div>
                         </div>
                         <div className="p-field p-grid">
-                            <label htmlFor="observStrategy" className="col-lg-2 col-md-2 col-sm-12">Observation Strategy <span style={{color:'red'}}>*</span></label>
-                            <div className="col-lg-3 col-md-3 col-sm-12" data-testid="observStrategy" >
-                                <Dropdown inputId="observStrategy" optionLabel="name" optionValue="id" 
-                                        tooltip="Observation Strategy Template to be used to create the Scheduling Unit and Tasks" tooltipOptions={this.tooltipOptions}
-                                        value={this.state.schedulingUnit.observation_strategy_template_id} 
-                                        disabled={this.state.schedulingUnit.observation_strategy_template_id} 
-                                        options={this.observStrategies} 
-                                        onChange={(e) => {this.changeStrategy(e.value)}} 
-                                        placeholder="Select Strategy" />
-                            </div>
+                            { this.state.observStrategyVisible && 
+                                <>
+                                    <label htmlFor="observStrategy" className="col-lg-2 col-md-2 col-sm-12">Observation Strategy </label>
+                                    <div className="col-lg-3 col-md-3 col-sm-12" data-testid="observStrategy" >
+                                        <Dropdown inputId="observStrategy" optionLabel="name" optionValue="id" 
+                                                tooltip="Observation Strategy Template to be used to create the Scheduling Unit and Tasks" tooltipOptions={this.tooltipOptions}
+                                                value={this.state.schedulingUnit.observation_strategy_template_id} 
+                                                disabled={this.state.schedulingUnit.observation_strategy_template_id?true:false} 
+                                                options={this.observStrategies} 
+                                                onChange={(e) => {this.changeStrategy(e.value)}} 
+                                                placeholder="Select Strategy" />
+                                    </div>
+                                </>
+                            }
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
                         </div>
                         
@@ -364,7 +373,7 @@ export class EditSchedulingUnit extends Component {
                     <div className="p-grid p-justify-start">
                         <div className="p-col-1">
                             <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.saveSchedulingUnit} 
-                                    isabled={!this.state.validEditor || !this.state.validForm} data-testid="save-btn" />
+                                    disabled={!this.state.validEditor || !this.state.validForm} data-testid="save-btn" />
                         </div>
                         <div className="p-col-1">
                             <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.cancelCreate}  />

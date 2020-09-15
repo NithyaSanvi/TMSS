@@ -61,7 +61,7 @@ class CycleList extends Component{
 
     getCycles(cycles = [], cycleQuota) {
         const promises = [];
-        cycles.map(cycle => promises.push(CycleService.getCycleById(cycle.name)));
+        cycles.map(cycle => promises.push(CycleService.getProjectsByCycle(cycle.name)));
         Promise.all(promises).then(responses => {
             const results = cycles;
             results.map(async (cycle, index) => {
@@ -148,6 +148,7 @@ class CycleList extends Component{
                         defaultSortColumn= {this.defaultSortColumn}
                         showaction="true"
                         paths={this.state.paths}
+                        tablename="cycle_list"
                  />  : <></>
                  } 
                 

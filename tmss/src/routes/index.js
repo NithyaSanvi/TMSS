@@ -9,8 +9,8 @@ import {NotFound} from '../layout/components/NotFound';
 import {ProjectList, ProjectCreate, ProjectView, ProjectEdit} from './Project';
 import {Dashboard} from './Dashboard';
 import {Scheduling} from './Scheduling';
-import {TaskEdit, TaskView} from './Task';
-import ViewSchedulingUnit from './Scheduling/ViewSchedulingUnit';
+import {TaskEdit, TaskView, DataProduct} from './Task';
+import ViewSchedulingUnit from './Scheduling/ViewSchedulingUnit'
 import SchedulingUnitCreate from './Scheduling/create';
 import EditSchedulingUnit from './Scheduling/edit';
 import { CycleList, CycleCreate, CycleView, CycleEdit } from './Cycle';
@@ -126,6 +126,11 @@ export const routes = [
         name: 'Cycle List',
         title:'Cycle-List'
     },
+    {
+        path: "/task/view/blueprint/:id/dataproducts",
+        component: DataProduct,
+        name: 'Data Product'
+    } 
 ];
 
 export const RoutedContent = () => {

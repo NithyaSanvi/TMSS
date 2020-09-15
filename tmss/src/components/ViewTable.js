@@ -8,10 +8,13 @@ import {OverlayPanel} from 'primereact/overlaypanel';
 import {InputSwitch} from 'primereact/inputswitch';
 import { Calendar } from 'primereact/calendar';
 import {Paginator} from 'primereact/paginator';
+import { Button } from "react-bootstrap";
+import { InputNumber } from "primereact/inputnumber";
 
 let tbldata =[];
 let isunittest = false;
 let columnclassname =[];
+
 // Define a default UI for filtering
 function GlobalFilter({
     preGlobalFilteredRows,
@@ -229,7 +232,7 @@ const IndeterminateCheckbox = React.forwardRef(
 )
 
 // Our table component
-function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn }) {
+function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn, tablename, defaultpagesize }) {
   const filterTypes = React.useMemo(
     () => ({
       // Add a new fuzzyTextFilterFn filter type.
@@ -257,7 +260,7 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
     }),
     []
   )
-
+ 
   const {
     getTableProps,
     getTableBodyProps,
@@ -273,7 +276,6 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
     setHiddenColumns,
     gotoPage,
     setPageSize,
-    
   } = useTable(
       {
         columns,
@@ -281,6 +283,7 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
         defaultColumn,
         filterTypes,
         initialState: { pageIndex: 0,
+          pageSize: (defaultpagesize && defaultpagesize>0)?defaultpagesize:10,
           sortBy: defaultSortColumn }
       },
       useFilters,
@@ -288,7 +291,6 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
       useSortBy,   
       usePagination
     )
-
   React.useEffect(() => {
     setHiddenColumns(
       columns.filter(column => !column.isVisible).map(column => column.accessor)
@@ -298,15 +300,50 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
   let op = useRef(null);
 
   const [currentpage, setcurrentPage] = React.useState(0);
-  const [currentrows, setcurrentRows] = React.useState(10);
-
+  const [currentrows, setcurrentRows] = React.useState(defaultpagesize);
+  const [custompagevalue,setcustompagevalue] = React.useState();
+  
   const onPagination = (e) => {
     gotoPage(e.page);
     setcurrentPage(e.first);
     setcurrentRows(e.rows);
     setPageSize(e.rows)
+    if([10,25,50,100].includes(e.rows)){
+      setcustompagevalue();
+    }
   };
 
+  const onCustomPage = (e) => {
+    if(typeof custompagevalue === 'undefined' || custompagevalue == null) return;
+    gotoPage(0);
+    setcurrentPage(0);
+    setcurrentRows(custompagevalue);
+    setPageSize(custompagevalue)
+  };
+
+  const onChangeCustompagevalue = (e) => {
+    setcustompagevalue(e.target.value);
+  }
+  
+  const onShowAllPage = (e) => {
+    gotoPage(e.page);
+    setcurrentPage(e.first);
+    setcurrentRows(e.rows);
+    setPageSize(tbldata.length)
+    setcustompagevalue();
+  };
+
+  const onToggleChange = (e) =>{
+    let lsToggleColumns = [];
+    allColumns.forEach( acolumn =>{
+      let jsonobj = {};
+      let visible = (acolumn.Header === e.target.id) ? ((acolumn.isVisible)?false:true) :acolumn.isVisible
+      jsonobj['Header'] = acolumn.Header;
+      jsonobj['isVisible'] = visible;
+      lsToggleColumns.push(jsonobj) 
+    })
+    localStorage.setItem(tablename,JSON.stringify(lsToggleColumns))
+  }
   return (
     <>
      <div id="block_container"> 
@@ -317,7 +354,7 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
                       <div style={{textAlign: 'center'}}>
                         <label>Select column(s) to view</label>
                       </div>
-                      <div style={{float: 'left', backgroundColor: '#d1cdd936', width: '250px', height: '400px', overflow: 'auto', marginBottom:'10px', padding:'5px'}}>
+                      <div style={{float: 'left', backgroundColor: '#d1cdd936', width: '250px', minHeight: '100px', maxHeight: '300px' , overflow: 'auto', marginBottom:'10px', padding:'5px'}}>
                       <div id="tagleid"  >
                         <div >
                           <div style={{marginBottom:'5px'}}>
@@ -325,7 +362,10 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
                           </div>
                           {allColumns.map(column => (
                             <div key={column.id} style={{'display':column.id !== 'actionpath'?'block':'none'}}> 
-                                <input type="checkbox" {...column.getToggleHiddenProps()}  /> {
+                                <input type="checkbox" {...column.getToggleHiddenProps()} 
+                                id={(defaultheader[column.id])?defaultheader[column.id]:(optionalheader[column.id]?optionalheader[column.id]:column.id)}
+                                onClick={onToggleChange}
+                                /> {
                                   (defaultheader[column.id]) ? defaultheader[column.id] : (optionalheader[column.id] ? optionalheader[column.id] : column.id)}
                             </div>
                           ))}
@@ -346,7 +386,8 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
               />
             }
         </div>
-</div>
+        <div className="total_records_top_label"> <label >Total records ({data.length})</label></div>
+  </div>
 
       <div className="table_container">
       <table {...getTableProps()} data-testid="viewtable" className="viewtable" >
@@ -367,7 +408,6 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
                     {column.Header !== 'actionpath' &&
                       <div className={columnclassname[0][column.Header]}  > 
                         {column.canFilter && column.Header !== 'Action' ? column.render('Filter') : null}
-                        
                       </div>
                     }
                 </th> 
@@ -382,7 +422,10 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
             return (
               <tr {...row.getRowProps()}>
                 {row.cells.map(cell => {
-                  return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                  if(cell.column.id !== 'actionpath')
+                    return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                  else 
+                    return "";
                 })}
               </tr>
             )
@@ -391,12 +434,21 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
       </table>
       </div>
       <div className="pagination">
-        <Paginator rowsPerPageOptions={[10,25,50,100]} first={currentpage} rows={currentrows} totalRecords={rows.length} onPageChange={onPagination}></Paginator>
+        <div className="total_records_bottom_label" ><label >Total records ({data.length})</label></div>
+        <div>
+         <Paginator rowsPerPageOptions={[10,25,50,100]} first={currentpage} rows={currentrows} totalRecords={rows.length} onPageChange={onPagination} >  </Paginator> 
+        </div>
+        <div>
+            <InputNumber id="custompage" value={custompagevalue} onChange ={onChangeCustompagevalue}
+              min={0} style={{width:'100px'}} />
+              <label >Records/Page</label>
+            <Button onClick={onCustomPage}> Show </Button>
+            <Button onClick={onShowAllPage} style={{marginLeft: "1em"}}> Show All </Button>
+          </div>  
       </div>
     </>
   )
 }
- 
 
 // Define a custom filter filter function!
 function filterGreaterThan(rows, id, filterValue) {
@@ -423,10 +475,12 @@ function ViewTable(props) {
     let defaultheader = props.defaultcolumns;
     let optionalheader = props.optionalcolumns;
     let defaultSortColumn = props.defaultSortColumn;
+    let tablename = (props.tablename)?props.tablename:window.location.pathname;
+
     if(!defaultSortColumn){
       defaultSortColumn =[{}];
     }
-
+    let defaultpagesize = (typeof props.defaultpagesize === 'undefined' || props.defaultpagesize == null)?10:props.defaultpagesize;
     let columns = [];   
     let defaultdataheader =  Object.keys(defaultheader[0]);
     let optionaldataheader =  Object.keys(optionalheader[0]);
@@ -455,34 +509,46 @@ function ViewTable(props) {
      // Object.entries(props.paths[0]).map(([key,value]) =>{})
     }
 
-  //Default Columns
-    defaultdataheader.forEach(header => {
-        const isString = typeof defaultheader[0][header] === 'string';
-        columns.push({
-        Header: isString ? defaultheader[0][header] : defaultheader[0][header].name,
-        id: isString ? defaultheader[0][header] : defaultheader[0][header].name,
-        accessor: header,
-        filter: (!isString && defaultheader[0][header].filter=== 'date') ? 'includes' : 'fuzzyText',
-        Filter: isString ? DefaultColumnFilter : (filterTypes[defaultheader[0][header].filter] ? filterTypes[defaultheader[0][header].filter] : DefaultColumnFilter),
-        isVisible: true,
-        Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
-       })
-    })
+   //Default Columns
+   defaultdataheader.forEach(header =>{
+    const isString = typeof defaultheader[0][header] === 'string';
+    columns.push({
+      Header: isString ? defaultheader[0][header] : defaultheader[0][header].name,
+      id: header,
+      accessor: header,
+      filter: (!isString && defaultheader[0][header].filter=== 'date') ? 'includes' : 'fuzzyText',
+      Filter: isString ? DefaultColumnFilter : (filterTypes[defaultheader[0][header].filter] ? filterTypes[defaultheader[0][header].filter] : DefaultColumnFilter),
+      isVisible: true,
+      Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
+   })
+})
 
-    //Optional Columns
-    optionaldataheader.forEach(header => {
-      const isString = typeof optionalheader[0][header] === 'string';
-        columns.push({
-          Header: isString ? optionalheader[0][header] : optionalheader[0][header].name,
-          id: isString ? optionalheader[0][header] : optionalheader[0][header].name,
+//Optional Columns
+
+optionaldataheader.forEach(header => {
+  const isString = typeof optionalheader[0][header] === 'string';
+    columns.push({
+      Header: isString ? optionalheader[0][header] : optionalheader[0][header].name,
+          id: isString ? header : optionalheader[0][header].name,
           accessor: header,
           filter: (!isString && optionalheader[0][header].filter=== 'date') ? 'includes' : 'fuzzyText',
           Filter: isString ? DefaultColumnFilter : (filterTypes[optionalheader[0][header].filter] ? filterTypes[optionalheader[0][header].filter] : DefaultColumnFilter),
           isVisible: false,
           Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
-          })
-    }); 
-     
+      })
+}); 
+    
+    let togglecolumns = localStorage.getItem(tablename);
+    if(togglecolumns){
+        togglecolumns = JSON.parse(togglecolumns)
+        columns.forEach(column =>{
+            togglecolumns.filter(tcol => {
+               column.isVisible = (tcol.Header === column.Header)?tcol.isVisible:column.isVisible;
+               return tcol;
+            })
+        })
+      }
+    
     function updatedCellvalue(key, value){
       try{
         if(key === 'blueprint_draft' && _.includes(value,'/task_draft/')){
@@ -514,7 +580,7 @@ function ViewTable(props) {
   return (
     <div>
         <Table columns={columns} data={tbldata} defaultheader={defaultheader[0]} optionalheader={optionalheader[0]} 
-        defaultSortColumn={defaultSortColumn} />
+                defaultSortColumn={defaultSortColumn} tablename={tablename} defaultpagesize={defaultpagesize}/>
     </div>
   )
 }

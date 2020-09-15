@@ -186,6 +186,7 @@ class ViewSchedulingUnit extends Component{
                         keyaccessor="id"
                         paths={this.state.paths}
                         unittest={this.state.unittest}
+                        tablename="scheduleunit_task_list"
                     />
                  } 
             </>

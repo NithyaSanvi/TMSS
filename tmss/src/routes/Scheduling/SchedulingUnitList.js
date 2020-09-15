@@ -5,7 +5,6 @@ import AppLoader from "./../../layout/components/AppLoader";
 import ViewTable from './../../components/ViewTable';
 
 import ScheduleService from '../../services/schedule.service';
- 
 
 class SchedulingUnitList extends Component{
      
@@ -39,32 +38,41 @@ class SchedulingUnitList extends Component{
             defaultSortColumn: [{id: "Name", desc: false}],
         }
     }
-    
-     
 
     async getSchedulingUnitList () {
-        const bluePrint = await ScheduleService.getSchedulingUnitBlueprint();
-        ScheduleService.getSchedulingUnitDraft().then(scheduleunit =>{
-            const output = [];
-            var scheduleunits = scheduleunit.data.results;
-            for( const scheduleunit  of scheduleunits){
-                const blueprintdata = bluePrint.data.results.filter(i => i.draft_id === scheduleunit.id);
-                blueprintdata.map(blueP => { 
-                    blueP.duration = moment.utc(blueP.duration*1000).format('HH:mm:ss'); 
-                    blueP.type="Blueprint"; 
-                    blueP['actionpath'] = '/schedulingunit/view/blueprint/'+blueP.id;
-                    return blueP; 
+        //Get SU Draft/Blueprints for the Project ID. This request is coming from view Project page. Otherwise it will show all SU
+        let project = this.props.project;
+        if(project){
+            let scheduleunits = await ScheduleService.getSchedulingListByProject(project);
+            if(scheduleunits){
+                this.setState({
+                    scheduleunit: scheduleunits, isLoading: false
                 });
-                output.push(...blueprintdata);
-                scheduleunit['actionpath']='/schedulingunit/view/draft/'+scheduleunit.id;
-                scheduleunit['type'] = 'Draft';
-                scheduleunit['duration'] = moment.utc(scheduleunit.duration*1000).format('HH:mm:ss');
-                output.push(scheduleunit);
             }
-            this.setState({
-                scheduleunit: output, isLoading: false
-            });
-        })
+        }else{
+            const bluePrint = await ScheduleService.getSchedulingUnitBlueprint();
+            ScheduleService.getSchedulingUnitDraft().then(scheduleunit =>{
+                const output = [];
+                var scheduleunits = scheduleunit.data.results;
+                for( const scheduleunit  of scheduleunits){
+                    const blueprintdata = bluePrint.data.results.filter(i => i.draft_id === scheduleunit.id);
+                    blueprintdata.map(blueP => { 
+                        blueP.duration = moment.utc(blueP.duration*1000).format('HH:mm:ss'); 
+                        blueP.type="Blueprint"; 
+                        blueP['actionpath'] = '/schedulingunit/view/blueprint/'+blueP.id;
+                        return blueP; 
+                    });
+                    output.push(...blueprintdata);
+                    scheduleunit['actionpath']='/schedulingunit/view/draft/'+scheduleunit.id;
+                    scheduleunit['type'] = 'Draft';
+                    scheduleunit['duration'] = moment.utc(scheduleunit.duration*1000).format('HH:mm:ss');
+                    output.push(scheduleunit);
+                }
+                this.setState({
+                    scheduleunit: output, isLoading: false
+                });
+            })
+        }
     }
     
     componentDidMount(){ 
@@ -88,7 +96,8 @@ class SchedulingUnitList extends Component{
                     paths - specify the path for navigation - Table will set "id" value for each row in action button
                     
                 */}
-                {this.state.scheduleunit &&
+               
+                {   (this.state.scheduleunit && this.state.scheduleunit.length>0)?
                     <ViewTable 
                         data={this.state.scheduleunit} 
                         defaultcolumns={this.state.defaultcolumns} 
@@ -99,7 +108,9 @@ class SchedulingUnitList extends Component{
                         keyaccessor="id"
                         paths={this.state.paths}
                         unittest={this.state.unittest}
+                        tablename="scheduleunit_list"
                     />
+                    :<div>No scheduling unit found </div>
                  }  
             </>
         )

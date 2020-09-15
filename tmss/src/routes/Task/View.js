@@ -81,7 +81,7 @@ export class TaskView extends Component {
             .then((task) => {
                 if (task) {
                     TaskService.getSchedulingUnit(taskType, (taskType==='draft'?task.scheduling_unit_draft_id:task.scheduling_unit_blueprint_id))
-                        .then((schedulingUnit) => {console.log('schedulingUnit' ,schedulingUnit)
+                        .then((schedulingUnit) => {
                             let path = _.join(['/schedulingunit','view',((this.state.taskType === "draft")?'draft':'blueprint'),schedulingUnit.id], '/');
                             this.setState({schedulingUnit: schedulingUnit, supath:path});
                         });
@@ -228,6 +228,16 @@ export class TaskView extends Component {
                                 }
                             </div>
                         </div>
+                        {this.state.taskType === 'blueprint' &&
+                            <div className="p-grid">
+                                <label className="col-lg-2 col-md-2 col-sm-12">Data Product</label>
+                                <div className="col-lg-4 col-md-4 col-sm-12">
+                                     
+                                <Link to={ { pathname:`/task/view/blueprint/${this.state.taskId}/dataproducts`}}> View Data Product</Link>
+                                </div>
+                            
+                            </div>
+                        }
                         <div className="p-fluid">
                             <div className="p-grid"><div className="p-col-12">
                                 {this.state.taskTemplate?jeditor:""}

@@ -36,14 +36,20 @@
 }
 
 .pagination {
-  display: block !important;
-}
-
-body .p-paginator {
+  margin-top: .25em;
+  display: flex;
+  justify-content: center;
   background-color: #ebeaea;
   border: none;
   border-bottom: 1px solid lightgray;
   border-top: 1px solid lightgray;
+}
+
+body .p-paginator {
+  margin-top: .25em;
+  margin-bottom: .15em;
+  background-color: #ebeaea;
+  border: none;
 }
 
 .p-paginator .p-paginator-icon {
@@ -68,7 +74,28 @@ body .p-paginator {
   border-color: black;
   border: black;
 }
-    
+
+.pagination span {
+  margin-bottom: 0px;
+}
+
+.pagination input {
+  margin-top: .25em;
+  margin-bottom: .15em;
+  margin-left: 1em;
+  margin-right: 0.75em;
+  width: 5em;
+  height: 2.25em;
+  border: none;
+  text-align: center;
+}
+
+.pagination button {
+  margin-left: 5px;
+  height: 35px;
+   
+  margin-bottom: .15em;
+}
 .filter-input input{
   max-width: 175px;
 }
@@ -101,20 +128,11 @@ body .p-paginator {
   padding-left: 3px;
 }
 
-/* }.pagination button {
-  margin-left: 3px;
-  background-color: #005b9f;
-  border: 1px solid #005b9f;
-  border-radius: 4px;
-  color: white;
-  font-weight: 900;
+.total_records_bottom_label {
+  text-align: left;
+  margin-right: 20px;
+  margin-top: 7px;
 }
-
-.pagination button:disabled {
-  margin-left: 3px;
-  background-color: #c8c9c9;
-  border: 1px solid #c8c9c9;
-  border-radius: 4px;
-  color: white;
-} */
-
+.total_records_top_label {
+  margin-left: 15px;
+}
