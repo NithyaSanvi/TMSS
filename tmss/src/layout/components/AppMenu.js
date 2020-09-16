@@ -52,6 +52,19 @@ class AppSubmenu extends Component {
         }
     }
 
+    componentDidMount() {
+        if (!this.props.items) {
+            return;
+        }
+        const pathname = window.location.pathname;
+        for (let i = 0; i < this.props.items.length; i++) {
+            if (pathname.indexOf(this.props.items[i].section) > -1) {
+                this.setState({activeIndex: i});
+                break
+            }
+        }
+    }
+
 
 	renderLinkContent(item) {
 		let submenuIcon = item.items && <i className="pi pi-fw pi-angle-down menuitem-toggle-icon"></i>;
@@ -59,10 +72,10 @@ class AppSubmenu extends Component {
 
 		return (
 			<React.Fragment>
-				<i className={item.icon}></i>
+				<i className={item.icon} title={item.label} tooltip="Click to proceed"></i>
 				<span>{item.label}</span>
 				{submenuIcon}
-				{badge}
+                {badge}
 			</React.Fragment>
 		);
 	}

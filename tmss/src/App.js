@@ -20,13 +20,13 @@ class App extends Component {
     constructor() {
     super();
     this.state = {
-	  layoutMode: 'static',
-      currentMenu: '',
-      currentPath: '/',
-      PageTitle:'',
-	  staticMenuInactive: false,
-            overlayMenuActive: false,
-            mobileMenuActive: false,
+        layoutMode: 'static',
+        currentMenu: '',
+        currentPath: '/',
+        PageTitle:'',
+        staticMenuInactive: localStorage.getItem('staticMenuInactive') === 'true' ? true : false,
+        overlayMenuActive: localStorage.getItem('overlayMenuActive') === 'true' ? true : false,
+        mobileMenuActive: localStorage.getItem('mobileMenuActive') === 'true' ? true : false,
     };
 	    this.onWrapperClick = this.onWrapperClick.bind(this);
         this.onToggleMenu = this.onToggleMenu.bind(this);
@@ -35,11 +35,11 @@ class App extends Component {
         this.setPageTitle = this.setPageTitle.bind(this);
   
       this.menu = [
-      {label: 'Dashboard', icon: 'pi pi-fw pi-home', to:'/dashboard'},
-      {label: 'Cycle', icon:'pi pi-fw pi-spinner', to:'/cycle'},
-      {label: 'Project', icon: 'fab fa-fw fa-wpexplorer', to:'/project'},
-      {label: 'Scheduling Units', icon: 'pi pi-fw pi-calendar', to:'/schedulingunit'},
-    //   {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task'},
+      {label: 'Dashboard', icon: 'pi pi-fw pi-home', to:'/dashboard', section: 'dashboard'},
+      {label: 'Cycle', icon:'pi pi-fw pi-spinner', to:'/cycle', section: 'cycle'},
+      {label: 'Project', icon: 'fab fa-fw fa-wpexplorer', to:'/project', section: 'project'},
+      {label: 'Scheduling Units', icon: 'pi pi-fw pi-calendar', to:'/schedulingunit', section: 'scheduling'},
+    //   {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task', section: 'task'},
       
       
     ];
@@ -64,11 +64,15 @@ class App extends Component {
             if (this.state.layoutMode === 'overlay') {
                 this.setState({
                     overlayMenuActive: !this.state.overlayMenuActive
+                }, () => {
+                    localStorage.setItem('overlayMenuActive', this.state.overlayMenuActive);
                 });
             }
             else if (this.state.layoutMode === 'static') {
                 this.setState({
                     staticMenuInactive: !this.state.staticMenuInactive
+                }, () => {
+                    localStorage.setItem('staticMenuInactive', this.state.staticMenuInactive);
                 });
             }
         }
@@ -76,6 +80,8 @@ class App extends Component {
             const mobileMenuActive = this.state.mobileMenuActive;
             this.setState({
                 mobileMenuActive: !mobileMenuActive
+            }, () => {
+                localStorage.setItem('mobileMenuActive', this.state.mobileMenuActive);
             });
         }
        event.preventDefault();
