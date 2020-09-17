@@ -1,5 +1,6 @@
  import React, { Component } from 'react';
-import {NavLink} from 'react-router-dom'
+import {NavLink} from 'react-router-dom';
+import { Button } from 'primereact/button';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 
@@ -72,10 +73,11 @@ class AppSubmenu extends Component {
 
 		return (
 			<React.Fragment>
-				<i className={item.icon} title={item.label} tooltip="Click to proceed"></i>
-				<span>{item.label}</span>
-				{submenuIcon}
-                {badge}
+                    <i className={item.icon} title={item.label} tooltip="Click to proceed"></i>
+                    <Button className="nav-btn" tooltip={item.label}></Button>
+                    <span>{item.label}</span>
+                    {submenuIcon}
+                    {badge}
 			</React.Fragment>
 		);
 	}

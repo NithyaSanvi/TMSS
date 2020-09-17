@@ -262,7 +262,8 @@ export class SchedulingUnitCreate extends Component {
      * Cancel SU creation and redirect
      */
     cancelCreate() {
-        this.setState({redirect: '/schedulingunit'})
+        // this.setState({redirect: '/schedulingunit'});
+        this.props.history.goBack();
     }
 
     /**
