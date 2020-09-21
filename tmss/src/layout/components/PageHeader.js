@@ -51,7 +51,7 @@ export default ({ title, subTitle, actions, ...props}) => {
                         );
                     }   else {
                         return (
-                            <Link className={action.classname} to={{ ...action.props }} title={action.title || ''} onClick={() => onClickLink(action)}>
+                            <Link to={{ ...action.props }} title={action.title || ''} onClick={() => onClickLink(action)}>
                                 <i className={`fa ${action.icon}`}></i>
                             </Link>
                         );

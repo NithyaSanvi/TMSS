@@ -538,7 +538,7 @@ optionaldataheader.forEach(header => {
       })
 }); 
     
-    let togglecolumns = !props.skipLocalStorage && localStorage.getItem(tablename);
+    let togglecolumns = localStorage.getItem(tablename);
     if(togglecolumns){
         togglecolumns = JSON.parse(togglecolumns)
         columns.forEach(column =>{

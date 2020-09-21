@@ -90,7 +90,8 @@ function Jeditor(props) {
             disable_properties: true,
             disable_collapse: true,
             show_errors: props.errorsOn?props.errorsOn:'change',        // Can be 'interaction', 'change', 'always', 'never'
-            compact: true
+            compact: true,
+            ajax: true
         };
         // Set Initial value to the editor
         if (props.initValue) {

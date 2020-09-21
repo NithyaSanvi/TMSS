@@ -23,30 +23,3 @@
     border-top: none;
    }
 }
-.disable-action {
-    pointer-events: none;
-    opacity: 0.5;
-}
-.nav-btn {
-    position: absolute;
-    height: 100%;
-    width: 100%;
-    top: 0;
-    left: 0;
-    background-color: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    :focus {
-        background-color: transparent !important;
-        border: 0 !important;
-        box-shadow: none !important;
-    }
-    :hover {
-        background-color: transparent !important;
-        border: 0 !important;
-        box-shadow: none !important;
-    }
-    span {
-        display: none !important;
-    }
-}
