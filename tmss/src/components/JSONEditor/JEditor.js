@@ -30,7 +30,8 @@ function Jeditor(props) {
         }
        return schema;
     };
-    useEffect(async () => {
+
+    const init = async () => {
         const element = document.getElementById('editor_holder');
         let schema = await resolveExternalRef();
         pointingProps = [];
@@ -121,6 +122,10 @@ function Jeditor(props) {
         }
         editorRef.current = editor;
         editor.on('change', () => {setEditorOutput()});
+    };
+
+    useEffect(() => {
+        init();
     }, [props.schema]);
 
     /**
