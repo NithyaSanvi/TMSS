@@ -70,9 +70,57 @@ export class EditSchedulingUnit extends Component {
      * @param {number} strategyId 
      */
     async changeStrategy (strategyId) {
+        let tasksToUpdate = {};
         const observStrategy = _.find(this.observStrategies, {'id': strategyId});
         const tasks = observStrategy.template.tasks;    
-        this.setState({ observationStartegyTasks: tasks, observStrategy: observStrategy });
+        let paramsOutput = {};
+        let schema = { type: 'object', additionalProperties: false, 
+                        properties: {}, definitions:{}
+                     };
+        for (const taskName in tasks)  {
+            const task = tasks[taskName];
+            const taskDraft = this.state.taskDrafts.find(taskD => taskD.name === taskName);
+            if (taskDraft) {
+                task.specifications_doc = taskDraft.specifications_doc;
+            }
+            //Resolve task from the strategy template
+            const $taskRefs = await $RefParser.resolve(task);
+
+            // Identify the task specification template of every task in the strategy template
+            const taskTemplate = _.find(this.taskTemplates, {'name': task['specifications_template']});
+            schema['$id'] = taskTemplate.schema['$id'];
+            schema['$schema'] = taskTemplate.schema['$schema'];
+            observStrategy.template.parameters.forEach(async(param, index) => {
+                if (param.refs[0].indexOf(`/tasks/${taskName}`) > 0) {
+                    tasksToUpdate[taskName] = taskName;
+                    // Resolve the identified template
+                    const $templateRefs = await $RefParser.resolve(taskTemplate);
+                    let property = { };
+                    let tempProperty = null;
+                    // Get the property type from the template and create new property in the schema for the parameters
+                    try {
+                        tempProperty = $templateRefs.get(param.refs[0].replace(`#/tasks/${taskName}/specifications_doc`, '#/schema/properties'))
+                    }   catch(error) {
+                        const taskPaths = param.refs[0].split("/");
+                        tempProperty = _.cloneDeep(taskTemplate.schema.properties[taskPaths[4]]);
+                        if (tempProperty.type === 'array') {
+                            tempProperty = tempProperty.items.properties[taskPaths[6]];
+                        }
+                        property = tempProperty;
+                    }
+                    property.title = param.name;
+                    property.default = $taskRefs.get(param.refs[0].replace(`#/tasks/${taskName}`, '#'));
+                    paramsOutput[`param_${index}`] = property.default;
+                    schema.properties[`param_${index}`] = property;
+                    // Set property defintions taken from the task template in new schema
+                    for (const definitionName in taskTemplate.schema.definitions) {
+                        schema.definitions[definitionName] = taskTemplate.schema.definitions[definitionName];
+                    }
+                }
+            });
+        }
+        this.setState({observStrategy: observStrategy, paramsSchema: schema, paramsOutput: paramsOutput, tasksToUpdate: tasksToUpdate});
+
         // Function called to clear the JSON Editor fields and reload with new schema
         if (this.state.editorFunction) {
             this.state.editorFunction();
@@ -232,11 +280,10 @@ export class EditSchedulingUnit extends Component {
         const schema = this.state.paramsSchema;
         
         let jeditor = null;
-        if (this.state.observationStartegyTasks) {
-            jeditor = React.createElement(Jeditor, {title: "Task Parameters", 
-                                                        taskTemplates: this.taskTemplates,
-                                                        observationStartegyTasks: this.state.observationStartegyTasks,
-                                                        observStrategy: this.state.observStrategy,
+        if (schema) {
+		    jeditor = React.createElement(Jeditor, {title: "Task Parameters", 
+                                                        schema: schema,
+                                                        initValue: this.state.paramsOutput, 
                                                         callback: this.setEditorOutput,
                                                         parentFunction: this.setEditorFunction
                                                     });
@@ -318,7 +365,7 @@ export class EditSchedulingUnit extends Component {
                     <div className="p-fluid">
                         <div className="p-grid">
                             <div className="p-col-12">
-                                {this.state.observationStartegyTasks?jeditor:""}
+                                {this.state.paramsSchema?jeditor:""}
                             </div>
                         </div>
                     </div>

@@ -102,7 +102,70 @@ export class SchedulingUnitCreate extends Component {
     async changeStrategy (strategyId) {
         const observStrategy = _.find(this.observStrategies, {'id': strategyId});
         const tasks = observStrategy.template.tasks;    
-        this.setState({ observationStartegyTasks: tasks, observStrategy: observStrategy });
+        let paramsOutput = {};
+        let schema = { type: 'object', additionalProperties: false, 
+                        properties: {}, definitions:{}
+                     };
+
+        for (const taskName of _.keys(tasks)) {
+            const task = tasks[taskName];
+            //Resolve task from the strategy template
+            const $taskRefs = await $RefParser.resolve(task);
+
+            // Identify the task specification template of every task in the strategy template
+            const taskTemplate = _.find(this.taskTemplates, {'name': task['specifications_template']});
+            schema['$id'] = taskTemplate.schema['$id'];
+            schema['$schema'] = taskTemplate.schema['$schema'];
+            let index = 0;
+            for (const param of observStrategy.template.parameters) {
+                if (param.refs[0].indexOf(`/tasks/${taskName}`) > 0) {
+                    // Resolve the identified template
+                    const $templateRefs = await $RefParser.resolve(taskTemplate);
+                    let property = { };
+                    let tempProperty = null;
+                    const taskPaths = param.refs[0].split("/");
+                    // Get the property type from the template and create new property in the schema for the parameters
+                    try {
+                        const parameterRef = param.refs[0];//.replace(`#/tasks/${taskName}/specifications_doc`, '#/schema/properties');
+                       tempProperty = $templateRefs.get(parameterRef);
+                    //    property = _.cloneDeep(taskTemplate.schema.properties[taskPaths[4]]);
+                       
+                    }   catch(error) {
+                        
+                        tempProperty = _.cloneDeep(taskTemplate.schema.properties[taskPaths[4]]);
+                        if (tempProperty.type === 'array') {
+                            tempProperty = tempProperty.items.properties[taskPaths[6]];
+                        }
+                        property = tempProperty;
+                        console.log(property);
+                    }
+                    console.log(property);
+                    // if (property['$ref'] && !property['$ref'].startsWith("#")) {
+                    //     const $propDefinition = await $RefParser.resolve(property['$ref']);
+                    //     const propDefinitions = $propDefinition.get("#/definitions");
+                    //     for (const propDefinition in propDefinitions) {
+                    //         schema.definitions[propDefinition] = propDefinitions[propDefinition];
+                    //         property['$ref'] = "#/definitions/"+ propDefinition ;
+                    //     } 
+                    // }
+                    property.title = param.name;
+                    property.default = $taskRefs.get(param.refs[0].replace(`#/tasks/${taskName}`, '#'));
+                    paramsOutput[`param_${index}`] = property.default;
+                    schema.properties[`param_${index}`] = property;
+                    // Set property defintions taken from the task template in new schema
+                    for (const definitionName in taskTemplate.schema.definitions) {
+                        schema.definitions[definitionName] = taskTemplate.schema.definitions[definitionName];
+                        
+                    }
+                }
+                index++;
+               
+            }
+            
+        }
+        console.log(schema);
+        this.setState({observStrategy: observStrategy, paramsSchema: schema, paramsOutput: paramsOutput});
+
         // Function called to clear the JSON Editor fields and reload with new schema
         if (this.state.editorFunction) {
             this.state.editorFunction();
@@ -252,12 +315,13 @@ export class SchedulingUnitCreate extends Component {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
         }
         
+        const schema = this.state.paramsSchema;
+        
         let jeditor = null;
-        if (this.state.observationStartegyTasks) {
-            jeditor = React.createElement(Jeditor, {title: "Task Parameters", 
-                                                        taskTemplates: this.taskTemplates,
-                                                        observationStartegyTasks: this.state.observationStartegyTasks,
-                                                        observStrategy: this.state.observStrategy,
+        if (schema) {
+		    jeditor = React.createElement(Jeditor, {title: "Task Parameters", 
+                                                        schema: schema,
+                                                        initValue: this.state.paramsOutput, 
                                                         callback: this.setEditorOutput,
                                                         parentFunction: this.setEditorFunction
                                                     });
@@ -350,7 +414,7 @@ export class SchedulingUnitCreate extends Component {
                     <div className="p-fluid">
                         <div className="p-grid">
                             <div className="p-col-12">
-                                {this.state.observationStartegyTasks?jeditor:""}
+                                {this.state.paramsSchema?jeditor:""}
                             </div>
                         </div>
                     </div>

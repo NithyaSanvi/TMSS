@@ -4,96 +4,35 @@
  */
 import React, {useEffect, useRef} from 'react';
 import _ from 'lodash';
+import flatpickr from 'flatpickr';
 import $RefParser from "@apidevtools/json-schema-ref-parser";
-
 import "@fortawesome/fontawesome-free/css/all.css";
 import "flatpickr/dist/flatpickr.css";
 const JSONEditor = require("@json-editor/json-editor").JSONEditor;
 
 function Jeditor(props) {
-    // console.log("In JEditor");
+    console.log("In JEditor", props.schema);
     const editorRef = useRef(null);
     let pointingProps = useRef(null);
     let editor = null;
-
-    const getSchema = async () => {
-        const observStrategy = props.observStrategy;
-        const tasks = props.observationStartegyTasks;
-        let paramsOutput = {};
-        let schema = { type: 'object', additionalProperties: false, 
-                        properties: {}, definitions:{}
-                     };
-
-        for (const taskName of _.keys(tasks)) {
-            const task = tasks[taskName];
-            //Resolve task from the strategy template
-            const $taskRefs = await $RefParser.resolve(task);
-
-            // Identify the task specification template of every task in the strategy template
-            const taskTemplate = _.find(props.taskTemplates, {'name': task['specifications_template']});
-            schema['$id'] = taskTemplate.schema['$id'];
-            schema['$schema'] = taskTemplate.schema['$schema'];
-            let index = 0;
-            for (const param of observStrategy.template.parameters) {
-                if (param.refs[0].indexOf(`/tasks/${taskName}`) > 0) {
-                    // Resolve the identified template
-                    const $templateRefs = await $RefParser.resolve(taskTemplate);
-                    let property = { };
-                    let tempProperty = null;
-                    const taskPaths = param.refs[0].split("/");
-                    // Get the property type from the template and create new property in the schema for the parameters
-                    try {
-                        const parameterRef = param.refs[0];//.replace(`#/tasks/${taskName}/specifications_doc`, '#/schema/properties');
-                       tempProperty = $templateRefs.get(parameterRef);
-                    //    property = _.cloneDeep(taskTemplate.schema.properties[taskPaths[4]]);
-                       
-                    }   catch(error) {
-                        
-                        tempProperty = _.cloneDeep(taskTemplate.schema.properties[taskPaths[4]]);
-                        if (tempProperty.type === 'array') {
-                            tempProperty = tempProperty.items.properties[taskPaths[6]];
-                        }
-                        property = tempProperty;
-                        console.log(property);
-                    }
-                    console.log(property);
-                    if (property['$ref'] && !property['$ref'].startsWith("#")) {
-                        const $propDefinition = await $RefParser.resolve(property['$ref']);
-                        const propDefinitions = $propDefinition.get("#/definitions");
-                        for (const propDefinition in propDefinitions) {
-                            schema.definitions[propDefinition] = propDefinitions[propDefinition];
-                            property['$ref'] = "#/definitions/"+ propDefinition ;
-                        } 
-                    }
-                    property.title = param.name;
-                    property.default = $taskRefs.get(param.refs[0].replace(`#/tasks/${taskName}`, '#'));
-                    paramsOutput[`param_${index}`] = property.default;
-                    schema.properties[`param_${index}`] = property;
-                    // Set property defintions taken from the task template in new schema
-                    for (const definitionName in taskTemplate.schema.definitions) {
-                        schema.definitions[definitionName] = taskTemplate.schema.definitions[definitionName];
-                        
-                    }
-                }
-                index++;
+    const resolveExternalRef = async () => {
+        let schema = {};
+        Object.assign(schema, props.schema ? props.schema : {});
+        for (const item in schema.properties) {
+            if (schema.properties[item]['$ref'] && !schema.properties[item]['$ref'].startsWith("#")) {
+                const $propDefinition = await $RefParser.resolve(schema.properties[item]['$ref']);
+                const propDefinitions = $propDefinition.get("#/definitions");
+                for (const propDefinition in propDefinitions) {
+                    schema.definitions[propDefinition] = propDefinitions[propDefinition];
+                    schema.properties[item]['$ref'] = "#/definitions/"+ propDefinition ;
+                } 
             }
         }
-        return { initialValue: paramsOutput, schema }
+       return schema;
     };
-    
     useEffect(async () => {
         const element = document.getElementById('editor_holder');
-        let tempSchema,initialValue;
-        if (!props.schema) {
-            const response = await getSchema();
-            tempSchema = response.schema;
-            initialValue = response.initialValue
-        } else {
-            tempSchema = {...props.schema}; 
-            initialValue = props.initialValuel
-        }
-        let schema = {};
-        Object.assign(schema, tempSchema ? tempSchema : {});
+        let schema = await resolveExternalRef();
         pointingProps = [];
         // Customize the pointing property to capture angle1 and angle2 to specified format
         for (const definitionKey in schema.definitions) {
@@ -169,8 +108,8 @@ function Jeditor(props) {
             ajax: true
         };
         // Set Initial value to the editor
-        if (initialValue) {
-            editorOptions.startval = updateInput(_.cloneDeep(initialValue));
+        if (props.initValue) {
+            editorOptions.startval = updateInput(_.cloneDeep(props.initValue));
         }
         editor = new JSONEditor(element, editorOptions);
         // editor.getEditor('root').disable();
@@ -182,7 +121,7 @@ function Jeditor(props) {
         }
         editorRef.current = editor;
         editor.on('change', () => {setEditorOutput()});
-    }, [props.observStrategy]);
+    }, [props.schema]);
 
     /**
      * Function to call on button click and send the output back to parent through callback
@@ -210,6 +149,46 @@ function Jeditor(props) {
      * @param {Boolean} isDegree 
      */
     function getAngleProperty(defProperty, isDegree) {
+        /*let newProperty = {
+            "type": "object",
+            "additionalProperties": false,
+            "format": "grid",
+            // "title": defProperty.title,
+            // "description": defProperty.description};
+            "title": "Duration",
+            "description": "Duration of the observation"};
+        let subProperties = {};
+        if (isDegree) {
+            subProperties["dd"] = {  "type": "number",
+                                      "title": "DD",
+                                      "description": "Degrees",
+                                      "default": 0,
+                                      "minimum": 0,
+                                      "maximum": 90 };
+        }   else {
+            subProperties["hh"] = {  "type": "number",
+                                      "title": "HH",
+                                      "description": "Hours",
+                                      "default": 0,
+                                      "minimum": 0,
+                                      "maximum": 23 };
+            
+        }
+        subProperties["mm"] = {  "type": "number",
+                                      "title": "MM",
+                                      "description": "Minutes",
+                                      "default": 0,
+                                      "minimum": 0,
+                                      "maximum": 59 };
+        subProperties["ss"] = {  "type": "number",
+                                      "title": "SS",
+                                      "description": "Seconds",
+                                      "default": 0,
+                                      "minimum": 0,
+                                      "maximum": 59 };
+
+        newProperty.properties = subProperties;
+        newProperty.required = isDegree?["dd", "mm", "ss"]:["hh", "mm", "ss"];*/
         let newProperty = {
             type: "string",
             title: defProperty.title,
@@ -251,6 +230,34 @@ function Jeditor(props) {
                 // };
                 properties[propertyKey] = newProperty;
             }   else if (propertyKey.toLowerCase() === 'duration') {
+                /*propertyValue.title = "Duration (minutes)";
+                propertyValue.default = "1";
+                propertyValue.description = "Duration of this observation. Enter in decimal for seconds. For example 0.5 for 30 seconds";
+                propertyValue.minimum = 0.25;
+                propertyValue.options = {
+                    grid_columns: 6
+                };*/
+                /*propertyValue.title = "Duration";
+                propertyValue.default = "1H20M30S";
+                propertyValue.type = "string";
+                propertyValue.description = "Duration of the observation (H-hours,M-minutes,S-seconds & should be in the order of H, M and S respectively)";
+                /*let newProperty = {
+                    type: "string",
+                    title: "Duration",
+                    description: `${propertyValue.description} (Hours:Minutes:Seconds)`,
+                    default: "00:00:00",
+                    "options": {
+                        "grid_columns": 5,
+                        "inputAttributes": {
+                            "placeholder": "HH:mm:ss"
+                        },
+                        "cleave": {
+                            date: true,
+                            datePattern: ['HH','mm','ss'],
+                            delimiter: ':'
+                        }
+                    }
+                }*/
                 let newProperty = {
                     "type": "string",
                     "format": "time",
@@ -419,6 +426,11 @@ function Jeditor(props) {
      * @param {Boolean} isDegree 
      */
     function getAngleOutput(prpOutput, isDegree) {
+        /*if ('dd' in prpOutput) {
+            return ((prpOutput.dd + prpOutput.mm/60 + prpOutput.ss/3600)*Math.PI/180);
+        }   else {
+            return ((prpOutput.hh*15 + prpOutput.mm/4  + prpOutput.ss/240)*Math.PI/180);
+        }*/
         const splitOutput = prpOutput.split(':');
         if (isDegree) {
             return ((splitOutput[0]*1 + splitOutput[1]/60 + splitOutput[2]/3600)*Math.PI/180);
@@ -525,6 +537,7 @@ function Jeditor(props) {
     return (
         <React.Fragment>
             <div id='editor_holder'></div>
+            {/* <div><input type="button" onClick={setEditorOutput} value="Show Output" /></div> */}
         </React.Fragment>
     );
 };
