@@ -31,7 +31,7 @@ class SchedulingUnitList extends Component{
                 },
                 "requirements_template_id":{
                     name: "Template",
-                    filter: "slider"
+                    filter: "minMax"
                 },
                 "start_time":"Start Time",
                 "stop_time":"End time",
@@ -60,11 +60,15 @@ class SchedulingUnitList extends Component{
                     blueP.duration = moment.utc(blueP.duration*1000).format('HH:mm:ss'); 
                     blueP.type="Blueprint"; 
                     blueP['actionpath'] = '/schedulingunit/view/blueprint/'+blueP.id;
+                    blueP['created_at'] = moment(blueP['created_at'], moment.ISO_8601).format("YYYY-MMM-DD");
+                    blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD");
                     return blueP; 
                 });
                 output.push(...blueprintdata);
                 scheduleunit['actionpath']='/schedulingunit/view/draft/'+scheduleunit.id;
                 scheduleunit['type'] = 'Draft';
+                scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format("YYYY-MMM-DD");
+                scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD");
                 scheduleunit['duration'] = moment.utc(scheduleunit.duration*1000).format('HH:mm:ss');
                 output.push(scheduleunit);
             }

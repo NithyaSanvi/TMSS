@@ -95,7 +95,8 @@ const ScheduleService = {
                 scheduletask['actionpath'] = '/task/view/draft/'+task['id'];
                 scheduletask['blueprint_draft'] = task['task_blueprints'];
                
-              
+                scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format("YYYY-MMM-DD");
+                scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD");
                 //fetch task draft details
                 for(const key of commonkeys){
                     scheduletask[key] = task[key];
@@ -110,6 +111,8 @@ const ScheduleService = {
                     taskblueprint['tasktype'] = 'Blueprint';
                     taskblueprint['actionpath'] = '/task/view/blueprint/'+blueprint['id'];
                     taskblueprint['blueprint_draft'] = blueprint['draft'];
+                    taskblueprint['created_at'] = moment(blueprint['created_at'], moment.ISO_8601).format("YYYY-MMM-DD");
+                    taskblueprint['updated_at'] = moment(blueprint['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD");
                     for(const key of commonkeys){
                         taskblueprint[key] = blueprint[key];
                     }

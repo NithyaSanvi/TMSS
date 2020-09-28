@@ -293,11 +293,26 @@ function fuzzyTextFilterFn(rows, id, filterValue) {
 }
 
 const filterTypes = {
-  'select': SelectColumnFilter,
-  'switch': BooleanColumnFilter,
-  'slider': SliderColumnFilter,
-  'date': CalendarColumnFilter,
-  'range': RangeColumnFilter
+  'select': { 
+    fn: SelectColumnFilter,
+  },
+  'switch': {
+    fn: BooleanColumnFilter
+  },
+  'slider': {
+    fn: SliderColumnFilter
+  },
+  'date': {
+    fn: CalendarColumnFilter,
+    type: 'includes'
+  },
+  'range': {
+    fn: RangeColumnFilter
+  },
+  'minMax': { 
+    fn: NumberRangeColumnFilter,
+    type: 'between'
+  }
 };
 // Let the table remove the filter if the string is empty
 fuzzyTextFilterFn.autoRemove = val => !val
@@ -547,26 +562,30 @@ function ViewTable(props) {
   //Default Columns
     defaultdataheader.forEach(header => {
         const isString = typeof defaultheader[0][header] === 'string';
+        const filterFn = isString ? DefaultColumnFilter : (filterTypes[defaultheader[0][header].filter].fn ? filterTypes[defaultheader[0][header].filter].fn : DefaultColumnFilter);
+        const filtertype = (!isString && filterTypes[defaultheader[0][header].filter].type) ? filterTypes[defaultheader[0][header].filter].type : 'fuzzyText'
         columns.push({
-        Header: isString ? defaultheader[0][header] : defaultheader[0][header].name,
-        id: isString ? defaultheader[0][header] : defaultheader[0][header].name,
-        accessor: header,
-        filter: (!isString && defaultheader[0][header].filter=== 'date') ? 'includes' : 'fuzzyText',
-        Filter: isString ? DefaultColumnFilter : (filterTypes[defaultheader[0][header].filter] ? filterTypes[defaultheader[0][header].filter] : DefaultColumnFilter),
-        isVisible: true,
-        Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
+          Header: isString ? defaultheader[0][header] : defaultheader[0][header].name,
+          id: isString ? defaultheader[0][header] : defaultheader[0][header].name,
+          accessor: header,
+          filter: filtertype,
+          Filter: filterFn,
+          isVisible: true,
+          Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
        })
     })
 
     //Optional Columns
     optionaldataheader.forEach(header => {
       const isString = typeof optionalheader[0][header] === 'string';
+      const filterFn = isString ? DefaultColumnFilter : (filterTypes[optionalheader[0][header].filter].fn ? filterTypes[optionalheader[0][header].filter].fn : DefaultColumnFilter);
+        const filtertype = (!isString && filterTypes[optionalheader[0][header].filter].type) ? filterTypes[optionalheader[0][header].filter].type : 'fuzzyText'
         columns.push({
           Header: isString ? optionalheader[0][header] : optionalheader[0][header].name,
           id: isString ? optionalheader[0][header] : optionalheader[0][header].name,
           accessor: header,
-          filter: (!isString && optionalheader[0][header].filter=== 'date') ? 'includes' : 'fuzzyText',
-          Filter: isString ? DefaultColumnFilter : (filterTypes[optionalheader[0][header].filter] ? filterTypes[optionalheader[0][header].filter] : DefaultColumnFilter),
+          filter: filtertype,
+          Filter: filterFn,
           isVisible: false,
           Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
           })
