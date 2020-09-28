@@ -1,6 +1,8 @@
 import axios from 'axios'
-import moment from 'moment';
+
 import TaskService from './task.service';
+import _ from 'lodash';
+import moment from 'moment';
 
 axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
 
@@ -83,12 +85,8 @@ const ScheduleService = {
     },
     getTasksBySchedulingUnit: async function(id){
         let scheduletasklist=[];
-        // let taskblueprints = [];
         // Common keys for Task and Blueprint
         let commonkeys = ['id','created_at','description','name','tags','updated_at','url','do_cancel','relative_start_time','relative_stop_time','start_time','stop_time','duration'];
-        // await this.getTaskBlueprints().then( blueprints =>{
-        //     taskblueprints = blueprints.data.results;
-        // });
         await this.getTasksDraftBySchedulingUnitId(id)
         .then(async(response) =>{
             for(const task of response.data.results){
@@ -96,7 +94,8 @@ const ScheduleService = {
                 scheduletask['tasktype'] = 'Draft';
                 scheduletask['actionpath'] = '/task/view/draft/'+task['id'];
                 scheduletask['blueprint_draft'] = task['task_blueprints'];
-
+               
+              
                 //fetch task draft details
                 for(const key of commonkeys){
                     scheduletask[key] = task[key];
@@ -105,11 +104,7 @@ const ScheduleService = {
                 scheduletask.relative_start_time = moment.utc(scheduletask.relative_start_time*1000).format('HH:mm:ss'); 
                 scheduletask.relative_stop_time = moment.utc(scheduletask.relative_stop_time*1000).format('HH:mm:ss'); 
                //Fetch blueprint details for Task Draft
-	            const draftBlueprints = await TaskService.getDraftsTaskBlueprints(task.id);
-                // let filteredblueprints =  _.filter(taskblueprints, function(o) {
-                //     if (o.draft_id === task['id']) return o;
-                // });
-
+                const draftBlueprints = await TaskService.getDraftsTaskBlueprints(task.id);
                 for(const blueprint of draftBlueprints){
                     let taskblueprint = [];
                     taskblueprint['tasktype'] = 'Blueprint';
@@ -132,6 +127,16 @@ const ScheduleService = {
             console.error('[schedule.services.getScheduleTasksBySchedulingUnitId]',error);
         });
         return scheduletasklist;
+    },
+    getSchedulingUnitBlueprint: async function (){
+        let res = [];
+        await axios.get('/api/scheduling_unit_blueprint/?ordering=id')
+        .then(response => {
+            res= response; 
+        }).catch(function(error) {
+            console.error('[schedule.services.getSchedulingUnitBlueprint]',error);
+        });
+        return res;
     },
     getTaskBlueprints: async function (){
         let res=[];
@@ -173,134 +178,6 @@ const ScheduleService = {
         });
         return res;
     },
-    getSchedulingSets: async function() {
-        try {
-            const response = await axios.get('/api/scheduling_set/');
-            return response.data.results;
-        }   catch(error) {
-            console.error(error);
-            return [];
-        };
-    },
-    getObservationStrategies: async function() {
-        try {
-            const response = await axios.get('/api/scheduling_unit_observing_strategy_template/');
-            return response.data.results;
-        }   catch(error) {
-            console.error(error);
-            return [];
-        };
-    },
-    saveSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit) {
-        try {
-            // Create the scheduling unit draft with observation strategy and scheduling set
-            const url = `/api/scheduling_unit_observing_strategy_template/${observStrategy.id}/create_scheduling_unit/?scheduling_set_id=${schedulingUnit.scheduling_set_id}&name=${schedulingUnit.name}&description=${schedulingUnit.description}`
-            const suObsResponse = await axios.get(url);
-            schedulingUnit = suObsResponse.data;
-            if (schedulingUnit && schedulingUnit.id) {
-                // Update the newly created SU draft requirement_doc with captured parameter values
-                schedulingUnit.requirements_doc = observStrategy.template;
-                delete schedulingUnit['duration'];
-                schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
-                if (!schedulingUnit || !schedulingUnit.id) {
-                    return null;
-                }
-                // Create task drafts with updated requirement_doc
-                schedulingUnit = await this.createSUTaskDrafts(schedulingUnit);
-                if (schedulingUnit && schedulingUnit.task_drafts.length > 0) {
-                    return schedulingUnit;
-                }
-            }
-            return null;
-        }   catch(error) {
-            console.error(error);
-            return null;
-        };
-    },
-    
-    updateSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit,tasks,tasksToUpdate) {
-        try {
-            delete schedulingUnit['duration'];
-            schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
-            for (const taskToUpdate in tasksToUpdate) {
-                let task = tasks.find(task => { return task.name === taskToUpdate});
-                task.specifications_doc = observStrategy.template.tasks[taskToUpdate].specifications_doc;
-                delete task['duration'];
-                delete task['relative_start_time'];
-                delete task['relative_stop_time'];
-                task = await TaskService.updateTask('draft', task);
-            }
-            return schedulingUnit;
-        }   catch(error) {
-            console.error(error);
-            return null;
-        };
-    },
-    updateSchedulingUnitDraft: async function(schedulingUnit) {
-        try {
-            console.log(schedulingUnit);
-            const suUpdateResponse = await axios.put(`/api/scheduling_unit_draft/${schedulingUnit.id}/`, schedulingUnit);
-            return suUpdateResponse.data;
-        }   catch(error) {
-            console.error("Mistake",error);
-            return null
-        }
-    },
-    createSUTaskDrafts: async (schedulingUnit) => {
-        try {
-            const suCreateTaskResponse = await axios.get(`/api/scheduling_unit_draft/${schedulingUnit.id}/create_task_drafts/`);
-            return suCreateTaskResponse.data;
-        }   catch(error) {
-            console.error(error);
-            return null;
-        }
-    },
-    getSchedulingListByProject: async function(project){
-        /*
-        SU -  Schedulign Unit
-        Get Scheduling Unit Draft and It's Blueprints using Project ID. there is no direct API to get SU form project (API request -TMSS-349)
-        Use Fetch all Scheduling Set and filter Scheduling Set with Project ID => Get SU Draft list and SU Blueprints
-        */
-        try {
-          let schedulingunitlist = [];
-          //Fetch all Scheduling Set as there is no API to fetch Scheduling Set for a Project
-          await this.getSchedulingSets().then(async schedulingsetlist =>{
-            let schedulingsets = schedulingsetlist.filter(scheduingset => scheduingset.project_id === project)
-            for(const scheduleset of schedulingsets){
-                //Fecth SU Drafts for the Scheduling Set
-                await this.getSchedulingBySet(scheduleset.id).then(async suDraftList =>{
-                    for(const suDraft of suDraftList){
-                        suDraft['actionpath']='/schedulingunit/view/draft/'+suDraft.id;
-                        suDraft['type'] = 'Draft';
-                        suDraft['duration'] = moment.utc(suDraft.duration*1000).format('HH:mm:ss');
-                        schedulingunitlist = schedulingunitlist.concat(suDraft);
-                        //Fetch SU Blue prints for the SU Draft
-                        await this.getBlueprintsByschedulingUnitId(suDraft.id).then(suBlueprintList =>{
-                            for(const suBlueprint of suBlueprintList.data.results){
-                                suBlueprint.duration = moment.utc(suBlueprint.duration*1000).format('HH:mm:ss'); 
-                                suBlueprint.type="Blueprint"; 
-                                suBlueprint['actionpath'] = '/schedulingunit/view/blueprint/'+suBlueprint.id;
-                                schedulingunitlist = schedulingunitlist.concat(suBlueprint);
-                            }
-                        })
-                    }
-                })
-            }
-          })
-          return schedulingunitlist;
-        } catch (error) {
-          console.error('[project.services.getSchedulingListByProject]',error);
-        }
-      },     
-      getSchedulingBySet: async function(id){
-        try{
-          const response = await axios.get(`/api/scheduling_set/${id}/scheduling_unit_draft/?ordering=id`);
-          return response.data.results;
-        } catch (error) {
-          console.error('[project.services.getSchedulingUnitBySet]',error);
-        }
-      }
 }
-
 
 export default ScheduleService;

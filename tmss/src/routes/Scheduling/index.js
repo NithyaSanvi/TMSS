@@ -15,9 +15,7 @@ export class Scheduling extends Component {
     render() {
 		   return (
             <>
-                <PageHeader location={this.props.location} title={'Scheduling Unit - List'}
-                            actions={[{icon: 'fa fa-plus-square', title: 'Add New Scheduling Unit', 
-                                        props: {pathname: '/schedulingunit/create'}}]} />
+                <PageHeader location={this.props.location} title={'Scheduling Unit - List'}/>
                 {this.state.scheduleunit && 
 				<SchedulingUnitList /> }
 		    </>

@@ -24,11 +24,28 @@ class ViewSchedulingUnit extends Component{
             defaultcolumns: [ {
                 "tasktype":"Type",
                 "id":"ID",
+                "id":{
+                  name: "ID",
+                  filter: "slider"
+                },
                 "name":"Name",
                 "description":"Description",
                 "created_at":"Created at",
+                "created_at": {
+                    name: "Created at",
+                    filter: "date"
+                },
                 "updated_at":"Updated at",
+                "updated_at": {
+                    name: "Updated at",
+                    filter: "date"
+                },
                 "do_cancel":"Cancelled",
+                "do_cancel": {
+                    name: "Cancelled",
+                    filter: "switch"
+                },
+
                 "start_time":"Start Time",
                 "stop_time":"End Time",
                 "duration":"Duration (HH:mm:ss)",
@@ -121,10 +138,7 @@ class ViewSchedulingUnit extends Component{
                     </Link> 
                 </div>
                 </div> */}
-                <PageHeader location={this.props.location} title={'Scheduling Unit - Details'} 
-                            actions={[{icon: 'fa-edit',title:'Click to Edit Scheduling Unit View', type:'link',
-                            props : { pathname: `/schedulingunit/edit/${this.props.match.params.id}` }},
-                                    {icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', props : { pathname: '/schedulingunit'}}]}/>
+                <PageHeader location={this.props.location} title={'Scheduling Unit - Details'} actions={[{icon: 'fa-times',title:'Click to Close Scheduling Unit View', props : { pathname: '/schedulingunit'}}]}/>
 				{ this.state.isLoading ? <AppLoader/> :this.state.scheduleunit &&
 			    <>
 		            <div className="main-content">
@@ -186,7 +200,6 @@ class ViewSchedulingUnit extends Component{
                         keyaccessor="id"
                         paths={this.state.paths}
                         unittest={this.state.unittest}
-                        tablename="scheduleunit_task_list"
                     />
                  } 
             </>

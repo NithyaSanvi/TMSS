@@ -1,5 +1,4 @@
 
-
 const ProjectServiceMock= {
     project_categories: [{url: "Regular", value: 'Regular'}, {url: "User Shared Support", value: 'User Shared Support'}],
     period_categories: [{url: "Single Cycle", value: 'Single Cycle'}, {url: "Long Term", value: 'Long Term'}],
@@ -220,118 +219,7 @@ const ProjectServiceMock= {
           "resource_type_id": "Support hours",
           "value": 32400
         }
-      ],
-    projectList: [
-      {
-        "name": "OSR-01",
-        "url": "http://192.168.99.100:8008/api/project/OSR-01",
-        "can_trigger": false,
-        "created_at": "2020-08-25T14:29:04.881620",
-        "cycles": [
-          "http://192.168.99.100:8008/api/cycle/Cycle%2014"
-        ],
-        "cycles_ids": [
-          "Cycle 14"
-        ],
-        "description": "OSR-01",
-        "expert": false,
-        "filler": false,
-        "period_category": "http://192.168.99.100:8008/api/period_category/single_cycle",
-        "period_category_value": "single_cycle",
-        "priority_rank": 1,
-        "private_data": true,
-        "project_category": "http://192.168.99.100:8008/api/project_category/regular",
-        "project_category_value": "regular",
-        "quota": [
-          "http://192.168.99.100:8008/api/project_quota/1",
-          "http://192.168.99.100:8008/api/project_quota/2",
-          "http://192.168.99.100:8008/api/project_quota/3",
-          "http://192.168.99.100:8008/api/project_quota/4",
-          "http://192.168.99.100:8008/api/project_quota/5",
-          "http://192.168.99.100:8008/api/project_quota/6",
-          "http://192.168.99.100:8008/api/project_quota/7"
-        ],
-        "quota_ids": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7
-        ],
-        "tags": [],
-        "trigger_priority": 1000,
-        "updated_at": "2020-08-25T14:29:04.881640"
-      },
-      {
-        "name": "OSR-02",
-        "url": "http://192.168.99.100:8008/api/project/OSR-02",
-        "can_trigger": false,
-        "created_at": "2020-08-28T07:52:07.411136",
-        "cycles": [],
-        "cycles_ids": [],
-        "description": "OSR-02",
-        "expert": false,
-        "filler": false,
-        "period_category": null,
-        "period_category_value": null,
-        "priority_rank": 1,
-        "private_data": true,
-        "project_category": null,
-        "project_category_value": null,
-        "quota": [
-          "http://192.168.99.100:8008/api/project_quota/8",
-          "http://192.168.99.100:8008/api/project_quota/9",
-          "http://192.168.99.100:8008/api/project_quota/10",
-          "http://192.168.99.100:8008/api/project_quota/11",
-          "http://192.168.99.100:8008/api/project_quota/12",
-          "http://192.168.99.100:8008/api/project_quota/13",
-          "http://192.168.99.100:8008/api/project_quota/14"
-        ],
-        "quota_ids": [
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14
-        ],
-        "tags": [],
-        "trigger_priority": 1000,
-        "updated_at": "2020-08-28T07:52:07.411167"
-      },
-      {
-        "name": "TMSS-Commissioning",
-        "url": "http://192.168.99.100:8008/api/project/TMSS-Commissioning",
-        "can_trigger": false,
-        "created_at": "2020-08-25T13:28:34.760707",
-        "cycles": [
-          "http://192.168.99.100:8008/api/cycle/Cycle%2014"
-        ],
-        "cycles_ids": [
-          "Cycle 14"
-        ],
-        "description": "Project for all TMSS tests and commissioning",
-        "expert": true,
-        "filler": false,
-        "period_category": null,
-        "period_category_value": null,
-        "priority_rank": 1,
-        "private_data": true,
-        "project_category": null,
-        "project_category_value": null,
-        "quota": [],
-        "quota_ids": [],
-        "tags": [],
-        "trigger_priority": 1000,
-        "updated_at": "2020-08-25T13:28:34.760729"
-      }
-    ]
+      ]
 }
-
-        
-     
 
 export default ProjectServiceMock;

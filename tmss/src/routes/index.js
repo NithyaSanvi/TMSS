@@ -9,10 +9,8 @@ import {NotFound} from '../layout/components/NotFound';
 import {ProjectList, ProjectCreate, ProjectView, ProjectEdit} from './Project';
 import {Dashboard} from './Dashboard';
 import {Scheduling} from './Scheduling';
-import {TaskEdit, TaskView, DataProduct} from './Task';
+import {TaskEdit, TaskView} from './Task';
 import ViewSchedulingUnit from './Scheduling/ViewSchedulingUnit'
-import SchedulingUnitCreate from './Scheduling/create';
-import EditSchedulingUnit from './Scheduling/edit';
 import { CycleList, CycleCreate, CycleView, CycleEdit } from './Cycle';
 
 export const routes = [
@@ -30,10 +28,6 @@ export const routes = [
         component: Scheduling,
         name: 'Scheduling Unit',
         title: 'Scheduling Unit - List'
-    },{
-        path: "/schedulingunit/create",
-        component: SchedulingUnitCreate,
-        name: 'Scheduling Unit Add'
     },{
         path: "/task",
         component: TaskView,
@@ -59,11 +53,6 @@ export const routes = [
         component: ViewSchedulingUnit,
         name: 'Scheduling View',
         title: 'Scheduling Unit - Details'
-    },{
-        path: "/schedulingunit/edit/:id",
-        component: EditSchedulingUnit,
-        name: 'Scheduling Edit',
-        title: 'Scheduling Unit - Edit'
     },{
         path: "/schedulingunit/view/:type/:id",
         component: ViewSchedulingUnit,
@@ -94,12 +83,8 @@ export const routes = [
         component: ProjectEdit,
         name: 'Project Edit',
         title: 'Project Edit'
-    },{
-        path: "/project/:project/schedulingunit/create",
-        component: SchedulingUnitCreate,
-        name: 'Scheduling Unit Add',
-        title: 'Scheduling Unit - Add'
-    },{
+    },
+    {
         path: "/cycle/edit/:id",
         component: CycleEdit,
         name: 'Cycle Edit',
@@ -126,11 +111,6 @@ export const routes = [
         name: 'Cycle List',
         title:'Cycle-List'
     },
-    {
-        path: "/task/view/blueprint/:id/dataproducts",
-        component: DataProduct,
-        name: 'Data Product'
-    } 
 ];
 
 export const RoutedContent = () => {

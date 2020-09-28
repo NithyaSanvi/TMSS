@@ -14,8 +14,7 @@ const CycleService = {
         }
     },
     // Duplicate
-    // now renamed getCycleById to getProjectsByCycle
-    getProjectsByCycle: async function (id) {
+    getCycleById: async function (id) {
         try {
             const url = `/api/cycle/${id}/project`;
             const response = await axios.get(url);

@@ -5,35 +5,20 @@
 import React, {useEffect, useRef} from 'react';
 import _ from 'lodash';
 import flatpickr from 'flatpickr';
-import $RefParser from "@apidevtools/json-schema-ref-parser";
+
 import "@fortawesome/fontawesome-free/css/all.css";
 import "flatpickr/dist/flatpickr.css";
 const JSONEditor = require("@json-editor/json-editor").JSONEditor;
 
 function Jeditor(props) {
-    console.log("In JEditor", props.schema);
+    // console.log("In JEditor");
     const editorRef = useRef(null);
     let pointingProps = useRef(null);
     let editor = null;
-    const resolveExternalRef = async () => {
-        let schema = {};
-        Object.assign(schema, props.schema ? props.schema : {});
-        for (const item in schema.properties) {
-            if (schema.properties[item]['$ref'] && !schema.properties[item]['$ref'].startsWith("#")) {
-                const $propDefinition = await $RefParser.resolve(schema.properties[item]['$ref']);
-                const propDefinitions = $propDefinition.get("#/definitions");
-                for (const propDefinition in propDefinitions) {
-                    schema.definitions[propDefinition] = propDefinitions[propDefinition];
-                    schema.properties[item]['$ref'] = "#/definitions/"+ propDefinition ;
-                } 
-            }
-        }
-       return schema;
-    };
-
-    const init = async () => {
+    useEffect(() => {
         const element = document.getElementById('editor_holder');
-        let schema = await resolveExternalRef();
+        let schema = {};
+        Object.assign(schema, props.schema?props.schema:{});
         pointingProps = [];
         // Customize the pointing property to capture angle1 and angle2 to specified format
         for (const definitionKey in schema.definitions) {
@@ -105,8 +90,7 @@ function Jeditor(props) {
             disable_properties: true,
             disable_collapse: true,
             show_errors: props.errorsOn?props.errorsOn:'change',        // Can be 'interaction', 'change', 'always', 'never'
-            compact: true,
-            ajax: true
+            compact: true
         };
         // Set Initial value to the editor
         if (props.initValue) {
@@ -122,10 +106,6 @@ function Jeditor(props) {
         }
         editorRef.current = editor;
         editor.on('change', () => {setEditorOutput()});
-    };
-
-    useEffect(() => {
-        init();
     }, [props.schema]);
 
     /**

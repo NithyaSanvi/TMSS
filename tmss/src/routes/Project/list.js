@@ -1,22 +1,23 @@
 import React, {Component} from 'react';
 import ProjectService from '../../services/project.service';
 import ViewTable from '../../components/ViewTable';
+// import { Link } from 'react-router-dom/cjs/react-router-dom.min';
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
-import CycleService from '../../services/cycle.service';
 
 export class ProjectList extends Component{
     constructor(props){
         super(props)
         this.state = {
             projectlist: [],
+            paths: [{
+                "View": "/project/view",
+            }],
             defaultcolumns: [ {
                 "name":"Name / Project Code",
                 "status":"Status" , 
                 "project_category_value":"Category of Project",
-                "description":"Description",
-                "archive_location_label":"LTA Storage Location",
-                "archive_subdirectory":"LTA Storage Path"
+                "description":"Description"
             }],
             optionalcolumns:  [{
                 "priority_rank":"Project Priority", 
@@ -31,7 +32,6 @@ export class ProjectList extends Component{
                 "LTA Storage":"LTA storage (TB)",
                 "Number of triggers":"Number of Triggers",
                 "actionpath":"actionpath",
-               
             }],
             columnclassname: [{
                 "Observing time (Hrs)":"filter-input-50",
@@ -46,51 +46,27 @@ export class ProjectList extends Component{
                 "Trigger Priority":"filter-input-50",
                 "Category of Period":"filter-input-50",
                 "Cycles":"filter-input-100",
-               "LTA Storage Location":"filter-input-100",
-                "LTA Storage Path":"filter-input-100"
             }],
             defaultSortColumn: [{id: "Name / Project Code", desc: false}],
             isprocessed: false,
             isLoading: true
         }
-        this.getPopulatedProjectList = this.getPopulatedProjectList.bind(this);
-    }
-
-    getPopulatedProjectList(cycleId) {
-        Promise.all([ProjectService.getFileSystem(), ProjectService.getCluster()]).then(async(response) => {
-            const options = {};
-            response[0].map(fileSystem => {
-                const cluster =  response[1].filter(clusterObj => { return (clusterObj.id === fileSystem.cluster_id && clusterObj.archive_site);});
-                if (cluster.length) {
-                    fileSystem.label =`${cluster[0].name} - ${fileSystem.name}`
-                    options[fileSystem.url] = fileSystem;
-                }
-                return fileSystem;
-            });
-            let projects = [];
-            if (cycleId) {
-                projects = await CycleService.getProjectsByCycle(cycleId);
-            }   else {
-                projects = await ProjectService.getProjectList();
-            }
-            projects = await ProjectService.getUpdatedProjectQuota(projects);
-            let list = projects.map(project => {
-                project.archive_location_label = (options[project.archive_location] || {}).label;
-                return project;
-            });
-            this.setState({
-                projectlist: list,
-                isprocessed: true,
-                isLoading: false,
-                ltaStorage: options
-            })
-        });
     }
 
     componentDidMount(){  
-        // Show Project for the Cycle, This request will be coming from Cycle View. Otherwise it is consider as normal Project List.
-        let cycle = this.props.cycle;
-        this.getPopulatedProjectList(cycle);
+        // for Unit test, Table data
+        this.unittestDataProvider();
+        ProjectService.getProjectList()
+        .then(async (projects) => {
+             await ProjectService.getUpdatedProjectQuota(projects)
+             .then( async projlist => {
+                this.setState({
+                    projectlist: projlist,
+                    isprocessed: true,
+                    isLoading: false
+                })
+            })
+        });
     }
    
     render(){
@@ -106,16 +82,8 @@ export class ProjectList extends Component{
                         </Link>
                     </div>
                 </div> */}
-              { (this.props.cycle) ? 
-                <>
-                </>
-                :
-                <PageHeader location={this.props.location} title={'Project - List'} 
-                actions={[{icon: 'fa-plus-square',title:'Click to Add Project', props:{pathname: '/project/create' }}]}
-                />
-               
-              }
-                {this.state.isLoading? <AppLoader /> : (this.state.isprocessed && this.state.projectlist.length>0) ?
+                <PageHeader location={this.props.location} title={'Project - List'} actions={[{icon: 'fa-plus-square',title:'Click to Add Project', props:{pathname: '/project/create' }}]}/>
+                {this.state.isLoading? <AppLoader /> : this.state.isprocessed &&
                     <ViewTable 
                         data={this.state.projectlist} 
                         defaultcolumns={this.state.defaultcolumns} 
@@ -126,9 +94,7 @@ export class ProjectList extends Component{
                         paths={this.state.paths}
                         keyaccessor="name"
                         unittest={this.state.unittest}
-                        tablename="project_list"
-                    />
-                    : <div>No project found </div>
+                        />
                 }
             </>
         )
@@ -163,3 +129,4 @@ export class ProjectList extends Component{
         }
     }
 }
+ 

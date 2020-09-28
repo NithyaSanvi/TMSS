@@ -94,16 +94,12 @@ p {
   margin-bottom: 5px;
 }
 
-.main-content .p-grid span {
+.p-grid span {
   margin-bottom: 10px;
 }
 
 .p-chips-token,.p-inputnumber span {
   margin-bottom: 0px;
-}
-
-.p-chips-token .p-chips-token-label {
-  margin-bottom: 0px !important;
 }
 
 .p-field {
