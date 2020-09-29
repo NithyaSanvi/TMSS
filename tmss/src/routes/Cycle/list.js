@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import moment from 'moment';
 import 'primeflex/primeflex.css';
 // import { Link } from 'react-router-dom/cjs/react-router-dom.min';
 import _ from 'lodash';
@@ -22,8 +23,8 @@ class CycleList extends Component{
         this.projectCategory = ['regular', 'user_shared_support'];
         this.periodCategory = ['long_term'];
         this.defaultcolumns = [ {   id:"Cycle Code",
-                                    start:"Start Date",
-                                    "Start Date": {
+                                    // start:"Start Date",
+                                    "start": {
                                         name: "Start Date",
                                         filter: "date"
                                     },
@@ -35,6 +36,7 @@ class CycleList extends Component{
                                     ltaResources: 'Lofar LTA Resources(TB)',
                                     support: 'Lofar Support (Hrs)',
                                     longterm : 'Long Term Projects' } ];
+
         this.optionalcolumns = [{   regularProjects: 'No.of Regular Projects',
                                     observingTimeDDT: 'Lofar Observing Time Commissioning (Hrs)',
                                     observingTimePrioA: 'Lofar Observing Time Prio A (Hrs)',
@@ -79,6 +81,7 @@ class CycleList extends Component{
                 cycle.id = cycle.name ;
                 cycle.regularProjects = regularProjects.length;
                 cycle.longterm = longterm.length;
+                cycle.start = moment(cycle['start'], moment.ISO_8601).format("YYYY-MMM-DD");
                 // cycle.observingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'observing_time');
                 // cycle.processingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'cep_processing_time');
                 // cycle.ltaResources = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'lta_storage');
