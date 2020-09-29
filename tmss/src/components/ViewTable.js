@@ -195,7 +195,6 @@ function RangeColumnFilter({
     })
     return [min, max]
   }, [id, preFilteredRows])
-
   return (
     <div
       style={{

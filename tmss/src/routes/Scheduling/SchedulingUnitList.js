@@ -54,7 +54,7 @@ class SchedulingUnitList extends Component{
         ScheduleService.getSchedulingUnitDraft().then(scheduleunit =>{
             const output = [];
             var scheduleunits = scheduleunit.data.results;
-            for( const scheduleunit of scheduleunits){
+            for( const scheduleunit  of scheduleunits){
                 const blueprintdata = bluePrint.data.results.filter(i => i.draft_id === scheduleunit.id);
                 blueprintdata.map(blueP => { 
                     blueP.duration = moment.utc(blueP.duration*1000).format('HH:mm:ss'); 
@@ -67,9 +67,9 @@ class SchedulingUnitList extends Component{
                 output.push(...blueprintdata);
                 scheduleunit['actionpath']='/schedulingunit/view/draft/'+scheduleunit.id;
                 scheduleunit['type'] = 'Draft';
+                scheduleunit['duration'] = moment.utc(scheduleunit.duration*1000).format('HH:mm:ss');
                 scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format("YYYY-MMM-DD");
                 scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD");
-                scheduleunit['duration'] = moment.utc(scheduleunit.duration*1000).format('HH:mm:ss');
                 output.push(scheduleunit);
             }
             this.setState({

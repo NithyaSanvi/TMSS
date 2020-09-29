@@ -23,6 +23,10 @@ class CycleList extends Component{
         this.periodCategory = ['long_term'];
         this.defaultcolumns = [ {   id:"Cycle Code",
                                     start:"Start Date",
+                                    "Start Date": {
+                                        name: "Start Date",
+                                        filter: "date"
+                                    },
                                     stop: "End Date",
                                     duration: "Duration (Days)",
                                     totalProjects: 'No.of Projects',
@@ -55,7 +59,9 @@ class CycleList extends Component{
 
     getUnitConvertedQuotaValue(cycle, cycleQuota, resourceName) {
         const quota = _.find(cycleQuota, {'cycle_id': cycle.name, 'resource_type_id': resourceName});
-        const unitQuantity = this.state.resources.find(i => i.name === resourceName).quantity_value;
+        const unitQuantity = 0;
+        let res = this.state.resources.find(i => i.name === resourceName)
+        if(res) unitQuantity = res.quantity_value;
         return UnitConversion.getUIResourceUnit(unitQuantity, quota?quota.value:0);
     }
 
