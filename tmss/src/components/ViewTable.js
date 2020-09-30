@@ -5,7 +5,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import { useHistory } from "react-router-dom";
 import {OverlayPanel} from 'primereact/overlaypanel';
-import {InputSwitch} from 'primereact/inputswitch';
+import {InputText} from 'primereact/inputtext';
 import { Calendar } from 'primereact/calendar';
 import {Paginator} from 'primereact/paginator';
 import {TriStateCheckbox} from 'primereact/tristatecheckbox';
@@ -239,6 +239,8 @@ function RangeColumnFilter({
 function NumberRangeColumnFilter({
   column: { filterValue = [], preFilteredRows, setFilter, id },
 }) {
+  const [errorProps, setErrorProps] = useState({});
+  const [maxErr, setMaxErr] = useState(false);
   const [min, max] = React.useMemo(() => {
     let min = preFilteredRows.length ? preFilteredRows[0].values[id] : 0
     let max = preFilteredRows.length ? preFilteredRows[0].values[id] : 0
@@ -253,14 +255,15 @@ function NumberRangeColumnFilter({
     <div
       style={{
         display: 'flex',
+        alignItems: 'center'
       }}
     >
       <input
         value={filterValue[0] || ''}
         type="number"
         onChange={e => {
-          const val = e.target.value
-          setFilter((old = []) => [val ? parseInt(val, 10) : undefined, old[1]])
+          const val = e.target.value;
+          setFilter((old = []) => [val ? parseInt(val, 10) : undefined, old[1]]);
         }}
         placeholder={`Min (${min})`}
         style={{
@@ -269,11 +272,24 @@ function NumberRangeColumnFilter({
         }}
       />
       to
-      <input
+      <InputText
         value={filterValue[1] || ''}
         type="number"
+        {...errorProps}
+        className={maxErr && 'field-error'}
         onChange={e => {
-          const val = e.target.value
+          const val = e.target.value;
+          const minVal = filterValue.length && filterValue[0]
+          if (minVal && e.target.value < minVal) {
+            setMaxErr(true);
+            setErrorProps({
+              tooltip: "Max value should be greater than Min",
+              tooltipOptions: { event: 'hover'}
+            });
+          } else {
+            setMaxErr(false);
+            setErrorProps({});
+          }
           setFilter((old = []) => [old[0], val ? parseInt(val, 10) : undefined])
         }}
         placeholder={`Max (${max})`}
@@ -452,46 +468,46 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
 </div>
 
       <div className="tmss-table table_container">
-      <table {...getTableProps()} data-testid="viewtable" className="viewtable" >
-        <thead>
-          {headerGroups.map(headerGroup =>  (
-            <tr {...headerGroup.getHeaderGroupProps()}>
-              {headerGroup.headers.map(column => (
-                <th> 
-                  <div {...column.getHeaderProps(column.getSortByToggleProps())}>
-                    {column.Header !== 'actionpath' && column.render('Header')}
-                    {column.Header !== 'Action'? 
-                      column.isSorted ? (column.isSortedDesc ? <i className="pi pi-sort-down" aria-hidden="true"></i> : <i className="pi pi-sort-up" aria-hidden="true"></i>) : ""
-                      : ""
-                    }
-                  </div>
-                  
-                  {/* Render the columns filter UI */} 
-                    {column.Header !== 'actionpath' &&
-                      <div className={columnclassname[0][column.Header]}  > 
-                        {column.canFilter && column.Header !== 'Action' ? column.render('Filter') : null}
-                        
-                      </div>
-                    }
-                </th> 
-              ))}
-            </tr>
-          ))}
-         
-        </thead>
-        <tbody {...getTableBodyProps()}>
-        {page.map((row, i) => {
-            prepareRow(row)
-            return (
-              <tr {...row.getRowProps()}>
-                {row.cells.map(cell => {
-                  return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
-                })}
+        <table {...getTableProps()} data-testid="viewtable" className="viewtable" >
+          <thead>
+            {headerGroups.map(headerGroup =>  (
+              <tr {...headerGroup.getHeaderGroupProps()}>
+                {headerGroup.headers.map(column => (
+                  <th> 
+                    <div {...column.getHeaderProps(column.getSortByToggleProps())}>
+                      {column.Header !== 'actionpath' && column.render('Header')}
+                      {column.Header !== 'Action'? 
+                        column.isSorted ? (column.isSortedDesc ? <i className="pi pi-sort-down" aria-hidden="true"></i> : <i className="pi pi-sort-up" aria-hidden="true"></i>) : ""
+                        : ""
+                      }
+                    </div>
+                    
+                    {/* Render the columns filter UI */} 
+                      {column.Header !== 'actionpath' &&
+                        <div className={columnclassname[0][column.Header]}  > 
+                          {column.canFilter && column.Header !== 'Action' ? column.render('Filter') : null}
+                          
+                        </div>
+                      }
+                  </th> 
+                ))}
               </tr>
-            )
-          })}
-        </tbody>
-      </table>
+            ))}
+          
+          </thead>
+          <tbody {...getTableBodyProps()}>
+          {page.map((row, i) => {
+              prepareRow(row)
+              return (
+                <tr {...row.getRowProps()}>
+                  {row.cells.map(cell => {
+                    return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                  })}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
       <div className="pagination">
         <Paginator rowsPerPageOptions={[10,25,50,100]} first={currentpage} rows={currentrows} totalRecords={rows.length} onPageChange={onPagination}></Paginator>

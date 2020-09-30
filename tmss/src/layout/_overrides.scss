@@ -23,8 +23,11 @@
    }
 }
 .tmss-table {
-   // overflow: unset !important;
    overflow: auto;
+   // since calendar getting inserted to table, because of above overflow, not getting visible
+   // so its hacky one based on calendar height
+   padding-top: 350px;
+   margin-top: -350px;
 }
 .tmss-table .p-datepicker table td {
     overflow-wrap: unset;
@@ -64,6 +67,12 @@
     border-color:lightgray;
     border-width: thin;
     border: 1px solid lightgray;
+}
+.field-error {
+    border-color: red !important;
+    border: 1px solid red !important;
+    box-shadow: 0 0 0 0.2px red !important;
+    outline: red;
 }
 
  
