@@ -24,10 +24,6 @@
 }
 .tmss-table {
    overflow: auto;
-   // since calendar getting inserted to table, because of above overflow, not getting visible
-   // so its hacky one based on calendar height
-   padding-top: 350px;
-   margin-top: -350px;
 }
 .tmss-table .p-datepicker table td {
     overflow-wrap: unset;
@@ -75,4 +71,4 @@
     outline: red;
 }
 
- 
+

@@ -145,7 +145,7 @@ function BooleanColumnFilter({
 // This is a custom filter UI that uses a
 // calendar to set the value
 function CalendarColumnFilter({
-  column: { setFilter, filterValue},
+  column: { setFilter, filterValue },
 }) {
   // Calculate the min and max
   // using the preFilteredRows
@@ -158,7 +158,7 @@ function CalendarColumnFilter({
   return (
     
     <div className="table-filter" onClick={e => { e.stopPropagation() }}>
-       <Calendar value={value} onChange={(e) => {
+       <Calendar value={value} appendTo={document.body} onChange={(e) => {
         const value = moment(e.value, moment.ISO_8601).format("YYYY-MMM-DD")
           setValue(value); setFilter(value); 
         }} showIcon></Calendar>
