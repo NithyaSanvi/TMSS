@@ -608,7 +608,7 @@ function ViewTable(props) {
         const filtertype = (!isString && filterTypes[optionalheader[0][header].filter].type) ? filterTypes[optionalheader[0][header].filter].type : 'fuzzyText'
         columns.push({
           Header: isString ? optionalheader[0][header] : optionalheader[0][header].name,
-          id: isString ? optionalheader[0][header] : optionalheader[0][header].name,
+          id: isString ? header : optionalheader[0][header].name,
           accessor: header,
           filter: filtertype,
           Filter: filterFn,
@@ -616,7 +616,7 @@ function ViewTable(props) {
           Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
           })
     }); 
-     
+
     let togglecolumns = localStorage.getItem(tablename);
     if(togglecolumns){
         togglecolumns = JSON.parse(togglecolumns)
