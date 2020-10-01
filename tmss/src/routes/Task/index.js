@@ -1,4 +1,5 @@
 import {TaskEdit} from './edit';
 import {TaskView} from './view';
+import {DataProduct} from './dataproduct';
 
-export {TaskEdit, TaskView} ;
+export {TaskEdit, TaskView, DataProduct} ;

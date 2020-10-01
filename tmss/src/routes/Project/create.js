@@ -1,7 +1,6 @@
 import React, {Component} from 'react';
 import { Redirect } from 'react-router-dom';
 import _ from 'lodash';
-
 import {InputText} from 'primereact/inputtext';
 import {InputNumber} from 'primereact/inputnumber';
 import {InputTextarea} from 'primereact/inputtextarea';
@@ -21,6 +20,7 @@ import ProjectService from '../../services/project.service';
 import UnitConverter from '../../utils/unit.converter';
 import UIConstants from '../../utils/ui.constants';
 
+
 /**
  * Component to create a new Project
  */
@@ -28,6 +28,7 @@ export class ProjectCreate extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            ltaStorage: [],
             isLoading: true,
             dialog: { header: '', detail: ''},      
             project: {
@@ -44,13 +45,16 @@ export class ProjectCreate extends Component {
             projectCategories: [],
             resources: [],                          // Selected Resources for Allocation
             resourceList: [],                       // Available Resources for Allocation
-            cycles: []
+            cycles: [],
+            archive_location:[],
+            cluster:[]
         }
         // Validateion Rules
         this.formRules = {
             name: {required: true, message: "Name can not be empty"},
             description: {required: true, message: "Description can not be empty"},
-            priority_rank: {required: true, message: "Enter Project Rank"}
+            priority_rank: {required: true, message: "Enter Project Rank"},
+            archive_subdirectory: {required:true, message:"Enter Storage Path"}
         };
         this.defaultResourcesEnabled = true;        // This property and functionality to be concluded based on PO input
         this.defaultResources = [{name:'LOFAR Observing Time'}, 
@@ -91,6 +95,18 @@ export class ProjectCreate extends Component {
         ProjectService.getPeriodCategories()
             .then(categories => {
                 this.setState({periodCategories: categories});
+            });
+        Promise.all([ProjectService.getFileSystem(), ProjectService.getCluster()]).then(response => {
+                const options = [];
+                response[0].map(fileSystem => {
+                    const cluster =  response[1].find(clusterObj => clusterObj.id === fileSystem.cluster_id && clusterObj.archive_site);
+                    if (cluster) {
+                        fileSystem.label =`${cluster.name} - ${fileSystem.name}`
+                        options.push(fileSystem);
+                    }
+                    return fileSystem;
+                });
+                this.setState({archive_location: response[0], ltaStorage: options, cluster: response[1] });
             });
         ProjectService.getResources()
             .then(resourceList => {
@@ -170,12 +186,31 @@ export class ProjectCreate extends Component {
                 project[key] = value?parseInt(value):0;
                 break;
             }
+            case 'SUB-DIRECTORY': {
+                const directory = value.split(' ').join('_').toLowerCase();
+                project[key] = (directory!=="" && !directory.endsWith('/'))? `${directory}/`: `${directory}`;
+                break;
+            }
+            case 'PROJECT_NAME': {
+                let directory = project[key]?project[key].split(' ').join('_').toLowerCase():"";
+                if (!project['archive_subdirectory'] || project['archive_subdirectory'] === "" ||
+                     project['archive_subdirectory'] === `${directory}/`) {
+                    directory = value.split(' ').join('_').toLowerCase();
+                    project['archive_subdirectory'] = `${directory}/`;
+                }
+                project[key] = value;
+                break;
+            }
             default: {
                 project[key] = value;
                 break;
             }
         }
-        this.setState({project: project, validForm: this.validateForm(key)});
+        let validForm = this.validateForm(key);
+        if (type==='PROJECT_NAME' & value!=="") {
+            validForm = this.validateForm('archive_subdirectory');
+        }
+        this.setState({project: project, validForm: validForm});
     }
 
     /**
@@ -285,7 +320,7 @@ export class ProjectCreate extends Component {
      * Function to cancel form creation and navigate to other page/component
      */
     cancelCreate() {
-        this.setState({redirect: '/project'});
+        this.props.history.goBack();
     }
 
     /**
@@ -314,7 +349,9 @@ export class ProjectCreate extends Component {
                     description: '',
                     trigger_priority: 1000,
                     priority_rank: null,
-                    quota: []
+                    quota: [],
+                    archive_location: null,
+                    archive_subdirectory:""
                 },
                 projectQuota: projectQuota,
                 validFields: {},
@@ -333,22 +370,10 @@ export class ProjectCreate extends Component {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
         }
-        
         return (
             <React.Fragment>
                 <Growl ref={(el) => this.growl = el} />
-                { /* <div className="p-grid">
-                    
-                    <div className="p-col-10 p-lg-10 p-md-10">
-                        <h2>Project - Add</h2>
-                    </div>
-                    <div className="p-col-2 p-lg-2 p-md-2">
-                        <Link to={{ pathname: '/project'}} tite="Close Edit" style={{float: "right"}}>
-                            <i className="fa fa-window-close" style={{marginTop: "10px"}}></i>
-                        </Link>
-                    </div>
-                 </div> */ }
-                 <PageHeader location={this.props.location} title={'Project - Add'} actions={[{icon:'fa-window-close',title:'Click to Close Project', props:{ pathname: '/project'}}]}/>
+                 <PageHeader location={this.props.location} title={'Project - Add'} actions={[{icon:'fa-window-close',link:this.props.history.goBack, title:'Click to Close Project', props:{ pathname: '/project'}}]}/>
                 { this.state.isLoading ? <AppLoader /> :
                 <>
                 <div>
@@ -365,8 +390,8 @@ export class ProjectCreate extends Component {
                                 <InputText className={this.state.errors.name ?'input-error':''} id="projectName" data-testid="name" 
                                             tooltip="Enter name of the project" tooltipOptions={this.tooltipOptions} maxLength="128"
                                             value={this.state.project.name} 
-                                            onChange={(e) => this.setProjectParams('name', e.target.value)}
-                                            onBlur={(e) => this.setProjectParams('name', e.target.value)}/>
+                                            onChange={(e) => this.setProjectParams('name', e.target.value,'PROJECT_NAME')}
+                                            onBlur={(e) => this.setProjectParams('name', e.target.value,'PROJECT_NAME')}/>
                                 <label className={this.state.errors.name?"error":"info"}>
                                     {this.state.errors.name ? this.state.errors.name : "Max 128 characters"}
                                 </label>
@@ -451,9 +476,34 @@ export class ProjectCreate extends Component {
                                     {this.state.errors.priority_rank ? this.state.errors.priority_rank : ""}
                                 </label>
                             </div>
-                        </div>
-                        
-                        {this.defaultResourcesEnabled && this.state.resourceList &&
+                            </div>
+                            <div className="p-field p-grid">
+                            <label htmlFor="ltaStorage" className="col-lg-2 col-md-2 col-sm-12">LTA Storage Location</label>
+                                <div className="col-lg-3 col-md-3 col-sm-12" >
+                                    <Dropdown inputId="ltaStore"
+                                            optionValue="url"
+                                            tooltip="LTA Storage" tooltipOptions={this.tooltipOptions}
+                                            value={this.state.project.archive_location}
+                                            options={this.state.ltaStorage}
+                                            onChange={(e) => this.setProjectParams('archive_location', e.target.value)}
+                                            placeholder="Select LTA Storage" />
+                                </div>
+                            
+                            <div className="col-lg-1 col-md-1 col-sm-12"></div>
+                            <label htmlFor="ltastoragepath" className="col-lg-2 col-md-2 col-sm-12">LTA Storage Path <span style={{color:'red'}}>*</span> </label>
+                                <div className="col-lg-3 col-md-3 col-sm-12">
+                                    <InputText  className={this.state.errors.archive_subdirectory ?'input-error':''} id="StoragePath" data-testid="name" 
+                                                tooltip="Enter storage relative path" tooltipOptions={this.tooltipOptions} maxLength="1024"
+                                                value={this.state.project.archive_subdirectory} 
+                                                onChange={(e) => this.setProjectParams('archive_subdirectory', e.target.value)}
+                                                onBlur={(e) => this.setProjectParams('archive_subdirectory', e.target.value,'SUB-DIRECTORY')}/>
+                                    <label className={this.state.errors.archive_subdirectory ?"error":"info"}>
+                                        {this.state.errors.archive_subdirectory ? this.state.errors.archive_subdirectory : "Max 1024 characters"}
+                                    </label>
+                            </div>
+                            
+                            </div>
+                            {this.defaultResourcesEnabled && this.state.resourceList &&
                             <div className="p-fluid">
                                 <div className="p-field p-grid">
                                     <div className="col-lg-2 col-md-2 col-sm-112">
@@ -511,7 +561,6 @@ export class ProjectCreate extends Component {
                             </div>
                     </Dialog>
                 </div>
-                
             </React.Fragment>
         );
     }

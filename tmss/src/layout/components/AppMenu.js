@@ -2,6 +2,7 @@
 import {NavLink} from 'react-router-dom'
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
+import { Button } from 'primereact/button';
 
 class AppSubmenu extends Component {
 
@@ -51,18 +52,35 @@ class AppSubmenu extends Component {
             });
         }
     }
+    
+    componentDidMount() {
+        if (!this.props.items) {
+            return;
+        }
+        const pathname = window.location.pathname;
+        console.log(pathname);
+        for (let i = 0; i < this.props.items.length; i++) {
+
+            if (pathname.indexOf(this.props.items[i].section) > -1) {
+                this.setState({activeIndex: i});
+                break
+            }
+        }
+    }
 
 
 	renderLinkContent(item) {
 		let submenuIcon = item.items && <i className="pi pi-fw pi-angle-down menuitem-toggle-icon"></i>;
 		let badge = item.badge && <span className="menuitem-badge">{item.badge}</span>;
-
+        
 		return (
 			<React.Fragment>
-				<i className={item.icon}></i>
-				<span>{item.label}</span>
-				{submenuIcon}
-				{badge}
+                <i className={item.icon}></i>
+                <Button className="nav-btn nav-btn-tooltip" tooltip={item.label}></Button>
+                <Button className="nav-btn nav-btn-notooltip"></Button>
+                <span>{item.label}</span>
+                {submenuIcon}
+                {badge}
 			</React.Fragment>
 		);
 	}

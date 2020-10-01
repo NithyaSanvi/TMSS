@@ -339,7 +339,9 @@ export class CycleCreate extends Component {
                     </div>
                 </div> */ }
                 
-                <PageHeader location={this.props.location} title={'Cycle - Add'} actions={[{icon:'fa-window-close',title:'Click to Close Add Cycle',props:{pathname: '/cycle' }}]}/>
+                <PageHeader location={this.props.location} title={'Cycle - Add'} actions={[{icon:'fa-window-close',
+                            title:'Click to Close Add Cycle',
+                            props:{pathname: '/cycle' }}]}/>
                 { this.state.isLoading ? <AppLoader /> :
                 <>
                 <div>

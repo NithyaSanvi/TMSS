@@ -139,7 +139,7 @@ export class TaskEdit extends Component {
     }
 
     cancelEdit() {
-        this.setState({redirect: '/task/view/draft/' + this.state.task.id});
+        this.props.history.goBack();
     }
 
     componentDidMount() {
@@ -202,7 +202,7 @@ export class TaskEdit extends Component {
                         </Link>
                     </div>
                     </div> */}
-				<PageHeader location={this.props.location} title={'Task - Edit'} actions={[{icon: 'fa-window-close',title:'Click to Close Task Edit Page' ,props : { pathname:  `/task/view/draft/${this.state.task?this.state.task.id:''}`}}]}/>
+				<PageHeader location={this.props.location} title={'Task - Edit'} actions={[{icon: 'fa-window-close',link: this.props.history.goBack,title:'Click to Close Task Edit Page' ,props : { pathname:  `/task/view/draft/${this.state.task?this.state.task.id:''}`}}]}/>
 				{isLoading ? <AppLoader/> :
                 <div>
 			        <div className="p-fluid">

@@ -26,7 +26,7 @@ class ViewSchedulingUnit extends Component{
                 "id":"ID",
                 "id":{
                   name: "ID",
-                  filter: "slider"
+                  filter: "minMax"
                 },
                 "name":"Name",
                 "description":"Description",
@@ -68,6 +68,15 @@ class ViewSchedulingUnit extends Component{
                 "Relative Start Time (HH:mm:ss)": "filter-input-75",
                 "Relative End Time (HH:mm:ss)": "filter-input-75",
             }]
+        }
+        this.actions = [
+            {icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', link: this.props.history.goBack} 
+        ];
+        if (this.props.match.params.type === 'draft') {
+            this.actions.unshift({icon: 'fa-edit', title: 'Click to edit',  props : { pathname:`/schedulingunit/edit/${ this.props.match.params.id}`
+        } });
+        } else {
+            this.actions.unshift({icon: 'fa-lock', title: 'Cannot edit blueprint'});
         }
         if (this.props.match.params.id) {
             this.state.scheduleunitId  = this.props.match.params.id;
@@ -137,8 +146,10 @@ class ViewSchedulingUnit extends Component{
                     <i className="fa fa-edit" style={{marginTop: "10px"}}></i>
                     </Link> 
                 </div>
-                </div> */}
-                <PageHeader location={this.props.location} title={'Scheduling Unit - Details'} actions={[{icon: 'fa-times',title:'Click to Close Scheduling Unit View', props : { pathname: '/schedulingunit'}}]}/>
+                </div> */
+                /*TMSS-363 Blueprint icon changes */}
+                <PageHeader location={this.props.location} title={'Scheduling Unit - Details'} 
+                            actions={this.actions}/>
 				{ this.state.isLoading ? <AppLoader/> :this.state.scheduleunit &&
 			    <>
 		            <div className="main-content">
@@ -200,6 +211,7 @@ class ViewSchedulingUnit extends Component{
                         keyaccessor="id"
                         paths={this.state.paths}
                         unittest={this.state.unittest}
+                        tablename="scheduleunit_task_list"
                     />
                  } 
             </>

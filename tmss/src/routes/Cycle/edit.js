@@ -352,7 +352,7 @@ export class CycleEdit extends Component {
      * Cancel edit and redirect to Cycle View page
      */
     cancelEdit() {
-        this.setState({redirect: `/cycle/view/${this.state.cycle.name}`});
+        this.props.history.goBack();
     }
 
     render() {
@@ -373,7 +373,9 @@ export class CycleEdit extends Component {
                         </Link>
                     </div>
                 </div> */}
-                <PageHeader location={this.props.location} title={'Cycle - Edit'} actions={[{icon:'fa-window-close',title:'Click to Close Cycle-Edit', props:{ pathname: `/cycle/view/${this.state.cycle.name}`}}]}/>
+                <PageHeader location={this.props.location} title={'Cycle - Edit'} actions={[{icon:'fa-window-close',
+                link: this.props.history.goBack,title:'Click to Close Cycle-Edit', 
+                props:{ pathname: `/cycle/view/${this.state.cycle.name}`}}]}/>
 
                 { this.state.isLoading ? <AppLoader/> :
                 <>

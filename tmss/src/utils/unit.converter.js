@@ -18,6 +18,15 @@ const UnitConverter = {
             console.error('[unit.converter.getUIResourceUnit]',error);
         }
         return value;
+    },
+    getSecsToHHmmss: function(seconds) {
+        if (seconds) {
+            const hh = Math.floor(seconds/3600);
+            const mm = Math.floor((seconds - hh*3600) / 60 );
+            const ss = +((seconds -(hh*3600)-(mm*60)) / 1);
+            return (hh<10?`0${hh}`:`${hh}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`);
+        }
+        return seconds;
     }
 };
 

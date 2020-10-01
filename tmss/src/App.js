@@ -24,9 +24,9 @@ class App extends Component {
       currentMenu: '',
       currentPath: '/',
       PageTitle:'',
-	  staticMenuInactive: false,
-            overlayMenuActive: false,
-            mobileMenuActive: false,
+      staticMenuInactive: localStorage.getItem('staticMenuInactive') === 'true' ? true : false,
+      overlayMenuActive: localStorage.getItem('overlayMenuActive') === 'true' ? true : false,
+      mobileMenuActive: localStorage.getItem('mobileMenuActive') === 'true' ? true : false,
     };
 	    this.onWrapperClick = this.onWrapperClick.bind(this);
         this.onToggleMenu = this.onToggleMenu.bind(this);
@@ -35,10 +35,11 @@ class App extends Component {
         this.setPageTitle = this.setPageTitle.bind(this);
   
       this.menu = [
-      {label: 'Dashboard', icon: 'pi pi-fw pi-home', to:'/dashboard'},
-      {label: 'Cycle', icon:'pi pi-fw pi-spinner', to:'/cycle'},
-      {label: 'Project', icon: 'fab fa-fw fa-wpexplorer', to:'/project'},
-      {label: 'Scheduling Units', icon: 'pi pi-fw pi-calendar', to:'/schedulingunit'},
+      {label: 'Dashboard', icon: 'pi pi-fw pi-home', to:'/dashboard',section: 'dashboard'},
+      {label: 'Cycle', icon:'pi pi-fw pi-spinner', to:'/cycle',section: 'cycle'},
+      {label: 'Project', icon: 'fab fa-fw fa-wpexplorer', to:'/project',section: 'project'},
+      {label: 'Scheduling Units', icon: 'pi pi-fw pi-calendar', to:'/schedulingunit',section: 'schedulingunit'},
+      {label: 'Timeline', icon: 'pi pi-fw pi-clock', to:'/su/timelineview',section: 'su/timelineview'},
     //   {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task'},
       
       
@@ -64,11 +65,16 @@ class App extends Component {
             if (this.state.layoutMode === 'overlay') {
                 this.setState({
                     overlayMenuActive: !this.state.overlayMenuActive
-                });
+                }, () => {
+                    localStorage.setItem('overlayMenuActive', this.state.overlayMenuActive);
+                }
+                );
             }
             else if (this.state.layoutMode === 'static') {
                 this.setState({
                     staticMenuInactive: !this.state.staticMenuInactive
+                }, () => {
+                    localStorage.setItem('staticMenuInactive', this.state.staticMenuInactive);
                 });
             }
         }
@@ -76,7 +82,10 @@ class App extends Component {
             const mobileMenuActive = this.state.mobileMenuActive;
             this.setState({
                 mobileMenuActive: !mobileMenuActive
-            });
+            },() => {
+                localStorage.setItem('mobileMenuActive', this.state.mobileMenuActive);
+            }
+            );
         }
        event.preventDefault();
     }
@@ -100,24 +109,23 @@ class App extends Component {
     } 
 	
   render() {
-			const wrapperClass = classNames('layout-wrapper', {
-            'layout-overlay': this.state.layoutMode === 'overlay',
-            'layout-static': this.state.layoutMode === 'static',
-            'layout-static-sidebar-inactive': this.state.staticMenuInactive && this.state.layoutMode === 'static',
-            'layout-overlay-sidebar-active': this.state.overlayMenuActive && this.state.layoutMode === 'overlay',
-            'layout-mobile-sidebar-active': this.state.mobileMenuActive			
-		});
-        const AppBreadCrumbWithRouter = withRouter(AppBreadcrumb);
+    const wrapperClass = classNames('layout-wrapper', {
+        'layout-overlay': this.state.layoutMode === 'overlay',
+        'layout-static': this.state.layoutMode === 'static',
+        'layout-static-sidebar-inactive': this.state.staticMenuInactive && this.state.layoutMode === 'static',
+        'layout-overlay-sidebar-active': this.state.overlayMenuActive && this.state.layoutMode === 'overlay',
+        'layout-mobile-sidebar-active': this.state.mobileMenuActive			
+    });
+    const AppBreadCrumbWithRouter = withRouter(AppBreadcrumb);
        
-		
-     return (
+    return (
       <React.Fragment>
            <div className="App">
            {/* <div className={wrapperClass} onClick={this.onWrapperClick}> */}
            <div className={wrapperClass}>
             <AppTopbar onToggleMenu={this.onToggleMenu}></AppTopbar>
             <Router basename={ this.state.currentPath }>
-              <AppMenu model={this.menu} onMenuItemClick={this.onMenuItemClick} />
+              <AppMenu model={this.menu} onMenuItemClick={this.onMenuItemClick} layoutMode={this.state.la} active={this.state.menuActive}/>
               <div className="layout-main">
 			  <AppBreadCrumbWithRouter setPageTitle={this.setPageTitle} />
               <RoutedContent />

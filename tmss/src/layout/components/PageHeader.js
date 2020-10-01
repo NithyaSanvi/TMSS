@@ -21,6 +21,18 @@ export default ({ title, subTitle, actions, ...props}) => {
         }
     };
 
+    const onButtonClick = (e, action) => {
+        if (action.actOn && action.actOn === 'click') {
+            action.props.callback(e);
+        }
+    };
+
+    const onButtonMouseOver = (e, action) => {
+        if (action.actOn && action.actOn === 'mouseOver') {
+            action.props.callback(e);
+        }
+    }
+
     return (
         <div className="page-header">
             <div className="title">
@@ -29,11 +41,22 @@ export default ({ title, subTitle, actions, ...props}) => {
             </div>
             <div className="page-action-menu">
                 {(actions || []).map(action => {
-                    return (
-                        <Link to={{ ...action.props }} title={action.title || ''} onClick={() => onClickLink(action)}>
-                        <i className={`fa ${action.icon}`}></i>
-                    </Link>
-                )})}
+                    if (action.type === 'button') {
+                        return (
+                            <button className="p-link">
+                                <i className={`fa ${action.icon}`}  
+                                    onMouseOver={(e) => onButtonMouseOver(e, action)}
+                                    onClick={(e) => onButtonClick(e, action)} />
+                            </button>
+                        );
+                    }   else {
+                        return (
+                            <Link className={action.classname} to={{ ...action.props }} title={action.title || ''} onClick={() => onClickLink(action)}>
+                                <i className={`fa ${action.icon}`}></i>
+                            </Link>
+                        );
+                    }
+                })}
             </div>
         </div>
     );

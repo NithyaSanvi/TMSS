@@ -1,9 +1,8 @@
 import React, { Component } from 'react'
-import moment from 'moment';
 import 'primeflex/primeflex.css';
 // import { Link } from 'react-router-dom/cjs/react-router-dom.min';
 import _ from 'lodash';
-
+import moment from 'moment';
 import ViewTable from '../../components/ViewTable';
 import CycleService from '../../services/cycle.service';
 import UnitConversion from '../../utils/unit.converter';
@@ -23,12 +22,16 @@ class CycleList extends Component{
         this.projectCategory = ['regular', 'user_shared_support'];
         this.periodCategory = ['long_term'];
         this.defaultcolumns = [ {   id:"Cycle Code",
-                                    // start:"Start Date",
+                                    start:"Start Date",
                                     "start": {
                                         name: "Start Date",
                                         filter: "date"
                                     },
                                     stop: "End Date",
+                                    "stop": {
+                                        name: "End Date",
+                                        filter: "date"
+                                    },
                                     duration: "Duration (Days)",
                                     totalProjects: 'No.of Projects',
                                     observingTime: 'Lofar Observing Time (Hrs)',
@@ -36,7 +39,6 @@ class CycleList extends Component{
                                     ltaResources: 'Lofar LTA Resources(TB)',
                                     support: 'Lofar Support (Hrs)',
                                     longterm : 'Long Term Projects' } ];
-
         this.optionalcolumns = [{   regularProjects: 'No.of Regular Projects',
                                     observingTimeDDT: 'Lofar Observing Time Commissioning (Hrs)',
                                     observingTimePrioA: 'Lofar Observing Time Prio A (Hrs)',
@@ -58,18 +60,14 @@ class CycleList extends Component{
                                      
         this.defaultSortColumn = [{id: "Cycle Code", desc: false}];                          
     }
-
     getUnitConvertedQuotaValue(cycle, cycleQuota, resourceName) {
         const quota = _.find(cycleQuota, {'cycle_id': cycle.name, 'resource_type_id': resourceName});
-        const unitQuantity = 0;
-        let res = this.state.resources.find(i => i.name === resourceName)
-        if(res) unitQuantity = res.quantity_value;
+        const unitQuantity = this.state.resources.find(i => i.name === resourceName).quantity_value;
         return UnitConversion.getUIResourceUnit(unitQuantity, quota?quota.value:0);
     }
-
     getCycles(cycles = [], cycleQuota) {
         const promises = [];
-        cycles.map(cycle => promises.push(CycleService.getCycleById(cycle.name)));
+        cycles.map(cycle => promises.push(CycleService.getProjectsByCycle(cycle.name)));
         Promise.all(promises).then(responses => {
             const results = cycles;
             results.map(async (cycle, index) => {
@@ -82,6 +80,7 @@ class CycleList extends Component{
                 cycle.regularProjects = regularProjects.length;
                 cycle.longterm = longterm.length;
                 cycle.start = moment(cycle['start'], moment.ISO_8601).format("YYYY-MMM-DD");
+                cycle.stop = moment(cycle['stop'], moment.ISO_8601).format("YYYY-MMM-DD");
                 // cycle.observingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'observing_time');
                 // cycle.processingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'cep_processing_time');
                 // cycle.ltaResources = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'lta_storage');
@@ -157,6 +156,7 @@ class CycleList extends Component{
                         defaultSortColumn= {this.defaultSortColumn}
                         showaction="true"
                         paths={this.state.paths}
+                        tablename="cycle_list"
                  />  : <></>
                  } 
                 

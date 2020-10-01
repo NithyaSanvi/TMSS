@@ -3,7 +3,7 @@ import {Link, Redirect} from 'react-router-dom'
 import moment from 'moment';
 import _ from 'lodash';
 
-import { Chips } from 'primereact/chips';
+// import { Chips } from 'primereact/chips';
 
 import ResourceDisplayList from './ResourceDisplayList';
 
@@ -11,6 +11,7 @@ import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
 import CycleService from '../../services/cycle.service';
 import UnitConverter from '../../utils/unit.converter';
+import {ProjectList} from './../Project/list';
 
 /**
  * Component to view the details of a cycle
@@ -93,7 +94,10 @@ export class CycleView extends Component {
                     </div>
                     }
                 </div> */ }
-                <PageHeader location={this.props.location} title={'Cycle - View'} actions={[{icon:'fa-edit',title:'Click to Edit Cycle', props:{ pathname: `/cycle/edit/${this.state.cycle.name}`, state: {id: this.state.cycle?this.state.cycle.name:''}}},{name: 'fa-times',props:{ pathname: `/cycle`}}]}/>
+                <PageHeader location={this.props.location} title={'Cycle - Details'} 
+                            actions={[ {icon:'fa-edit', title:'Click to Edit Cycle', props:{ pathname: `/cycle/edit/${this.state.cycle.name}`, 
+                                        state: {id: this.state.cycle?this.state.cycle.name:''}}},
+                                        {icon: 'fa-window-close',link: this.props.history.goBack}]}/>
                 { this.state.isLoading && <AppLoader /> }
                 { this.state.cycle &&
                     <React.Fragment>
@@ -111,10 +115,10 @@ export class CycleView extends Component {
                                 <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.cycle.updated_at).format(this.DATE_FORMAT)}</span>
                             </div>
                             
-                            <div className="p-grid">
+                            {/* <div className="p-grid">
                                 <label className="col-lg-2 col-md-2 col-sm-12">Projects</label>
                                 <Chips className="col-lg-4 col-md-4 col-sm-12 chips-readonly" disabled value={this.state.cycle.projects_ids}></Chips>
-                            </div>
+                            </div> */}
                             <div className="p-fluid">
                                 <div className="p-field p-grid">
                                     <div className="col-lg-3 col-md-3 col-sm-12">
@@ -134,6 +138,15 @@ export class CycleView extends Component {
                             <div className="p-field p-grid resource-input-grid">
                                 <ResourceDisplayList cycleQuota={this.state.cycleQuota}  unitMap={this.resourceUnitMap} />
                             </div>
+                            {/* Show Project list for this Cycle */}
+                            <div className="p-fluid">
+                                <div className="p-field p-grid">
+                                    <div className="col-lg-3 col-md-3 col-sm-12">
+                                        <h5 data-testid="project-list">Projects</h5>
+                                    </div>
+                                </div>
+                            </div>
+                            <ProjectList cycle={this.state.cycle.name}/>
                         </div>
                     </React.Fragment>
                 }

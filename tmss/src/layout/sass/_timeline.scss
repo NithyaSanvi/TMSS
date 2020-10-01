@@ -1,0 +1,117 @@
+.rct-sidebar-row {
+    font-size: 14px;
+}
+
+.react-calendar-timeline .rct-header-root {
+    background-color: #f0f0f0;
+}
+
+.timeline-toolbar {
+    margin-top: 25px;
+    margin-bottom: 2px;
+    font-size: 12px;
+}
+
+.timeline-actionbar {
+    padding-right: 0px;
+}
+
+.timeline-actionbar button {
+    padding-top: 3px;
+    font-size: 1.0rem;
+    // float: right;
+}
+
+.timeline-toolbar .p-dropdown {
+    float: right;
+}
+
+.timeline-toolbar .p-dropdown,.timeline-toolbar .p-dropdown-panel {
+    font-size: 12px !important;
+    white-space: nowrap;
+}
+
+#now-btn {
+    margin-left: 20px;
+}
+
+.resize-div,
+.resize-div-min,
+.resize-div-avg,
+.resize-div-max   {
+    position: fixed  !important;
+    // top: 50%;
+    // transition: all 0.2s ease-in 0s;//this is the key attribute
+    z-index: 9999;
+    //cursor: pointer;
+    font-size: 8px;
+    color: #ffffff;
+    margin-left: -39px;
+}
+
+.resize-div-min,
+.resize-div-avg,
+.resize-div-max  button {
+    // height: 50px;
+    // width: 10px;
+}
+
+.resize-div-min,
+.resize-div-avg,
+.resize-div-max pi {
+    // font-size: 10px;
+}
+
+.layout-static-sidebar-inactive .resize-div-min {
+    // padding-right: 0.4%  !important;
+}
+
+.layout-static .resize-div-min {
+    // padding-right: 5.8% ;
+}
+
+.layout-static-sidebar-inactive .resize-div-avg {
+    // padding-right: 1%  !important;
+}
+
+.layout-static .resize-div-avg {
+    // padding-right: 7.7% ;
+}
+.layout-static-sidebar-inactive .resize-div-max {
+    // padding-right: 1.4% !important;
+}
+
+.layout-static .resize-div-max {
+    // padding-right: 9.6% ;
+}
+
+.resize-btn {
+    // float: right; 
+    height: 25px;
+    width: 20px;
+    font-size: 10px !important;
+    background-color: #007ad9;
+    color: #faf6f6 !important;
+    margin-left: 1px;
+    padding-left: 5px;
+}
+
+.resize-btn i {
+    font-size: 12px;
+    cursor: pointer;
+    color: #faf6f6 !important;
+}
+
+.resize-btn:disabled {
+    background-color: #e4e4e4;
+    cursor: not-allowed;
+    color: #928f8f !important;
+}
+
+.resize-btn:disabled i {
+    cursor: not-allowed;
+    color: #928f8f !important;
+}
+// .float-button:hover {
+//     right: -7px;//hide it by pushing it off the screen
+// }

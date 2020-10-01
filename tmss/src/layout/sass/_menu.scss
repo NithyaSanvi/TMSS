@@ -182,3 +182,19 @@
         }
     }
 }
+
+.layout-static .nav-btn-tooltip {
+    display: none;
+}
+
+.layout-static .nav-btn-notooltip {
+    display: block;
+}
+
+.layout-static-sidebar-inactive .nav-btn-tooltip {
+    display: block;
+}
+
+.layout-static-sidebar-inactive .nav-btn-notooltip {
+    display: none;
+}
