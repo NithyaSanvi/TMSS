@@ -31,19 +31,21 @@ export class EditSchedulingUnit extends Component {
             redirect: null,                         
             errors: [],                             
             schedulingSets: [],                     
-            schedulingUnit: {
-            },
+            schedulingUnit: {},
             projectDisabled: (props.match?(props.match.params.project? true:false):false),      
-            observStrategy: {},                     
-            paramsSchema: null,                     
+            observStrategy: {},
+            schedulingConstraintTemp:{},                     
+            paramsSchema: null,
+            constraintsSchema:null,                     
             validEditor: false,                     
             validFields: {},  
             observStrategyVisible: false                     
         }
         this.projects = [];                         
         this.schedulingSets = [];                   
-        this.observStrategies = [];                 
+        this.observStrategies = [];
         this.taskTemplates = [];                    
+        this.constraintTemplates = [];
         this.tooltipOptions = UIConstants.tooltipOptions;
         this.nameInput = React.createRef();         
         this.formRules = {                          
@@ -53,6 +55,7 @@ export class EditSchedulingUnit extends Component {
  
         this.setEditorOutput = this.setEditorOutput.bind(this);
         this.changeStrategy = this.changeStrategy.bind(this);
+        this.constraintStrategy = this.constraintStrategy.bind(this);
         this.setSchedUnitParams = this.setSchedUnitParams.bind(this);
         this.validateForm = this.validateForm.bind(this);
         this.validateEditor = this.validateEditor.bind(this);
@@ -136,13 +139,15 @@ export class EditSchedulingUnit extends Component {
                             ScheduleService.getObservationStrategies(),
                             TaskService.getTaskTemplates(),
                             ScheduleService.getSchedulingUnitDraftById(this.props.match.params.id),
-                            ScheduleService.getTasksDraftBySchedulingUnitId(this.props.match.params.id)
+                            ScheduleService.getTasksDraftBySchedulingUnitId(this.props.match.params.id),
+                            ScheduleService.getSchedulingConstraints()
                         ];
         Promise.all(promises).then(responses => {
             this.projects = responses[0];
             this.schedulingSets = responses[1];
             this.observStrategies = responses[2];
             this.taskTemplates = responses[3];
+            this.constraintTemplates = responses[6];
             responses[4].project = this.schedulingSets.find(i => i.id === responses[4].scheduling_set_id).project_id;
             this.setState({ schedulingUnit: responses[4], taskDrafts: responses[5].data.results,
                             observStrategyVisible: responses[4].observation_strategy_template_id?true:false });
@@ -275,23 +280,38 @@ export class EditSchedulingUnit extends Component {
         this.props.history.goBack();
     }
 
+    constraintStrategy(jeditor){
+         this.setState(jeditor);
+    }
+  
+
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
         }
         
         const schema = this.state.paramsSchema;
-        
+        const schemas = this.state.constraintsSchema;
         let jeditor = null;
         if (schema) {
-		    jeditor = React.createElement(Jeditor, {title: "Task Parameters", 
-                                                        schema: schema,
+            jeditor = React.createElement(Jeditor, {title: "Task Parameters",
+                                                     schema: schema,
                                                         initValue: this.state.paramsOutput, 
                                                         callback: this.setEditorOutput,
                                                         parentFunction: this.setEditorFunction
                                                     });
         }
-        return (
+        if(schemas){
+            jeditor = React.createElement(Jeditor, {title: "Scheduling Constraints specification",
+                                                        schema: schemas,
+                                                        initValue: this.state.paramsOutput, 
+                                                        callback: this.setEditorOutput,
+                                                        parentFunction: this.setEditorFunction
+                                                    });
+
+        }
+       
+       return (
             <React.Fragment>
                 <Growl ref={el => (this.growl = el)} />
                 <PageHeader location={this.props.location} title={'Scheduling Unit - Edit'} 
@@ -362,13 +382,30 @@ export class EditSchedulingUnit extends Component {
                                 </>
                             }
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
+                                    <label htmlFor="schedulingConstraintsTemp" className="col-lg-2 col-md-2 col-sm-12">Scheduling Constraints Template</label>
+                                    <div className="col-lg-3 col-md-3 col-sm-12" data-testid="schedulingConstraintsTemp">
+                                        <Dropdown inputId="schedulingConstraintsTemp" optionLabel="name" optionValue="id" 
+                                                tooltip="Scheduling Constraints Template to add scheduling constraints to a scheduling unit" tooltipOptions={this.tooltipOptions}
+                                                value={this.state.schedulingUnit.scheduling_constraints_template_id} 
+                                                disabled={this.state.schedulingUnit.scheduling_constraints_template_id?true:false} 
+                                                options={this.constraintTemplates} 
+                                                onClick={this.constraintStrategy}
+                                                placeholder="Select Constraints Template"/>
+                                  
+                            </div>
                         </div>
-                        
                     </div>
                     <div className="p-fluid">
                         <div className="p-grid">
                             <div className="p-col-12">
                                 {this.state.paramsSchema?jeditor:""}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="p-fluid">
+                        <div className="p-grid">
+                            <div className="p-col-12">
+                                {this.state.constraintsSchema?jeditor:""}
                             </div>
                         </div>
                     </div>
