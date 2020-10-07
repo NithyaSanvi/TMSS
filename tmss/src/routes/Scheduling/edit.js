@@ -34,14 +34,13 @@ export class EditSchedulingUnit extends Component {
             schedulingUnit: {},
             projectDisabled: (props.match?(props.match.params.project? true:false):false),      
             observStrategy: {},
-            schedulingConstraintTemp:{},                     
             paramsSchema: null,
-            constraintsSchema:null,                     
+            constraintSchema:null,                     
             validEditor: false,                     
             validFields: {},  
             observStrategyVisible: false                     
         }
-        this.projects = [];                         
+        this.projects = [];                        
         this.schedulingSets = [];                   
         this.observStrategies = [];
         this.taskTemplates = [];                    
@@ -64,8 +63,6 @@ export class EditSchedulingUnit extends Component {
         this.cancelCreate = this.cancelCreate.bind(this);
         
     }
-
-    
 
     /**
      * Function called when observation strategy template is changed. 
@@ -280,8 +277,11 @@ export class EditSchedulingUnit extends Component {
         this.props.history.goBack();
     }
 
-    constraintStrategy(jeditor){
-         this.setState(jeditor);
+    constraintStrategy(e){
+       let schedulingUnit = this.state.schedulingUnit;
+      schedulingUnit.scheduling_constraints_template_id = e.value;
+    //    const schema = this.state.constraintSchema;
+        this.setState({ constraintSchema: this.constraintTemplates[0]});
     }
   
 
@@ -291,7 +291,6 @@ export class EditSchedulingUnit extends Component {
         }
         
         const schema = this.state.paramsSchema;
-        const schemas = this.state.constraintsSchema;
         let jeditor = null;
         if (schema) {
             jeditor = React.createElement(Jeditor, {title: "Task Parameters",
@@ -300,15 +299,6 @@ export class EditSchedulingUnit extends Component {
                                                         callback: this.setEditorOutput,
                                                         parentFunction: this.setEditorFunction
                                                     });
-        }
-        if(schemas){
-            jeditor = React.createElement(Jeditor, {title: "Scheduling Constraints specification",
-                                                        schema: schemas,
-                                                        initValue: this.state.paramsOutput, 
-                                                        callback: this.setEditorOutput,
-                                                        parentFunction: this.setEditorFunction
-                                                    });
-
         }
        
        return (
@@ -376,7 +366,7 @@ export class EditSchedulingUnit extends Component {
                                                 value={this.state.schedulingUnit.observation_strategy_template_id} 
                                                 disabled={this.state.schedulingUnit.observation_strategy_template_id?true:false} 
                                                 options={this.observStrategies} 
-                                                onChange={(e) => {this.changeStrategy(e.value)}} 
+                                                onChange={(e) => {this.changeStrategy(e)}} 
                                                 placeholder="Select Strategy" />
                                     </div>
                                 </>
@@ -387,9 +377,9 @@ export class EditSchedulingUnit extends Component {
                                         <Dropdown inputId="schedulingConstraintsTemp" optionLabel="name" optionValue="id" 
                                                 tooltip="Scheduling Constraints Template to add scheduling constraints to a scheduling unit" tooltipOptions={this.tooltipOptions}
                                                 value={this.state.schedulingUnit.scheduling_constraints_template_id} 
-                                                disabled={this.state.schedulingUnit.scheduling_constraints_template_id?true:false} 
+                                                disabled={this.state.schedulingUnit.scheduling_constraints_template_id?true:false}
                                                 options={this.constraintTemplates} 
-                                                onClick={this.constraintStrategy}
+                                                onChange={(e) => { this.constraintStrategy(e);}}
                                                 placeholder="Select Constraints Template"/>
                                   
                             </div>
@@ -402,13 +392,16 @@ export class EditSchedulingUnit extends Component {
                             </div>
                         </div>
                     </div>
-                    <div className="p-fluid">
+                    {this.state.constraintSchema && <div className="p-fluid">
                         <div className="p-grid">
                             <div className="p-col-12">
-                                {this.state.constraintsSchema?jeditor:""}
+                                {React.createElement(Jeditor, {
+                                    title: "Scheduling Constraints specification",
+                                    schema: this.state.constraintSchema.schema,
+                                 })}
                             </div>
                         </div>
-                    </div>
+                    </div>}
                     
                     <div className="p-grid p-justify-start">
                         <div className="p-col-1">
@@ -428,5 +421,4 @@ export class EditSchedulingUnit extends Component {
         );
     }
 }
-
-export default EditSchedulingUnit;
+export default EditSchedulingUnit

@@ -37,6 +37,7 @@ export class SchedulingUnitCreate extends Component {
             projectDisabled: (props.match?(props.match.params.project? true:false):false),      // Disable project selection if 
             observStrategy: {},                     // Selected strategy to create SU
             paramsSchema: null,                     // JSON Schema to be generated from strategy template to pass to JSOn editor
+            constraintSchema:null,                  
             validEditor: false,                     // For JSON editor validation
             validFields: {},                        // For Form Validation
         }
@@ -45,6 +46,7 @@ export class SchedulingUnitCreate extends Component {
         this.observStrategies = [];                 // All Observing strategy templates
         this.taskTemplates = [];                    // All task templates to be filtered based on tasks in selected strategy template
         this.tooltipOptions = UIConstants.tooltipOptions;
+        this.constraintTemplates = [];
         this.nameInput = React.createRef();         // Ref to Name field for auto focus
         this.formRules = {                          // Form validation rules
             name: {required: true, message: "Name can not be empty"},
@@ -56,6 +58,7 @@ export class SchedulingUnitCreate extends Component {
         this.setEditorOutput = this.setEditorOutput.bind(this);
         this.changeProject = this.changeProject.bind(this);
         this.changeStrategy = this.changeStrategy.bind(this);
+        this.constraintStrategy = this.constraintStrategy.bind(this);
         this.setSchedUnitParams = this.setSchedUnitParams.bind(this);
         this.validateForm = this.validateForm.bind(this);
         this.validateEditor = this.validateEditor.bind(this);
@@ -69,12 +72,14 @@ export class SchedulingUnitCreate extends Component {
         const promises = [  ProjectService.getProjectList(), 
                             ScheduleService.getSchedulingSets(),
                             ScheduleService.getObservationStrategies(),
-                            TaskService.getTaskTemplates()]
+                            TaskService.getTaskTemplates(),
+                            ScheduleService.getSchedulingConstraints()]
         Promise.all(promises).then(responses => {
             this.projects = responses[0];
             this.schedulingSets = responses[1];
             this.observStrategies = responses[2];
             this.taskTemplates = responses[3];
+            this.constraintTemplates = responses[4];
             if (this.state.schedulingUnit.project) {
                 const projectSchedSets = _.filter(this.schedulingSets, {'project_id': this.state.schedulingUnit.project});
                 this.setState({isLoading: false, schedulingSets: projectSchedSets});
@@ -282,6 +287,15 @@ export class SchedulingUnitCreate extends Component {
         this.props.history.goBack();
     }
 
+    constraintStrategy(e){
+        let schedulingUnit = this.state.schedulingUnit;
+       schedulingUnit.scheduling_constraints_template_id = e.value;
+     //    const schema = this.state.constraintSchema;
+         this.setState({ constraintSchema: this.constraintTemplates[0]});
+     }
+   
+ 
+
     /**
      * Reset function to be called when user wants to create new SU
      */
@@ -396,7 +410,18 @@ export class SchedulingUnitCreate extends Component {
                                         onChange={(e) => {this.changeStrategy(e.value)}} 
                                         placeholder="Select Strategy" />
                             </div>
-                            <div className="col-lg-1 col-md-1 col-sm-12"></div>
+                          <div className="col-lg-1 col-md-1 col-sm-12"></div>
+                                    <label htmlFor="schedulingConstraintsTemp" className="col-lg-2 col-md-2 col-sm-12">Scheduling Constraints Template</label>
+                                    <div className="col-lg-3 col-md-3 col-sm-12" data-testid="schedulingConstraintsTemp">
+                                        <Dropdown inputId="schedulingConstraintsTemp" optionLabel="name" optionValue="id" 
+                                                tooltip="Scheduling Constraints Template to add scheduling constraints to a scheduling unit" tooltipOptions={this.tooltipOptions}
+                                                value={this.state.schedulingUnit.scheduling_constraints_template_id}
+                                                disabled={this.state.schedulingUnit.scheduling_constraints_template_id?true:false}
+                                                options={this.constraintTemplates} 
+                                                onChange={(e) => { this.constraintStrategy(e);}}
+                                                placeholder="Select Constraints Template"/>
+                                  
+                            </div> 
                         </div>
                         
                     </div>
@@ -407,6 +432,16 @@ export class SchedulingUnitCreate extends Component {
                             </div>
                         </div>
                     </div>
+                    {this.state.constraintSchema && <div className="p-fluid">
+                        <div className="p-grid">
+                            <div className="p-col-12">
+                                {React.createElement(Jeditor, {
+                                    title: "Scheduling Constraints specification",
+                                    schema: this.state.constraintSchema.schema,
+                                 })}
+                            </div>
+                        </div>
+                    </div>}
                     
                     <div className="p-grid p-justify-start">
                         <div className="p-col-1">
