@@ -224,3 +224,11 @@ thead {
     transform: rotate(360deg);
   }
 }
+
+div[data-schemapath='root.$schema'] {
+  display: none;
+}
+
+.app-header-menu ul li a span {
+  display: inline !important;
+}

@@ -24,28 +24,11 @@ class ViewSchedulingUnit extends Component{
             defaultcolumns: [ {
                 "tasktype":"Type",
                 "id":"ID",
-                "id":{
-                  name: "ID",
-                  filter: "minMax"
-                },
                 "name":"Name",
                 "description":"Description",
                 "created_at":"Created at",
-                "created_at": {
-                    name: "Created at",
-                    filter: "date"
-                },
                 "updated_at":"Updated at",
-                "updated_at": {
-                    name: "Updated at",
-                    filter: "date"
-                },
                 "do_cancel":"Cancelled",
-                "do_cancel": {
-                    name: "Cancelled",
-                    filter: "switch"
-                },
-
                 "start_time":"Start Time",
                 "stop_time":"End Time",
                 "duration":"Duration (HH:mm:ss)",

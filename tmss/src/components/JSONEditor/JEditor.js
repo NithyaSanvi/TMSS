@@ -5,20 +5,77 @@
 import React, {useEffect, useRef} from 'react';
 import _ from 'lodash';
 import flatpickr from 'flatpickr';
-
+import $RefParser from "@apidevtools/json-schema-ref-parser";
 import "@fortawesome/fontawesome-free/css/all.css";
 import "flatpickr/dist/flatpickr.css";
 const JSONEditor = require("@json-editor/json-editor").JSONEditor;
 
 function Jeditor(props) {
-    // console.log("In JEditor");
+    // console.log("In JEditor", props.schema);
     const editorRef = useRef(null);
     let pointingProps = useRef(null);
     let editor = null;
-    useEffect(() => {
-        const element = document.getElementById('editor_holder');
+
+    /**
+     * Function to resolve external references
+     */
+    const resolveExternalRef = async () => {
         let schema = {};
-        Object.assign(schema, props.schema?props.schema:{});
+        Object.assign(schema, props.schema ? props.schema : {});
+        schema.definitions = schema.definitions?schema.definitions:{};
+        return (await resolveSchema(schema));
+    };
+
+    /**
+     * Function to resolve external reference in part based on the depth of schema iteration.
+     * @param {JSON Object} schema 
+     */
+    const resolveSchema = async (schema) => {
+        let properties = schema.properties;
+        schema.definitions = schema.definitions?schema.definitions:{};
+        if (properties) {
+            for (const propertyKey in properties) {
+                let property = properties[propertyKey];
+                if (property["$ref"] && !property["$ref"].startsWith("#")) {    // 1st level reference of the object
+                    const refUrl = property["$ref"];
+                    let newRef = refUrl.substring(refUrl.indexOf("#"));
+                    if (refUrl.endsWith("/pointing")) {                         // For type pointing
+                        schema.definitions["pointing"] = (await $RefParser.resolve(refUrl)).get(newRef);
+                        property["$ref"] = newRef;
+                    }   else {                   // General object to resolve if any reference in child level
+                        property = await resolveSchema((await $RefParser.resolve(refUrl)).get(newRef));
+                    }
+                }   else if(property["type"] === "array") {             // reference in array items definition
+                    let resolvedItems = await resolveSchema(property["items"]);
+                    schema.definitions = {...schema.definitions, ...resolvedItems.definitions};
+                    delete resolvedItems['definitions'];
+                    property["items"] = resolvedItems;
+                }
+                properties[propertyKey] = property;
+            }
+        }   else if (schema["oneOf"]) {             // Reference in OneOf array
+            let resolvedOneOfList = []
+            for (const oneOfProperty of schema["oneOf"]) {
+                const resolvedOneOf = await resolveSchema(oneOfProperty);
+                resolvedOneOfList.push(resolvedOneOf);
+            }
+            schema["oneOf"] = resolvedOneOfList;
+        }   else if (schema["$ref"] && !schema["$ref"].startsWith("#")) {   //reference in oneOf list item
+            const refUrl = schema["$ref"];
+            let newRef = refUrl.substring(refUrl.indexOf("#"));
+            if (refUrl.endsWith("/pointing")) {
+                schema.definitions["pointing"] = (await $RefParser.resolve(refUrl)).get(newRef);
+                schema["$ref"] = newRef;
+            }   else {
+                schema = await resolveSchema((await $RefParser.resolve(refUrl)).get(newRef));
+            }
+        }
+        return schema;
+    }
+
+    const init = async () => {
+        const element = document.getElementById('editor_holder');
+        let schema = await resolveExternalRef();
         pointingProps = [];
         // Customize the pointing property to capture angle1 and angle2 to specified format
         for (const definitionKey in schema.definitions) {
@@ -90,7 +147,8 @@ function Jeditor(props) {
             disable_properties: true,
             disable_collapse: true,
             show_errors: props.errorsOn?props.errorsOn:'change',        // Can be 'interaction', 'change', 'always', 'never'
-            compact: true
+            compact: true,
+            ajax: true
         };
         // Set Initial value to the editor
         if (props.initValue) {
@@ -99,13 +157,19 @@ function Jeditor(props) {
         editor = new JSONEditor(element, editorOptions);
         // editor.getEditor('root').disable();
         if (props.disabled) {
-            editor.disable();
+            editor.on('ready',() => {
+                editor.disable();
+            });
         }
         if (props.parentFunction) {
             props.parentFunction(editorFunction);
         }
         editorRef.current = editor;
         editor.on('change', () => {setEditorOutput()});
+    };
+
+    useEffect(() => {
+        init();
     }, [props.schema]);
 
     /**
@@ -134,46 +198,6 @@ function Jeditor(props) {
      * @param {Boolean} isDegree 
      */
     function getAngleProperty(defProperty, isDegree) {
-        /*let newProperty = {
-            "type": "object",
-            "additionalProperties": false,
-            "format": "grid",
-            // "title": defProperty.title,
-            // "description": defProperty.description};
-            "title": "Duration",
-            "description": "Duration of the observation"};
-        let subProperties = {};
-        if (isDegree) {
-            subProperties["dd"] = {  "type": "number",
-                                      "title": "DD",
-                                      "description": "Degrees",
-                                      "default": 0,
-                                      "minimum": 0,
-                                      "maximum": 90 };
-        }   else {
-            subProperties["hh"] = {  "type": "number",
-                                      "title": "HH",
-                                      "description": "Hours",
-                                      "default": 0,
-                                      "minimum": 0,
-                                      "maximum": 23 };
-            
-        }
-        subProperties["mm"] = {  "type": "number",
-                                      "title": "MM",
-                                      "description": "Minutes",
-                                      "default": 0,
-                                      "minimum": 0,
-                                      "maximum": 59 };
-        subProperties["ss"] = {  "type": "number",
-                                      "title": "SS",
-                                      "description": "Seconds",
-                                      "default": 0,
-                                      "minimum": 0,
-                                      "maximum": 59 };
-
-        newProperty.properties = subProperties;
-        newProperty.required = isDegree?["dd", "mm", "ss"]:["hh", "mm", "ss"];*/
         let newProperty = {
             type: "string",
             title: defProperty.title,
@@ -210,39 +234,8 @@ function Jeditor(props) {
                 newProperty.default = '';
                 newProperty.description = "For Range enter Start and End seperated by 2 dots. Mulitple ranges can be separated by comma. Minimum should be 0 and maximum should be 511. For exmaple 11..20, 30..50";
                 newProperty.validationType = 'subband_list';
-                // newProperty.options = {
-                //     grid_columns: 4
-                // };
                 properties[propertyKey] = newProperty;
             }   else if (propertyKey.toLowerCase() === 'duration') {
-                /*propertyValue.title = "Duration (minutes)";
-                propertyValue.default = "1";
-                propertyValue.description = "Duration of this observation. Enter in decimal for seconds. For example 0.5 for 30 seconds";
-                propertyValue.minimum = 0.25;
-                propertyValue.options = {
-                    grid_columns: 6
-                };*/
-                /*propertyValue.title = "Duration";
-                propertyValue.default = "1H20M30S";
-                propertyValue.type = "string";
-                propertyValue.description = "Duration of the observation (H-hours,M-minutes,S-seconds & should be in the order of H, M and S respectively)";
-                /*let newProperty = {
-                    type: "string",
-                    title: "Duration",
-                    description: `${propertyValue.description} (Hours:Minutes:Seconds)`,
-                    default: "00:00:00",
-                    "options": {
-                        "grid_columns": 5,
-                        "inputAttributes": {
-                            "placeholder": "HH:mm:ss"
-                        },
-                        "cleave": {
-                            date: true,
-                            datePattern: ['HH','mm','ss'],
-                            delimiter: ':'
-                        }
-                    }
-                }*/
                 let newProperty = {
                     "type": "string",
                     "format": "time",
@@ -522,7 +515,6 @@ function Jeditor(props) {
     return (
         <React.Fragment>
             <div id='editor_holder'></div>
-            {/* <div><input type="button" onClick={setEditorOutput} value="Show Output" /></div> */}
         </React.Fragment>
     );
 };

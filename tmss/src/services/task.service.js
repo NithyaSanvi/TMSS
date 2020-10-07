@@ -120,6 +120,14 @@ const TaskService = {
         console.error(error);
       }
     },
+    getTaskTemplateSchemaResolved: async function(templateId) {
+      try {
+        const response = await axios.get('/api/task_template/' + templateId + '/ref_resolved_schema' );
+        return response.data;
+      } catch (error) {
+        console.log(error);
+      }
+    },
     getDraftsTaskBlueprints: async function(id) {
       try {
         const url = `/api/task_draft/${id}/task_blueprint`;

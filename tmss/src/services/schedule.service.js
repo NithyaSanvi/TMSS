@@ -1,8 +1,6 @@
 import axios from 'axios'
-//import moment from 'moment';
-import TaskService from './task.service';
-import _ from 'lodash';
 import moment from 'moment';
+import TaskService from './task.service';
 
 axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
 
@@ -99,9 +97,6 @@ const ScheduleService = {
                 scheduletask['actionpath'] = '/task/view/draft/'+task['id'];
                 scheduletask['blueprint_draft'] = task['task_blueprints'];
 
-               // scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format("YYYY-MMM-DD");
-              //  scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD");
-               
                 //fetch task draft details
                 for(const key of commonkeys){
                     scheduletask[key] = task[key];
@@ -120,9 +115,6 @@ const ScheduleService = {
                     taskblueprint['tasktype'] = 'Blueprint';
                     taskblueprint['actionpath'] = '/task/view/blueprint/'+blueprint['id'];
                     taskblueprint['blueprint_draft'] = blueprint['draft'];
-
-               //     taskblueprint['created_at'] = moment(blueprint['created_at'], moment.ISO_8601).format("YYYY-MMM-DD");
-               //     taskblueprint['updated_at'] = moment(blueprint['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD");
                     for(const key of commonkeys){
                         taskblueprint[key] = blueprint[key];
                     }
@@ -140,16 +132,6 @@ const ScheduleService = {
             console.error('[schedule.services.getScheduleTasksBySchedulingUnitId]',error);
         });
         return scheduletasklist;
-    },
-    getSchedulingUnitBlueprint: async function (){
-        let res = [];
-        await axios.get('/api/scheduling_unit_blueprint/?ordering=id')
-        .then(response => {
-            res= response; 
-        }).catch(function(error) {
-            console.error('[schedule.services.getSchedulingUnitBlueprint]',error);
-        });
-        return res;
     },
     getTaskBlueprints: async function (){
         let res=[];
@@ -203,6 +185,15 @@ const ScheduleService = {
     getObservationStrategies: async function() {
         try {
             const response = await axios.get('/api/scheduling_unit_observing_strategy_template/');
+            return response.data.results;
+        }   catch(error) {
+            console.error(error);
+            return [];
+        };
+    },
+    getSchedulingConstraints: async function(){
+        try {
+            const response = await axios.get('/api/scheduling_constraints_template/');
             return response.data.results;
         }   catch(error) {
             console.error(error);

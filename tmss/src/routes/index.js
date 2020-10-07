@@ -34,7 +34,8 @@ export const routes = [
     },{
         path: "/schedulingunit/create",
         component: SchedulingUnitCreate,
-        name: 'Scheduling Unit Add'
+        name: 'Scheduling Unit Add',
+        title: 'Scheduling Unit - Add'
     },{
         path: "/task",
         component: TaskView,

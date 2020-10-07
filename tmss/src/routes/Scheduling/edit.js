@@ -90,18 +90,20 @@ export class EditSchedulingUnit extends Component {
             const taskTemplate = _.find(this.taskTemplates, {'name': task['specifications_template']});
             schema['$id'] = taskTemplate.schema['$id'];
             schema['$schema'] = taskTemplate.schema['$schema'];
-            observStrategy.template.parameters.forEach(async(param, index) => {
+            let index = 0;
+            for (const param of observStrategy.template.parameters) {
                 if (param.refs[0].indexOf(`/tasks/${taskName}`) > 0) {
                     tasksToUpdate[taskName] = taskName;
                     // Resolve the identified template
                     const $templateRefs = await $RefParser.resolve(taskTemplate);
                     let property = { };
                     let tempProperty = null;
+                    const taskPaths = param.refs[0].split("/");
                     // Get the property type from the template and create new property in the schema for the parameters
                     try {
-                        tempProperty = $templateRefs.get(param.refs[0].replace(`#/tasks/${taskName}/specifications_doc`, '#/schema/properties'))
+                        const parameterRef = param.refs[0];//.replace(`#/tasks/${taskName}/specifications_doc`, '#/schema/properties');
+                        tempProperty = $templateRefs.get(parameterRef);
                     }   catch(error) {
-                        const taskPaths = param.refs[0].split("/");
                         tempProperty = _.cloneDeep(taskTemplate.schema.properties[taskPaths[4]]);
                         if (tempProperty.type === 'array') {
                             tempProperty = tempProperty.items.properties[taskPaths[6]];
@@ -117,7 +119,8 @@ export class EditSchedulingUnit extends Component {
                         schema.definitions[definitionName] = taskTemplate.schema.definitions[definitionName];
                     }
                 }
-            });
+                index++;
+            }
         }
         this.setState({observStrategy: observStrategy, paramsSchema: schema, paramsOutput: paramsOutput, tasksToUpdate: tasksToUpdate});
 

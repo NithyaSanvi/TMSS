@@ -20,21 +20,12 @@ class SchedulingUnitList extends Component{
                 "type":"Type",
                 "name":"Name",
                 "description":"Description",
-                "created_at":{
-                    name:"Created At",
-                    filter: "date"
-                },
-                "updated_at":{
-                    name:"Updated At",
-                    filter: "date"
-                },
-                "requirements_template_id":{
-                    name: "Template",
-                    filter: "minMax"
-                },
+                "created_at":"Created Date",
+                "updated_at":"Updated Date",
+                "requirements_template_id": "Template",
                 "start_time":"Start Time",
                 "stop_time":"End time",
-                "duration":"Duration (H:mm:ss)"
+                "duration":"Duration (HH:mm:ss)"
                 }],
             optionalcolumns:  [{
                 "actionpath":"actionpath",
@@ -42,7 +33,7 @@ class SchedulingUnitList extends Component{
             columnclassname: [{
                 "Template":"filter-input-50",
                 "Duration":"filter-input-50",
-                "Type": "filter-input-75",
+                "Type": "filter-input-75"
             }],
             defaultSortColumn: [{id: "Name", desc: false}],
         }
@@ -69,16 +60,12 @@ class SchedulingUnitList extends Component{
                         blueP.duration = moment.utc(blueP.duration*1000).format('HH:mm:ss'); 
                         blueP.type="Blueprint"; 
                         blueP['actionpath'] ='/schedulingunit/view/blueprint/'+blueP.id;
-                        blueP['created_at'] = moment(blueP['created_at'], moment.ISO_8601).format("YYYY-MMM-DD");
-                        blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD");
                         return blueP; 
                     });
                     output.push(...blueprintdata);
                     scheduleunit['actionpath']='/schedulingunit/view/draft/'+scheduleunit.id;
                     scheduleunit['type'] = 'Draft';
                     scheduleunit['duration'] = moment.utc(scheduleunit.duration*1000).format('HH:mm:ss');
-                    scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format("YYYY-MMM-DD");
-                    scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD");
                     output.push(scheduleunit);
                 }
                 this.setState({
@@ -90,7 +77,6 @@ class SchedulingUnitList extends Component{
     
     componentDidMount(){ 
        this.getSchedulingUnitList();
-        
     }
 
     render(){

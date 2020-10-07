@@ -122,15 +122,13 @@ export class TaskView extends Component {
                             props : { pathname:'/task/edit',
                                         state: {taskId: this.state.task?this.state.task.id:''} 
                                     } 
-                        },
-                        {   icon: 'fa-window-close',
-                            link: this.props.history.goBack,
-                            title:'Click to Close Task', 
-                            props : { pathname:'/task' }}];
+                        }];
         }   else {
             actions = [{    icon: 'fa-lock',
                             title: 'Cannot edit blueprint'}];
         }
+        actions.push({  icon: 'fa-window-close', link: this.props.history.goBack,
+                        title:'Click to Close Task', props : { pathname:'/schedulingunit' }});
 
         // Child component to render predecessors and successors list
         const TaskRelationList = ({ list }) => (

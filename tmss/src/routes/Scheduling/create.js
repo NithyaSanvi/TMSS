@@ -17,6 +17,7 @@ import ProjectService from '../../services/project.service';
 import ScheduleService from '../../services/schedule.service';
 import TaskService from '../../services/task.service';
 import UIConstants from '../../utils/ui.constants';
+import PageHeader from '../../layout/components/PageHeader';
 
 /**
  * Component to create a new SchedulingUnit from Observation strategy template
@@ -106,8 +107,8 @@ export class SchedulingUnitCreate extends Component {
         let schema = { type: 'object', additionalProperties: false, 
                         properties: {}, definitions:{}
                      };
-
-        for (const taskName in tasks)  {
+                     
+            for (const taskName of _.keys(tasks)) {
             const task = tasks[taskName];
             //Resolve task from the strategy template
             const $taskRefs = await $RefParser.resolve(task);
@@ -116,23 +117,35 @@ export class SchedulingUnitCreate extends Component {
             const taskTemplate = _.find(this.taskTemplates, {'name': task['specifications_template']});
             schema['$id'] = taskTemplate.schema['$id'];
             schema['$schema'] = taskTemplate.schema['$schema'];
-            observStrategy.template.parameters.forEach(async(param, index) => {
+            let index = 0;
+            for (const param of observStrategy.template.parameters) {
                 if (param.refs[0].indexOf(`/tasks/${taskName}`) > 0) {
                     // Resolve the identified template
                     const $templateRefs = await $RefParser.resolve(taskTemplate);
                     let property = { };
                     let tempProperty = null;
+                    const taskPaths = param.refs[0].split("/");
                     // Get the property type from the template and create new property in the schema for the parameters
                     try {
-                        tempProperty = $templateRefs.get(param.refs[0].replace(`#/tasks/${taskName}/specifications_doc`, '#/schema/properties'))
+                        const parameterRef = param.refs[0];//.replace(`#/tasks/${taskName}/specifications_doc`, '#/schema/properties');
+                        tempProperty = $templateRefs.get(parameterRef);
+                    //    property = _.cloneDeep(taskTemplate.schema.properties[taskPaths[4]]);
+                       
                     }   catch(error) {
-                        const taskPaths = param.refs[0].split("/");
                         tempProperty = _.cloneDeep(taskTemplate.schema.properties[taskPaths[4]]);
                         if (tempProperty.type === 'array') {
                             tempProperty = tempProperty.items.properties[taskPaths[6]];
                         }
                         property = tempProperty;
                     }
+                  /*  if (property['$ref'] && !property['$ref'].startsWith("#")) {
+                        const $propDefinition = await $RefParser.resolve(property['$ref']);
+                        const propDefinitions = $propDefinition.get("#/definitions");
+                        for (const propDefinition in propDefinitions) {
+                            schema.definitions[propDefinition] = propDefinitions[propDefinition];
+                            property['$ref'] = "#/definitions/"+ propDefinition ;
+                        } 
+                    } */
                     property.title = param.name;
                     property.default = $taskRefs.get(param.refs[0].replace(`#/tasks/${taskName}`, '#'));
                     paramsOutput[`param_${index}`] = property.default;
@@ -140,9 +153,13 @@ export class SchedulingUnitCreate extends Component {
                     // Set property defintions taken from the task template in new schema
                     for (const definitionName in taskTemplate.schema.definitions) {
                         schema.definitions[definitionName] = taskTemplate.schema.definitions[definitionName];
+                        
                     }
                 }
-            });
+                index++;
+               
+            }
+            
         }
         this.setState({observStrategy: observStrategy, paramsSchema: schema, paramsOutput: paramsOutput});
 
@@ -299,27 +316,19 @@ export class SchedulingUnitCreate extends Component {
         
         let jeditor = null;
         if (schema) {
-		    jeditor = React.createElement(Jeditor, {title: "Task Parameters", 
+            
+		   jeditor = React.createElement(Jeditor, {title: "Task Parameters", 
                                                         schema: schema,
                                                         initValue: this.state.paramsOutput, 
                                                         callback: this.setEditorOutput,
                                                         parentFunction: this.setEditorFunction
-                                                    });
+                                                    }); 
         }
         return (
             <React.Fragment>
-                <div className="p-grid">
-                    <Growl ref={(el) => this.growl = el} />
-                
-                    <div className="p-col-10 p-lg-10 p-md-10">
-                        <h2>Scheduling Unit - Add</h2>
-                    </div>
-                    <div className="p-col-2 p-lg-2 p-md-2">
-                        <Link to={{ pathname: '/schedulingunit'}} tite="Close" style={{float: "right"}}>
-                            <i className="fa fa-window-close" link={this.props.history.goBack()} style={{marginTop: "10px"}}></i>
-                        </Link>
-                    </div>
-                </div>
+                <Growl ref={(el) => this.growl = el} />
+                <PageHeader location={this.props.location} title={'Scheduling Unit - Add'} 
+                           actions={[{icon: 'fa-window-close',link: this.props.history.goBack,title:'Click to close Scheduling Unit creation', props : { pathname: `/schedulingunit`}}]}/>
                 { this.state.isLoading ? <AppLoader /> :
                 <>
                 <div>

@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import 'primeflex/primeflex.css';
 // import { Link } from 'react-router-dom/cjs/react-router-dom.min';
 import _ from 'lodash';
-import moment from 'moment';
+
 import ViewTable from '../../components/ViewTable';
 import CycleService from '../../services/cycle.service';
 import UnitConversion from '../../utils/unit.converter';
@@ -23,15 +23,7 @@ class CycleList extends Component{
         this.periodCategory = ['long_term'];
         this.defaultcolumns = [ {   id:"Cycle Code",
                                     start:"Start Date",
-                                    "start": {
-                                        name: "Start Date",
-                                        filter: "date"
-                                    },
                                     stop: "End Date",
-                                    "stop": {
-                                        name: "End Date",
-                                        filter: "date"
-                                    },
                                     duration: "Duration (Days)",
                                     totalProjects: 'No.of Projects',
                                     observingTime: 'Lofar Observing Time (Hrs)',
@@ -65,6 +57,7 @@ class CycleList extends Component{
         const unitQuantity = this.state.resources.find(i => i.name === resourceName).quantity_value;
         return UnitConversion.getUIResourceUnit(unitQuantity, quota?quota.value:0);
     }
+
     getCycles(cycles = [], cycleQuota) {
         const promises = [];
         cycles.map(cycle => promises.push(CycleService.getProjectsByCycle(cycle.name)));
@@ -79,8 +72,6 @@ class CycleList extends Component{
                 cycle.id = cycle.name ;
                 cycle.regularProjects = regularProjects.length;
                 cycle.longterm = longterm.length;
-                cycle.start = moment(cycle['start'], moment.ISO_8601).format("YYYY-MMM-DD");
-                cycle.stop = moment(cycle['stop'], moment.ISO_8601).format("YYYY-MMM-DD");
                 // cycle.observingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'observing_time');
                 // cycle.processingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'cep_processing_time');
                 // cycle.ltaResources = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'lta_storage');

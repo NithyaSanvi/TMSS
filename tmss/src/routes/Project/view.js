@@ -111,7 +111,7 @@ export class ProjectView extends Component {
         
         return (
             <React.Fragment>
-                <TieredMenu model={this.menuOptions} popup ref={el => this.optionsMenu = el} />
+                <TieredMenu className="app-header-menu" model={this.menuOptions} popup ref={el => this.optionsMenu = el} />
                 <PageHeader location={this.props.location} title={'Project - View'} 
                             actions={[  {icon:'fa-bars',title: '', type:'button',
                                          actOn:'mouseOver', props : { callback: this.showOptionMenu},

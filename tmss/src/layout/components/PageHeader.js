@@ -15,7 +15,6 @@ export default ({ title, subTitle, actions, ...props}) => {
     }, [props.location.pathname]);
 
     const onClickLink = (action) => {
-        console.log('Hi')
         if (action.link) {
             action.link();
         }
@@ -40,10 +39,10 @@ export default ({ title, subTitle, actions, ...props}) => {
                 {(page.subTitle || subTitle) && <h6 className="page-subtitle">{subTitle || page.subTitle}</h6>}
             </div>
             <div className="page-action-menu">
-                {(actions || []).map(action => {
+                {(actions || []).map((action, index) =>{
                     if (action.type === 'button') {
                         return (
-                            <button className="p-link">
+                            <button className="p-link" key={index}>
                                 <i className={`fa ${action.icon}`}  
                                     onMouseOver={(e) => onButtonMouseOver(e, action)}
                                     onClick={(e) => onButtonClick(e, action)} />
@@ -51,7 +50,7 @@ export default ({ title, subTitle, actions, ...props}) => {
                         );
                     }   else {
                         return (
-                            <Link className={action.classname} to={{ ...action.props }} title={action.title || ''} onClick={() => onClickLink(action)}>
+                            <Link key={index} className={action.classname} to={{ ...action.props }} title={action.title || ''} onClick={() => onClickLink(action)}>
                                 <i className={`fa ${action.icon}`}></i>
                             </Link>
                         );
