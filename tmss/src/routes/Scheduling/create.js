@@ -80,8 +80,8 @@ export class SchedulingUnitCreate extends Component {
             this.observStrategies = responses[2];
             this.taskTemplates = responses[3];
             this.constraintTemplates = responses[4];
-            //  Setting first value as constraint template
-            this.constraintStrategy(this.constraintTemplates[0]);
+             //  Setting first value as constraint template
+             this.constraintStrategy(this.constraintTemplates[0]);
             if (this.state.schedulingUnit.project) {
                 const projectSchedSets = _.filter(this.schedulingSets, {'project_id': this.state.schedulingUnit.project});
                 this.setState({isLoading: false, schedulingSets: projectSchedSets});
@@ -291,9 +291,8 @@ export class SchedulingUnitCreate extends Component {
 
     constraintStrategy(e){
         let schedulingUnit = { ...this.state.schedulingUnit };
-       schedulingUnit.scheduling_constraints_template_id = e.id;
-     //    const schema = this.state.constraintSchema;
-         this.setState({ constraintSchema: this.constraintTemplates[0], schedulingUnit});
+        schedulingUnit.scheduling_constraints_template_id = e.id;
+        this.setState({ constraintSchema: this.constraintTemplates[0], schedulingUnit});
      }
    
  
@@ -420,7 +419,7 @@ export class SchedulingUnitCreate extends Component {
                                                 value={this.state.schedulingUnit.scheduling_constraints_template_id}
                                                 disabled
                                                 options={this.constraintTemplates} 
-                                                // onChange={(e) => { this.constraintStrategy(e);}}
+                                                //onChange={(e) => { this.constraintStrategy(e);}}
                                                 placeholder="Select Constraints Template"/>
                                   
                             </div> 

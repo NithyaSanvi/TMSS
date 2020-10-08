@@ -287,9 +287,61 @@ function Jeditor(props) {
                 if (propertyValue['$ref'] && propertyValue['$ref'].endsWith("/pointing")) {
                     pointingProps.push(propertyKey);
                 }
-                getCustomProperties(propertyValue);
+                
+              getCustomProperties(propertyValue);
             }
+            if(propertyKey === 'scheduler'){
+                propertyValue.propertyOrder=1;
+            }
+            if(propertyKey === 'time'){
+                propertyValue.propertyOrder=2;
+            }
+            if(propertyKey === 'at'){
+                propertyValue.propertyOrder=3;
+            }
+            if(propertyKey === 'after'){
+                propertyValue.propertyOrder=3;
+            }
+            if(propertyKey === 'before'){
+                propertyValue.propertyOrder=4;
+            }
+            if(propertyKey === 'between'){
+                propertyValue.propertyOrder=5;
+            }
+            if(propertyKey === 'not_between'){
+                propertyValue.propertyOrder=6;
+            }
+            if(propertyKey === 'daily'){
+                propertyValue.propertyOrder=7;
+            }
+            if (propertyKey === 'require_night'){
+                propertyValue.propertyOrder=8;
+            }
+            if (propertyKey === 'require_day'){
+                propertyValue.propertyOrder=9;
+            }
+            if (propertyKey === 'avoid_twilight'){
+                propertyValue.propertyOrder=10;
+            }
+            if(propertyKey === 'sky'){
+                propertyValue.propertyOrder=11;
+            }
+            if(propertyKey === 'min_calibrator_elevation'){
+                propertyValue.propertyOrder=12;
+            }
+            if(propertyKey === 'min_target_elevation'){
+                propertyValue.propertyOrder=13;
+            }
+            if(propertyKey === 'transit_offset'){
+                propertyValue.propertyOrder=14;
+            }
+            if(propertyKey === 'min_distance'){
+                propertyValue.propertyOrder=15;
+            }
+            
         }
+        
+        
     }
 
     /**
