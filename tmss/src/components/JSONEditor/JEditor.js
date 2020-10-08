@@ -98,7 +98,7 @@ function Jeditor(props) {
             }
         }
         
-        // Customize datatype of certain properties like subbands, duration, etc.,
+    // Customize datatype of certain properties like subbands, duration, etc.,
         getCustomProperties(schema.properties);
         schema.title = props.title;
         const subbandValidator = validateSubbandOutput;
@@ -128,6 +128,14 @@ function Jeditor(props) {
                         path: path,
                         property: 'validationType',
                         message: 'Not a valid input. Mimimum: 00:00:00, Maximum:90:00:00'
+                    });
+                }
+            } else if (schema.validationType === "sun") {
+                if (!value || isNaN(value) || value < 0 || value > 90) {
+                    errors.push({
+                        path: path,
+                        property: 'validationType',
+                        message: 'Must be number between 0 - 90'
                     });
                 }
             }
@@ -337,6 +345,9 @@ function Jeditor(props) {
             }
             if(propertyKey === 'min_distance'){
                 propertyValue.propertyOrder=15;
+            }
+            if(propertyKey === 'sun'){
+                propertyValue.validationType= 'sun';
             }
             
         }

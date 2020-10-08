@@ -56,6 +56,7 @@ export class SchedulingUnitCreate extends Component {
         };
  
         this.setEditorOutput = this.setEditorOutput.bind(this);
+        this.setEditorOutputCosntarint = this.setEditorOutputCosntarint.bind(this);
         this.changeProject = this.changeProject.bind(this);
         this.changeStrategy = this.changeStrategy.bind(this);
         this.constraintStrategy = this.constraintStrategy.bind(this);
@@ -187,6 +188,14 @@ export class SchedulingUnitCreate extends Component {
         this.validEditor = errors.length === 0;
         this.setState({ paramsOutput: jsonOutput, 
                         validEditor: errors.length === 0,
+                        validForm: this.validateForm()});
+    }
+
+    setEditorOutputCosntarint(jsonOutput, errors) {
+        this.constarintParamsOutput = jsonOutput;
+        this.constarintValidEditor = errors.length === 0;
+        this.setState({ constarintParamsOutput: jsonOutput, 
+                        constarintValidEditor: errors.length === 0,
                         validForm: this.validateForm()});
     }
 
@@ -439,6 +448,7 @@ export class SchedulingUnitCreate extends Component {
                                 {React.createElement(Jeditor, {
                                     title: "Scheduling Constraints specification",
                                     schema: this.state.constraintSchema.schema,
+                                    callback: this.setEditorOutputCosntarint,
                                  })}
                             </div>
                         </div>
