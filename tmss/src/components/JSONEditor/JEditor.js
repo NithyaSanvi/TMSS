@@ -130,7 +130,23 @@ function Jeditor(props) {
                         message: 'Not a valid input. Mimimum: 00:00:00, Maximum:90:00:00'
                     });
                 }
-            } else if (schema.validationType === "sun") {
+            } else if (schema.validationType === "distanceOnSky") {
+                if (!value || isNaN(value) || value < 0 || value > 180) {
+                    errors.push({
+                        path: path,
+                        property: 'validationType',
+                        message: 'Must be number between 0 - 180'
+                    });
+                }
+            } else if (schema.validationType === "dateTime") {
+                if (!value) {
+                    errors.push({
+                        path: path,
+                        property: 'validationType',
+                        message: 'Not a valid Date and Time'
+                    });
+                }
+            } else if (schema.validationType === "elevation") {
                 if (!value || isNaN(value) || value < 0 || value > 90) {
                     errors.push({
                         path: path,
@@ -138,7 +154,7 @@ function Jeditor(props) {
                         message: 'Must be number between 0 - 90'
                     });
                 }
-            }
+            } 
             return errors;
         });
         schema.format = "grid"
@@ -306,11 +322,14 @@ function Jeditor(props) {
             }
             if(propertyKey === 'at'){
                 propertyValue.propertyOrder=3;
+                setDateTimeOption(propertyValue);
             }
             if(propertyKey === 'after'){
                 propertyValue.propertyOrder=3;
+                setDateTimeOption(propertyValue);
             }
             if(propertyKey === 'before'){
+                setDateTimeOption(propertyValue);
                 propertyValue.propertyOrder=4;
             }
             if(propertyKey === 'between'){
@@ -336,9 +355,21 @@ function Jeditor(props) {
             }
             if(propertyKey === 'min_calibrator_elevation'){
                 propertyValue.propertyOrder=12;
+                propertyValue.validationType= 'elevation';
+                propertyValue.options = {
+                    inputAttributes: {
+                        "placeholder": "30"
+                    }
+                }
             }
             if(propertyKey === 'min_target_elevation'){
                 propertyValue.propertyOrder=13;
+                propertyValue.validationType= 'elevation';
+                propertyValue.options = {
+                    inputAttributes: {
+                        "placeholder": "30"
+                    }
+                }
             }
             if(propertyKey === 'transit_offset'){
                 propertyValue.propertyOrder=14;
@@ -346,13 +377,24 @@ function Jeditor(props) {
             if(propertyKey === 'min_distance'){
                 propertyValue.propertyOrder=15;
             }
-            if(propertyKey === 'sun'){
-                propertyValue.validationType= 'sun';
+            if(propertyKey === 'sun' || propertyKey === 'moon' || propertyKey === 'jupiter'){
+                propertyValue.validationType= 'distanceOnSky';
             }
-            
         }
-        
-        
+    }
+
+    function setDateTimeOption(propertyValue) {
+        propertyValue.format = 'datetime-local';
+        propertyValue.validationType = 'dateTime';
+        propertyValue.options = {
+            "inputAttributes": {
+                "placeholder": "mm/dd/yyyy,--:--"
+              },
+            "flatpickr": {
+                "inlineHideInput": true,
+                "wrap": true,
+            }          
+        };
     }
 
     /**

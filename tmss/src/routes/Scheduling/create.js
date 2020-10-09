@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import { Link, Redirect } from 'react-router-dom';
 import _ from 'lodash';
 import $RefParser from "@apidevtools/json-schema-ref-parser";
-
+import moment from 'moment';
 import {InputText} from 'primereact/inputtext';
 import {InputTextarea} from 'primereact/inputtextarea';
 import {Dropdown} from 'primereact/dropdown';
@@ -67,6 +67,7 @@ export class SchedulingUnitCreate extends Component {
         this.saveSchedulingUnit = this.saveSchedulingUnit.bind(this);
         this.cancelCreate = this.cancelCreate.bind(this);
         this.reset = this.reset.bind(this);
+        this.degreeToRadius= this.degreeToRadius.bind(this);
     }
 
     componentDidMount() {
@@ -203,7 +204,7 @@ export class SchedulingUnitCreate extends Component {
      * This function is mainly added for Unit Tests. If this function is removed Unit Tests will fail.
      */
     validateEditor() {
-        return this.validEditor?true:false;
+        return this.validEditor && this.constarintValidEditor ? true : false;
     }
     
     /**
@@ -271,16 +272,32 @@ export class SchedulingUnitCreate extends Component {
         return validForm;
     }
 
+    degreeToRadius(object) {
+        for(let type in object) {
+            if (typeof object[type] === 'object') {
+                this.degreeToRadius(object[type]);
+            } else {
+                object[type] = object[type] * (Math.PI/180);
+            }
+        }
+    }
+
     /**
      * Function to create Scheduling unit
      */
     async saveSchedulingUnit() {
+        const constStrategy = _.cloneDeep(this.state.constarintParamsOutput);
+        for (let type in constStrategy.time) {
+            if (constStrategy.time[type] && constStrategy.time[type].length) {
+                constStrategy.time[type] = `${moment(constStrategy.time[type]).format("YYYY-MM-DDTh:mm:ss.SSSSS")}Z`;
+            }
+        }
+        this.degreeToRadius(constStrategy.sky);
         let observStrategy = _.cloneDeep(this.state.observStrategy);
         const $refs = await $RefParser.resolve(observStrategy.template);
         observStrategy.template.parameters.forEach(async(param, index) => {
             $refs.set(observStrategy.template.parameters[index]['refs'][0], this.state.paramsOutput['param_' + index]);
         });
-        
         const schedulingUnit = await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit);
         if (schedulingUnit) {
             // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks created successfully!'});
@@ -301,6 +318,11 @@ export class SchedulingUnitCreate extends Component {
     constraintStrategy(e){
         let schedulingUnit = { ...this.state.schedulingUnit };
         schedulingUnit.scheduling_constraints_template_id = e.id;
+        for (const definitionName in this.constraintTemplates[0].schema.definitions) {
+            this.constraintTemplates[0].schema.definitions[definitionName] = {
+                type: this.constraintTemplates[0].schema.definitions[definitionName].type
+            };
+        }
         this.setState({ constraintSchema: this.constraintTemplates[0], schedulingUnit});
      }
    
@@ -457,7 +479,7 @@ export class SchedulingUnitCreate extends Component {
                     <div className="p-grid p-justify-start">
                         <div className="p-col-1">
                             <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.saveSchedulingUnit} 
-                                    disabled={!this.state.validEditor || !this.state.validForm} data-testid="save-btn" />
+                                     disabled={!this.state.validEditor || !this.state.validForm} data-testid="save-btn" />
                         </div>
                         <div className="p-col-1">
                             <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.cancelCreate}  />
