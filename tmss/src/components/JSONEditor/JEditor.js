@@ -389,6 +389,9 @@ function Jeditor(props) {
             }
             if(propertyKey === 'sun' || propertyKey === 'moon' || propertyKey === 'jupiter'){
                 propertyValue.validationType= 'distanceOnSky';
+            } 
+            if(propertyKey === 'avoid_twilight' || propertyKey === 'require_day' || propertyKey === 'require_night'){
+                propertyValue.format= 'checkbox';
             }   
         }
     }
