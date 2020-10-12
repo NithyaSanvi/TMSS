@@ -23,6 +23,16 @@ function Jeditor(props) {
         let schema = {};
         Object.assign(schema, props.schema ? props.schema : {});
         schema.definitions = schema.definitions?schema.definitions:{};
+        if (schema.definitions && schema.definitions.timewindow) {
+            for (let property in schema.definitions.timewindow.properties) {
+                if(property === 'to' || property === 'from'){
+                    setDateTimeOption(schema.definitions.timewindow.properties[property]);
+                }
+            }
+        }
+        if (schema.definitions && schema.definitions.timestamp) {
+            schema.definitions.timestamp.validationType = 'datetime';
+        }
         return (await resolveSchema(schema));
     };
 
@@ -379,7 +389,7 @@ function Jeditor(props) {
             }
             if(propertyKey === 'sun' || propertyKey === 'moon' || propertyKey === 'jupiter'){
                 propertyValue.validationType= 'distanceOnSky';
-            }
+            }   
         }
     }
 

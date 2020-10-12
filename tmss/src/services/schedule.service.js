@@ -200,7 +200,7 @@ const ScheduleService = {
             return [];
         };
     },
-    saveSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit) {
+    saveSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit, constraint) {
         try {
             // Create the scheduling unit draft with observation strategy and scheduling set
             const url = `/api/scheduling_unit_observing_strategy_template/${observStrategy.id}/create_scheduling_unit/?scheduling_set_id=${schedulingUnit.scheduling_set_id}&name=${schedulingUnit.name}&description=${schedulingUnit.description}`
@@ -209,6 +209,8 @@ const ScheduleService = {
             if (schedulingUnit && schedulingUnit.id) {
                 // Update the newly created SU draft requirement_doc with captured parameter values
                 schedulingUnit.requirements_doc = observStrategy.template;
+                schedulingUnit.scheduling_constraints_doc = constraint.scheduling_constraints_doc;
+                schedulingUnit.scheduling_constraints_template_id = constraint.id;
                 delete schedulingUnit['duration'];
                 schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
                 if (!schedulingUnit || !schedulingUnit.id) {

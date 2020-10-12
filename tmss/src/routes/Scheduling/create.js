@@ -292,13 +292,15 @@ export class SchedulingUnitCreate extends Component {
                 constStrategy.time[type] = `${moment(constStrategy.time[type]).format("YYYY-MM-DDTh:mm:ss.SSSSS")}Z`;
             }
         }
+        // Override min to radians for (let type in constStrategy.sky.properties.transit_offset) {
         this.degreeToRadius(constStrategy.sky);
         let observStrategy = _.cloneDeep(this.state.observStrategy);
         const $refs = await $RefParser.resolve(observStrategy.template);
         observStrategy.template.parameters.forEach(async(param, index) => {
             $refs.set(observStrategy.template.parameters[index]['refs'][0], this.state.paramsOutput['param_' + index]);
         });
-        const schedulingUnit = await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit);
+        const const_starategy = {scheduling_constraints_doc: constStrategy, id: this.constraintTemplates[0].id};
+        const schedulingUnit = await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, const_starategy);
         if (schedulingUnit) {
             // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks created successfully!'});
             const dialog = {header: 'Success', detail: 'Scheduling Unit and Tasks are created successfully. Do you want to create another Scheduling Unit?'};
@@ -318,10 +320,13 @@ export class SchedulingUnitCreate extends Component {
     constraintStrategy(e){
         let schedulingUnit = { ...this.state.schedulingUnit };
         schedulingUnit.scheduling_constraints_template_id = e.id;
+        // Overriding default validation
         for (const definitionName in this.constraintTemplates[0].schema.definitions) {
-            this.constraintTemplates[0].schema.definitions[definitionName] = {
-                type: this.constraintTemplates[0].schema.definitions[definitionName].type
-            };
+            if (definitionName != 'timewindow') {
+                this.constraintTemplates[0].schema.definitions[definitionName] = {
+                    type: this.constraintTemplates[0].schema.definitions[definitionName].type
+                };
+            }
         }
         this.setState({ constraintSchema: this.constraintTemplates[0], schedulingUnit});
      }
@@ -479,7 +484,7 @@ export class SchedulingUnitCreate extends Component {
                     <div className="p-grid p-justify-start">
                         <div className="p-col-1">
                             <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.saveSchedulingUnit} 
-                                     disabled={!this.state.validEditor || !this.state.validForm} data-testid="save-btn" />
+                                     disabled={!this.state.constarintValidEditor || !this.state.validEditor || !this.state.validForm} data-testid="save-btn" />
                         </div>
                         <div className="p-col-1">
                             <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.cancelCreate}  />
