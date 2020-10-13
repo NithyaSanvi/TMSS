@@ -53,4 +53,10 @@
 .form-group .form-control #specification[scheduler]{
     width:  250px;
 }
+.disable-field {
+    pointer-events: none;
+}
+.hide {
+    display: none !important;
+}
 

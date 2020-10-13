@@ -18,7 +18,7 @@ import ScheduleService from '../../services/schedule.service';
 import TaskService from '../../services/task.service';
 import UIConstants from '../../utils/ui.constants';
 import PageHeader from '../../layout/components/PageHeader';
-
+import SchedulingConstraint from './SchedulingCostraint';
 /**
  * Component to create a new SchedulingUnit from Observation strategy template
  */
@@ -320,19 +320,9 @@ export class SchedulingUnitCreate extends Component {
     constraintStrategy(e){
         let schedulingUnit = { ...this.state.schedulingUnit };
         schedulingUnit.scheduling_constraints_template_id = e.id;
-        // Overriding default validation
-        for (const definitionName in this.constraintTemplates[0].schema.definitions) {
-            if (definitionName != 'timewindow') {
-                this.constraintTemplates[0].schema.definitions[definitionName] = {
-                    type: this.constraintTemplates[0].schema.definitions[definitionName].type
-                };
-            }
-        }
         this.setState({ constraintSchema: this.constraintTemplates[0], schedulingUnit});
      }
    
- 
-
     /**
      * Reset function to be called when user wants to create new SU
      */
@@ -448,16 +438,16 @@ export class SchedulingUnitCreate extends Component {
                                         placeholder="Select Strategy" />
                             </div>
                           <div className="col-lg-1 col-md-1 col-sm-12"></div>
-                                    <label htmlFor="schedulingConstraintsTemp" className="col-lg-2 col-md-2 col-sm-12">Scheduling Constraints Template</label>
-                                    <div className="col-lg-3 col-md-3 col-sm-12" data-testid="schedulingConstraintsTemp">
-                                        <Dropdown inputId="schedulingConstraintsTemp" optionLabel="name" optionValue="id" 
-                                                tooltip="Scheduling Constraints Template to add scheduling constraints to a scheduling unit" tooltipOptions={this.tooltipOptions}
-                                                value={this.state.schedulingUnit.scheduling_constraints_template_id}
-                                                disabled
-                                                options={this.constraintTemplates} 
-                                                //onChange={(e) => { this.constraintStrategy(e);}}
-                                                placeholder="Select Constraints Template"/>
-                                  
+                            <label htmlFor="schedulingConstraintsTemp" className="col-lg-2 col-md-2 col-sm-12 hide">Scheduling Constraints Template</label>
+                            <div className="col-lg-3 col-md-3 col-sm-12 hide" data-testid="schedulingConstraintsTemp">
+                                <Dropdown inputId="schedulingConstraintsTemp" optionLabel="name" optionValue="id" 
+                                        tooltip="Scheduling Constraints Template to add scheduling constraints to a scheduling unit" tooltipOptions={this.tooltipOptions}
+                                        value={this.state.schedulingUnit.scheduling_constraints_template_id}
+                                        disabled
+                                        options={this.constraintTemplates} 
+                                        //onChange={(e) => { this.constraintStrategy(e);}}
+                                        placeholder="Select Constraints Template"/>
+                            
                             </div> 
                         </div>
                         
@@ -472,11 +462,7 @@ export class SchedulingUnitCreate extends Component {
                     {this.state.constraintSchema && <div className="p-fluid">
                         <div className="p-grid">
                             <div className="p-col-12">
-                                {React.createElement(Jeditor, {
-                                    title: "Scheduling Constraints specification",
-                                    schema: this.state.constraintSchema.schema,
-                                    callback: this.setEditorOutputCosntarint,
-                                 })}
+                                 <SchedulingConstraint constraintTemplate={this.state.constraintSchema} callback={this.setEditorOutputCosntarint} />
                             </div>
                         </div>
                     </div>}
