@@ -18,6 +18,7 @@ import ProjectService from '../../services/project.service';
 import ScheduleService from '../../services/schedule.service';
 import TaskService from '../../services/task.service';
 import UIConstants from '../../utils/ui.constants';
+import SchedulingConstraint from './SchedulingCostraint';
 
 /**
  * Compoenent to edit scheduling unit draft
@@ -157,6 +158,7 @@ export class EditSchedulingUnit extends Component {
             }   else {
                 this.setState({isLoading: false});
             }
+            this.constraintStrategy(this.state.schedulingUnit.scheduling_constraints_doc)
         }); 
     }
 
@@ -172,6 +174,14 @@ export class EditSchedulingUnit extends Component {
         this.setState({ paramsOutput: jsonOutput, 
                         validEditor: errors.length === 0,
                         validForm: this.validateForm()});
+    }
+
+    setEditorOutputCosntarint(jsonOutput, errors) {
+        // this.constarintParamsOutput = jsonOutput || {};
+        // this.constarintValidEditor = errors.length === 0;
+        // this.setState({ constarintParamsOutput: jsonOutput, 
+        //                 constarintValidEditor: errors.length === 0,
+        //                 validForm: this.validateForm()});
     }
 
     /**
@@ -278,10 +288,12 @@ export class EditSchedulingUnit extends Component {
     }
 
     constraintStrategy(e){
-       let schedulingUnit = this.state.schedulingUnit;
-      schedulingUnit.scheduling_constraints_template_id = e.value;
+    //    let schedulingUnit = this.state.schedulingUnit;
+    //   schedulingUnit.scheduling_constraints_template_id = e.value;
     //    const schema = this.state.constraintSchema;
-        this.setState({ constraintSchema: this.constraintTemplates[0]});
+
+    // TODO: modification rquiired if any
+        this.setState({ constraintSchema: e});
     }
   
 
@@ -395,10 +407,7 @@ export class EditSchedulingUnit extends Component {
                     {this.state.constraintSchema && <div className="p-fluid">
                         <div className="p-grid">
                             <div className="p-col-12">
-                                {React.createElement(Jeditor, {
-                                    title: "Scheduling Constraints specification",
-                                    schema: this.state.constraintSchema.schema,
-                                 })}
+                                <SchedulingConstraint constraintTemplate={this.state.constraintSchema} callback={this.setEditorOutputCosntarint} />
                             </div>
                         </div>
                     </div>}

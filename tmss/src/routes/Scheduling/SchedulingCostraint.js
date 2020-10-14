@@ -122,22 +122,24 @@ export default (props) => {
     }
 
     const onEditForm = (jsonOutput, errors, ref) => {
-        if (ref.editors['root.scheduler'].value !== 'manual') {
+        if (ref.editors['root.scheduler'] && ref.editors['root.scheduler'].value !== 'manual') {
             const list = ref.editors['root.time.at'].container.className.split(' ');
             if (!list.includes('disable-field')) {
                 list.push('disable-field');
             }
             ref.editors['root.time.at'].container.className = list.join(' ');
         } else {
-            ref.editors['root.time.at'].container.className = ref.editors['root.time.at'].container.className.replace('disable-field', '');
+            // ref.editors['root.time.at'].container.className = ref.editors['root.time.at'].container.className.replace('disable-field', '');
         }
         props.callback(jsonOutput, errors);
     }
 
     const constraintStrategy = () => {
         const constraintTemplate = { ...props.constraintTemplate }
-        configureProperties(constraintTemplate.schema.properties);
-        configureDefinitions(constraintTemplate.schema);
+        if (constraintTemplate.schema) {
+            configureProperties(constraintTemplate.schema.properties);
+            configureDefinitions(constraintTemplate.schema);
+        }
         setConstraintSchema(constraintTemplate);
     };
 
