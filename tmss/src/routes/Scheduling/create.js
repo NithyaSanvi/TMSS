@@ -301,7 +301,7 @@ export class SchedulingUnitCreate extends Component {
         observStrategy.template.parameters.forEach(async(param, index) => {
             $refs.set(observStrategy.template.parameters[index]['refs'][0], this.state.paramsOutput['param_' + index]);
         });
-        const const_starategy = {scheduling_constraints_doc: constStrategy, id: this.constraintTemplates[0].id};
+        const const_starategy = {scheduling_constraints_doc: constStrategy, id: this.constraintTemplates[0].id, constarint: this.constraintTemplates[0]};
         const schedulingUnit = await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, const_starategy);
         if (schedulingUnit) {
             // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks created successfully!'});
