@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import moment from 'moment';
 import Jeditor from '../../components/JSONEditor/JEditor'; 
 
 export default (props) => {
     const [constraintSchema, setConstraintSchema] = useState();
+    const [initialValue, setInitialValue] = useState();
 
     const configureProperties = (properties) => {
         for (const propertyKey in properties) {
@@ -129,7 +131,7 @@ export default (props) => {
             }
             ref.editors['root.time.at'].container.className = list.join(' ');
         } else {
-            // ref.editors['root.time.at'].container.className = ref.editors['root.time.at'].container.className.replace('disable-field', '');
+            ref.editors['root.time.at'].container.className = ref.editors['root.time.at'].container.className.replace('disable-field', '');
         }
         props.callback(jsonOutput, errors);
     }
@@ -143,12 +145,27 @@ export default (props) => {
         setConstraintSchema(constraintTemplate);
     };
 
+    const modififyInitiValue = () => {
+        const initValue = { ...props.initValue }
+        // For Time
+        for (let key in initValue.time) {
+            if (initValue.time[key] && initValue.time[key].length) {
+                initValue.time[key] = moment(new Date((initValue.time[key] || '').replace('Z', ''))).format("YYYY-MM-DD hh:mm");
+            }
+        }
+        // Radians
+        setInitialValue(initValue);
+    }
+
     useEffect(() => {
         if (!props.constraintTemplate) {
             return;
         }
-        constraintStrategy()
-    }, [props.constraintTemplate]);
+        if (props.initValue) {
+            modififyInitiValue();
+        }
+        constraintStrategy();
+    }, [props.constraintTemplate, props.initValue]);
 
     return (
         <>
@@ -156,6 +173,7 @@ export default (props) => {
                 title: "Scheduling Constraints specification",
                 schema: constraintSchema.schema,
                 callback: onEditForm,
+                initValue: initialValue
             })}
         </>
     );

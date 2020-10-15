@@ -211,6 +211,8 @@ const ScheduleService = {
                 schedulingUnit.requirements_doc = observStrategy.template;
                 schedulingUnit.scheduling_constraints_doc = constraint.scheduling_constraints_doc;
                 schedulingUnit.scheduling_constraints_template_id = constraint.id;
+                schedulingUnit.scheduling_constraints_template_id = 1;
+                schedulingUnit.scheduling_constraints_template = "http://127.0.0.1:8008/api/scheduling_constraints_template/1";
                 delete schedulingUnit['duration'];
                 schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
                 if (!schedulingUnit || !schedulingUnit.id) {

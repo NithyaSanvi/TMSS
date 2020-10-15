@@ -193,7 +193,9 @@ export class SchedulingUnitCreate extends Component {
     }
 
     setEditorOutputCosntarint(jsonOutput, errors) {
+        debugger
         this.constarintParamsOutput = jsonOutput;
+        // condiition goes here..
         this.constarintValidEditor = errors.length === 0;
         this.setState({ constarintParamsOutput: jsonOutput, 
                         constarintValidEditor: errors.length === 0,

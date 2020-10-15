@@ -158,7 +158,7 @@ export class EditSchedulingUnit extends Component {
             }   else {
                 this.setState({isLoading: false});
             }
-            this.constraintStrategy(this.state.schedulingUnit.scheduling_constraints_doc)
+            this.constraintStrategy(this.constraintTemplates[0], this.state.schedulingUnit.scheduling_constraints_doc)
         }); 
     }
 
@@ -287,13 +287,13 @@ export class EditSchedulingUnit extends Component {
         this.props.history.goBack();
     }
 
-    constraintStrategy(e){
+    constraintStrategy(schema, initValue){
     //    let schedulingUnit = this.state.schedulingUnit;
     //   schedulingUnit.scheduling_constraints_template_id = e.value;
     //    const schema = this.state.constraintSchema;
 
     // TODO: modification rquiired if any
-        this.setState({ constraintSchema: e});
+        this.setState({ constraintSchema: schema, initValue: initValue});
     }
   
 
@@ -306,7 +306,7 @@ export class EditSchedulingUnit extends Component {
         let jeditor = null;
         if (schema) {
             jeditor = React.createElement(Jeditor, {title: "Task Parameters",
-                                                     schema: schema,
+                                                        schema: schema,
                                                         initValue: this.state.paramsOutput, 
                                                         callback: this.setEditorOutput,
                                                         parentFunction: this.setEditorFunction
@@ -407,7 +407,7 @@ export class EditSchedulingUnit extends Component {
                     {this.state.constraintSchema && <div className="p-fluid">
                         <div className="p-grid">
                             <div className="p-col-12">
-                                <SchedulingConstraint constraintTemplate={this.state.constraintSchema} callback={this.setEditorOutputCosntarint} />
+                                <SchedulingConstraint initValue={this.state.initValue} constraintTemplate={this.state.constraintSchema} callback={this.setEditorOutputCosntarint} />
                             </div>
                         </div>
                     </div>}
