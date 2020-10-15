@@ -193,12 +193,15 @@ export class SchedulingUnitCreate extends Component {
     }
 
     setEditorOutputCosntarint(jsonOutput, errors) {
-        debugger
+        let err = [ ...errors ];
+        if (jsonOutput.scheduler === 'online') {
+            err = err.filter(e => e.path !== 'root.time.at');
+        }
         this.constarintParamsOutput = jsonOutput;
         // condiition goes here..
-        this.constarintValidEditor = errors.length === 0;
+        this.constarintValidEditor = err.length === 0;
         this.setState({ constarintParamsOutput: jsonOutput, 
-                        constarintValidEditor: errors.length === 0,
+                        constarintValidEditor: err.length === 0,
                         validForm: this.validateForm()});
     }
 
@@ -291,17 +294,27 @@ export class SchedulingUnitCreate extends Component {
         const constStrategy = _.cloneDeep(this.state.constarintParamsOutput);
         for (let type in constStrategy.time) {
             if (constStrategy.time[type] && constStrategy.time[type].length) {
-                constStrategy.time[type] = `${moment(constStrategy.time[type]).format("YYYY-MM-DDTh:mm:ss.SSSSS")}Z`;
+                if (typeof constStrategy.time[type] === 'string') {
+                    constStrategy.time[type] = `${moment(constStrategy.time[type]).format("YYYY-MM-DDTh:mm:ss.SSSSS")}Z`;
+                } else {
+                    constStrategy.time[type].map(time => {
+                        for (let key in time) {
+                            time[key] = `${moment(time[key] ).format("YYYY-MM-DDTh:mm:ss.SSSSS")}Z`;
+                        }
+                    })
+                }
             }
         }
-        // Override min to radians for (let type in constStrategy.sky.properties.transit_offset) {
+        for (let type in constStrategy.sky.transit_offset) {
+            constStrategy.sky.transit_offset[type] = constStrategy.sky.transit_offset[type] * 60;
+        }
         this.degreeToRadius(constStrategy.sky);
         let observStrategy = _.cloneDeep(this.state.observStrategy);
         const $refs = await $RefParser.resolve(observStrategy.template);
         observStrategy.template.parameters.forEach(async(param, index) => {
             $refs.set(observStrategy.template.parameters[index]['refs'][0], this.state.paramsOutput['param_' + index]);
         });
-        const const_starategy = {scheduling_constraints_doc: constStrategy, id: this.constraintTemplates[0].id, constarint: this.constraintTemplates[0]};
+        const const_starategy = {scheduling_constraints_doc: constStrategy, id: this.constraintTemplates[0].id, constraint: this.constraintTemplates[0]};
         const schedulingUnit = await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, const_starategy);
         if (schedulingUnit) {
             // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks created successfully!'});
@@ -472,7 +485,7 @@ export class SchedulingUnitCreate extends Component {
                     <div className="p-grid p-justify-start">
                         <div className="p-col-1">
                             <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.saveSchedulingUnit} 
-                                     disabled={!this.state.constarintValidEditor || !this.state.validEditor || !this.state.validForm} data-testid="save-btn" />
+                                      disabled={!this.state.constarintValidEditor || !this.state.validEditor || !this.state.validForm} data-testid="save-btn" />
                         </div>
                         <div className="p-col-1">
                             <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.cancelCreate}  />

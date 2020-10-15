@@ -73,6 +73,10 @@ export default (props) => {
             }
             if(propertyKey === 'transit_offset'){
                 propertyValue.propertyOrder=14;
+                for (let type in propertyValue.properties) {
+                    propertyValue.properties[type].minimum = 0;
+                    propertyValue.properties[type].maximum = 60;
+                }
             }
             if(propertyKey === 'min_distance'){
                 propertyValue.propertyOrder=15;
@@ -133,7 +137,9 @@ export default (props) => {
         } else {
             ref.editors['root.time.at'].container.className = ref.editors['root.time.at'].container.className.replace('disable-field', '');
         }
-        props.callback(jsonOutput, errors);
+        if (props.callback) {
+            props.callback(jsonOutput, errors);
+        }
     }
 
     const constraintStrategy = () => {
@@ -145,15 +151,34 @@ export default (props) => {
         setConstraintSchema(constraintTemplate);
     };
 
+   const radiusToDegree = (object) => {
+        for(let type in object) {
+            if (typeof object[type] === 'object') {
+                radiusToDegree(object[type]);
+            } else {
+                object[type] = (object[type] * 180) / Math.PI;
+            }
+        }
+    }
+
     const modififyInitiValue = () => {
         const initValue = { ...props.initValue }
         // For Time
         for (let key in initValue.time) {
-            if (initValue.time[key] && initValue.time[key].length) {
+            if (typeof initValue.time[key] === 'string') {
                 initValue.time[key] = moment(new Date((initValue.time[key] || '').replace('Z', ''))).format("YYYY-MM-DD hh:mm");
+            } else {
+                initValue.time[key].map(time => {
+                    for (let subKey in time) {
+                        time[subKey] = moment(new Date((time[subKey] || '').replace('Z', ''))).format("YYYY-MM-DD hh:mm");
+                    }
+                })
             }
         }
-        // Radians
+        for (let type in initValue.sky.transit_offset) {
+            initValue.sky.transit_offset[type] = initValue.sky.transit_offset[type] / 60;
+        }
+        radiusToDegree(initValue.sky);
         setInitialValue(initValue);
     }
 
@@ -173,7 +198,8 @@ export default (props) => {
                 title: "Scheduling Constraints specification",
                 schema: constraintSchema.schema,
                 callback: onEditForm,
-                initValue: initialValue
+                initValue: initialValue,
+                disabled: props.disable,
             })}
         </>
     );

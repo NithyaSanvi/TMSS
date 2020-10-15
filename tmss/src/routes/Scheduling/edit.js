@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import { Redirect } from 'react-router-dom';
+import moment from 'moment';
 import _ from 'lodash';
 import $RefParser from "@apidevtools/json-schema-ref-parser";
 
@@ -62,6 +63,7 @@ export class EditSchedulingUnit extends Component {
         this.setEditorFunction = this.setEditorFunction.bind(this);
         this.saveSchedulingUnit = this.saveSchedulingUnit.bind(this);
         this.cancelCreate = this.cancelCreate.bind(this);
+        this.setEditorOutputCosntarint = this.setEditorOutputCosntarint.bind(this);
         
     }
 
@@ -177,11 +179,15 @@ export class EditSchedulingUnit extends Component {
     }
 
     setEditorOutputCosntarint(jsonOutput, errors) {
-        // this.constarintParamsOutput = jsonOutput || {};
-        // this.constarintValidEditor = errors.length === 0;
-        // this.setState({ constarintParamsOutput: jsonOutput, 
-        //                 constarintValidEditor: errors.length === 0,
-        //                 validForm: this.validateForm()});
+        let err = [ ...errors ];
+        if (jsonOutput.scheduler === 'online') {
+            err = err.filter(e => e.path !== 'root.time.at');
+        }
+        this.constarintParamsOutput = jsonOutput || {};
+        this.constarintValidEditor = err.length === 0;
+        this.setState({ constarintParamsOutput: jsonOutput, 
+                        constarintValidEditor: err.length === 0,
+                        validForm: this.validateForm()});
     }
 
     /**
@@ -256,17 +262,49 @@ export class EditSchedulingUnit extends Component {
         return validForm;
     }
 
+    degreeToRadius(object) {
+        for(let type in object) {
+            if (typeof object[type] === 'object') {
+                this.degreeToRadius(object[type]);
+            } else {
+                object[type] = object[type] * (Math.PI/180);
+            }
+        }
+    }
+
     /**
      * Function to create Scheduling unit
      */
     async saveSchedulingUnit() {
         if (this.state.schedulingUnit.observation_strategy_template_id) {
+            const constStrategy = _.cloneDeep(this.state.constarintParamsOutput);
+            debugger
+            for (let type in constStrategy.time) {
+                if (constStrategy.time[type] && constStrategy.time[type].length) {
+                    if (typeof constStrategy.time[type] === 'string') {
+                        constStrategy.time[type] = `${moment(constStrategy.time[type]).format("YYYY-MM-DDTh:mm:ss.SSSSS")}Z`;
+                    } else {
+                        constStrategy.time[type].map(time => {
+                            for (let key in time) {
+                                time[key] = `${moment(time[key] ).format("YYYY-MM-DDTh:mm:ss.SSSSS")}Z`;
+                            }
+                        })
+                    }
+                }
+            }
+            for (let type in constStrategy.sky.transit_offset) {
+                constStrategy.sky.transit_offset[type] = constStrategy.sky.transit_offset[type] * 60;
+            }
+            this.degreeToRadius(constStrategy.sky);
+
             let observStrategy = _.cloneDeep(this.state.observStrategy);
             const $refs = await $RefParser.resolve(observStrategy.template);
             observStrategy.template.parameters.forEach(async(param, index) => {
                 $refs.set(observStrategy.template.parameters[index]['refs'][0], this.state.paramsOutput['param_' + index]);
             });
-            const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, this.state.taskDrafts, this.state.tasksToUpdate);
+            const schUnit = { ...this.state.schedulingUnit };
+            schUnit.scheduling_constraints_doc = constStrategy;
+            const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy, schUnit, this.state.taskDrafts, this.state.tasksToUpdate);
             if (schedulingUnit) {
                 // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks edited successfully!'});
                 this.props.history.push({

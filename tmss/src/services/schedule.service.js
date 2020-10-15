@@ -211,7 +211,6 @@ const ScheduleService = {
                 schedulingUnit.requirements_doc = observStrategy.template;
                 schedulingUnit.scheduling_constraints_doc = constraint.scheduling_constraints_doc;
                 schedulingUnit.scheduling_constraints_template_id = constraint.id;
-                schedulingUnit.scheduling_constraints_template_id = constraint.constraint.id;
                 schedulingUnit.scheduling_constraints_template = constraint.constraint.url;
                 delete schedulingUnit['duration'];
                 schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);

@@ -9,6 +9,7 @@ import PageHeader from '../../layout/components/PageHeader';
 import ViewTable from './../../components/ViewTable';
 import ScheduleService from '../../services/schedule.service';
 import moment from 'moment';
+import SchedulingConstraint from './SchedulingCostraint';
 
 class ViewSchedulingUnit extends Component{
     constructor(props){
@@ -55,6 +56,7 @@ class ViewSchedulingUnit extends Component{
         this.actions = [
             {icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', link: this.props.history.goBack} 
         ];
+        this.constraintTemplates = [];
         if (this.props.match.params.type === 'draft') {
             this.actions.unshift({icon: 'fa-edit', title: 'Click to edit',  props : { pathname:`/schedulingunit/edit/${ this.props.match.params.id}`
         } });
@@ -76,6 +78,10 @@ class ViewSchedulingUnit extends Component{
             this.getScheduleUnit(schedule_type, schedule_id)
             .then(schedulingUnit =>{
                 if (schedulingUnit) {
+                    ScheduleService.getSchedulingConstraints().then((response) => {
+                        this.constraintTemplates = response;
+                        this.setState({ constraintSchema:  this.constraintTemplates.find(i => i.id === schedulingUnit.scheduling_constraints_template_id) })
+                    });
                     this.getScheduleUnitTasks(schedule_type, schedulingUnit)
                         .then(tasks =>{
                     /* tasks.map(task => {
@@ -170,6 +176,7 @@ class ViewSchedulingUnit extends Component{
                 </>
 			 
                 }
+                {this.state.scheduleunit && this.state.scheduleunit.scheduling_constraints_doc && <SchedulingConstraint disable constraintTemplate={this.state.constraintSchema} initValue={this.state.scheduleunit.scheduling_constraints_doc} />}
                 <div>
                     <h3>Tasks Details</h3>
                 </div>
