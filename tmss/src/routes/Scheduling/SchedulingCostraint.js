@@ -102,6 +102,7 @@ export default (props) => {
             "flatpickr": {
                 "inlineHideInput": true,
                 "wrap": true,
+                "enableSeconds": true
             }          
         };
     };
@@ -121,6 +122,12 @@ export default (props) => {
                 for (let property in schema.definitions.timewindow.properties) {
                     if(property === 'to' || property === 'from'){
                         setDateTimeOption(schema.definitions.timewindow.properties[property]);
+                        if (property === 'from') {
+                            schema.definitions.timewindow.properties[property].propertyOrder = 1;
+                        } else {
+                            schema.definitions.timewindow.properties[property].propertyOrder = 2;
+                            schema.definitions.timewindow.properties[property].title = 'Until';
+                        }
                     }
                 }
             }
@@ -166,11 +173,11 @@ export default (props) => {
         // For Time
         for (let key in initValue.time) {
             if (typeof initValue.time[key] === 'string') {
-                initValue.time[key] = moment(new Date((initValue.time[key] || '').replace('Z', ''))).format("YYYY-MM-DD hh:mm");
+                initValue.time[key] = moment(new Date((initValue.time[key] || '').replace('Z', ''))).format("YYYY-MM-DD hh:mm:ss");
             } else {
                 initValue.time[key].map(time => {
                     for (let subKey in time) {
-                        time[subKey] = moment(new Date((time[subKey] || '').replace('Z', ''))).format("YYYY-MM-DD hh:mm");
+                        time[subKey] = moment(new Date((time[subKey] || '').replace('Z', ''))).format("YYYY-MM-DD hh:mm:ss");
                     }
                 })
             }
