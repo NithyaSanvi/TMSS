@@ -293,6 +293,16 @@ export class SchedulingUnitCreate extends Component {
     async saveSchedulingUnit() {
         const constStrategy = _.cloneDeep(this.state.constarintParamsOutput);
         for (let type in constStrategy.time) {
+            if (constStrategy.scheduler === 'online') {
+                // For deleting property
+                // delete constStrategy.time.at;
+
+                // For setting default value to the property
+                // if (!constStrategy.time.at) {
+                //     constStrategy.time.at = new Date();
+                // }
+
+            }
             if (constStrategy.time[type] && constStrategy.time[type].length) {
                 if (typeof constStrategy.time[type] === 'string') {
                     constStrategy.time[type] = `${moment(constStrategy.time[type]).format("YYYY-MM-DDTh:mm:ss.SSSSS")}Z`;

@@ -182,6 +182,9 @@ export default (props) => {
                 })
             }
         }
+        if (!initValue.time.at) {
+            initValue.time.at = '';
+        }
         for (let type in initValue.sky.transit_offset) {
             initValue.sky.transit_offset[type] = initValue.sky.transit_offset[type] / 60;
         }

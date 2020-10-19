@@ -278,7 +278,16 @@ export class EditSchedulingUnit extends Component {
     async saveSchedulingUnit() {
         if (this.state.schedulingUnit.observation_strategy_template_id) {
             const constStrategy = _.cloneDeep(this.state.constarintParamsOutput);
-            debugger
+            if (constStrategy.scheduler === 'online') {
+                // For deleting property
+                // delete constStrategy.time.at;
+
+                // For setting default value to the property
+                // if (!constStrategy.time.at) {
+                //     constStrategy.time.at = new Date();
+                // }
+
+            }
             for (let type in constStrategy.time) {
                 if (constStrategy.time[type] && constStrategy.time[type].length) {
                     if (typeof constStrategy.time[type] === 'string') {
