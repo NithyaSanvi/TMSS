@@ -3,6 +3,7 @@ import moment from 'moment';
 import Jeditor from '../../components/JSONEditor/JEditor'; 
 
 export default (props) => {
+    const { parentFunction = () => {} } = props;
     const [constraintSchema, setConstraintSchema] = useState();
     const [initialValue, setInitialValue] = useState();
 
@@ -210,6 +211,7 @@ export default (props) => {
                 callback: onEditForm,
                 initValue: initialValue,
                 disabled: props.disable,
+                parentFunction: parentFunction
             })}
         </>
     );

@@ -205,6 +205,7 @@ function Jeditor(props) {
         const formattedOutput = updateOutput(_.cloneDeep(editorOutput));
         const editorValidationErrors = editorRef.current.validate();
         if (props.callback) {
+            // editorRef.current for accessing fields in parent to add classname for enabling and disabling
             props.callback(formattedOutput, editorValidationErrors, editorRef.current);
         }
     }
@@ -289,6 +290,7 @@ function Jeditor(props) {
 
                 properties[propertyKey] = newProperty;
             }   else if (propertyValue instanceof Object) {
+                // by default previously, all field will have format as Grid, but this will fail for calendar, so added property called skipFormat
                 if (propertyKey !== 'properties' && propertyKey !== 'default' && !propertyValue.skipFormat) {
                     propertyValue.format = "grid";
                 }

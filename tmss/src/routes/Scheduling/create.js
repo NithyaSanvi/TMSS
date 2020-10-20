@@ -28,6 +28,7 @@ export class SchedulingUnitCreate extends Component {
         this.state = {
             isLoading: true,                        // Flag for loading spinner
             dialog: { header: '', detail: ''},      // Dialog properties
+            touched: {},
             redirect: null,                         // URL to redirect
             errors: [],                             // Form Validation errors
             schedulingSets: [],                     // Scheduling set of the selected project
@@ -63,6 +64,7 @@ export class SchedulingUnitCreate extends Component {
         this.setSchedUnitParams = this.setSchedUnitParams.bind(this);
         this.validateForm = this.validateForm.bind(this);
         this.validateEditor = this.validateEditor.bind(this);
+        this.setConstraintEditorFun = this.setConstraintEditorFun.bind(this);
         this.setEditorFunction = this.setEditorFunction.bind(this);
         this.saveSchedulingUnit = this.saveSchedulingUnit.bind(this);
         this.cancelCreate = this.cancelCreate.bind(this);
@@ -218,6 +220,12 @@ export class SchedulingUnitCreate extends Component {
      * @param {object} value 
      */
     setSchedUnitParams(key, value) {
+        this.setState({ 
+            touched: { 
+                ...this.state.touched,
+                [key]: true
+            }
+        });
         let schedulingUnit = this.state.schedulingUnit;
         schedulingUnit[key] = value;
         this.setState({schedulingUnit: schedulingUnit, validForm: this.validateForm(key), validEditor: this.validateEditor()});
@@ -230,6 +238,10 @@ export class SchedulingUnitCreate extends Component {
      */
     setEditorFunction(editorFunction) {
         this.setState({editorFunction: editorFunction});
+    }
+
+    setConstraintEditorFun(editorFunction) {
+        this.setState({constraintEditorFunction: editorFunction});
     }
 
     /**
@@ -279,7 +291,9 @@ export class SchedulingUnitCreate extends Component {
 
     degreeToRadius(object) {
         for(let type in object) {
-            if (typeof object[type] === 'object') {
+            if (type === 'transit_offset') {
+                continue;
+            } else if (typeof object[type] === 'object') {
                 this.degreeToRadius(object[type]);
             } else {
                 object[type] = object[type] * (Math.PI/180);
@@ -294,14 +308,7 @@ export class SchedulingUnitCreate extends Component {
         const constStrategy = _.cloneDeep(this.state.constarintParamsOutput);
         for (let type in constStrategy.time) {
             if (constStrategy.scheduler === 'online') {
-                // For deleting property
-                // delete constStrategy.time.at;
-
-                // For setting default value to the property
-                // if (!constStrategy.time.at) {
-                //     constStrategy.time.at = new Date();
-                // }
-
+                delete constStrategy.time.at;
             }
             if (constStrategy.time[type] && constStrategy.time[type].length) {
                 if (typeof constStrategy.time[type] === 'string') {
@@ -315,9 +322,9 @@ export class SchedulingUnitCreate extends Component {
                 }
             }
         }
-        for (let type in constStrategy.sky.transit_offset) {
-            constStrategy.sky.transit_offset[type] = constStrategy.sky.transit_offset[type] * 60;
-        }
+        // for (let type in constStrategy.sky.transit_offset) {
+        //     constStrategy.sky.transit_offset[type] = constStrategy.sky.transit_offset[type] * 60;
+        // }
         this.degreeToRadius(constStrategy.sky);
         let observStrategy = _.cloneDeep(this.state.observStrategy);
         const $refs = await $RefParser.resolve(observStrategy.template);
@@ -363,14 +370,20 @@ export class SchedulingUnitCreate extends Component {
                 name: '',
                 description: '',
                 project: this.props.match.params.project || null,
+                scheduling_constraints_template_id: this.constraintTemplates[0].id
             },
             projectDisabled: (this.props.match.params.project? true:false),
             observStrategy: {},
             paramsOutput: null,
             validEditor: false,
-            validFields: {}
+            validFields: {},
+            constraintSchema: null
+        }, () => {
+            this.constraintStrategy(this.constraintTemplates[0]);
         });
         this.state.editorFunction();
+        this.state.constraintEditorFunction();
+        
     }
 
     render() {
@@ -402,26 +415,26 @@ export class SchedulingUnitCreate extends Component {
                         <div className="p-field p-grid">
                             <label htmlFor="schedUnitName" className="col-lg-2 col-md-2 col-sm-12">Name <span style={{color:'red'}}>*</span></label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
-                                <InputText className={this.state.errors.name ?'input-error':''} id="schedUnitName" data-testid="name" 
+                                <InputText className={(this.state.errors.name && this.state.touched.name) ?'input-error':''} id="schedUnitName" data-testid="name" 
                                             tooltip="Enter name of the Scheduling Unit" tooltipOptions={this.tooltipOptions} maxLength="128"
                                             ref={input => {this.nameInput = input;}}
                                             value={this.state.schedulingUnit.name} autoFocus
                                             onChange={(e) => this.setSchedUnitParams('name', e.target.value)}
                                             onBlur={(e) => this.setSchedUnitParams('name', e.target.value)}/>
-                                <label className={this.state.errors.name?"error":"info"}>
-                                    {this.state.errors.name ? this.state.errors.name : "Max 128 characters"}
+                                <label className={(this.state.errors.name && this.state.touched.name)?"error":"info"}>
+                                    {this.state.errors.name && this.state.touched.name ? this.state.errors.name : "Max 128 characters"}
                                 </label>
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="description" className="col-lg-2 col-md-2 col-sm-12">Description <span style={{color:'red'}}>*</span></label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
-                                <InputTextarea className={this.state.errors.description ?'input-error':''} rows={3} cols={30} 
+                                <InputTextarea className={(this.state.errors.description && this.state.touched.description) ?'input-error':''} rows={3} cols={30} 
                                             tooltip="Longer description of the scheduling unit" tooltipOptions={this.tooltipOptions} maxLength="128"
                                             data-testid="description" value={this.state.schedulingUnit.description} 
                                             onChange={(e) => this.setSchedUnitParams('description', e.target.value)}
                                             onBlur={(e) => this.setSchedUnitParams('description', e.target.value)}/>
-                                <label className={this.state.errors.description ?"error":"info"}>
-                                    {this.state.errors.description ? this.state.errors.description : "Max 255 characters"}
+                                <label className={(this.state.errors.description && this.state.touched.description) ?"error":"info"}>
+                                    {(this.state.errors.description && this.state.touched.description) ? this.state.errors.description : "Max 255 characters"}
                                 </label>
                             </div>
                         </div>
@@ -434,8 +447,8 @@ export class SchedulingUnitCreate extends Component {
                                         options={this.projects} 
                                         onChange={(e) => {this.changeProject(e.value)}} 
                                         placeholder="Select Project" />
-                                <label className={this.state.errors.project ?"error":"info"}>
-                                    {this.state.errors.project ? this.state.errors.project : "Select Project to get Scheduling Sets"}
+                                <label className={(this.state.errors.project && this.state.touched.project) ?"error":"info"}>
+                                    {(this.state.errors.project && this.state.touched.project) ? this.state.errors.project : "Select Project to get Scheduling Sets"}
                                 </label>
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
@@ -447,8 +460,8 @@ export class SchedulingUnitCreate extends Component {
                                         options={this.state.schedulingSets} 
                                         onChange={(e) => {this.setSchedUnitParams('scheduling_set_id',e.value)}} 
                                         placeholder="Select Scheduling Set" />
-                                <label className={this.state.errors.scheduling_set_id ?"error":"info"}>
-                                    {this.state.errors.scheduling_set_id ? this.state.errors.scheduling_set_id : "Scheduling Set of the Project"}
+                                <label className={(this.state.errors.scheduling_set_id && this.state.touched.scheduling_set_id) ?"error":"info"}>
+                                    {(this.state.errors.scheduling_set_id && this.state.touched.scheduling_set_id) ? this.state.errors.scheduling_set_id : "Scheduling Set of the Project"}
                                 </label>
                             </div>
                         </div>
@@ -464,7 +477,7 @@ export class SchedulingUnitCreate extends Component {
                             </div>
                           <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="schedulingConstraintsTemp" className="col-lg-2 col-md-2 col-sm-12 hide">Scheduling Constraints Template</label>
-                            <div className="col-lg-3 col-md-3 col-sm-12 hide" data-testid="schedulingConstraintsTemp">
+                            <div className="col-lg-3 col-md-3 col-sm-12" data-testid="schedulingConstraintsTemp">
                                 <Dropdown inputId="schedulingConstraintsTemp" optionLabel="name" optionValue="id" 
                                         tooltip="Scheduling Constraints Template to add scheduling constraints to a scheduling unit" tooltipOptions={this.tooltipOptions}
                                         value={this.state.schedulingUnit.scheduling_constraints_template_id}
@@ -487,7 +500,7 @@ export class SchedulingUnitCreate extends Component {
                     {this.state.constraintSchema && <div className="p-fluid">
                         <div className="p-grid">
                             <div className="p-col-12">
-                                 <SchedulingConstraint constraintTemplate={this.state.constraintSchema} callback={this.setEditorOutputCosntarint} />
+                                 <SchedulingConstraint constraintTemplate={this.state.constraintSchema} callback={this.setEditorOutputCosntarint} parentFunction={this.setConstraintEditorFun}/>
                             </div>
                         </div>
                     </div>}

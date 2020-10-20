@@ -280,7 +280,7 @@ export class EditSchedulingUnit extends Component {
             const constStrategy = _.cloneDeep(this.state.constarintParamsOutput);
             if (constStrategy.scheduler === 'online') {
                 // For deleting property
-                // delete constStrategy.time.at;
+                delete constStrategy.time.at;
 
                 // For setting default value to the property
                 // if (!constStrategy.time.at) {
