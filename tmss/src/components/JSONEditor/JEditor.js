@@ -2,6 +2,7 @@
  * This is the custom component to use "@json-editor/json-editor"
  * to create form using JSON Schema and get JSON output
  */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useRef} from 'react';
 import _ from 'lodash';
 import $RefParser from "@apidevtools/json-schema-ref-parser";
