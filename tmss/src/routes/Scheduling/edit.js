@@ -293,7 +293,7 @@ export class EditSchedulingUnit extends Component {
                     if (typeof constStrategy.time[type] === 'string') {
                         constStrategy.time[type] = `${moment(constStrategy.time[type]).format("YYYY-MM-DDTh:mm:ss.SSSSS")}Z`;
                     } else {
-                        constStrategy.time[type].map(time => {
+                        constStrategy.time[type].forEach(time => {
                             for (let key in time) {
                                 time[key] = `${moment(time[key] ).format("YYYY-MM-DDTh:mm:ss.SSSSS")}Z`;
                             }

@@ -4,7 +4,6 @@
  */
 import React, {useEffect, useRef} from 'react';
 import _ from 'lodash';
-import flatpickr from 'flatpickr';
 import $RefParser from "@apidevtools/json-schema-ref-parser";
 import "@fortawesome/fontawesome-free/css/all.css";
 import "flatpickr/dist/flatpickr.css";

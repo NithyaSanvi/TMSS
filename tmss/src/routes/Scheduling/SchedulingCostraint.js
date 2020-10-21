@@ -115,11 +115,11 @@ export default (props) => {
                     validationType: 'datetime',
                     type: schema.definitions.timestamp.type
                 };
-            } else if (definitionName != 'timewindow' && definitionName !== 'timestamp') {
+            } else if (definitionName !== 'timewindow' && definitionName !== 'timestamp') {
                 schema.definitions[definitionName] = {
                     type: schema.definitions[definitionName].type
                 };
-            } else if(definitionName == 'timewindow') {
+            } else if(definitionName === 'timewindow') {
                 for (let property in schema.definitions.timewindow.properties) {
                     if(property === 'to' || property === 'from'){
                         setDateTimeOption(schema.definitions.timewindow.properties[property]);
@@ -176,7 +176,7 @@ export default (props) => {
             if (typeof initValue.time[key] === 'string') {
                 initValue.time[key] = moment(new Date((initValue.time[key] || '').replace('Z', ''))).format("YYYY-MM-DD hh:mm:ss");
             } else {
-                initValue.time[key].map(time => {
+                initValue.time[key].forEach(time => {
                     for (let subKey in time) {
                         time[subKey] = moment(new Date((time[subKey] || '').replace('Z', ''))).format("YYYY-MM-DD hh:mm:ss");
                     }

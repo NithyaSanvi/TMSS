@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import { Link, Redirect } from 'react-router-dom';
+import { Redirect } from 'react-router-dom';
 import _ from 'lodash';
 import $RefParser from "@apidevtools/json-schema-ref-parser";
 import moment from 'moment';
@@ -314,7 +314,7 @@ export class SchedulingUnitCreate extends Component {
                 if (typeof constStrategy.time[type] === 'string') {
                     constStrategy.time[type] = `${moment(constStrategy.time[type]).format("YYYY-MM-DDTh:mm:ss.SSSSS")}Z`;
                 } else {
-                    constStrategy.time[type].map(time => {
+                    constStrategy.time[type].forEach(time => {
                         for (let key in time) {
                             time[key] = `${moment(time[key] ).format("YYYY-MM-DDTh:mm:ss.SSSSS")}Z`;
                         }
