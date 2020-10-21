@@ -274,10 +274,12 @@ export class EditSchedulingUnit extends Component {
                 // For deleting property
                 delete constStrategy.time.at;
              }
-            if (constStrategy.scheduler === 'manual') {
+            if (!constStrategy.time.after) {
                 delete constStrategy.time.after;
+            }
+            if (!constStrategy.time.before) {
                 delete constStrategy.time.before;
-             }
+            }
             for (let type in constStrategy.time) {
                 if (constStrategy.time[type] && constStrategy.time[type].length) {
                     if (typeof constStrategy.time[type] === 'string') {

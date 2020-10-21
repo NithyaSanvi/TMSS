@@ -148,9 +148,15 @@ export default (props) => {
                 })
             }
         }
-      if (!initValue.time.at) {
-          initValue.time.at= '';
-       }
+        if (!initValue.time.at) {
+            initValue.time.at= '';
+        }
+        if (!initValue.time.after) {
+            initValue.time.after= '';
+        }
+        if (!initValue.time.before) {
+            initValue.time.before= '';
+        }
      
        /*   for (let type in initValue.sky.transit_offset) {
             initValue.sky.transit_offset[type] = initValue.sky.transit_offset[type] / 60;

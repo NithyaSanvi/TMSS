@@ -290,10 +290,12 @@ export class SchedulingUnitCreate extends Component {
             if (constStrategy.scheduler === 'online') {
                 delete constStrategy.time.at;
             }
-             if (constStrategy.scheduler === 'manual') {
+            if (!constStrategy.time.after) {
                 delete constStrategy.time.after;
+            }
+            if (!constStrategy.time.before) {
                 delete constStrategy.time.before;
-             }
+            }
             if (constStrategy.time[type] && constStrategy.time[type].length) {
                 if (typeof constStrategy.time[type] === 'string') {
                     constStrategy.time[type] = `${moment(constStrategy.time[type]).format("YYYY-MM-DDTh:mm:ss.SSSSS")}Z`;
