@@ -5,6 +5,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useRef} from 'react';
 import _ from 'lodash';
+import flatpickr from 'flatpickr';
 import $RefParser from "@apidevtools/json-schema-ref-parser";
 import "@fortawesome/fontawesome-free/css/all.css";
 import "flatpickr/dist/flatpickr.css";
@@ -135,15 +136,7 @@ function Jeditor(props) {
                     errors.push({
                         path: path,
                         property: 'validationType',
-                        message: 'Must be number between 0 - 180'
-                    });
-                }
-            } else if (schema.validationType === "dateTime") {
-                if (!value) {
-                    errors.push({
-                        path: path,
-                        property: 'validationType',
-                        message: 'Not a valid Date and Time'
+                        message: 'Not a valid input.Must be number between 0 - 180'
                     });
                 }
             } else if (schema.validationType === "elevation") {
@@ -151,7 +144,7 @@ function Jeditor(props) {
                     errors.push({
                         path: path,
                         property: 'validationType',
-                        message: 'Must be number between 0 - 90'
+                        message: 'Not a valid input.Must be number between 0 - 90'
                     });
                 }
             } 

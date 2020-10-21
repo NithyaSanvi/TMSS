@@ -9,7 +9,9 @@ import PageHeader from '../../layout/components/PageHeader';
 import ViewTable from './../../components/ViewTable';
 import ScheduleService from '../../services/schedule.service';
 import moment from 'moment';
-import SchedulingConstraint from './SchedulingCostraint';
+import SchedulingConstraint from './Scheduling.Constraints';
+import { Dialog } from 'primereact/dialog';
+import TaskStatusLogs from '../Task/state_logs';
 
 class ViewSchedulingUnit extends Component{
     constructor(props){
@@ -18,11 +20,13 @@ class ViewSchedulingUnit extends Component{
             scheduleunit: null,
             schedule_unit_task: [],
             isLoading: true,
+            showStatusLogs: false,
             paths: [{
                 "View": "/task",
             }],
 
             defaultcolumns: [ {
+                "status_logs": "Status Logs",
                 "tasktype":"Type",
                 "id":"ID",
                 "name":"Name",
@@ -33,6 +37,7 @@ class ViewSchedulingUnit extends Component{
                 "start_time":"Start Time",
                 "stop_time":"End Time",
                 "duration":"Duration (HH:mm:ss)",
+                "status":"Status"
             }],
             optionalcolumns:  [{
                 "relative_start_time":"Relative Start Time (HH:mm:ss)",
@@ -43,6 +48,7 @@ class ViewSchedulingUnit extends Component{
                 "actionpath":"actionpath",
             }],
             columnclassname: [{
+                "Status Logs": "filter-input-0",
                 "Type":"filter-input-75",
                 "ID":"filter-input-50",
                 "Cancelled":"filter-input-50",
@@ -51,6 +57,7 @@ class ViewSchedulingUnit extends Component{
                 "BluePrint / Task Draft link": "filter-input-100",
                 "Relative Start Time (HH:mm:ss)": "filter-input-75",
                 "Relative End Time (HH:mm:ss)": "filter-input-75",
+                "Status":"filter-input-100"
             }]
         }
         this.actions = [
@@ -58,8 +65,8 @@ class ViewSchedulingUnit extends Component{
         ];
         this.constraintTemplates = [];
         if (this.props.match.params.type === 'draft') {
-            this.actions.unshift({icon: 'fa-edit', title: 'Click to edit',  props : { pathname:`/schedulingunit/edit/${ this.props.match.params.id}`
-        } });
+            this.actions.unshift({icon: 'fa-edit', title: 'Click to edit',  props : { pathname:`/schedulingunit/edit/${ this.props.match.params.id}`}
+            });
         } else {
             this.actions.unshift({icon: 'fa-lock', title: 'Cannot edit blueprint'});
         }
@@ -69,27 +76,32 @@ class ViewSchedulingUnit extends Component{
         if (this.props.match.params.type) {
             this.state.scheduleunitType = this.props.match.params.type;
         }
-    }
+       }
 
     componentDidMount(){ 
         let schedule_id = this.state.scheduleunitId;
         let schedule_type = this.state.scheduleunitType;
         if (schedule_type && schedule_id) {
+            const subtaskComponent = (task)=> {
+                return (
+                    <button className="p-link" onClick={(e) => {this.setState({showStatusLogs: true, task: task})}}>
+                        <i className="fa fa-history"></i>
+                    </button>
+                );
+            };
             this.getScheduleUnit(schedule_type, schedule_id)
             .then(schedulingUnit =>{
                 if (schedulingUnit) {
-                    ScheduleService.getSchedulingConstraints().then((response) => {
+                    ScheduleService.getSchedulingConstraintTemplates().then((response) => {
                         this.constraintTemplates = response;
                         this.setState({ constraintSchema:  this.constraintTemplates.find(i => i.id === schedulingUnit.scheduling_constraints_template_id) })
                     });
                     this.getScheduleUnitTasks(schedule_type, schedulingUnit)
                         .then(tasks =>{
-                    /* tasks.map(task => {
-                            task.duration = moment.utc(task.duration*1000).format('HH:mm:ss'); 
-                            task.relative_start_time = moment.utc(task.relative_start_time*1000).format('HH:mm:ss'); 
-                            task.relative_stop_time = moment.utc(task.relative_stop_time*1000).format('HH:mm:ss'); 
+                        tasks.map(task => {
+                            task.status_logs = task.tasktype === "Blueprint"?subtaskComponent(task):"";
                             return task;
-                        });*/
+                        });
                         this.setState({
                             scheduleunit : schedulingUnit,
                             schedule_unit_task : tasks,
@@ -117,8 +129,8 @@ class ViewSchedulingUnit extends Component{
         else
             return ScheduleService.getSchedulingUnitBlueprintById(id)
     }
-
-    render(){
+   
+ render(){
         return(
 		   <>   
                 {/*}  <div className="p-grid">
@@ -142,40 +154,45 @@ class ViewSchedulingUnit extends Component{
 				{ this.state.isLoading ? <AppLoader/> :this.state.scheduleunit &&
 			    <>
 		            <div className="main-content">
-                    <div className="p-grid">
-                        <label  className="col-lg-2 col-md-2 col-sm-12">Name</label>
-                        <span className="p-col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.name}</span>
-                        <label  className="col-lg-2 col-md-2 col-sm-12">Description</label>
-                        <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.description}</span>
-                    </div>
-                    <div className="p-grid">
-                        <label className="col-lg-2 col-md-2 col-sm-12">Created At</label>
-                        <span className="col-lg-4 col-md-4 col-sm-12">{moment(this.state.scheduleunit.created_at).format("YYYY-MMM-DD HH:mm:SS")}</span>
-                        <label className="col-lg-2 col-md-2 col-sm-12">Updated At</label>
-                        <span className="col-lg-4 col-md-4 col-sm-12">{moment(this.state.scheduleunit.updated_at).format("YYYY-MMM-DD HH:mm:SS")}</span>
-                    </div>
-                    <div className="p-grid">
-                        <label className="col-lg-2 col-md-2 col-sm-12">Start Time</label>
-                        <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.start_time && moment(this.state.scheduleunit.start_time).format("YYYY-MMM-DD HH:mm:SS")}</span>
-                        <label className="col-lg-2 col-md-2 col-sm-12">End Time</label>
-                        <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.stop_time && moment(this.state.scheduleunit.stop_time).format("YYYY-MMM-DD HH:mm:SS")}</span>
-                    </div>
-                    <div className="p-grid">
-                        <label className="col-lg-2 col-md-2 col-sm-12">Template ID</label>
-                        <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.requirements_template_id}</span>
-                        <label  className="col-lg-2 col-md-2 col-sm-12">Scheduling set</label>
-                        <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.scheduling_set_object.name}</span>
-                    </div>
-                    <div className="p-grid">
-                        <label className="col-lg-2 col-md-2 col-sm-12">Duration (HH:mm:ss)</label>
-                        <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.scheduleunit.duration*1000).format('HH:mm:ss')}</span>
+                        <div className="p-grid">
+                            <label  className="col-lg-2 col-md-2 col-sm-12">Name</label>
+                            <span className="p-col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.name}</span>
+                            <label  className="col-lg-2 col-md-2 col-sm-12">Description</label>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.description}</span>
+                        </div>
+                        <div className="p-grid">
+                            <label className="col-lg-2 col-md-2 col-sm-12">Created At</label>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{moment(this.state.scheduleunit.created_at).format("YYYY-MMM-DD HH:mm:SS")}</span>
+                            <label className="col-lg-2 col-md-2 col-sm-12">Updated At</label>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{moment(this.state.scheduleunit.updated_at).format("YYYY-MMM-DD HH:mm:SS")}</span>
+                        </div>
+                        <div className="p-grid">
+                            <label className="col-lg-2 col-md-2 col-sm-12">Start Time</label>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.start_time && moment(this.state.scheduleunit.start_time).format("YYYY-MMM-DD HH:mm:SS")}</span>
+                            <label className="col-lg-2 col-md-2 col-sm-12">End Time</label>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.stop_time && moment(this.state.scheduleunit.stop_time).format("YYYY-MMM-DD HH:mm:SS")}</span>
+                        </div>
+                        <div className="p-grid">
+                            <label className="col-lg-2 col-md-2 col-sm-12">Template ID</label>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.requirements_template_id}</span>
+                            <label  className="col-lg-2 col-md-2 col-sm-12">Scheduling set</label>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.scheduling_set_object.name}</span>
+                        </div>
+                        <div className="p-grid">
+                            <label className="col-lg-2 col-md-2 col-sm-12" >Duration (HH:mm:ss)</label>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc((this.state.scheduleunit.duration?this.state.scheduleunit.duration:0)*1000).format('HH:mm:ss')}</span>
+                            {this.props.match.params.type === 'blueprint' &&
+                            <label className="col-lg-2 col-md-2 col-sm-12 ">Status</label> }
+                             {this.props.match.params.type === 'blueprint' &&
+                            <span className="col-lg-2 col-md-2 col-sm-12">{this.state.scheduleunit.status}</span>}
+                         </div>
+                     <div className="p-grid">
                         <label  className="col-lg-2 col-md-2 col-sm-12">Tags</label>
                         <Chips className="p-col-4 chips-readonly" disabled value={this.state.scheduleunit.tags}></Chips>
-                    </div>
+                        </div>
                     </div>
                 </>
-			 
-                }
+			    }
                 {this.state.scheduleunit && this.state.scheduleunit.scheduling_constraints_doc && <SchedulingConstraint disable constraintTemplate={this.state.constraintSchema} initValue={this.state.scheduleunit.scheduling_constraints_doc} />}
                 <div>
                     <h3>Tasks Details</h3>
@@ -203,7 +220,14 @@ class ViewSchedulingUnit extends Component{
                         unittest={this.state.unittest}
                         tablename="scheduleunit_task_list"
                     />
-                 } 
+                 }
+                 {this.state.showStatusLogs &&
+                    <Dialog header={`Status change logs - ${this.state.task?this.state.task.name:""}`} 
+                            visible={this.state.showStatusLogs} maximizable maximized={false} position="left" style={{ width: '50vw' }} 
+                            onHide={() => {this.setState({showStatusLogs: false})}}>
+                            <TaskStatusLogs taskId={this.state.task.id}></TaskStatusLogs>
+                    </Dialog>
+                 }
             </>
         )
     }

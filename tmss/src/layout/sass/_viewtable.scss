@@ -102,27 +102,31 @@ body .p-paginator {
   max-width: 175px;
 }
 
-.filter-input-50 input{
+.filter-input-0 input{
+  display: none;
+}
+
+.filter-input-50,.filter-input-50 input{
   width: 50px;
 }
 
-.filter-input-75 input{
+.filter-input-75,.filter-input-75 input{
   width: 75px;
 }
 
-.filter-input-100 input{
+.filter-input-100,.filter-input-100 input{
   width: 100px;
 }
 
-.filter-input-125 input{
+.filter-input-125,.filter-input-125 input{
   width: 125px;
 }
 
-.filter-input-150 input{
+.filter-input-150,.filter-input-150 input{
   width: 150px;
 }
 
-.filter-input-175 input{
+.filter-input-175,.filter-input-175 input{
   width: 175px;
 }
  

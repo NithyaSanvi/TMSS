@@ -10,16 +10,16 @@ import {Dropdown} from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import {Growl} from 'primereact/components/growl/Growl';
 
-
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
 import Jeditor from '../../components/JSONEditor/JEditor';
+import UnitConversion from '../../utils/unit.converter';
 
 import ProjectService from '../../services/project.service';
 import ScheduleService from '../../services/schedule.service';
 import TaskService from '../../services/task.service';
 import UIConstants from '../../utils/ui.constants';
-import SchedulingConstraint from './SchedulingCostraint';
+import SchedulingConstraint from './Scheduling.Constraints';
 
 /**
  * Compoenent to edit scheduling unit draft
@@ -28,28 +28,31 @@ export class EditSchedulingUnit extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            isLoading: true,                        
-            dialog: { header: '', detail: ''},      
-            redirect: null,                         
-            errors: [],                             
-            schedulingSets: [],                     
+            isLoading: true,                        //Flag for loading spinner                     
+            dialog: { header: '', detail: ''},      //Dialog properties
+            redirect: null,                         //URL to redirect
+            errors: [],                             //Form Validation errors
+            schedulingSets: [],                     // Scheduling set of the selected project
             schedulingUnit: {},
             projectDisabled: (props.match?(props.match.params.project? true:false):false),      
-            observStrategy: {},
-            paramsSchema: null,
+            observStrategy: {},                     // Selected strategy to create SU
+            paramsSchema: null,                     // JSON Schema to be generated from strategy template to pass to JSOn editor
             constraintSchema:null,                     
-            validEditor: false,                     
-            validFields: {},  
+            validEditor: false,                     // For JSON editor validation
+            validFields: {},                        // For Form Validation 
             observStrategyVisible: false                     
         }
-        this.projects = [];                        
+        this.projects = [];                         // All projects to load project dropdown
+        this.schedulingSets = [];                   // All scheduling sets to be filtered for project
+        this.observStrategies = [];                 // All Observing strategy templates
+        this.taskTemplates = [];                    // All task templates to be filtered based on tasks in selected strategy template             
         this.schedulingSets = [];                   
         this.observStrategies = [];
         this.taskTemplates = [];                    
         this.constraintTemplates = [];
         this.tooltipOptions = UIConstants.tooltipOptions;
-        this.nameInput = React.createRef();         
-        this.formRules = {                          
+        this.nameInput = React.createRef();         // Ref to Name field for auto focus
+        this.formRules = {                          // Form validation rules                  
             name: {required: true, message: "Name can not be empty"},
             description: {required: true, message: "Description can not be empty"},
         };
@@ -63,8 +66,7 @@ export class EditSchedulingUnit extends Component {
         this.setEditorFunction = this.setEditorFunction.bind(this);
         this.saveSchedulingUnit = this.saveSchedulingUnit.bind(this);
         this.cancelCreate = this.cancelCreate.bind(this);
-        this.setEditorOutputCosntarint = this.setEditorOutputCosntarint.bind(this);
-        
+        this.setEditorOutputConstraint = this.setEditorOutputConstraint.bind(this);
     }
 
     /**
@@ -140,7 +142,7 @@ export class EditSchedulingUnit extends Component {
                             TaskService.getTaskTemplates(),
                             ScheduleService.getSchedulingUnitDraftById(this.props.match.params.id),
                             ScheduleService.getTasksDraftBySchedulingUnitId(this.props.match.params.id),
-                            ScheduleService.getSchedulingConstraints()
+                            ScheduleService.getSchedulingConstraintTemplates()
                         ];
         Promise.all(promises).then(responses => {
             this.projects = responses[0];
@@ -178,15 +180,15 @@ export class EditSchedulingUnit extends Component {
                         validForm: this.validateForm()});
     }
 
-    setEditorOutputCosntarint(jsonOutput, errors) {
+    setEditorOutputConstraint(jsonOutput, errors) {
         let err = [ ...errors ];
         if (jsonOutput.scheduler === 'online') {
             err = err.filter(e => e.path !== 'root.time.at');
         }
-        this.constarintParamsOutput = jsonOutput || {};
-        this.constarintValidEditor = err.length === 0;
-        this.setState({ constarintParamsOutput: jsonOutput, 
-                        constarintValidEditor: err.length === 0,
+        this.constraintParamsOutput = jsonOutput || {};
+        this.constraintValidEditor = err.length === 0;
+        this.setState({ constraintParamsOutput: jsonOutput, 
+                        constraintValidEditor: err.length === 0,
                         validForm: this.validateForm()});
     }
 
@@ -262,32 +264,20 @@ export class EditSchedulingUnit extends Component {
         return validForm;
     }
 
-    degreeToRadius(object) {
-        for(let type in object) {
-            if (typeof object[type] === 'object') {
-                this.degreeToRadius(object[type]);
-            } else {
-                object[type] = object[type] * (Math.PI/180);
-            }
-        }
-    }
-
     /**
      * Function to create Scheduling unit
      */
     async saveSchedulingUnit() {
         if (this.state.schedulingUnit.observation_strategy_template_id) {
-            const constStrategy = _.cloneDeep(this.state.constarintParamsOutput);
+            const constStrategy = _.cloneDeep(this.state.constraintParamsOutput);
             if (constStrategy.scheduler === 'online') {
                 // For deleting property
                 delete constStrategy.time.at;
-
-                // For setting default value to the property
-                // if (!constStrategy.time.at) {
-                //     constStrategy.time.at = new Date();
-                // }
-
-            }
+             }
+            if (constStrategy.scheduler === 'manual') {
+                delete constStrategy.time.after;
+                delete constStrategy.time.before;
+             }
             for (let type in constStrategy.time) {
                 if (constStrategy.time[type] && constStrategy.time[type].length) {
                     if (typeof constStrategy.time[type] === 'string') {
@@ -295,17 +285,17 @@ export class EditSchedulingUnit extends Component {
                     } else {
                         constStrategy.time[type].forEach(time => {
                             for (let key in time) {
-                                time[key] = `${moment(time[key] ).format("YYYY-MM-DDTh:mm:ss.SSSSS")}Z`;
+                               time[key] = `${moment(time[key] ).format("YYYY-MM-DDTh:mm:ss.SSSSS")}Z`;
                             }
+                            
                         })
                     }
                 }
             }
-            for (let type in constStrategy.sky.transit_offset) {
+           /* for (let type in constStrategy.sky.transit_offset) {
                 constStrategy.sky.transit_offset[type] = constStrategy.sky.transit_offset[type] * 60;
-            }
-            this.degreeToRadius(constStrategy.sky);
-
+            }*/
+            UnitConversion.degreeToRadians(constStrategy.sky);
             let observStrategy = _.cloneDeep(this.state.observStrategy);
             const $refs = await $RefParser.resolve(observStrategy.template);
             observStrategy.template.parameters.forEach(async(param, index) => {
@@ -313,7 +303,7 @@ export class EditSchedulingUnit extends Component {
             });
             const schUnit = { ...this.state.schedulingUnit };
             schUnit.scheduling_constraints_doc = constStrategy;
-            const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy, schUnit, this.state.taskDrafts, this.state.tasksToUpdate);
+            const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy,schUnit,this.state.taskDrafts, this.state.tasksToUpdate);
             if (schedulingUnit) {
                 // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks edited successfully!'});
                 this.props.history.push({
@@ -335,15 +325,9 @@ export class EditSchedulingUnit extends Component {
     }
 
     constraintStrategy(schema, initValue){
-    //    let schedulingUnit = this.state.schedulingUnit;
-    //   schedulingUnit.scheduling_constraints_template_id = e.value;
-    //    const schema = this.state.constraintSchema;
-
-    // TODO: modification rquiired if any
-        this.setState({ constraintSchema: schema, initValue: initValue});
+       this.setState({ constraintSchema: schema, initValue: initValue});
     }
   
-
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -431,17 +415,17 @@ export class EditSchedulingUnit extends Component {
                                 </>
                             }
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
-                                    <label htmlFor="schedulingConstraintsTemp" className="col-lg-2 col-md-2 col-sm-12">Scheduling Constraints Template</label>
-                                    <div className="col-lg-3 col-md-3 col-sm-12" data-testid="schedulingConstraintsTemp">
-                                        <Dropdown inputId="schedulingConstraintsTemp" optionLabel="name" optionValue="id" 
-                                                tooltip="Scheduling Constraints Template to add scheduling constraints to a scheduling unit" tooltipOptions={this.tooltipOptions}
-                                                value={this.state.schedulingUnit.scheduling_constraints_template_id} 
-                                                disabled={this.state.schedulingUnit.scheduling_constraints_template_id?true:false}
-                                                options={this.constraintTemplates} 
-                                                onChange={(e) => { this.constraintStrategy(e);}}
-                                                placeholder="Select Constraints Template"/>
-                                  
-                            </div>
+                            <label htmlFor="schedulingConstraintsTemp" className="col-lg-2 col-md-2 col-sm-12 hide">Scheduling Constraints Template</label>
+                            <div className="col-lg-3 col-md-3 col-sm-12 hide" data-testid="schedulingConstraintsTemp">
+                                <Dropdown inputId="schedulingConstraintsTemp" optionLabel="name" optionValue="id" 
+                                        tooltip="Scheduling Constraints Template to add scheduling constraints to a scheduling unit" tooltipOptions={this.tooltipOptions}
+                                        value={this.state.schedulingUnit.scheduling_constraints_template_id}
+                                        disabled
+                                        options={this.constraintTemplates} 
+                                        //onChange={(e) => { this.constraintStrategy(e);}}
+                                        placeholder="Select Constraints Template"/>
+                            
+                            </div> 
                         </div>
                     </div>
                     <div className="p-fluid">
@@ -454,7 +438,7 @@ export class EditSchedulingUnit extends Component {
                     {this.state.constraintSchema && <div className="p-fluid">
                         <div className="p-grid">
                             <div className="p-col-12">
-                                <SchedulingConstraint initValue={this.state.initValue} constraintTemplate={this.state.constraintSchema} callback={this.setEditorOutputCosntarint} />
+                                <SchedulingConstraint initValue={this.state.initValue} constraintTemplate={this.state.constraintSchema} callback={this.setEditorOutputConstraint} />
                             </div>
                         </div>
                     </div>}

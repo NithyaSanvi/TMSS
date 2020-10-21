@@ -11,10 +11,14 @@ import {Paginator} from 'primereact/paginator';
 import { Button } from "react-bootstrap";
 import { InputNumber } from "primereact/inputnumber";
 
-let tbldata =[];
+let tbldata =[], filteredData = [] ;
 let isunittest = false;
 let showTopTotal = true;
+let showGlobalFilter = true;
+let showColumnFilter = true;
+let allowColumnSelection = true;
 let columnclassname =[];
+let parentCallbackFunction;
 
 // Define a default UI for filtering
 function GlobalFilter({
@@ -39,13 +43,13 @@ function GlobalFilter({
 
 // Define a default UI for filtering
 function DefaultColumnFilter({
-  column: { filterValue, preFilteredRows, setFilter },
+  column: { filterValue, preFilteredRows, setFilter, filteredRows },
 }) {
   return (
     <input
       value={filterValue || ''}
       onChange={e => {
-        setFilter(e.target.value || undefined) // Set undefined to remove the filter entirely
+        setFilter(e.target.value || undefined); // Set undefined to remove the filter entirely
       }}
     />
   )
@@ -291,7 +295,7 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
       useGlobalFilter,
       useSortBy,   
       usePagination
-    )
+    );
   React.useEffect(() => {
     setHiddenColumns(
       columns.filter(column => !column.isVisible).map(column => column.accessor)
@@ -345,11 +349,18 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
     })
     localStorage.setItem(tablename,JSON.stringify(lsToggleColumns))
   }
+
+  filteredData = _.map(rows, 'values');
+  if (parentCallbackFunction) {
+    parentCallbackFunction(filteredData);
+  }
+  
   return (
     <>
      <div id="block_container"> 
+     { allowColumnSelection &&
           <div   style={{textAlign:'left', marginRight:'30px'}}>
-                <i className="fa fa-columns col-filter-btn" label="Toggle Columns" onClick={(e) => op.current.toggle(e)}  />
+                <i className="fa fa-columns col-filter-btn" label="Toggle Columns" onClick={(e) => op.current.toggle(e)}  /> 
                 <OverlayPanel ref={op} id="overlay_panel" showCloseIcon={false} >
                   <div>
                       <div style={{textAlign: 'center'}}>
@@ -377,9 +388,9 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
                   </div>
                 </OverlayPanel>
             </div> 
-                
+      }
         <div  style={{textAlign:'right'}}>
-        {tbldata.length>0 && !isunittest && 
+        {tbldata.length>0 && !isunittest && showGlobalFilter &&
               <GlobalFilter
                 preGlobalFilteredRows={preGlobalFilteredRows}
                 globalFilter={state.globalFilter}
@@ -470,10 +481,14 @@ filterGreaterThan.autoRemove = val => typeof val !== 'number'
 function ViewTable(props) {
     const history = useHistory();
     // Data to show in table
-    tbldata = props.data; 
+    tbldata = props.data;
+    parentCallbackFunction = props.filterCallback; 
     isunittest = props.unittest;
     columnclassname = props.columnclassname;
-    showTopTotal = props.showTopTotal==='false'? false:true;
+    showTopTotal = props.showTopTotal===undefined?true:props.showTopTotal;
+    showGlobalFilter = props.showGlobalFilter===undefined?true:props.showGlobalFilter;
+    showColumnFilter = props.showColumnFilter===undefined?true:props.showColumnFilter;
+    allowColumnSelection = props.allowColumnSelection===undefined?true:props.allowColumnSelection;
     // Default Header to show in table and other columns header will not show until user action on UI
     let defaultheader = props.defaultcolumns;
     let optionalheader = props.optionalcolumns;
@@ -519,8 +534,8 @@ function ViewTable(props) {
       Header: isString ? defaultheader[0][header] : defaultheader[0][header].name,
       id: header,
       accessor: header,
-      filter: (!isString && defaultheader[0][header].filter=== 'date') ? 'includes' : 'fuzzyText',
-      Filter: isString ? DefaultColumnFilter : (filterTypes[defaultheader[0][header].filter] ? filterTypes[defaultheader[0][header].filter] : DefaultColumnFilter),
+      filter: (showColumnFilter?((!isString && defaultheader[0][header].filter=== 'date') ? 'includes' : 'fuzzyText'):""),
+      Filter: (showColumnFilter?(isString ? DefaultColumnFilter : (filterTypes[defaultheader[0][header].filter] ? filterTypes[defaultheader[0][header].filter] : DefaultColumnFilter)):""),
       isVisible: true,
       Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
    })
@@ -534,8 +549,8 @@ optionaldataheader.forEach(header => {
       Header: isString ? optionalheader[0][header] : optionalheader[0][header].name,
           id: isString ? header : optionalheader[0][header].name,
           accessor: header,
-          filter: (!isString && optionalheader[0][header].filter=== 'date') ? 'includes' : 'fuzzyText',
-          Filter: isString ? DefaultColumnFilter : (filterTypes[optionalheader[0][header].filter] ? filterTypes[optionalheader[0][header].filter] : DefaultColumnFilter),
+          filter: (showColumnFilter?((!isString && optionalheader[0][header].filter=== 'date') ? 'includes' : 'fuzzyText'):""),
+          Filter: (showColumnFilter?(isString ? DefaultColumnFilter : (filterTypes[optionalheader[0][header].filter] ? filterTypes[optionalheader[0][header].filter] : DefaultColumnFilter)):""),
           isVisible: false,
           Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
       })

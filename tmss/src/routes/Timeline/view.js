@@ -15,6 +15,7 @@ import ScheduleService from '../../services/schedule.service';
 import UtilService from '../../services/util.service';
 
 import UnitConverter from '../../utils/unit.converter';
+import SchedulingUnitSummary from '../Scheduling/summary';
 
 // Color constant for status
 const STATUS_COLORS = { "ERROR": "FF0000", "CANCELLED": "#00FF00", "DEFINED": "#00BCD4", 
@@ -39,13 +40,16 @@ export class TimelineView extends Component {
             isSUDetsVisible: false,
             canExtendSUList: true,
             canShrinkSUList: false,
-            selectedItem: null
+            selectedItem: null,
+            suTaskList:[],
+            isSummaryLoading: false
         }
 
         this.onItemClick = this.onItemClick.bind(this);
         this.closeSUDets = this.closeSUDets.bind(this);
         this.dateRangeCallback = this.dateRangeCallback.bind(this);
         this.resizeSUList = this.resizeSUList.bind(this);
+        this.suListFilterCallback = this.suListFilterCallback.bind(this);
     }
 
     async componentDidMount() {
@@ -126,7 +130,24 @@ export class TimelineView extends Component {
         if (this.state.isSUDetsVisible && item.id===this.state.selectedItem.id) {
             this.closeSUDets();
         }   else {
-            this.setState({selectedItem: item, isSUDetsVisible: true, canExtendSUList: false, canShrinkSUList:false});
+            const fetchDetails = !this.state.selectedItem || item.id!==this.state.selectedItem.id
+            this.setState({selectedItem: item, isSUDetsVisible: true, 
+                isSummaryLoading: fetchDetails,
+                suTaskList: !fetchDetails?this.state.suTaskList:[],
+                canExtendSUList: false, canShrinkSUList:false});
+            if (fetchDetails) {
+                const suBlueprint = _.find(this.state.suBlueprints, {id: item.id});
+                ScheduleService.getTaskBlueprintsBySchedulingUnit(suBlueprint, true)
+                    .then(taskList => {
+                        for (let task of taskList) {
+                            if (task.template.type_value.toLowerCase() === "observation") {
+                                task.antenna_set = task.specifications_doc.antenna_set;
+                                task.band = task.specifications_doc.filter;
+                            }
+                        }
+                        this.setState({suTaskList: _.sortBy(taskList, "id"), isSummaryLoading: false})
+                    });
+            }
         }
     }
 
@@ -162,7 +183,7 @@ export class TimelineView extends Component {
         }
         this.setState({suBlueprintList: _.filter(suBlueprintList, (suBlueprint) => {return suBlueprint.start_time!=null})});
         // On range change close the Details pane
-        this.closeSUDets();
+        // this.closeSUDets();
         return {group: group, items: items};
     }
 
@@ -185,6 +206,25 @@ export class TimelineView extends Component {
         this.setState({canExtendSUList: canExtendSUList, canShrinkSUList: canShrinkSUList});
     }
 
+    /**
+     * Callback function to pass to the ViewTable component to pass back filtered data
+     * @param {Array} filteredData 
+     */
+    suListFilterCallback(filteredData) {
+        let group=[], items = [];
+        const suBlueprints = this.state.suBlueprints;
+        for (const data of filteredData) {
+            const suBlueprint = _.find(suBlueprints, {actionpath: data.actionpath});
+            items.push(this.getTimelineItem(suBlueprint));
+            if (!_.find(group, {'id': suBlueprint.suDraft.id})) {
+                group.push({'id': suBlueprint.suDraft.id, title: suBlueprint.suDraft.name});
+            }
+        }
+        if (this.timeline) {
+            this.timeline.updateTimeline({group: group, items: items});
+        }
+    }
+
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -192,21 +232,15 @@ export class TimelineView extends Component {
         const isSUDetsVisible = this.state.isSUDetsVisible;
         const canExtendSUList = this.state.canExtendSUList;
         const canShrinkSUList = this.state.canShrinkSUList;
+        let suBlueprint = null;
+        if (isSUDetsVisible) {
+            suBlueprint = _.find(this.state.suBlueprints, {id: this.state.selectedItem.id});
+        }
         return (
             <React.Fragment>
                 <PageHeader location={this.props.location} title={'Scheduling Units - Timeline View'} />
                 { this.state.isLoading ? <AppLoader /> :
                         <div className="p-grid">
-                        {/* <SplitPane split="vertical" defaultSize={600} style={{height: 'auto'}} primary="second"> */}
-                            {/* <div className={isSUDetsVisible || (canExtendSUList && !canShrinkSUList)?"resize-div-min col-lg-4 col-md-4 col-sm-12":((canExtendSUList && canShrinkSUList)?"resize-div-avg col-lg-5 col-md-5 col-sm-12":"resize-div-max col-lg-6 col-md-6 col-sm-12")}>
-                                    <button className="p-link resize-btn" disabled={!this.state.canExtendSUList} 
-                                        onClick={(e)=> { this.resizeSUList(1)}}>
-                                        <i className="pi pi-step-forward"></i>
-                                    </button>
-                                    <button className="p-link resize-btn" disabled={!this.state.canShrinkSUList} 
-                                            onClick={(e)=> { this.resizeSUList(-1)}}>
-                                        <i className="pi pi-step-backward"></i>
-                                    </button></div>  */}
                             {/* SU List Panel */}
                             <div className={isSUDetsVisible || (canExtendSUList && !canShrinkSUList)?"col-lg-4 col-md-4 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":"col-lg-6 col-md-6 col-sm-12")}
                                  style={{position: "inherit", borderRight: "5px solid #efefef", paddingTop: "10px"}}>
@@ -221,10 +255,11 @@ export class TimelineView extends Component {
                                     showaction="true"
                                     tablename="timeline_scheduleunit_list"
                                     showTopTotal="false"
+                                    filterCallback={this.suListFilterCallback}
                                 />
                             </div>
                             {/* Timeline Panel */}
-                            <div className={isSUDetsVisible || (!canExtendSUList && canShrinkSUList)?"col-lg-6 col-md-6 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-7 col-md-7 col-sm-12":"col-lg-8 col-md-8 col-sm-12")}>
+                            <div className={isSUDetsVisible || (!canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-7 col-md-7 col-sm-12":"col-lg-8 col-md-8 col-sm-12")}>
                                 {/* Panel Resize buttons */}
                                 <div className="resize-div">
                                     <button className="p-link resize-btn" disabled={!this.state.canShrinkSUList} 
@@ -245,21 +280,14 @@ export class TimelineView extends Component {
                                         rowHeight={30} itemClickCallback={this.onItemClick}
                                         dateRangeCallback={this.dateRangeCallback}></Timeline>
                             </div>
-                        {/* </SplitPane> */}
                             {/* Details Panel */}
                             {this.state.isSUDetsVisible &&
-                                <div className="col-lg-2 col-md-2 col-sm-12" 
+                                <div className="col-lg-3 col-md-3 col-sm-12" 
                                      style={{borderLeft: "1px solid #efefef", marginTop: "0px", backgroundColor: "#f2f2f2"}}>
-                                    <div className="p-grid" style={{marginTop: '10px'}}>
-                                        <h6 className="col-lg-10 col-sm-10">Details</h6>
-                                        <button className="p-link" onClick={this.closeSUDets}><i className="fa fa-times"></i></button>
-                                    
-                                        <div className="col-12">
-                                            {this.state.selectedItem.title}
-                                        </div>
-
-                                        <div className="col-12">Still In Development</div>
-                                    </div>
+                                    {this.state.isSummaryLoading?<AppLoader /> :
+                                        <SchedulingUnitSummary schedulingUnit={suBlueprint} suTaskList={this.state.suTaskList}
+                                                closeCallback={this.closeSUDets}></SchedulingUnitSummary>
+                                    }
                                 </div>
                             }  
                         

@@ -52,29 +52,31 @@ const ScheduleService = {
             return null;
         }
     },
-    getTaskBlueprintById: async function(id){
-        let res = [];
-        await axios.get('/api/task_blueprint/'+id)
-        .then(response => {
-            res= response; 
-        }).catch(function(error) {
+    getTaskBlueprintById: async function(id, loadTemplate){
+        let result;
+        try {
+            result = await axios.get('/api/task_blueprint/'+id);
+            if (result.data && loadTemplate) {
+                result.data.template = await TaskService.getTaskTemplate(result.data.specifications_template_id);
+            }
+        }   catch(error) {
             console.error('[schedule.services.getTaskBlueprintById]',error);
-        });
-        return res;
+        }
+        return result;
     },
-    getTaskBlueprintsBySchedulingUnit: async function(scheduleunit){
+    getTaskBlueprintsBySchedulingUnit: async function(scheduleunit, loadTemplate){
         // there no single api to fetch associated task_blueprint, so iteare the task_blueprint id to fetch associated task_blueprint
         let taskblueprintsList = [];
         if(scheduleunit.task_blueprints_ids){
             for(const id of scheduleunit.task_blueprints_ids){
-               await this.getTaskBlueprintById(id).then(response =>{
+               await this.getTaskBlueprintById(id, loadTemplate).then(response =>{
                     let taskblueprint = response.data;
                     taskblueprint['tasktype'] = 'Blueprint';
                     taskblueprint['actionpath'] = '/task/view/blueprint/'+taskblueprint['id'];
                     taskblueprint['blueprint_draft'] = taskblueprint['draft'];
                     taskblueprint['relative_start_time'] = 0;
                     taskblueprint['relative_stop_time'] = 0;
-                    taskblueprint.duration = moment.utc(taskblueprint.duration*1000).format('HH:mm:ss'); 
+                    taskblueprint.duration = moment.utc((taskblueprint.duration || 0)*1000).format('HH:mm:ss');
                     taskblueprintsList.push(taskblueprint);
                 })
             }
@@ -85,9 +87,9 @@ const ScheduleService = {
         let scheduletasklist=[];
         // let taskblueprints = [];
         // Common keys for Task and Blueprint
-        let commonkeys = ['id','created_at','description','name','tags','updated_at','url','do_cancel','relative_start_time','relative_stop_time','start_time','stop_time','duration'];
+        let commonkeys = ['id','created_at','description','name','tags','updated_at','url','do_cancel','relative_start_time','relative_stop_time','start_time','stop_time','duration','status'];
         // await this.getTaskBlueprints().then( blueprints =>{
-        //     taskblueprints = blueprints.data.results;
+        //     taskblueprints = blueprints.data.results;'
         // });
         await this.getTasksDraftBySchedulingUnitId(id)
         .then(async(response) =>{
@@ -96,12 +98,13 @@ const ScheduleService = {
                 scheduletask['tasktype'] = 'Draft';
                 scheduletask['actionpath'] = '/task/view/draft/'+task['id'];
                 scheduletask['blueprint_draft'] = task['task_blueprints'];
+                scheduletask['status'] = task['status'];
 
                 //fetch task draft details
                 for(const key of commonkeys){
                     scheduletask[key] = task[key];
                 }
-                scheduletask.duration = moment.utc(scheduletask.duration*1000).format('HH:mm:ss'); 
+                scheduletask.duration = moment.utc((scheduletask.duration || 0)*1000).format('HH:mm:ss'); 
                 scheduletask.relative_start_time = moment.utc(scheduletask.relative_start_time*1000).format('HH:mm:ss'); 
                 scheduletask.relative_stop_time = moment.utc(scheduletask.relative_stop_time*1000).format('HH:mm:ss'); 
                //Fetch blueprint details for Task Draft
@@ -115,10 +118,12 @@ const ScheduleService = {
                     taskblueprint['tasktype'] = 'Blueprint';
                     taskblueprint['actionpath'] = '/task/view/blueprint/'+blueprint['id'];
                     taskblueprint['blueprint_draft'] = blueprint['draft'];
+                    taskblueprint['status'] = blueprint['status'];
+                    
                     for(const key of commonkeys){
                         taskblueprint[key] = blueprint[key];
                     }
-                    taskblueprint.duration = moment.utc(taskblueprint.duration*1000).format('HH:mm:ss'); 
+                    taskblueprint.duration = moment.utc((taskblueprint.duration || 0)*1000).format('HH:mm:ss'); 
                     taskblueprint.relative_start_time = moment.utc(taskblueprint.relative_start_time*1000).format('HH:mm:ss'); 
                     taskblueprint.relative_stop_time = moment.utc(taskblueprint.relative_stop_time*1000).format('HH:mm:ss'); 
 
@@ -191,7 +196,7 @@ const ScheduleService = {
             return [];
         };
     },
-    getSchedulingConstraints: async function(){
+    getSchedulingConstraintTemplates: async function(){
         try {
             const response = await axios.get('/api/scheduling_constraints_template/');
             return response.data.results;
@@ -230,7 +235,7 @@ const ScheduleService = {
         };
     },
     
-    updateSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit,tasks,tasksToUpdate) {
+    updateSUDraftFromObservStrategy: async function(observStrategy,schedulingUnit,tasks,tasksToUpdate) {
         try {
             delete schedulingUnit['duration'];
             schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
@@ -284,12 +289,12 @@ const ScheduleService = {
                     for(const suDraft of suDraftList){
                         suDraft['actionpath']='/schedulingunit/view/draft/'+suDraft.id;
                         suDraft['type'] = 'Draft';
-                        suDraft['duration'] = moment.utc(suDraft.duration*1000).format('HH:mm:ss');
+                        suDraft['duration'] = moment.utc((suDraft.duration || 0)*1000).format('HH:mm:ss');
                         schedulingunitlist = schedulingunitlist.concat(suDraft);
                         //Fetch SU Blue prints for the SU Draft
                         await this.getBlueprintsByschedulingUnitId(suDraft.id).then(suBlueprintList =>{
                             for(const suBlueprint of suBlueprintList.data.results){
-                                suBlueprint.duration = moment.utc(suBlueprint.duration*1000).format('HH:mm:ss'); 
+                                suBlueprint.duration = moment.utc((suBlueprint.duration || 0)*1000).format('HH:mm:ss'); 
                                 suBlueprint.type="Blueprint"; 
                                 suBlueprint['actionpath'] = '/schedulingunit/view/blueprint/'+suBlueprint.id;
                                 schedulingunitlist = schedulingunitlist.concat(suBlueprint);

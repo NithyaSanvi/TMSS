@@ -7,6 +7,7 @@ const UnitConverter = {
     getDBResourceUnit: function() {
 
     },
+
     getUIResourceUnit: function(type, value) {
         try{
             if(this.resourceUnitMap[type]){
@@ -27,6 +28,28 @@ const UnitConverter = {
             return (hh<10?`0${hh}`:`${hh}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`);
         }
         return seconds;
+    },
+    radiansToDegree: function(object) {
+        for(let type in object) {
+            if (type === 'transit_offset') {
+                continue;
+            }else if (typeof object[type] === 'object') {
+               this.radiansToDegree(object[type]);
+            } else {
+                object[type] = (object[type] * 180) / Math.PI;
+            }
+        }
+    },
+    degreeToRadians(object) {
+        for(let type in object) {
+            if (type === 'transit_offset') {
+                continue;
+            } else if (typeof object[type] === 'object') {
+                this.degreeToRadians(object[type]);
+            } else {
+                object[type] = object[type] * (Math.PI/180);
+            }
+        }
     }
 };
 

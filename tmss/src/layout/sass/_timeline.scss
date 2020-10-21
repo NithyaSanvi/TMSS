@@ -19,6 +19,7 @@
 .timeline-actionbar button {
     padding-top: 3px;
     font-size: 1.0rem;
+    padding-left: 3px;
     // float: right;
 }
 
@@ -31,8 +32,23 @@
     white-space: nowrap;
 }
 
+.timeline-filters,.timeline-bottom {
+    padding-top: 25px;
+}
+
+.timeline-button {
+    padding-bottom: 5px;
+    padding-left: 0px;
+    padding-right: 0px;
+    padding-top: 25px;
+}
+
+.timeline-details-pane {
+    font-size: 14px;
+}
+
 #now-btn {
-    margin-left: 20px;
+    margin-left: 10px;
 }
 
 .resize-div,

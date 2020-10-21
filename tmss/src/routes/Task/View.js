@@ -6,8 +6,11 @@ import Jeditor from '../../components/JSONEditor/JEditor';
 
 import TaskService from '../../services/task.service';
 import { Chips } from 'primereact/chips';
+import { Dialog } from 'primereact/dialog';
+
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
+import TaskStatusLogs from './state_logs';
 
 export class TaskView extends Component {
     DATE_FORMAT = 'YYYY-MMM-DD HH:mm:ss';
@@ -231,10 +234,16 @@ export class TaskView extends Component {
                             <div className="p-grid">
                                 <label className="col-lg-2 col-md-2 col-sm-12">Data Product</label>
                                 <div className="col-lg-4 col-md-4 col-sm-12">
-                                     
-                                <Link to={ { pathname:`/task/view/blueprint/${this.state.taskId}/dataproducts`}}> View Data Product</Link>
+                                    <Link to={ { pathname:`/task/view/blueprint/${this.state.taskId}/dataproducts`}}> View Data Product</Link>
                                 </div>
-                            
+                                <label className="col-lg-2 col-md-2 col-sm-12">Status Logs</label>
+                                <div className="col-lg-4 col-md-4 col-sm-12">
+                                    <button className="p-link" onMouseOver={(e) => { this.setState({showStatusLogs: true})}}><i className="fa fa-history"></i></button>
+                                    <Dialog header="State change logs" visible={this.state.showStatusLogs} maximizable position="right" style={{ width: '50vw' }} 
+                                            onHide={() => {this.setState({showStatusLogs: false})}}>
+                                        <TaskStatusLogs taskId={this.state.taskId}></TaskStatusLogs>
+                                    </Dialog>
+                                </div>
                             </div>
                         }
                         <div className="p-fluid">

@@ -25,15 +25,17 @@ class SchedulingUnitList extends Component{
                 "requirements_template_id": "Template",
                 "start_time":"Start Time",
                 "stop_time":"End time",
-                "duration":"Duration (HH:mm:ss)"
+                "duration":"Duration (HH:mm:ss)",
+                "status":"Status"
                 }],
             optionalcolumns:  [{
                 "actionpath":"actionpath",
             }],
             columnclassname: [{
                 "Template":"filter-input-50",
-                "Duration":"filter-input-50",
-                "Type": "filter-input-75"
+                "Duration (HH:mm:ss)":"filter-input-75",
+                "Type": "filter-input-75",
+                "Status":"filter-input-100"
             }],
             defaultSortColumn: [{id: "Name", desc: false}],
         }
@@ -57,7 +59,7 @@ class SchedulingUnitList extends Component{
                 for( const scheduleunit  of scheduleunits){
                     const blueprintdata = bluePrint.data.results.filter(i => i.draft_id === scheduleunit.id);
                     blueprintdata.map(blueP => { 
-                        blueP.duration = moment.utc(blueP.duration*1000).format('HH:mm:ss'); 
+                        blueP.duration = moment.utc((blueP.duration || 0)*1000).format('HH:mm:ss'); 
                         blueP.type="Blueprint"; 
                         blueP['actionpath'] ='/schedulingunit/view/blueprint/'+blueP.id;
                         return blueP; 
@@ -65,7 +67,7 @@ class SchedulingUnitList extends Component{
                     output.push(...blueprintdata);
                     scheduleunit['actionpath']='/schedulingunit/view/draft/'+scheduleunit.id;
                     scheduleunit['type'] = 'Draft';
-                    scheduleunit['duration'] = moment.utc(scheduleunit.duration*1000).format('HH:mm:ss');
+                    scheduleunit['duration'] = moment.utc((scheduleunit.duration || 0)*1000).format('HH:mm:ss');
                     output.push(scheduleunit);
                 }
                 this.setState({

@@ -145,7 +145,55 @@ const TaskService = {
       } catch (error) {
         console.error(error);
       }
-    }
+    },
+    getAllSubtaskStatusLogs: async function() {
+      try {
+        const count = (await axios.get('/api/subtask_state_log')).data.count;
+        const response = await axios.get(`/api/subtask_state_log?offset=0&limit=${count}`);
+        return response.data.results;
+      } catch(error) {
+        console.error(error);
+      }
+    },
+    getSubtaskStatusLogs: async function(subtaskId) {
+      try {
+        const response = await axios.get(`/api/subtask/${subtaskId}/state_log`);
+        return response.data;
+      } catch(error) {
+        console.error(error);
+      }
+    },
+    getTaskStatusLogs: async function(taskId) {
+      let statusLogs = [];
+      try {
+        let subtaskTemplates = {};
+        const taskDetails = (await axios.get(`/api/task_blueprint/${taskId}`)).data;
+        for (const subtaskId of taskDetails.subtasks_ids) {
+          const subtaskDetails = (await axios.get(`/api/subtask/${subtaskId}`)).data;
+          const subtaskLogs = await this.getSubtaskStatusLogs(subtaskId);
+          let template = subtaskTemplates[subtaskDetails.specifications_template_id];
+          if (!template) {
+            template = (await this.getSubtaskTemplate(subtaskDetails.specifications_template_id));
+            subtaskTemplates[subtaskDetails.specifications_template_id] = template;
+          }
+          for (let statusLog of subtaskLogs) {
+            statusLog.subtask_type = template?template.name:"";
+          }
+          statusLogs = statusLogs.concat(subtaskLogs);
+        }
+      } catch(error) {
+        console.error(error);
+      }
+      return statusLogs;
+    },
+    getSubtaskTemplate: async function(templateId) {
+      try {
+        const response = await axios.get(`/api/subtask_template/${templateId}`);
+        return response.data;
+      } catch(error) {
+        console.error(error);
+      }
+    },
     
 }
 

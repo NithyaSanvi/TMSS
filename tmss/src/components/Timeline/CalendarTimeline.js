@@ -18,6 +18,7 @@ import UtilService from '../../services/util.service';
 
 import 'react-calendar-timeline/lib/Timeline.css';
 import { Calendar } from 'primereact/calendar';
+import { Checkbox } from 'primereact/checkbox';
 
 // Label formats for day headers based on the interval label width
 const DAY_HEADER_FORMATS = [{ name: "longer", minWidth: 300, maxWidth: 50000, format: "DD dddd, MMMM YYYY"},
@@ -30,7 +31,8 @@ const DAY_HEADER_FORMATS = [{ name: "longer", minWidth: 300, maxWidth: 50000, fo
                             {name: "nano", minWidth: 0, maxWidth: 0, format: ""}];
 
 //>>>>>> Constants for date/time formats, zoom level definition & defaults
-const UTC_DISPLAY_FORMAT = "YYYY-MM-DDTHH:mm:ss";
+const UTC_DATE_FORMAT = "YYYY-MM-DD";
+const UTC_TIME_FORMAT = "HH:mm:ss";
 const UTC_LST_KEY_FORMAT = "YYYY-MM-DDTHH:mm:00";
 const UTC_LST_HOUR_FORMAT = "YYYY-MM-DDTHH:00:00";
 const UTC_LST_DAY_FORMAT = "YYYY-MM-DDT00:00:00";
@@ -95,7 +97,8 @@ export class CalendarTimeline extends Component {
         lstDateHeaderUnit: 'hour',                                  // Unit to be considered for the LST axis header based on the visible duration
         isLSTDateHeaderLoading: true,
         dayHeaderVisible: true,                                     // To control the Day header visibility based on the zoom level
-        weekHeaderVisible: false                                    // To control the Week header visibility based on the zoom level
+        weekHeaderVisible: false,                                   // To control the Week header visibility based on the zoom level
+        isLive: false
       }
       this.itemClickCallback = props.itemClickCallback;             // Pass timeline item click event back to parent
       
@@ -125,6 +128,10 @@ export class CalendarTimeline extends Component {
       this.zoomOut = this.zoomOut.bind(this);
       this.setZoomRange = this.setZoomRange.bind(this);
       //<<<<<< Functions of this component
+      
+      //>>>>>> Public functions of the component
+      this.updateTimeline = this.updateTimeline.bind(this);
+      //<<<<<< Public functions of the component
     }
 
     componentDidMount() {
@@ -158,11 +165,16 @@ export class CalendarTimeline extends Component {
                     const currentUTC = moment.utc(utcString);
                     this.setState({currentUTC: currentUTC});
                     let currentLST = await UtilService.getLST(utcString);
-                    this.setState({currentLST: moment(currentUTC.format('DD-MMM-YYYY ') + currentLST)})
+                    this.setState({currentLST: moment(currentUTC.format('DD-MMM-YYYY ') + currentLST.split('.')[0], 'DD-MMM-YYYY HH:mm:ss')})
                 } );
         }   else {
             this.setState({currentUTC: this.state.currentUTC.add(1, 'second'), 
                             currentLST: this.state.currentLST?this.state.currentLST.add(1, 'second'):null});
+        }
+        if (this.state.isLive) {
+            this.props.dateRangeCallback(this.state.defaultStartTime.add(1, 'second'), this.state.defaultEndTime.add(1, 'second'));
+            // const result = this.props.dateRangeCallback(this.state.defaultStartTime.add(1, 'second'), this.state.defaultEndTime.add(1, 'second'));
+            // let group = DEFAULT_GROUP.concat(result.group);
         }
     }
 
@@ -183,7 +195,7 @@ export class CalendarTimeline extends Component {
             const formattedColUTC = colUTC.format(lstDateHeaderUnit==="hour"?UTC_LST_HOUR_FORMAT:UTC_LST_DAY_FORMAT);
             // if (!lstDateHeaderMap[formattedColUTC]) {
                 const lst = await UtilService.getLST(formattedColUTC);
-                const lstDate = moment(colUTC.format(`DD-MMM-YYYY ${lst}`)).add(30, 'minutes');
+                const lstDate = moment(colUTC.format(`MM-DD-YYYY ${lst.split('.')[0]}`), 'MM-DD-YYYY HH:mm:ss').add(30, 'minutes');
                 lstDateHeaderMap[formattedColUTC] = lstDateHeaderUnit==="hour"?lstDate.format('HH'):lstDate.format('DD');
             // }
         }
@@ -506,6 +518,7 @@ export class CalendarTimeline extends Component {
     onTimeChange(visibleTimeStart, visibleTimeEnd, updateScrollCanvas) {
         this.loadLSTDateHeaderMap(moment(visibleTimeStart).utc(), moment(visibleTimeEnd).utc(), this.state.lstDateHeaderUnit);
         updateScrollCanvas(visibleTimeStart, visibleTimeEnd);
+        this.props.dateRangeCallback(moment(visibleTimeStart).utc(), moment(visibleTimeEnd).utc());
         this.setState({defaultStartTime: moment(visibleTimeStart), defaultEndTime: moment(visibleTimeEnd)})
     }
 
@@ -570,8 +583,11 @@ export class CalendarTimeline extends Component {
         let visibleTimeEnd = this.state.defaultEndTime;
         const visibleTimeDiff = visibleTimeEnd.valueOf()-visibleTimeStart.valueOf();
         const secondsToMove = visibleTimeDiff / 1000 / 10 ;
+        const result = this.props.dateRangeCallback(visibleTimeStart, visibleTimeEnd);
+        let group = DEFAULT_GROUP.concat(result.group);
         this.setState({defaultStartTime: visibleTimeStart.add(-1 * secondsToMove, 'seconds'),
-                        defaultEndTime: visibleTimeEnd.add(-1 * secondsToMove, 'seconds')});
+                        defaultEndTime: visibleTimeEnd.add(-1 * secondsToMove, 'seconds'),
+                        group: group, items: result.items});
     }
 
     /**
@@ -582,22 +598,17 @@ export class CalendarTimeline extends Component {
         let visibleTimeEnd = this.state.defaultEndTime;
         const visibleTimeDiff = visibleTimeEnd.valueOf()-visibleTimeStart.valueOf();
         const secondsToMove = visibleTimeDiff / 1000 / 10 ;
+        const result = this.props.dateRangeCallback(visibleTimeStart, visibleTimeEnd);
+        let group = DEFAULT_GROUP.concat(result.group);
         this.setState({defaultStartTime: visibleTimeStart.add(1 * secondsToMove, 'seconds'),
-                        defaultEndTime: visibleTimeEnd.add(1 * secondsToMove, 'seconds')});
+                        defaultEndTime: visibleTimeEnd.add(1 * secondsToMove, 'seconds'),
+                        group: group, items: result.items});
     }
 
     /**
      * Zooms In to the next pre-defined zoom level
      */
     zoomIn() {
-        /*let visibleTimeStart = this.state.defaultStartTime;
-        let visibleTimeEnd = this.state.defaultEndTime;
-        const visibleTimeDiff = visibleTimeEnd.valueOf()-visibleTimeStart.valueOf();
-        if (visibleTimeDiff > this.state.minZoom) {
-            const secondsToZoom = visibleTimeDiff / 1000 / 2 / 4 * 3 ;
-            this.setState({defaultStartTime: visibleTimeStart.add(1*secondsToZoom, 'seconds'),
-                            defaultEndTime: visibleTimeEnd.add(-1*secondsToZoom, 'seconds')});
-        }*/
         let prevZoomLevel = this.state.zoomLevel;
         const prevZoomObject = _.find(ZOOM_LEVELS, {'name': prevZoomLevel});
         const prevZoomIndex = ZOOM_LEVELS.indexOf(prevZoomObject);
@@ -610,14 +621,6 @@ export class CalendarTimeline extends Component {
      * Zooms out to the next pre-defined zoom level
      */
     zoomOut() {
-        /*let visibleTimeStart = this.state.defaultStartTime;
-        let visibleTimeEnd = this.state.defaultEndTime;
-        const visibleTimeDiff = visibleTimeEnd.valueOf()-visibleTimeStart.valueOf();
-        if (visibleTimeDiff < this.state.maxZoom) {
-            const secondsToZoom = visibleTimeDiff / 1000 * 3 / 2;
-            this.setState({defaultStartTime: visibleTimeStart.add(-1*secondsToZoom, 'seconds'),
-                            defaultEndTime: visibleTimeEnd.add(1*secondsToZoom, 'seconds')});
-        }*/
         let prevZoomLevel = this.state.zoomLevel;
         const prevZoomObject = _.find(ZOOM_LEVELS, {'name': prevZoomLevel});
         const prevZoomIndex = ZOOM_LEVELS.indexOf(prevZoomObject);
@@ -663,15 +666,27 @@ export class CalendarTimeline extends Component {
         }
     }
 
+    /**
+     * Public function that can be called by its implementation class or function to pass required data and parameters
+     * as objects
+     * @param {Object} props 
+     */
+    updateTimeline(props) {
+        this.setState({group: DEFAULT_GROUP.concat(props.group), items: props.items});
+    }
+
     render() {
         return (
             <React.Fragment>
                 {/* Toolbar for the timeline */}
                 <div className="p-fluid p-grid timeline-toolbar">
                     {/* Clock Display */}
-                    <div className="p-col-3" style={{padding: '0px 0px 0px 10px'}}>
+                    <div className="p-col-2" style={{padding: '0px 0px 0px 10px'}}>
                         <div style={{marginTop: "0px"}}>
-                            <label style={{marginBottom: "0px"}}>UTC:</label><span>{this.state.currentUTC.format(UTC_DISPLAY_FORMAT)}</span>
+                            <label style={{marginBottom: "0px"}}>Date:</label><span>{this.state.currentUTC.format(UTC_DATE_FORMAT)}</span>
+                        </div>
+                        <div style={{marginTop: "0px"}}>
+                            <label style={{marginBottom: "0px"}}>UTC:</label><span>{this.state.currentUTC.format(UTC_TIME_FORMAT)}</span>
                         </div>
                         {this.state.currentLST && 
                             <div style={{marginTop: "0px"}}>
@@ -679,8 +694,12 @@ export class CalendarTimeline extends Component {
                             </div>
                         }
                     </div>
+                    <div className="p-col-1 timeline-filters">
+                        <label style={{paddingRight: "3px"}}>Live </label>
+                        <Checkbox checked={this.state.isLive} label="Live" onChange={(e) => { this.setState({'isLive': e.checked})}} ></Checkbox>
+                    </div>
                     {/* Date Range Selection */}
-                    <div className="p-col-4">
+                    <div className="p-col-4 timeline-filters">
                         {/* <span className="p-float-label"> */}
                         <Calendar id="range" placeholder="Select Date Range" selectionMode="range" showIcon={!this.state.zoomRange}
                                 value={this.state.zoomRange} onChange={(e) => this.setZoomRange( e.value )} readOnlyInput />
@@ -690,11 +709,11 @@ export class CalendarTimeline extends Component {
                                                     onClick={() => {this.setZoomRange( null)}}></i>}
                     </div>
                     {/* Reset to default zoom and current timeline */}
-                    <div className="p-col-1" style={{padding: '5px 0px'}}>
+                    <div className="p-col-1 timeline-button" >
                         <Button label="" icon="pi pi-arrow-down" className="p-button-rounded p-button-success" id="now-btn" onClick={this.resetToCurrentTime} title="Rest Zoom & Move to Current Time"/>
                     </div>
                     {/* Zoom Select */}
-                    <div className="p-col-2" style={{paddingRight: '0px'}}>
+                    <div className="p-col-2 timeline-filters" style={{paddingRight: '0px'}}>
                         <Dropdown optionLabel="name" optionValue="name" 
                                 style={{fontSize: '10px'}}
                                 value={this.state.zoomLevel} 
@@ -704,7 +723,7 @@ export class CalendarTimeline extends Component {
                                 placeholder="Zoom"/>
                     </div>
                     {/* Zoom and Move Action */}
-                    <div className="p-col-2 timeline-actionbar">
+                    <div className="p-col-2 timeline-actionbar timeline-filters">
                         <button className="p-link" title="Move Left" onClick={e=> { this.moveLeft() }}><i className="pi pi-angle-left"></i></button>
                         <button className="p-link" title="Zoom Out" onClick={e=> { this.zoomOut() }} disabled={this.state.zoomLevel.startsWith('Custom')}><i className="pi pi-minus-circle"></i></button>
                         <button className="p-link" title="Zoom In" onClick={e=> { this.zoomIn() }} disabled={this.state.zoomLevel.startsWith('Custom')}><i className="pi pi-plus-circle"></i></button>
