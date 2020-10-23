@@ -1,11 +1,11 @@
 #block_container { 
   display: flex;
   vertical-align: middle;
-  margin-top: 20px
+  margin-top: 20px; 
 }
 
 .table_container {
-  overflow: auto;
+  //overflow: auto;
   padding: 0.75em 0;
 }
 
@@ -98,7 +98,7 @@ body .p-paginator {
   padding-left:10px;
   
 }
-.filter-input input{
+.filter-input input, .p-slider {
   max-width: 175px;
 }
 
@@ -106,33 +106,55 @@ body .p-paginator {
   display: none;
 }
 
-.filter-input-50,.filter-input-50 input{
+.filter-input-50, .filter-input-50 input, .filter-input-50 .p-slider {
   width: 50px;
 }
 
-.filter-input-75,.filter-input-75 input{
+.filter-input-75, .filter-input-75 input, .filter-input-75 .p-slider {
   width: 75px;
 }
 
-.filter-input-100,.filter-input-100 input{
+.filter-input-100, .filter-input-100 input, .filter-input-100 .p-slider {
   width: 100px;
 }
 
-.filter-input-125,.filter-input-125 input{
+.filter-input-125, .filter-input-125 input, .filter-input-125 .p-slider {
   width: 125px;
 }
 
-.filter-input-150,.filter-input-150 input{
+.filter-input-150, .filter-input-150 input, .filter-input-150 .p-slider {
   width: 150px;
 }
 
-.filter-input-175,.filter-input-175 input{
+.filter-input-175, .filter-input-175 input, .filter-input-175 .p-slider {
   width: 175px;
 }
  
+.filter-slider {
+  margin: 25px 5px 10px 5px;
+}
+
+.filter-slider-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.filter-slider-label span {
+  margin-top: -25px;
+}
+
 .table_container .pi {
   padding-left: 3px;
 }
+
+/* }.pagination button {
+  margin-left: 3px;
+  background-color: #005b9f;
+  border: 1px solid #005b9f;
+  border-radius: 4px;
+  color: white;
+  font-weight: 900;
+}*/
 
 .total_records_bottom_label {
   text-align: left;
@@ -141,4 +163,10 @@ body .p-paginator {
 }
 .total_records_top_label {
   margin-left: 15px;
+}
+.fa-sync-alt{
+  cursor: pointer;
+}
+.table_container .pi {
+  padding-left: 0px;
 }

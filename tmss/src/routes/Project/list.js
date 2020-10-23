@@ -11,26 +11,68 @@ export class ProjectList extends Component{
         this.state = {
             projectlist: [],
             defaultcolumns: [ {
-                "name":"Name / Project Code",
-                "status":"Status" , 
-                "project_category_value":"Category of Project",
-                "description":"Description",
-                "archive_location_label":"LTA Storage Location",
-                "archive_subdirectory":"LTA Storage Path"
+                name:"Name / Project Code",
+                status:{
+                    name:"Status",
+                    filter:"select"
+                },
+                project_category_value:{
+                    name:"Category of Project",
+                    filter:"select"
+                },
+                description:"Description",
+                archive_location_label:{
+                    name:"LTA Storage Location",
+                    filter:"select"
+                },
+                archive_subdirectory:"LTA Storage Path"
             }],
             optionalcolumns:  [{
-                "priority_rank":"Project Priority", 
-                "trigger_priority":"Trigger Priority",
-                "period_category_value":"Category of Period",
-                "cycles_ids":"Cycles",
-                "can_trigger": "Trigger Allowed",
-                "LOFAR Observing Time":"Observing time (Hrs)",
-                "LOFAR Observing Time prio A":"Observing time prio A (Hrs)",
-                "LOFAR Observing Time prio B":"Observing time prio B (Hrs)",
-                "CEP Processing Time":"Processing time (Hrs)",
-                "LTA Storage":"LTA storage (TB)",
-                "Number of triggers":"Number of Triggers",
-                "actionpath":"actionpath",
+                priority_rank:{
+                    name:"Project Priority", 
+                    filter:"range"
+                },
+                trigger_priority:{
+                    name:"Trigger Priority",
+                    filter:"range"
+                },
+                period_category_value:{
+                    name:"Category of Period",
+                    filter:"select"
+                },
+                cycles_ids:{
+                    name:"Cycles",
+                    filter:"select"
+                },
+                can_trigger:{
+                    name:"Trigger Allowed",
+                    filter:"switch"
+                },
+                LOFAR_Observing_Time:{
+                    name:"Observing time (Hrs)",
+                    filter:"range"
+                },
+                LOFAR_Observing_Time_prio_A:{
+                    name:"Observing time prio A (Hrs)",
+                    filter:"range"
+                },
+                LOFAR_Observing_Time_prio_B:{
+                    name:"Observing time prio B (Hrs)",
+                    filter:"range"
+                },
+                CEP_Processing_Time:{
+                    name:"Processing time (Hrs)",
+                    filter:"range"
+                },
+                LTA_Storage:{
+                    name:"LTA storage (TB)",
+                    filter:"range"
+                },
+                Number_of_triggers:{
+                    name:"Number of Triggers",
+                    filter:"range"
+                },
+                actionpath:"actionpath"
                
             }],
             columnclassname: [{

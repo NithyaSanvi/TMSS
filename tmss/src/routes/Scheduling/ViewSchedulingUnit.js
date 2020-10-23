@@ -26,26 +26,38 @@ class ViewSchedulingUnit extends Component{
             }],
 
             defaultcolumns: [ {
-                "status_logs": "Status Logs",
-                "tasktype":"Type",
-                "id":"ID",
-                "name":"Name",
-                "description":"Description",
-                "created_at":"Created at",
-                "updated_at":"Updated at",
-                "do_cancel":"Cancelled",
-                "start_time":"Start Time",
-                "stop_time":"End Time",
-                "duration":"Duration (HH:mm:ss)",
-                "status":"Status"
+                status_logs: "Status Logs",
+                tasktype:{
+                    name:"Type",
+                    filter:"select"
+                },
+                id: "ID",
+                name:"Name",
+                description:"Description",
+                created_at:{
+                    name: "Created at",
+                    filter: "date"
+                },
+                updated_at:{
+                    name: "Updated at",
+                    filter: "date"
+                },
+                do_cancel:{
+                    name: "Cancelled",
+                    filter: "switch"
+                },
+                start_time:"Start Time",
+                stop_time:"End Time",
+                duration:"Duration (HH:mm:ss)",
+                status:"Status"
             }],
             optionalcolumns:  [{
-                "relative_start_time":"Relative Start Time (HH:mm:ss)",
-                "relative_stop_time":"Relative End Time (HH:mm:ss)",
-                "tags":"Tags",
-                "blueprint_draft":"BluePrint / Task Draft link",
-                "url":"URL",
-                "actionpath":"actionpath",
+                relative_start_time:"Relative Start Time (HH:mm:ss)",
+                relative_stop_time:"Relative End Time (HH:mm:ss)",
+                tags:"Tags",
+                blueprint_draft:"BluePrint / Task Draft link",
+                url:"URL",
+                actionpath:"actionpath"
             }],
             columnclassname: [{
                 "Status Logs": "filter-input-0",

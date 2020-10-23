@@ -14,7 +14,8 @@ import ViewSchedulingUnit from './Scheduling/ViewSchedulingUnit'
 import SchedulingUnitCreate from './Scheduling/create';
 import EditSchedulingUnit from './Scheduling/edit';
 import { CycleList, CycleCreate, CycleView, CycleEdit } from './Cycle';
-import {TimelineView} from './Timeline';
+import {TimelineView, WeekTimelineView} from './Timeline';
+import SchedulingSetCreate from './Scheduling/create.scheduleset'
 
 export const routes = [
     {
@@ -135,9 +136,20 @@ export const routes = [
         title:'SU Timeline View'
     },
     {
+        path: "/su/timelineview/week",
+        component: WeekTimelineView,
+        name: 'Scheduling Unit Timeline - Week',
+        title:'SU Weekly Timeline View'
+    },
+    {
         path: "/task/view/blueprint/:id/dataproducts",
         component: DataProduct,
         name: 'Data Product'
+    },
+    {
+        path: "/schedulingset/schedulingunit/create",
+        component: SchedulingSetCreate,
+        name: 'Scheduling Set Add'
     } 
 ];
 

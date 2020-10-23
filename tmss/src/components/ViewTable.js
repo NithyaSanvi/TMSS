@@ -5,9 +5,12 @@ import _ from 'lodash';
 import moment from 'moment';
 import { useHistory } from "react-router-dom";
 import {OverlayPanel} from 'primereact/overlaypanel';
-import {InputSwitch} from 'primereact/inputswitch';
+//import {InputSwitch} from 'primereact/inputswitch';
+import {InputText} from 'primereact/inputtext';
 import { Calendar } from 'primereact/calendar';
 import {Paginator} from 'primereact/paginator';
+import {TriStateCheckbox} from 'primereact/tristatecheckbox';
+import { Slider } from 'primereact/slider';
 import { Button } from "react-bootstrap";
 import { InputNumber } from "primereact/inputnumber";
 
@@ -29,7 +32,7 @@ function GlobalFilter({
   const [value, setValue] = React.useState(globalFilter)
   const onChange = useAsyncDebounce(value => {setGlobalFilter(value || undefined)}, 200)
   return (
-    <span>
+    <span style={{marginLeft:"-10px"}}>
       <input
         value={value || ""}
         onChange={e => {
@@ -45,13 +48,23 @@ function GlobalFilter({
 function DefaultColumnFilter({
   column: { filterValue, preFilteredRows, setFilter, filteredRows },
 }) {
+  const [value, setValue] = useState('');
+  React.useEffect(() => {
+    if (!filterValue && value) {
+      setValue('');
+    }
+  }, [filterValue, value]);
   return (
-    <input
-      value={filterValue || ''}
-      onChange={e => {
-        setFilter(e.target.value || undefined); // Set undefined to remove the filter entirely
-      }}
-    />
+    <div className="table-filter" onClick={e => { e.stopPropagation() }}>
+      <input
+        value={value}   //***TO REMOVE - INCOMING CHANGE WAS value={filterValue || ''}
+        onChange={e => {
+          setValue(e.target.value);
+          setFilter(e.target.value || undefined) // Set undefined to remove the filter entirely
+        }}
+      />
+      {value && <i onClick={() => {setFilter(undefined); setValue('') }} className="table-reset fa fa-times" />}
+    </div>
   )
 }
 
@@ -61,22 +74,31 @@ function DefaultColumnFilter({
 function SelectColumnFilter({
   column: { filterValue, setFilter, preFilteredRows, id },
 }) {
-  // Calculate the options for filtering
-  // using the preFilteredRows
-  const options = React.useMemo(() => {
-    const options = new Set()
+  const [value, setValue] = useState('');
+  React.useEffect(() => {
+    if (!filterValue && value) {
+      setValue('');
+    }
+  }, [filterValue, value]);
+    const options = React.useMemo(() => {
+      const options = new Set()
     preFilteredRows.forEach(row => {
       options.add(row.values[id])
     })
     return [...options.values()]
   }, [id, preFilteredRows])
-
-  // Render a multi-select box
+   // Render a multi-select box
   return (
+    <div onClick={e => { e.stopPropagation() }}>
     <select
-      value={filterValue}
-      onChange={e => {
-        setFilter(e.target.value || undefined)
+       style={{
+        height: '24.2014px',
+        width: '60px',
+        border:'1px solid lightgrey',
+       }}
+      value={value}
+      onChange={e => { setValue(e.target.value);
+        setFilter(e.target.value|| undefined)
       }}
     >
       <option value="">All</option>
@@ -85,7 +107,8 @@ function SelectColumnFilter({
           {option}
         </option>
       ))}
-    </select>
+      </select>
+   </div>
   )
 }
 
@@ -97,8 +120,8 @@ function SliderColumnFilter({
 }) {
   // Calculate the min and max
   // using the preFilteredRows
-
-  const [min, max] = React.useMemo(() => {
+  const [value, setValue] = useState(0);
+  /*const [min, max] = React.useMemo(() => {
     let min = preFilteredRows.length ? preFilteredRows[0].values[id] : 0
     let max = preFilteredRows.length ? preFilteredRows[0].values[id] : 0
     preFilteredRows.forEach(row => {
@@ -106,55 +129,122 @@ function SliderColumnFilter({
       max = Math.max(row.values[id], max)
     })
     return [min, max]
-  }, [id, preFilteredRows])
+  }, [id, preFilteredRows])*/
 
   return (
-    <>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        value={filterValue || min}
-        onChange={e => {
-          setFilter(parseInt(e.target.value, 10))
-        }}
-      />
-      <button onClick={() => setFilter(undefined)}>Off</button>
-    </>
+    <div onClick={e => { e.stopPropagation() }} className="table-slider">
+    <Slider value={value} onChange={(e) => { setFilter(e.value);setValue(e.value)}}  />
+    </div>
   )
 }
 
 // This is a custom filter UI that uses a
 // switch to set the value
 function BooleanColumnFilter({
-  column: { setFilter},
+  column: { setFilter, filterValue},
 }) {
-  const [value, setValue] = useState(true);
+  // Calculate the min and max
+  // using the preFilteredRows
+  const [value, setValue] = useState(null);
+  React.useEffect(() => {
+    if (!filterValue && value) {
+      setValue(null);
+    }
+  }, [filterValue, value]);
   return (
-    <>
-      <InputSwitch checked={value} onChange={() => { setValue(!value); setFilter(!value); }} />
-      <button onClick={() => setFilter(undefined)}>Off</button>
-    </>
+    <div onClick={e => { e.stopPropagation() }}>
+      <TriStateCheckbox value={value} style={{'width':'15px','height':'24.2014px'}} onChange={(e) => { setValue(e.value); setFilter(e.value === null ? undefined : e.value); }} />
+    </div>
   )
 }
 
 // This is a custom filter UI that uses a
 // calendar to set the value
 function CalendarColumnFilter({
-  column: { setFilter},
+  column: { setFilter, filterValue},
 }) {
+  // Calculate the min and max
+  // using the preFilteredRows
   const [value, setValue] = useState('');
+  React.useEffect(() => {
+    if (!filterValue && value) {
+      setValue(null);
+    }
+  }, [filterValue, value]);
   return (
-    <>
-      <Calendar value={value} onChange={(e) => {
+    
+    <div className="table-filter" onClick={e => { e.stopPropagation() }}>
+       <Calendar value={value} appendTo={document.body} onChange={(e) => {
         const value = moment(e.value, moment.ISO_8601).format("YYYY-MMM-DD")
           setValue(value); setFilter(value); 
         }} showIcon></Calendar>
-      <button onClick={() => setFilter(undefined)}>Off</button>
-    </>
+       {value && <i onClick={() => {setFilter(undefined); setValue('') }} className="tb-cal-reset fa fa-times" />}
+        </div>
   )
 }
 
+/**
+ * Custom function to filter data from date field.
+ * @param {Array} rows 
+ * @param {String} id 
+ * @param {String} filterValue 
+ */
+function dateFilterFn(rows, id, filterValue) {
+  const filteredRows = _.filter(rows, function(row) {
+                        // If cell value is null or empty
+                        if (!row.values[id]) {
+                          return false;
+                        }
+                        //Remove microsecond if value passed is UTC string in format "YYYY-MM-DDTHH:mm:ss.sssss"
+                        let rowValue = moment.utc(row.values[id].split('.')[0]);
+                        if (!rowValue.isValid()) {
+                            // For cell data in format 'YYYY-MMM-DD'
+                            rowValue = moment.utc(moment(row.values[id], 'YYYY-MMM-DD').format("YYYY-MM-DDT00:00:00"));
+                        }
+                        const start = moment.utc(moment(filterValue, 'YYYY-MMM-DD').format("YYYY-MM-DDT00:00:00"));
+                        const end = moment.utc(moment(filterValue, 'YYYY-MMM-DD').format("YYYY-MM-DDT23:59:59"));
+                        return (start.isSameOrBefore(rowValue) && end.isSameOrAfter(rowValue));
+                      } );
+  return filteredRows;
+}
+
+
+
+// This is a custom UI for our 'between' or number range
+// filter. It uses slider to filter between min and max values.
+function RangeColumnFilter({
+  column: { filterValue = [], preFilteredRows, setFilter, id},
+}) {
+  const [min, max] = React.useMemo(() => {
+    let min = 0;
+    let max = 0;
+    if (preFilteredRows.length > 0 && preFilteredRows[0].values[id]) {
+      min = preFilteredRows[0].values[id];
+    }
+    preFilteredRows.forEach(row => {
+      min = Math.min(row.values[id]?row.values[id]:0, min);
+      max = Math.max(row.values[id]?row.values[id]:0, max);
+    });
+    return [min, max];
+  }, [id, preFilteredRows]);
+  if (filterValue.length === 0) {
+    filterValue = [min, max];
+  }
+
+  return (
+    <>
+      <div className="filter-slider-label">
+        <span style={{float: "left"}}>{filterValue[0]}</span>
+        <span style={{float: "right"}}>{min!==max?filterValue[1]:""}</span>
+      </div>
+      <Slider value={filterValue} min={min} max={max} className="filter-slider"
+              style={{}}
+              onChange={(e) => { setFilter(e.value); }} range />
+      
+      
+    </>
+  );
+}
 
 // This is a custom UI for our 'between' or number range
 // filter. It uses two number boxes and filters rows to
@@ -162,7 +252,9 @@ function CalendarColumnFilter({
 function NumberRangeColumnFilter({
   column: { filterValue = [], preFilteredRows, setFilter, id },
 }) {
-  const [min, max] = React.useMemo(() => {
+    const [errorProps, setErrorProps] = useState({});
+    const [maxErr, setMaxErr] = useState(false);
+    const [min, max] = React.useMemo(() => {
     let min = preFilteredRows.length ? preFilteredRows[0].values[id] : 0
     let max = preFilteredRows.length ? preFilteredRows[0].values[id] : 0
     preFilteredRows.forEach(row => {
@@ -175,34 +267,50 @@ function NumberRangeColumnFilter({
   return (
     <div
       style={{
-        display: 'flex',
+      //  display: 'flex',
+      //  flexdirection:'column',
+        alignItems: 'center'
       }}
     >
-      <input
-        value={filterValue[0] || ''}
+      <InputText
+        value={filterValue[0]}
         type="number"
         onChange={e => {
-          const val = e.target.value
-          setFilter((old = []) => [val ? parseInt(val, 10) : undefined, old[1]])
+          const val = e.target.value;
+          setFilter((old = []) => [val ? parseFloat (val, 10) : undefined, old[1]]);
         }}
         placeholder={`Min (${min})`}
         style={{
-          width: '70px',
-          marginRight: '0.5rem',
+          width: '55px',
+          height:'25px'
+       // marginRight: '0.5rem',
         }}
       />
-      to
-      <input
+       <InputText
         value={filterValue[1] || ''}
         type="number"
+        {...errorProps}
+        className={maxErr && 'field-error'}
         onChange={e => {
-          const val = e.target.value
-          setFilter((old = []) => [old[0], val ? parseInt(val, 10) : undefined])
+          const val = e.target.value;
+          const minVal = filterValue.length && filterValue[0];
+          if (minVal && e.target.value < minVal) {
+            setMaxErr(true);
+            setErrorProps({
+              tooltip: "Max value should be greater than Min",
+              tooltipOptions: { event: 'hover'}
+            });
+          } else {
+            setMaxErr(false);
+            setErrorProps({});
+          }
+          setFilter((old = []) => [old[0], val ? parseFloat (val, 10) : undefined])
         }}
         placeholder={`Max (${max})`}
         style={{
-          width: '70px',
-          marginLeft: '0.5rem',
+          width: '55px',
+          height:'25px'
+        //  marginLeft: '0.5rem',
         }}
       />
     </div>
@@ -215,13 +323,28 @@ function fuzzyTextFilterFn(rows, id, filterValue) {
 }
 
 const filterTypes = {
-  'select': SelectColumnFilter,
-  'switch': BooleanColumnFilter,
-  'slider': SliderColumnFilter,
-  'date': CalendarColumnFilter,
-  'range': NumberRangeColumnFilter
+  'select': { 
+    fn: SelectColumnFilter,
+  },
+  'switch': {
+    fn: BooleanColumnFilter
+  },
+  'slider': {
+    fn: SliderColumnFilter
+  },
+  'date': {
+    fn: CalendarColumnFilter,
+    type: dateFilterFn
+  },
+  'range': {
+    fn: RangeColumnFilter,
+    type: 'between'
+  },
+  'minMax': { 
+    fn: NumberRangeColumnFilter,
+    type: 'between'
+  }
 };
-
 // Let the table remove the filter if the string is empty
 fuzzyTextFilterFn.autoRemove = val => !val
 
@@ -237,7 +360,7 @@ const IndeterminateCheckbox = React.forwardRef(
 )
 
 // Our table component
-function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn, tablename, defaultpagesize }) {
+function Table({ columns, data, defaultheader, optionalheader, tablename, defaultSortColumn,defaultpagesize }) {
   const filterTypes = React.useMemo(
     () => ({
       // Add a new fuzzyTextFilterFn filter type.
@@ -258,20 +381,22 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
     []
   )
 
-  const defaultColumn = React.useMemo(
+const defaultColumn = React.useMemo(
     () => ({
       // Let's set up our default Filter UI
       Filter: DefaultColumnFilter,
+     
     }),
     []
   )
- 
+
   const {
     getTableProps,
     getTableBodyProps,
     headerGroups,
     rows,
     prepareRow,
+    setAllFilters,
     allColumns,
     getToggleHideAllColumnsProps,
     state,
@@ -281,7 +406,7 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
     setHiddenColumns,
     gotoPage,
     setPageSize,
-  } = useTable(
+    } = useTable(
       {
         columns,
         data,
@@ -307,7 +432,7 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
   const [currentpage, setcurrentPage] = React.useState(0);
   const [currentrows, setcurrentRows] = React.useState(defaultpagesize);
   const [custompagevalue,setcustompagevalue] = React.useState();
-  
+
   const onPagination = (e) => {
     gotoPage(e.page);
     setcurrentPage(e.first);
@@ -317,7 +442,6 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
       setcustompagevalue();
     }
   };
-
   const onCustomPage = (e) => {
     if(typeof custompagevalue === 'undefined' || custompagevalue == null) return;
     gotoPage(0);
@@ -360,13 +484,16 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
      <div id="block_container"> 
      { allowColumnSelection &&
           <div   style={{textAlign:'left', marginRight:'30px'}}>
-                <i className="fa fa-columns col-filter-btn" label="Toggle Columns" onClick={(e) => op.current.toggle(e)}  /> 
+                <i className="fa fa-columns col-filter-btn" label="Toggle Columns" onClick={(e) => op.current.toggle(e)}  />
+                {showColumnFilter &&
+                <div style={{position:"relative",top: "-25px",marginLeft: "50px",color: "#005b9f"}} onClick={() => setAllFilters([])} >
+                  <i class="fas fa-sync-alt" title="Clear All Filters"></i></div>}
                 <OverlayPanel ref={op} id="overlay_panel" showCloseIcon={false} >
                   <div>
                       <div style={{textAlign: 'center'}}>
                         <label>Select column(s) to view</label>
                       </div>
-                      <div style={{float: 'left', backgroundColor: '#d1cdd936', width: '250px', minHeight: '100px', maxHeight: '300px' , overflow: 'auto', marginBottom:'10px', padding:'5px'}}>
+                      <div style={{float: 'left', backgroundColor: '#d1cdd936', width: '250px', height: '400px', overflow: 'auto', marginBottom:'10px', padding:'5px'}}>
                       <div id="tagleid"  >
                         <div >
                           <div style={{marginBottom:'5px'}}>
@@ -397,72 +524,74 @@ function Table({ columns, data, defaultheader, optionalheader, defaultSortColumn
                 setGlobalFilter={setGlobalFilter}
               />
             }
-        </div>
-        { showTopTotal &&
+         </div>
+         { showTopTotal &&
           <div className="total_records_top_label"> <label >Total records ({data.length})</label></div>
         }
   </div>
 
-      <div className="table_container">
+      <div className="tmss-table table_container">
       <table {...getTableProps()} data-testid="viewtable" className="viewtable" >
-        <thead>
-          {headerGroups.map(headerGroup =>  (
-            <tr {...headerGroup.getHeaderGroupProps()}>
-              {headerGroup.headers.map(column => (
-                <th> 
-                  <div {...column.getHeaderProps(column.getSortByToggleProps())}>
-                    {column.Header !== 'actionpath' && column.render('Header')}
-                    {column.Header !== 'Action'? 
-                      column.isSorted ? (column.isSortedDesc ? <i className="pi pi-sort-down" aria-hidden="true"></i> : <i className="pi pi-sort-up" aria-hidden="true"></i>) : ""
-                      : ""
-                    }
-                  </div>
-                  
-                  {/* Render the columns filter UI */} 
-                    {column.Header !== 'actionpath' &&
-                      <div className={columnclassname[0][column.Header]}  > 
-                        {column.canFilter && column.Header !== 'Action' ? column.render('Filter') : null}
-                      </div>
-                    }
-                </th> 
-              ))}
-            </tr>
-          ))}
-         
-        </thead>
-        <tbody {...getTableBodyProps()}>
-        {page.map((row, i) => {
-            prepareRow(row)
-            return (
-              <tr {...row.getRowProps()}>
-                {row.cells.map(cell => {
-                  if(cell.column.id !== 'actionpath')
-                    return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
-                  else 
-                    return "";
-                })}
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-      </div>
-      <div className="pagination p-grid">
-        <div className="total_records_bottom_label" ><label >Total records ({data.length})</label></div>
-        <div>
-         <Paginator rowsPerPageOptions={[10,25,50,100]} first={currentpage} rows={currentrows} totalRecords={rows.length} onPageChange={onPagination} >  </Paginator> 
+          <thead>
+            {headerGroups.map(headerGroup =>  (
+              <tr {...headerGroup.getHeaderGroupProps()}>
+                {headerGroup.headers.map(column => (
+                  <th> 
+                    <div {...column.getHeaderProps(column.getSortByToggleProps())}>
+                      {column.Header !== 'actionpath' && column.render('Header')}
+                      {column.Header !== 'Action'? 
+                        column.isSorted ? (column.isSortedDesc ? <i className="pi pi-sort-down" aria-hidden="true"></i> : <i className="pi pi-sort-up" aria-hidden="true"></i>) : ""
+                        : ""
+                      }
+                    </div>
+
+                    {/* Render the columns filter UI */} 
+                      {column.Header !== 'actionpath' &&
+                        <div className={columnclassname[0][column.Header]}  > 
+                          {column.canFilter && column.Header !== 'Action' ? column.render('Filter') : null}
+
+                        </div>
+                      }
+                  </th> 
+                ))}
+                 </tr>
+                 ))}
+                  </thead>
+                 <tbody {...getTableBodyProps()}>
+                 {page.map((row, i) => {
+                     prepareRow(row)
+                     return (
+                       <tr {...row.getRowProps()}>
+                         {row.cells.map(cell => {
+                          if(cell.column.id !== 'actionpath')
+                          return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                        else 
+                          return "";
+                         })}
+                       </tr>
+                     )
+                   })}
+                 </tbody>
+               </table>
+               </div>
+               <div className="pagination p-grid" >
+               <div className="total_records_bottom_label" ><label >Total records ({data.length})</label></div>
+               <div>
+        <Paginator rowsPerPageOptions={[10,25,50,100]} first={currentpage} rows={currentrows} totalRecords={rows.length} onPageChange={onPagination}></Paginator>
         </div>
         <div>
             <InputNumber id="custompage" value={custompagevalue} onChange ={onChangeCustompagevalue}
-              min={0}  />
+              min={0} style={{width:'100px'}} />
               <label >Records/Page</label>
-            <Button onClick={onCustomPage} style={{width: "50px"}}> Show </Button>
-            <Button onClick={onShowAllPage} style={{marginLeft: "1em", width: "80px"}}> Show All </Button>
+            <Button onClick={onCustomPage}> Show </Button>
+            <Button onClick={onShowAllPage} style={{marginLeft: "1em"}}> Show All </Button>
           </div>  
       </div>
+      
     </>
   )
 }
+ 
 
 // Define a custom filter filter function!
 function filterGreaterThan(rows, id, filterValue) {
@@ -494,7 +623,7 @@ function ViewTable(props) {
     let optionalheader = props.optionalcolumns;
     let defaultSortColumn = props.defaultSortColumn;
     let tablename = (props.tablename)?props.tablename:window.location.pathname;
-
+    
     if(!defaultSortColumn){
       defaultSortColumn =[{}];
     }
@@ -527,35 +656,41 @@ function ViewTable(props) {
      // Object.entries(props.paths[0]).map(([key,value]) =>{})
     }
 
-   //Default Columns
-   defaultdataheader.forEach(header =>{
+  //Default Columns
+  defaultdataheader.forEach(header => {
     const isString = typeof defaultheader[0][header] === 'string';
+    const filterFn = (showColumnFilter?(isString ? DefaultColumnFilter : (filterTypes[defaultheader[0][header].filter].fn ? filterTypes[defaultheader[0][header].filter].fn : DefaultColumnFilter)):"");
+    const filtertype = (showColumnFilter?(!isString && filterTypes[defaultheader[0][header].filter].type) ? filterTypes[defaultheader[0][header].filter].type : 'fuzzyText':"");
     columns.push({
       Header: isString ? defaultheader[0][header] : defaultheader[0][header].name,
-      id: header,
+      id: isString ? defaultheader[0][header] : defaultheader[0][header].name,
       accessor: header,
-      filter: (showColumnFilter?((!isString && defaultheader[0][header].filter=== 'date') ? 'includes' : 'fuzzyText'):""),
-      Filter: (showColumnFilter?(isString ? DefaultColumnFilter : (filterTypes[defaultheader[0][header].filter] ? filterTypes[defaultheader[0][header].filter] : DefaultColumnFilter)):""),
+      filter: filtertype,
+      Filter: filterFn,
+      //*** TO REMOVE - INCOMING CHANGE */
+      // filter: (showColumnFilter?((!isString && defaultheader[0][header].filter=== 'date') ? 'includes' : 'fuzzyText'):""),
+      // Filter: (showColumnFilter?(isString ? DefaultColumnFilter : (filterTypes[defaultheader[0][header].filter] ? filterTypes[defaultheader[0][header].filter] : DefaultColumnFilter)):""),
       isVisible: true,
       Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
    })
 })
 
 //Optional Columns
-
 optionaldataheader.forEach(header => {
   const isString = typeof optionalheader[0][header] === 'string';
+  const filterFn = (showColumnFilter?(isString ? DefaultColumnFilter : (filterTypes[optionalheader[0][header].filter].fn ? filterTypes[optionalheader[0][header].filter].fn : DefaultColumnFilter)):"");
+    const filtertype = (showColumnFilter?(!isString && filterTypes[optionalheader[0][header].filter].type) ? filterTypes[optionalheader[0][header].filter].type : 'fuzzyText':"");
     columns.push({
       Header: isString ? optionalheader[0][header] : optionalheader[0][header].name,
-          id: isString ? header : optionalheader[0][header].name,
-          accessor: header,
-          filter: (showColumnFilter?((!isString && optionalheader[0][header].filter=== 'date') ? 'includes' : 'fuzzyText'):""),
-          Filter: (showColumnFilter?(isString ? DefaultColumnFilter : (filterTypes[optionalheader[0][header].filter] ? filterTypes[optionalheader[0][header].filter] : DefaultColumnFilter)):""),
-          isVisible: false,
-          Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
+      id: isString ? header : optionalheader[0][header].name,
+      accessor: header,
+      filter: filtertype,
+      Filter: filterFn,
+      isVisible: false,
+      Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
       })
-}); 
-    
+    }); 
+     
     let togglecolumns = localStorage.getItem(tablename);
     if(togglecolumns){
         togglecolumns = JSON.parse(togglecolumns)
@@ -566,7 +701,7 @@ optionaldataheader.forEach(header => {
             })
         })
       }
-    
+
     function updatedCellvalue(key, value){
       try{
         if(key === 'blueprint_draft' && _.includes(value,'/task_draft/')){

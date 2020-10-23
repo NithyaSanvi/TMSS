@@ -50,6 +50,44 @@ const UnitConverter = {
                 object[type] = object[type] * (Math.PI/180);
             }
         }
+    },
+    /**
+     * Function to convert Angle 1 & 2 input value for UI. 
+     */
+    getAngleInput(prpInput, isDegree) {
+        if(prpInput){
+            const degrees = prpInput * 180 / Math.PI;
+            if (isDegree) {
+                const dd = Math.floor(prpInput * 180 / Math.PI);
+                const mm = Math.floor((degrees-dd) * 60);
+                const ss = +((degrees-dd-(mm/60)) * 3600).toFixed(0);
+                return (dd<10?`0${dd}`:`${dd}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`);
+            }   else {
+                const hh = Math.floor(degrees/15);
+                const mm = Math.floor((degrees - (hh*15))/15 * 60 );
+                const ss = +((degrees -(hh*15)-(mm*15/60))/15 * 3600).toFixed(0);
+                return (hh<10?`0${hh}`:`${hh}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`);
+            }
+        }else{
+            return "00:00:00";
+        }
+    },
+
+    /**
+     * Function to convert Angle 1 & 2 input value for Backend. 
+     */
+    getAngleOutput(prpOutput, isDegree) {
+        if(prpOutput){
+            const splitOutput = prpOutput.split(':');
+            if (isDegree) {
+                return ((splitOutput[0]*1 + splitOutput[1]/60 + splitOutput[2]/3600)*Math.PI/180);
+            }   else {
+                return ((splitOutput[0]*15 + splitOutput[1]/4  + splitOutput[2]/240)*Math.PI/180);
+            }
+        }else{
+            return "00:00:00";
+        }
+        
     }
 };
 

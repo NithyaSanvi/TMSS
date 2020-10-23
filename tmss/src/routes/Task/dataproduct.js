@@ -13,13 +13,25 @@ export class DataProduct extends Component{
             isLoading: true,
             dataproduct:[],
             defaultcolumns: [ {
-              "type":"Type",
-              "filename":"File Name",
-              "fullpath":"File Path",
-              "storagelocation":"Storage Location",
-              "size":"Size (TB)", 
-              "completed":"Completed %",
-              "deleted_since":"Deleted at",
+              type:{
+                name:"Type",
+                filter:"select"
+              },
+              filename:"File Name",
+              fullpath:"File Path",
+              storagelocation:{
+                name:"Storage Location",
+                filter:"select"
+              },
+              size:{
+                name:"Size (TB)", 
+                filter:"minMax"
+              },
+              completed:{
+                name:"Completed %",
+                filter:"minMax"
+              },
+              deleted_since:"Deleted at",
               }],
           optionalcolumns:  [{
           }],

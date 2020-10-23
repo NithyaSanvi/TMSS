@@ -1,6 +1,7 @@
 import axios from 'axios'
-import moment from 'moment';
+//import moment from 'moment';
 import TaskService from './task.service';
+import moment from 'moment';
 
 axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
 
@@ -100,10 +101,14 @@ const ScheduleService = {
                 scheduletask['blueprint_draft'] = task['task_blueprints'];
                 scheduletask['status'] = task['status'];
 
+              
                 //fetch task draft details
                 for(const key of commonkeys){
                     scheduletask[key] = task[key];
                 }
+                scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                
                 scheduletask.duration = moment.utc((scheduletask.duration || 0)*1000).format('HH:mm:ss'); 
                 scheduletask.relative_start_time = moment.utc(scheduletask.relative_start_time*1000).format('HH:mm:ss'); 
                 scheduletask.relative_stop_time = moment.utc(scheduletask.relative_stop_time*1000).format('HH:mm:ss'); 
@@ -119,10 +124,12 @@ const ScheduleService = {
                     taskblueprint['actionpath'] = '/task/view/blueprint/'+blueprint['id'];
                     taskblueprint['blueprint_draft'] = blueprint['draft'];
                     taskblueprint['status'] = blueprint['status'];
-                    
+                  
                     for(const key of commonkeys){
                         taskblueprint[key] = blueprint[key];
                     }
+                    taskblueprint['created_at'] = moment(blueprint['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                    taskblueprint['updated_at'] = moment(blueprint['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                     taskblueprint.duration = moment.utc((taskblueprint.duration || 0)*1000).format('HH:mm:ss'); 
                     taskblueprint.relative_start_time = moment.utc(taskblueprint.relative_start_time*1000).format('HH:mm:ss'); 
                     taskblueprint.relative_stop_time = moment.utc(taskblueprint.relative_stop_time*1000).format('HH:mm:ss'); 
@@ -255,7 +262,8 @@ const ScheduleService = {
     },
     updateSchedulingUnitDraft: async function(schedulingUnit) {
         try {
-            console.log(schedulingUnit);
+           // console.log(schedulingUnit);
+           schedulingUnit.scheduling_constraints_doc = ( schedulingUnit.scheduling_constraints_doc == null)?"": schedulingUnit.scheduling_constraints_doc;
             const suUpdateResponse = await axios.put(`/api/scheduling_unit_draft/${schedulingUnit.id}/`, schedulingUnit);
             return suUpdateResponse.data;
         }   catch(error) {

@@ -116,12 +116,8 @@ export default (props) => {
                 list.push('disable-field');
             }
             ref.editors['root.time.at'].container.className = list.join(' ');
-            Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = true);
-            Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = true);
         } else {
             ref.editors['root.time.at'].container.className = ref.editors['root.time.at'].container.className.replace('disable-field', '');
-            Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = false);
-            Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = false);
         }
         if (props.callback) {
             props.callback(jsonOutput, errors);
@@ -152,15 +148,15 @@ export default (props) => {
                 })
             }
         }
-        if (!initValue.time.at) {
-            initValue.time.at= '';
-        }
-        if (!initValue.time.after) {
-            initValue.time.after= '';
-        }
-        if (!initValue.time.before) {
-            initValue.time.before= '';
-        }
+      if (!initValue.time.at) {
+          initValue.time.at= '';
+       }
+       if (!initValue.time.after) {
+        initValue.time.after= '';
+       }
+       if (!initValue.time.before) {
+        initValue.time.before= '';
+       }
      
        /*   for (let type in initValue.sky.transit_offset) {
             initValue.sky.transit_offset[type] = initValue.sky.transit_offset[type] / 60;

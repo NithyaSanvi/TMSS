@@ -295,14 +295,14 @@ export class SchedulingUnitCreate extends Component {
             }
             if (!constStrategy.time.before) {
                 delete constStrategy.time.before;
-            }
+             }
             if (constStrategy.time[type] && constStrategy.time[type].length) {
                 if (typeof constStrategy.time[type] === 'string') {
                     constStrategy.time[type] = `${moment(constStrategy.time[type]).format("YYYY-MM-DDThh:mm:ss.SSSSS", { trim: false })}Z`;
                 } else {
                     constStrategy.time[type].forEach(time => {
                         for (let key in time) {
-                          time[key] = `${moment(time[key] ).format("YYYY-MM-DDThh:mm:ss.SSSSS", { trim: false })}Z`;
+                            time[key] = `${moment(time[key] ).format("YYYY-MM-DDThh:mm:ss.SSSSS", { trim: false })}Z`;
                         }
                    })
                 }
@@ -477,13 +477,6 @@ export class SchedulingUnitCreate extends Component {
                         </div>
                         
                     </div>
-                    <div className="p-fluid">
-                        <div className="p-grid">
-                            <div className="p-col-12">
-                                {this.state.paramsSchema?jeditor:""}
-                            </div>
-                        </div>
-                    </div>
                     {this.state.constraintSchema && <div className="p-fluid">
                         <div className="p-grid">
                             <div className="p-col-12">
@@ -491,6 +484,14 @@ export class SchedulingUnitCreate extends Component {
                             </div>
                         </div>
                     </div>}
+                    <div className="p-fluid">
+                        <div className="p-grid">
+                            <div className="p-col-12">
+                                {this.state.paramsSchema?jeditor:""}
+                            </div>
+                        </div>
+                    </div>
+                    
                     
                     <div className="p-grid p-justify-start">
                         <div className="p-col-1">

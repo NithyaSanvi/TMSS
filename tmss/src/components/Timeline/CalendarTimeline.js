@@ -19,6 +19,8 @@ import UtilService from '../../services/util.service';
 import 'react-calendar-timeline/lib/Timeline.css';
 import { Calendar } from 'primereact/calendar';
 import { Checkbox } from 'primereact/checkbox';
+import { ProgressSpinner } from 'primereact/progressspinner';
+import UIConstants from '../../utils/ui.constants';
 
 // Label formats for day headers based on the interval label width
 const DAY_HEADER_FORMATS = [{ name: "longer", minWidth: 300, maxWidth: 50000, format: "DD dddd, MMMM YYYY"},
@@ -66,8 +68,8 @@ export class CalendarTimeline extends Component {
       }
       const defaultZoomLevel = _.find(ZOOM_LEVELS, {name: DEFAULT_ZOOM_LEVEL});
       this.state = {
-        defaultStartTime: props.startTime || moment().utc().add(-1 * defaultZoomLevel.value/2, 'seconds'),
-        defaultEndTime: props.endTime || moment().utc().add(1 * defaultZoomLevel.value/2, 'seconds'),
+        defaultStartTime: props.startTime?props.startTime.clone():null || moment().utc().add(-1 * defaultZoomLevel.value/2, 'seconds'),
+        defaultEndTime: props.endTime?props.endTime.clone():null || moment().utc().add(1 * defaultZoomLevel.value/2, 'seconds'),
         group: group,
         items: props.items || [],
         //>>>>>> Properties to pass to react-calendar-timeline component
@@ -75,7 +77,7 @@ export class CalendarTimeline extends Component {
         zoomAllowed: props.zoomAllowed || true,
         minZoom: props.minZoom || (1 * 60 * 1000),                  // One Minute
         maxZoom: props.maxZoom || (32 * 24 * 60 * 60 * 1000),       // 32 hours
-        zoomLevel: DEFAULT_ZOOM_LEVEL,
+        zoomLevel: props.zoomLevel || DEFAULT_ZOOM_LEVEL,
         isTimelineZoom: true,
         zoomRange: null,
         prevZoomRange: null,
@@ -98,9 +100,18 @@ export class CalendarTimeline extends Component {
         isLSTDateHeaderLoading: true,
         dayHeaderVisible: true,                                     // To control the Day header visibility based on the zoom level
         weekHeaderVisible: false,                                   // To control the Week header visibility based on the zoom level
+        allowLive: props.showLive===undefined?true:props.showLive,
+        allowDateSelection: props.showDateRange===undefined?true:props.showDateRange,
+        viewType: props.viewType || UIConstants.timeline.types.NORMAL,
         isLive: false
       }
+      if (props.viewType && props.viewType===UIConstants.timeline.types.WEEKVIEW) {
+        this.state.timelineStartDate = this.state.defaultStartTime.clone();
+        this.state.timelineEndDate = this.state.defaultEndTime.clone();
+      }
       this.itemClickCallback = props.itemClickCallback;             // Pass timeline item click event back to parent
+      this.ZOOM_LEVELS = props.viewType===UIConstants.timeline.types.WEEKVIEW?
+                            _.filter(ZOOM_LEVELS, (level => { return level.value<=24*60*60 && level.name!=="Custom"})):ZOOM_LEVELS;
       
       //>>>>>>> Override function of timeline component
       this.onZoom = this.onZoom.bind(this);                         
@@ -241,7 +252,9 @@ export class CalendarTimeline extends Component {
         return (<div {...getRootProps()} 
                     style={{color: '#ffffff', textAlign: "right", width: `${this.state.sidebarWidth}px`, 
                             paddingRight: '10px', backgroundColor: '#8ba7d9'}}>
-                    <div style={{height:'30px'}}>{this.state.dayHeaderVisible?`Day${monthDuration}`:`Week${monthDuration}`}</div> 
+                    <div style={{height:'30px'}}>{this.state.viewType===UIConstants.timeline.types.NORMAL?
+                                    (this.state.dayHeaderVisible?`Day${monthDuration}`:`Week${monthDuration}`)
+                                    :`Week (${this.state.timelineStartDate.week()}) / Day`}</div> 
                     <div style={{height:'30px'}}>{this.state.dayHeaderVisible?`UTC(Hr)`:`UTC(Day)`}</div>
                     <div style={{height:'30px'}}>{this.state.dayHeaderVisible?`LST(Hr)`:`LST(Day)`}</div>
                 </div>
@@ -443,11 +456,16 @@ export class CalendarTimeline extends Component {
         const backgroundColor = itemContext.selected?item.bgColor:item.bgColor;
         // const backgroundColor = itemContext.selected ? (itemContext.dragging ? "red" : item.selectedBgColor) : item.bgColor;
         // const borderColor = itemContext.resizing ? "red" : item.color;
-        const itemContentStyle = {lineHeight: `${Math.floor(itemContext.dimensions.height)}px`, 
+        let itemContentStyle = {lineHeight: `${Math.floor(itemContext.dimensions.height)}px`, 
                                   fontSize: "14px",
                                   overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                                   textAlign: "center"};
-                        
+        if (this.state.viewType===UIConstants.timeline.types.WEEKVIEW) {
+            itemContentStyle = {lineHeight: `${Math.floor(itemContext.dimensions.height/3)}px`, 
+                                  fontSize: "12px", fontWeight: "600",
+                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                  textAlign: "center"};
+        }
         return (
           <div
             {...getItemProps({
@@ -477,10 +495,12 @@ export class CalendarTimeline extends Component {
                 //whiteSpace: "nowrap"
               }}
             >
-              {/* <div style={itemContentStyle}><span>{item.project}</span></div>
-              <div style={itemContentStyle}><span>{item.name}</span></div>
-              <div style={itemContentStyle}><span>{item.duration}</span></div> */}
-              <div style={itemContentStyle}><span>{item.title}</span></div>
+              { this.state.viewType===UIConstants.timeline.types.WEEKVIEW &&
+                <><div style={itemContentStyle}><i style={{fontSize:"12px"}} className="fa fa-user" title="Friend"></i><span>{item.project}</span></div>
+                    <div style={itemContentStyle}><span>{item.duration}</span></div>
+                    <div style={itemContentStyle}><span>{item.band}</span></div> </>}
+              {this.state.viewType===UIConstants.timeline.types.NORMAL &&
+                <div style={itemContentStyle}><span>{item.title}</span></div> }
             </div>
             {itemContext.useResizeHandle ? <div {...rightResizeProps} /> : null}
           </div>
@@ -516,10 +536,23 @@ export class CalendarTimeline extends Component {
 
     /** Overriding function to pass to timeline component for custom actions when visible time changes */
     onTimeChange(visibleTimeStart, visibleTimeEnd, updateScrollCanvas) {
-        this.loadLSTDateHeaderMap(moment(visibleTimeStart).utc(), moment(visibleTimeEnd).utc(), this.state.lstDateHeaderUnit);
-        updateScrollCanvas(visibleTimeStart, visibleTimeEnd);
-        this.props.dateRangeCallback(moment(visibleTimeStart).utc(), moment(visibleTimeEnd).utc());
-        this.setState({defaultStartTime: moment(visibleTimeStart), defaultEndTime: moment(visibleTimeEnd)})
+        let newVisibleTimeStart = moment(visibleTimeStart).utc();
+        let newVisibleTimeEnd = moment(visibleTimeEnd).utc();
+        if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW) {
+            const visibleTimeDiff = (visibleTimeEnd - visibleTimeStart)/1000;
+            if (newVisibleTimeStart.isBefore(this.state.timelineStartDate)) {
+                newVisibleTimeStart = this.state.timelineStartDate.clone();
+                newVisibleTimeEnd = newVisibleTimeStart.clone().add(visibleTimeDiff, 'seconds');
+            }   else if (newVisibleTimeEnd.isAfter(this.state.timelineEndDate)) {
+                newVisibleTimeEnd = this.state.timelineEndDate.clone();
+                newVisibleTimeStart = newVisibleTimeEnd.clone().add((-1 * visibleTimeDiff), 'seconds');
+            }
+        }
+        this.loadLSTDateHeaderMap(newVisibleTimeStart, newVisibleTimeEnd, this.state.lstDateHeaderUnit);
+        updateScrollCanvas(newVisibleTimeStart.valueOf(), newVisibleTimeEnd.valueOf());
+        this.props.dateRangeCallback(newVisibleTimeStart, newVisibleTimeEnd);
+        // this.setState({defaultStartTime: moment(visibleTimeStart), defaultEndTime: moment(visibleTimeEnd)})
+        this.setState({defaultStartTime: newVisibleTimeStart, defaultEndTime: newVisibleTimeEnd});
     }
 
     /**
@@ -535,10 +568,23 @@ export class CalendarTimeline extends Component {
     /**
      * Resets the timeline view to default zoom and move to the current timeline
      */
-    resetToCurrentTime(){
-        this.setState({defaultStartTime: moment().utc().add(-24, 'hours'),
-                        defaultEndTime: moment().utc().add(24, 'hours'), zoomLevel: DEFAULT_ZOOM_LEVEL,
-                        dayHeaderVisible: true, weekHeaderVisible: false, lstDateHeaderUnit: "hour"});
+    async resetToCurrentTime(){
+        if (this.state.viewType===UIConstants.timeline.types.NORMAL) {
+            const startTime = moment().utc().add(-24, 'hours');
+            const endTime = moment().utc().add(24, 'hours');
+            let result = this.props.dateRangeCallback(startTime, endTime);
+            let group = DEFAULT_GROUP.concat(result.group);
+            this.setState({defaultStartTime: startTime, defaultEndTime: endTime, 
+                            zoomLevel: DEFAULT_ZOOM_LEVEL, dayHeaderVisible: true, 
+                            weekHeaderVisible: false, lstDateHeaderUnit: "hour",
+                            group: group, items: result.items});
+        }   else {
+            if (moment().utc().week()-this.state.timelineStartDate.week() !== 0) {
+                this.changeWeek(moment().utc().week()-this.state.timelineStartDate.week());
+            }   else {
+                this.changeZoomLevel("1 Day");
+            }
+        }
     }
 
     /**
@@ -547,7 +593,7 @@ export class CalendarTimeline extends Component {
      * @param {String} zoomLevel 
      * @param {boolean} isTimelineZoom 
      */
-    changeZoomLevel(zoomLevel, isTimelineZoom) {
+    async changeZoomLevel(zoomLevel, isTimelineZoom) {
         zoomLevel = zoomLevel?zoomLevel: DEFAULT_ZOOM_LEVEL;
         const newZoomLevel = _.find(ZOOM_LEVELS, {'name': zoomLevel});
         let startTime = this.state.defaultStartTime;
@@ -565,8 +611,27 @@ export class CalendarTimeline extends Component {
                 startTime = startTime.add(-1 * (newZoomLevel.value-visibleDuration)/2, 'seconds');
                 endTime = endTime.add(1 * (newZoomLevel.value-visibleDuration)/2, 'seconds');
             }
+            if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW) {
+                if ( zoomLevel==="1 Day") {
+                    startTime = this.state.timelineStartDate.clone();
+                    endTime = startTime.clone().add(newZoomLevel.value, 'seconds');
+                }   else {
+                    if (startTime.isBefore(this.state.timelineStartDate)) {
+                        startTime = this.state.timelineStartDate.clone();
+                        endTime = startTime.clone().add(newZoomLevel.value, 'seconds');
+                    }   else if (endTime.isAfter(this.state.timelineEndDate)) {
+                        endTime = this.state.timelineEndDate.clone();
+                        startTime = endTime.clone().add(-1 * ( newZoomLevel.value), 'seconds');
+                    }
+                }
+            }
             this.loadLSTDateHeaderMap(startTime, endTime, 'hour');
-            const result = this.props.dateRangeCallback(startTime, endTime);
+            let result = {};
+            if (this.state.viewType===UIConstants.timeline.types.WEEKVIEW) {
+                result = await this.props.dateRangeCallback(startTime, endTime);
+            }   else {
+                result = this.props.dateRangeCallback(startTime, endTime);
+            }
             let group = DEFAULT_GROUP.concat(result.group);
             this.setState({zoomLevel: zoomLevel, defaultStartTime: startTime, defaultEndTime: endTime, 
                             isTimelineZoom: isTimelineZoom, zoomRange: null, 
@@ -578,30 +643,56 @@ export class CalendarTimeline extends Component {
     /**
      * Moves the timeline left 1/10th of the visible timeline duration
      */
-    moveLeft() {
-        let visibleTimeStart = this.state.defaultStartTime;
-        let visibleTimeEnd = this.state.defaultEndTime;
+    async moveLeft() {
+        let visibleTimeStart = this.state.defaultStartTime.utc();
+        let visibleTimeEnd = this.state.defaultEndTime.utc();
         const visibleTimeDiff = visibleTimeEnd.valueOf()-visibleTimeStart.valueOf();
-        const secondsToMove = visibleTimeDiff / 1000 / 10 ;
-        const result = this.props.dateRangeCallback(visibleTimeStart, visibleTimeEnd);
+        let secondsToMove = visibleTimeDiff / 1000 / 10 ;
+        let newVisibleTimeStart = visibleTimeStart.clone().add(-1 * secondsToMove, 'seconds');
+        let newVisibleTimeEnd = visibleTimeEnd.clone().add(-1 * secondsToMove, 'seconds');
+        let result = {};
+        if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW &&
+            newVisibleTimeStart.isBefore(this.state.timelineStartDate)) {
+            newVisibleTimeStart = this.state.timelineStartDate.clone().hours(0).minutes(0).seconds(0);
+            newVisibleTimeEnd = newVisibleTimeStart.clone().add(visibleTimeDiff/1000, 'seconds');
+        }
+        if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW) {
+            result = await this.props.dateRangeCallback(newVisibleTimeStart, newVisibleTimeEnd);
+        }   else {
+            result = this.props.dateRangeCallback(newVisibleTimeStart, newVisibleTimeEnd);
+        }
+        this.loadLSTDateHeaderMap(newVisibleTimeStart, newVisibleTimeEnd, 'hour');
         let group = DEFAULT_GROUP.concat(result.group);
-        this.setState({defaultStartTime: visibleTimeStart.add(-1 * secondsToMove, 'seconds'),
-                        defaultEndTime: visibleTimeEnd.add(-1 * secondsToMove, 'seconds'),
+        this.setState({defaultStartTime: newVisibleTimeStart,
+                        defaultEndTime: newVisibleTimeEnd,
                         group: group, items: result.items});
     }
 
     /**
      * Moves the timeline right 1/10th of the visible timeline length
      */
-    moveRight() {
-        let visibleTimeStart = this.state.defaultStartTime;
-        let visibleTimeEnd = this.state.defaultEndTime;
+    async moveRight() {
+        let visibleTimeStart = this.state.defaultStartTime.utc();
+        let visibleTimeEnd = this.state.defaultEndTime.utc();
         const visibleTimeDiff = visibleTimeEnd.valueOf()-visibleTimeStart.valueOf();
         const secondsToMove = visibleTimeDiff / 1000 / 10 ;
-        const result = this.props.dateRangeCallback(visibleTimeStart, visibleTimeEnd);
+        let newVisibleTimeStart = visibleTimeStart.clone().add(1 * secondsToMove, 'seconds');
+        let newVisibleTimeEnd = visibleTimeEnd.clone().add(1 * secondsToMove, 'seconds');
+        let result = {};
+        if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW &&
+            newVisibleTimeEnd.isAfter(this.state.timelineEndDate)) {
+            newVisibleTimeEnd = this.state.timelineEndDate.clone().hours(23).minutes(59).minutes(59);
+            newVisibleTimeStart = newVisibleTimeEnd.clone().add((-1 * visibleTimeDiff/1000), 'seconds');
+        }
+        if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW) {
+           result = await this.props.dateRangeCallback(visibleTimeStart, visibleTimeEnd);
+        }   else {
+            result = this.props.dateRangeCallback(visibleTimeStart, visibleTimeEnd);
+        }
+        this.loadLSTDateHeaderMap(newVisibleTimeStart, newVisibleTimeEnd, 'hour');
         let group = DEFAULT_GROUP.concat(result.group);
-        this.setState({defaultStartTime: visibleTimeStart.add(1 * secondsToMove, 'seconds'),
-                        defaultEndTime: visibleTimeEnd.add(1 * secondsToMove, 'seconds'),
+        this.setState({defaultStartTime: newVisibleTimeStart,
+                        defaultEndTime: newVisibleTimeEnd,
                         group: group, items: result.items});
     }
 
@@ -610,10 +701,10 @@ export class CalendarTimeline extends Component {
      */
     zoomIn() {
         let prevZoomLevel = this.state.zoomLevel;
-        const prevZoomObject = _.find(ZOOM_LEVELS, {'name': prevZoomLevel});
-        const prevZoomIndex = ZOOM_LEVELS.indexOf(prevZoomObject);
+        const prevZoomObject = _.find(this.ZOOM_LEVELS, {'name': prevZoomLevel});
+        const prevZoomIndex = this.ZOOM_LEVELS.indexOf(prevZoomObject);
         if (prevZoomIndex > 0) {
-            this.changeZoomLevel(ZOOM_LEVELS[prevZoomIndex-1].name, false);
+            this.changeZoomLevel(this.ZOOM_LEVELS[prevZoomIndex-1].name, false);
         }
     }
 
@@ -622,10 +713,11 @@ export class CalendarTimeline extends Component {
      */
     zoomOut() {
         let prevZoomLevel = this.state.zoomLevel;
-        const prevZoomObject = _.find(ZOOM_LEVELS, {'name': prevZoomLevel});
-        const prevZoomIndex = ZOOM_LEVELS.indexOf(prevZoomObject);
-        if (prevZoomIndex < ZOOM_LEVELS.length-2) {
-            this.changeZoomLevel(ZOOM_LEVELS[prevZoomIndex+1].name, false);
+        const prevZoomObject = _.find(this.ZOOM_LEVELS, {'name': prevZoomLevel});
+        const prevZoomIndex = this.ZOOM_LEVELS.indexOf(prevZoomObject);
+        const maxZoomOutLevel = this.ZOOM_LEVELS.length-(this.state.viewType===UIConstants.timeline.types.NORMAL?2:1);
+        if (prevZoomIndex < maxZoomOutLevel) {
+            this.changeZoomLevel(this.ZOOM_LEVELS[prevZoomIndex+1].name, false);
         }
     }
 
@@ -666,6 +758,30 @@ export class CalendarTimeline extends Component {
         }
     }
 
+    async changeWeek(direction) {
+        this.setState({isWeekLoading: true});
+        let startDate = this.state.group[1].value.clone().add(direction * 7, 'days');
+        let endDate = this.state.group[this.state.group.length-1].value.clone().add(direction * 7, 'days').hours(23).minutes(59).seconds(59);
+        let timelineStart = this.state.timelineStartDate.clone().add(direction * 7, 'days');
+        let timelineEnd = this.state.timelineEndDate.clone().add(direction * 7, 'days');
+        const result = await this.props.dateRangeCallback(startDate, endDate, true);
+        let group = DEFAULT_GROUP.concat(result.group);
+        let dayHeaderVisible = this.state.dayHeaderVisible;
+        let weekHeaderVisible = this.state.weekHeaderVisible;
+        let lstDateHeaderUnit = this.state.lstDateHeaderUnit;
+        let rangeDays = endDate.diff(startDate, 'days');
+        dayHeaderVisible = rangeDays > 35?false: true; 
+        weekHeaderVisible = rangeDays > 35?true: false; 
+        lstDateHeaderUnit = rangeDays > 35?"day":"hour";
+        this.setState({defaultStartTime: timelineStart, defaultEndTime: timelineEnd,
+                        timelineStartDate: timelineStart, timelineEndDate: timelineEnd,
+                        zoomLevel: this.ZOOM_LEVELS[this.ZOOM_LEVELS.length-1].name, isTimelineZoom: false,
+                        dayHeaderVisible: dayHeaderVisible, weekHeaderVisible: weekHeaderVisible,
+                        lstDateHeaderUnit: lstDateHeaderUnit, group: group, items: result.items});
+        this.loadLSTDateHeaderMap(startDate, endDate, lstDateHeaderUnit);
+        this.setState({isWeekLoading: false});
+    }
+
     /**
      * Public function that can be called by its implementation class or function to pass required data and parameters
      * as objects
@@ -695,11 +811,16 @@ export class CalendarTimeline extends Component {
                         }
                     </div>
                     <div className="p-col-1 timeline-filters">
-                        <label style={{paddingRight: "3px"}}>Live </label>
-                        <Checkbox checked={this.state.isLive} label="Live" onChange={(e) => { this.setState({'isLive': e.checked})}} ></Checkbox>
+                        {this.state.allowLive &&
+                            <>
+                                <label style={{paddingRight: "3px"}}>Live </label>
+                                <Checkbox checked={this.state.isLive} label="Live" onChange={(e) => { this.setState({'isLive': e.checked})}} ></Checkbox>
+                            </>}
                     </div>
                     {/* Date Range Selection */}
                     <div className="p-col-4 timeline-filters">
+                        {this.state.allowDateSelection &&
+                        <>
                         {/* <span className="p-float-label"> */}
                         <Calendar id="range" placeholder="Select Date Range" selectionMode="range" showIcon={!this.state.zoomRange}
                                 value={this.state.zoomRange} onChange={(e) => this.setZoomRange( e.value )} readOnlyInput />
@@ -707,17 +828,26 @@ export class CalendarTimeline extends Component {
                         </span> */}
                         {this.state.zoomRange && <i className="pi pi-times pi-primary" style={{position: 'relative', left:'90%', bottom:'20px', cursor:'pointer'}} 
                                                     onClick={() => {this.setZoomRange( null)}}></i>}
+                        </>}
+                        {this.state.viewType===UIConstants.timeline.types.WEEKVIEW &&
+                            <>
+                                <Button label="" icon="pi pi-angle-double-left" title="Previous Week" onClick={(e) =>{this.changeWeek(-1)}}/>
+                                <label className="timeline-week-span">Week {this.state.isWeekLoading}</label>
+                                <Button label="" icon="pi pi-angle-double-right" title="Next Week" onClick={(e) =>{this.changeWeek(1)}}/>
+                                {this.state.isWeekLoading && <ProgressSpinner style={{width: '30px', height: '30px', marginLeft:'5px', paddingTop: '5px'}} strokeWidth="4" />}
+                            </>
+                        }
                     </div>
                     {/* Reset to default zoom and current timeline */}
                     <div className="p-col-1 timeline-button" >
-                        <Button label="" icon="pi pi-arrow-down" className="p-button-rounded p-button-success" id="now-btn" onClick={this.resetToCurrentTime} title="Rest Zoom & Move to Current Time"/>
+                        <Button label="" icon="pi pi-arrow-down" className="p-button-rounded p-button-success" id="now-btn" onClick={this.resetToCurrentTime} title="Reset Zoom & Move to Current Time"/>
                     </div>
                     {/* Zoom Select */}
                     <div className="p-col-2 timeline-filters" style={{paddingRight: '0px'}}>
                         <Dropdown optionLabel="name" optionValue="name" 
                                 style={{fontSize: '10px'}}
                                 value={this.state.zoomLevel} 
-                                options={ZOOM_LEVELS} 
+                                options={this.ZOOM_LEVELS} 
                                 filter showClear={false} filterBy="name"
                                 onChange={(e) => {this.changeZoomLevel(e.value, false)}} 
                                 placeholder="Zoom"/>
@@ -727,7 +857,7 @@ export class CalendarTimeline extends Component {
                         <button className="p-link" title="Move Left" onClick={e=> { this.moveLeft() }}><i className="pi pi-angle-left"></i></button>
                         <button className="p-link" title="Zoom Out" onClick={e=> { this.zoomOut() }} disabled={this.state.zoomLevel.startsWith('Custom')}><i className="pi pi-minus-circle"></i></button>
                         <button className="p-link" title="Zoom In" onClick={e=> { this.zoomIn() }} disabled={this.state.zoomLevel.startsWith('Custom')}><i className="pi pi-plus-circle"></i></button>
-                        <button className="p-link" title="Move Right" onClick={e=> { this.moveRight() }} onMouseDown={e=> { this.moveRight() }}><i className="pi pi-angle-right"></i></button>
+                        <button className="p-link" title="Move Right" onClick={e=> { this.moveRight() }}><i className="pi pi-angle-right"></i></button>
                     </div>
                 </div>
                 <Timeline

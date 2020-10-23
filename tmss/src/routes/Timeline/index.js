@@ -1,3 +1,4 @@
 import {TimelineView} from './view';
+import {WeekTimelineView} from './week.view';
 
-export {TimelineView} ;
+export {TimelineView, WeekTimelineView} ;

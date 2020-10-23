@@ -33,7 +33,7 @@ export class SchedulingUnitSummary extends Component {
                 <div className="p-grid timeline-details-pane" style={{marginTop: '10px'}}>
                     <h6 className="col-lg-10 col-sm-10">Details</h6>
                     <Link to={`/schedulingunit/view/blueprint/${schedulingUnit.id}`} title="View Full Details"><i className="fa fa-eye"></i></Link>
-                    <Link to={`/su/timelineview`} onClick={this.closeSUDets} title="Close Details"><i className="fa fa-times"></i></Link>
+                    <Link to={this.props.location?this.props.location.pathname:"/su/timelineview"} onClick={this.closeSUDets} title="Close Details"><i className="fa fa-times"></i></Link>
                     <div className="col-4"><label>Name:</label></div>
                     <div className="col-8">{schedulingUnit.name}</div>
                     <div className="col-4"><label>Project:</label></div>
