@@ -460,7 +460,6 @@ export class ProjectCreate extends Component {
                                         value={this.state.project.cycles} 
                                         options={this.state.cycles} 
                                         onChange={(e) => {this.setProjectParams('cycles',e.value)}} 
-                                        
                                 />
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
