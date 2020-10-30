@@ -21,6 +21,7 @@ class SchedulingUnitList extends Component{
                 name:"Created At",
                 filter: "date"
             },
+            project: "Project Name",
             updated_at:{
                 name:"Updated At",
                 filter: "date"
@@ -34,8 +35,8 @@ class SchedulingUnitList extends Component{
             duration:"Duration (HH:mm:ss)",
             status:"Status"
         };
-        if (!props.hideProjectColumn) {
-            defaultcolumns['project'] = "Project Name";
+        if (props.hideProjectColumn) {
+            delete defaultcolumns['project'];
         }
         this.state = {
             scheduleunit: [],
