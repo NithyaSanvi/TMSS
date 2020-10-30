@@ -677,13 +677,13 @@ function ViewTable(props) {
 
 //Optional Columns
 optionaldataheader.forEach(header => {
-    const isString = typeof optionalheader[0][header] === 'string';
-    const filterFn = (showColumnFilter?(isString ? DefaultColumnFilter : (filterTypes[optionalheader[0][header].filter].fn ? filterTypes[optionalheader[0][header].filter].fn : DefaultColumnFilter)):"");
+  const isString = typeof optionalheader[0][header] === 'string';
+  const filterFn = (showColumnFilter?(isString ? DefaultColumnFilter : (filterTypes[optionalheader[0][header].filter].fn ? filterTypes[optionalheader[0][header].filter].fn : DefaultColumnFilter)):"");
     const filtertype = (showColumnFilter?(!isString && filterTypes[optionalheader[0][header].filter].type) ? filterTypes[optionalheader[0][header].filter].type : 'fuzzyText':"");
     columns.push({
       Header: isString ? optionalheader[0][header] : optionalheader[0][header].name,
       id: isString ? header : optionalheader[0][header].name,
-      accessor: isString ? header : optionalheader[0][header].name, 
+      accessor: header,
       filter: filtertype,
       Filter: filterFn,
       isVisible: false,
