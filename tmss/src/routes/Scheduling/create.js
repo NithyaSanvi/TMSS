@@ -13,7 +13,7 @@ import {MultiSelect} from 'primereact/multiselect';
 import AppLoader from '../../layout/components/AppLoader';
 import Jeditor from '../../components/JSONEditor/JEditor';
 import UnitConversion from '../../utils/unit.converter';
-
+import { OverlayPanel } from 'primereact/overlaypanel';
 import ProjectService from '../../services/project.service';
 import ScheduleService from '../../services/schedule.service';
 import TaskService from '../../services/task.service';
@@ -42,7 +42,8 @@ export class SchedulingUnitCreate extends Component {
             constraintSchema:null,                  
             validEditor: false,                     // For JSON editor validation
             validFields: {},                        // For Form Validation
-            selectedStations: []
+            selectedStations: [],
+            stations: []
         }
         this.projects = [];                         // All projects to load project dropdown
         this.schedulingSets = [];                   // All scheduling sets to be filtered for project
@@ -71,6 +72,7 @@ export class SchedulingUnitCreate extends Component {
         this.saveSchedulingUnit = this.saveSchedulingUnit.bind(this);
         this.cancelCreate = this.cancelCreate.bind(this);
         this.reset = this.reset.bind(this);
+        this.showStations = this.showStations.bind(this);
     }
 
     componentDidMount() {
@@ -377,6 +379,16 @@ export class SchedulingUnitCreate extends Component {
         this.state.editorFunction();
     }
 
+    async showStations(e) {
+        this.op.toggle(e);
+        this.setState({fetchingStations: true});
+        const response = await ScheduleService.getStations();
+        this.setState({
+            stations: response.stations,
+            fetchingStations: false
+        });
+    }
+
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -497,13 +509,32 @@ export class SchedulingUnitCreate extends Component {
                                     <label>Selected Stations:</label>
                                     <div className="col-sm-12 p-0">
                                         {this.state.selectedStations.map(i => (
-                                            <span className="chips">
-                                                {i}
-                                                <i className="pi pi-info-circle info" aria-hidden="true"></i>
-                                            </span>
+                                            <div className="p-field p-grid" key={i}>
+                                                <label className="col-lg-2 col-md-2 col-sm-12 text-caps">
+                                                    {i}
+                                                    <Button icon="pi pi-info-circle" className="p-button-rounded p-button-secondary p-button-text info" onClick={this.showStations} />
+                                                </label>
+                                                <div className="col-lg-3 col-md-3 col-sm-12">
+                                                <InputText id="schedUnitName" data-testid="name" 
+                                                    tooltip="No. of Missing Stations" tooltipOptions={this.tooltipOptions} maxLength="128"
+                                                    placeholder="No. of Missing Stations"
+                                                    ref={input => {this.nameInput = input;}}
+                                                    onChange={(e) => this.setSchedUnitParams(i, e.target.value)}
+                                                    onBlur={(e) => this.setSchedUnitParams(i, e.target.value)}/>
+                                                </div>
+                                            </div>
                                         ))}
                                     </div>
+                                    
                                 </div> : null}
+                                <OverlayPanel ref={(el) => this.op = el} showCloseIcon dismissable  style={{width: '450px'}}>
+                                    <div className="station-container">
+                                        {this.state.fetchingStations && <span>Loading...</span>}
+                                        {this.state.stations.map(i => (
+                                            <label>{i}</label>
+                                        ))}
+                                    </div>
+                                </OverlayPanel>
                             </fieldset>
                         </div>
                         

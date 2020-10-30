@@ -221,6 +221,9 @@ const ScheduleService = {
             if (schedulingUnit && schedulingUnit.id) {
                 // Update the newly created SU draft requirement_doc with captured parameter values
                 schedulingUnit.requirements_doc = observStrategy.template;
+                schedulingUnit.requirements_doc.tasks['Target Observation'].specifications_doc.station_groups.forEach(i => {
+                    // setting number here
+                });
                 schedulingUnit.scheduling_constraints_doc = constraint.scheduling_constraints_doc;
                 schedulingUnit.scheduling_constraints_template_id = constraint.id;
                 schedulingUnit.scheduling_constraints_template = constraint.constraint.url;
@@ -325,7 +328,7 @@ const ScheduleService = {
           console.error('[project.services.getSchedulingUnitBySet]',error);
         }
       },
-      getStationGroup: async function() {
+    getStationGroup: async function() {
         try {
             const response = await axios.get('/api/station_type/');
             return response.data.results;
@@ -333,6 +336,15 @@ const ScheduleService = {
             console.error(error);
             return [];
         };
+    },
+    getStations: async function() {
+        try {
+            const response = await axios.get('/api/station_groups/stations/1/dutch');
+            return response.data;
+        }   catch(error) {
+            console.error(error);
+            return [];
+        }
     },
 }
 

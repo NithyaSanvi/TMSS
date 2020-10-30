@@ -134,14 +134,27 @@
     margin-top: 10px;
 }
 .selected_stations .info {
-    font-size: 14px;
-    margin-left: 10px;
-    top: 1px;
-    color: #004B93;
-    font-weight: 600;
-    position: relative;
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0;
+    width: auto !important;
+    top: 2px;
+    span {
+        font-size: 14px !important;
+        padding: 0 !important;
+    }
 }
-
+.text-caps {
+    text-transform: capitalize;
+}
+.station-container {
+    padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    label {
+        display: block;
+    }
+}
 
 
 
