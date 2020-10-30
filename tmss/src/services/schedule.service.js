@@ -324,7 +324,16 @@ const ScheduleService = {
         } catch (error) {
           console.error('[project.services.getSchedulingUnitBySet]',error);
         }
-      }
+      },
+      getStationGroup: async function() {
+        try {
+            const response = await axios.get('/api/station_type/');
+            return response.data.results;
+        }   catch(error) {
+            console.error(error);
+            return [];
+        };
+    },
 }
 
 

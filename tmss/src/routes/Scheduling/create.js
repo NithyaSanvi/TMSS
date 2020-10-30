@@ -9,7 +9,7 @@ import {Dropdown} from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import {Dialog} from 'primereact/components/dialog/Dialog';
 import {Growl} from 'primereact/components/growl/Growl';
-
+import {MultiSelect} from 'primereact/multiselect';
 import AppLoader from '../../layout/components/AppLoader';
 import Jeditor from '../../components/JSONEditor/JEditor';
 import UnitConversion from '../../utils/unit.converter';
@@ -42,6 +42,7 @@ export class SchedulingUnitCreate extends Component {
             constraintSchema:null,                  
             validEditor: false,                     // For JSON editor validation
             validFields: {},                        // For Form Validation
+            selectedStations: []
         }
         this.projects = [];                         // All projects to load project dropdown
         this.schedulingSets = [];                   // All scheduling sets to be filtered for project
@@ -77,13 +78,16 @@ export class SchedulingUnitCreate extends Component {
                             ScheduleService.getSchedulingSets(),
                             ScheduleService.getObservationStrategies(),
                             TaskService.getTaskTemplates(),
-                            ScheduleService.getSchedulingConstraintTemplates()]
+                            ScheduleService.getSchedulingConstraintTemplates(),
+                            ScheduleService.getStationGroup()
+                        ]
         Promise.all(promises).then(responses => {
             this.projects = responses[0];
             this.schedulingSets = responses[1];
             this.observStrategies = responses[2];
             this.taskTemplates = responses[3];
             this.constraintTemplates = responses[4];
+            this.stations = responses[5];
              //  Setting first value as constraint template
              this.constraintStrategy(this.constraintTemplates[0]);
             if (this.state.schedulingUnit.project) {
@@ -474,6 +478,33 @@ export class SchedulingUnitCreate extends Component {
                                         placeholder="Select Constraints Template"/>
                             
                             </div> 
+                        </div>
+                        <div className="p-field p-grid grouping">
+                            <fieldset>
+                                <legend>
+                                    <label>Stations:<span style={{color:'red'}}>*</span></label>
+                                </legend>
+                                <div className="col-lg-3 col-md-3 col-sm-12" data-testid="stations">
+                                    <MultiSelect data-testid="stations" id="stations" optionLabel="value" optionValue="value" filter={true}
+                                        tooltip="Select Stations" tooltipOptions={this.tooltipOptions}
+                                        value={this.state.selectedStations} 
+                                        options={this.stations} 
+                                        placeholder="Select Stations"
+                                        onChange={(e) => this.setState({selectedStations: e.value})}
+                                    />
+                                </div>
+                                {this.state.selectedStations.length ? <div className="col-sm-12 selected_stations" data-testid="selected_stations">
+                                    <label>Selected Stations:</label>
+                                    <div className="col-sm-12 p-0">
+                                        {this.state.selectedStations.map(i => (
+                                            <span className="chips">
+                                                {i}
+                                                <i className="pi pi-info-circle info" aria-hidden="true"></i>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div> : null}
+                            </fieldset>
                         </div>
                         
                     </div>

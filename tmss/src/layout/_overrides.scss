@@ -109,6 +109,38 @@
 .hide {
     display: none !important;
 }
+.grouping {
+    padding: 0 15px;
+}
+.grouping fieldset {
+    border-width: 1px;
+    border-style: double;
+    border-color: #ccc;
+    border-image: initial;
+    padding: 10px;
+    width: 100%;
+}
+.grouping legend {
+    width: auto;
+}
+.grouping .chips {
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    padding: 5px 10px;
+    background: #f1f0f0;
+}
+.grouping .selected_stations {
+    margin-top: 10px;
+}
+.selected_stations .info {
+    font-size: 14px;
+    margin-left: 10px;
+    top: 1px;
+    color: #004B93;
+    font-weight: 600;
+    position: relative;
+}
 
 
 
