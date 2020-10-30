@@ -10,36 +10,40 @@ class SchedulingUnitList extends Component{
      
     constructor(props){
         super(props)
+        const defaultcolumns =  {
+            type:{
+                name:"Type",
+                filter:"select"
+            },
+            name:"Name",
+            description:"Description",
+            created_at:{
+                name:"Created At",
+                filter: "date"
+            },
+            updated_at:{
+                name:"Updated At",
+                filter: "date"
+            },
+            requirements_template_id:{
+                name: "Template",
+                filter: "select"
+            },
+            start_time:"Start Time",
+            stop_time:"End time",
+            duration:"Duration (HH:mm:ss)",
+            status:"Status"
+        };
+        if (!props.hideProjectColumn) {
+            defaultcolumns['project'] = "Project Name";
+        }
         this.state = {
             scheduleunit: [],
             paths: [{
                 "View": "/schedulingunit/view",
             }],
             isLoading: true,
-            defaultcolumns: [ {
-                type:{
-                    name:"Type",
-                    filter:"select"
-                },
-                name:"Name",
-                description:"Description",
-                created_at:{
-                    name:"Created At",
-                    filter: "date"
-                },
-                updated_at:{
-                    name:"Updated At",
-                    filter: "date"
-                },
-                requirements_template_id:{
-                    name: "Template",
-                    filter: "select"
-                },
-                start_time:"Start Time",
-                stop_time:"End time",
-                duration:"Duration (HH:mm:ss)",
-                status:"Status"
-                }],
+            defaultcolumns: [defaultcolumns],
             optionalcolumns:  [{
                 actionpath:"actionpath",
             }],
