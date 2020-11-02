@@ -43,8 +43,10 @@ export class SchedulingUnitCreate extends Component {
             validEditor: false,                     // For JSON editor validation
             validFields: {},                        // For Form Validation
             selectedStations: [],
+            customSelectedStations: [],
             stations: []
-        }
+        };
+        this.customStations = ['test'];
         this.projects = [];                         // All projects to load project dropdown
         this.schedulingSets = [];                   // All scheduling sets to be filtered for project
         this.observStrategies = [];                 // All Observing strategy templates
@@ -90,6 +92,9 @@ export class SchedulingUnitCreate extends Component {
             this.taskTemplates = responses[3];
             this.constraintTemplates = responses[4];
             this.stations = responses[5];
+            this.stations.push({
+                value: 'Custom'
+            });
              //  Setting first value as constraint template
              this.constraintStrategy(this.constraintTemplates[0]);
             if (this.state.schedulingUnit.project) {
@@ -507,27 +512,54 @@ export class SchedulingUnitCreate extends Component {
                                 </div>
                                 {this.state.selectedStations.length ? <div className="col-sm-12 selected_stations" data-testid="selected_stations">
                                     <label>Selected Stations:</label>
-                                    <div className="col-sm-12 p-0">
-                                        {this.state.selectedStations.map(i => (
-                                            <div className="p-field p-grid" key={i}>
-                                                <label className="col-lg-2 col-md-2 col-sm-12 text-caps">
-                                                    {i}
-                                                    <Button icon="pi pi-info-circle" className="p-button-rounded p-button-secondary p-button-text info" onClick={this.showStations} />
-                                                </label>
-                                                <div className="col-lg-3 col-md-3 col-sm-12">
-                                                <InputText id="schedUnitName" data-testid="name" 
-                                                    tooltip="No. of Missing Stations" tooltipOptions={this.tooltipOptions} maxLength="128"
-                                                    placeholder="No. of Missing Stations"
-                                                    ref={input => {this.nameInput = input;}}
-                                                    onChange={(e) => this.setSchedUnitParams(i, e.target.value)}
-                                                    onBlur={(e) => this.setSchedUnitParams(i, e.target.value)}/>
+                                    <div className="col-sm-12 p-0 d-flex flex-wrap">
+                                        {this.state.selectedStations.map(i => {
+                                            return i !== 'Custom' ? (
+                                                <div className="p-field p-grid col-md-6" key={i}>
+                                                    <label className="col-sm-6 text-caps">
+                                                        {i}
+                                                        <Button icon="pi pi-info-circle" className="p-button-rounded p-button-secondary p-button-text info" onClick={this.showStations} />
+                                                    </label>
+                                                    <div className="col-sm-6">
+                                                        <InputText id="schedUnitName" data-testid="name" 
+                                                            tooltip="No. of Missing Stations" tooltipOptions={this.tooltipOptions} maxLength="128"
+                                                            placeholder="No. of Missing Stations"
+                                                            ref={input => {this.nameInput = input;}}
+                                                            onChange={(e) => this.setSchedUnitParams(i, e.target.value)}
+                                                            onBlur={(e) => this.setSchedUnitParams(i, e.target.value)}/>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            ) : (
+                                                <div className="p-field p-grid col-md-12" key={i}>
+                                                    <div className="col-md-6 p-field p-grid">
+                                                        <label className="col-sm-6 text-caps custom-label">
+                                                            {i}
+                                                        </label>
+                                                        <div className="col-sm-6 pr-8 custom-value">
+                                                            <MultiSelect data-testid="stations" id="stations"  filter={true}
+                                                                tooltip="Select Stations" tooltipOptions={this.tooltipOptions}
+                                                                value={this.state.customSelectedStations} 
+                                                                options={this.customStations} 
+                                                                placeholder="Select Stations"
+                                                                onChange={(e) => this.setState({customSelectedStations: e.value})}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-sm-6 custom-field">
+                                                        <InputText id="schedUnitName" data-testid="name" 
+                                                            tooltip="No. of Missing Stations" tooltipOptions={this.tooltipOptions} maxLength="128"
+                                                            placeholder="No. of Missing Stations"
+                                                            ref={input => {this.nameInput = input;}}
+                                                            onChange={(e) => this.setSchedUnitParams(i, e.target.value)}
+                                                            onBlur={(e) => this.setSchedUnitParams(i, e.target.value)}/>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
                                     </div>
                                     
                                 </div> : null}
-                                <OverlayPanel ref={(el) => this.op = el} showCloseIcon dismissable  style={{width: '450px'}}>
+                                <OverlayPanel ref={(el) => this.op = el} dismissable  style={{width: '450px'}}>
                                     <div className="station-container">
                                         {this.state.fetchingStations && <span>Loading...</span>}
                                         {this.state.stations.map(i => (
