@@ -44,7 +44,9 @@ export class SchedulingUnitCreate extends Component {
             validFields: {},                        // For Form Validation
             selectedStations: [],
             customSelectedStations: [],
-            stations: []
+            stations: [],
+            noOfMissingFields: {},
+            missingFieldsErrors: []
         };
         this.customStations = ['test'];
         this.projects = [];                         // All projects to load project dropdown
@@ -75,6 +77,8 @@ export class SchedulingUnitCreate extends Component {
         this.cancelCreate = this.cancelCreate.bind(this);
         this.reset = this.reset.bind(this);
         this.showStations = this.showStations.bind(this);
+        this.getStationGroup = this.getStationGroup.bind(this);
+        this.setNoOfMissingFields = this.setNoOfMissingFields.bind(this);
     }
 
     componentDidMount() {
@@ -123,6 +127,7 @@ export class SchedulingUnitCreate extends Component {
      * @param {number} strategyId 
      */
     async changeStrategy (strategyId) {
+        this.setState({ selectedStrategyId: strategyId})
         const observStrategy = _.find(this.observStrategies, {'id': strategyId});
         const tasks = observStrategy.template.tasks;    
         let paramsOutput = {};
@@ -235,6 +240,8 @@ export class SchedulingUnitCreate extends Component {
         this.validateEditor();
     }
 
+   
+
     /**
      * JEditor's function that to be called when parent wants to trigger change in the JSON Editor
      * @param {Function} editorFunction 
@@ -289,7 +296,7 @@ export class SchedulingUnitCreate extends Component {
         if (Object.keys(validFields).length === Object.keys(this.formRules).length) {
             validForm = true;
         }
-        return validForm;
+        return validForm && !this.state.missingFieldsErrors.length;
     }
     
     /**
@@ -331,7 +338,7 @@ export class SchedulingUnitCreate extends Component {
             $refs.set(observStrategy.template.parameters[index]['refs'][0], this.state.paramsOutput['param_' + index]);
         });
         const const_strategy = {scheduling_constraints_doc: constStrategy, id: this.constraintTemplates[0].id, constraint: this.constraintTemplates[0]};
-        const schedulingUnit = await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, const_strategy);
+        const schedulingUnit = await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, const_strategy, this.state);
         if (schedulingUnit) {
             // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks created successfully!'});
             const dialog = {header: 'Success', detail: 'Scheduling Unit and Tasks are created successfully. Do you want to create another Scheduling Unit?'};
@@ -384,13 +391,64 @@ export class SchedulingUnitCreate extends Component {
         this.state.editorFunction();
     }
 
-    async showStations(e) {
-        this.op.toggle(e);
-        this.setState({fetchingStations: true});
-        const response = await ScheduleService.getStations();
+    async getStations(e) {
+        if (this.state[e]) {
+            return;
+        }
+        this.setState({ [e] : { fetchingStations: true } });
+        const response = await ScheduleService.getStations(e);
+        const observStrategy = _.find(this.observStrategies, {'id': this.state.selectedStrategyId});
+        const stationGroups = observStrategy.template.tasks['Target Observation'].specifications_doc.station_groups; 
+        const missingFields = stationGroups.find(i => {
+            if (i.stations.length === response.stations.length && i.stations[0] === response.stations[0]) {
+                return true;
+            }
+            return false;
+        })
         this.setState({
-            stations: response.stations,
-            fetchingStations: false
+            [e]: {
+                stations: response.stations,
+                fetchingStations: false,
+                missingFields: missingFields ? missingFields.max_nr_missing : ''
+            }
+        });
+    }
+
+    async showStations(e, key) {
+        this.op.toggle(e);
+        this.setState({
+            stations: (this.state[key] && this.state[key].stations ) || [],
+            fetchingStations: (this.state[key] && this.state[key].fetchingStations ) || false
+        })
+    }
+
+    async getStationGroup(e) {
+        this.setState({selectedStations: e.value});
+        e.value.forEach((i) => {
+            this.getStations(i);
+        });
+    }
+
+    setNoOfMissingFields(key, value) {
+        let missingFieldsErrors = this.state.missingFieldsErrors;
+        if (value > this.state[key].stations.length) {
+            if (!missingFieldsErrors.includes(key)) {
+                missingFieldsErrors.push(key);
+            }
+        } else {
+            missingFieldsErrors = missingFieldsErrors.filter(i => i !== key);
+        }
+        this.setState({
+            [key]: {
+                ...this.state[key],
+                missingFields: value,
+                error: value > this.state[key].stations.length
+            },
+            missingFieldsErrors: missingFieldsErrors
+        }, () => {
+            this.setState({
+                validForm: this.validateForm()
+            });
         });
     }
 
@@ -496,7 +554,7 @@ export class SchedulingUnitCreate extends Component {
                             
                             </div> 
                         </div>
-                        <div className="p-field p-grid grouping">
+                       {this.state.selectedStrategyId && <div className="p-field p-grid grouping">
                             <fieldset>
                                 <legend>
                                     <label>Stations:<span style={{color:'red'}}>*</span></label>
@@ -507,7 +565,7 @@ export class SchedulingUnitCreate extends Component {
                                         value={this.state.selectedStations} 
                                         options={this.stations} 
                                         placeholder="Select Stations"
-                                        onChange={(e) => this.setState({selectedStations: e.value})}
+                                        onChange={this.getStationGroup}
                                     />
                                 </div>
                                 {this.state.selectedStations.length ? <div className="col-sm-12 selected_stations" data-testid="selected_stations">
@@ -518,15 +576,16 @@ export class SchedulingUnitCreate extends Component {
                                                 <div className="p-field p-grid col-md-6" key={i}>
                                                     <label className="col-sm-6 text-caps">
                                                         {i}
-                                                        <Button icon="pi pi-info-circle" className="p-button-rounded p-button-secondary p-button-text info" onClick={this.showStations} />
+                                                        <Button icon="pi pi-info-circle" className="p-button-rounded p-button-secondary p-button-text info" onClick={(e) => this.showStations(e, i)} />
                                                     </label>
                                                     <div className="col-sm-6">
                                                         <InputText id="schedUnitName" data-testid="name" 
+                                                            className={(this.state[i] && this.state[i].error) ?'input-error':''}
                                                             tooltip="No. of Missing Stations" tooltipOptions={this.tooltipOptions} maxLength="128"
                                                             placeholder="No. of Missing Stations"
                                                             ref={input => {this.nameInput = input;}}
-                                                            onChange={(e) => this.setSchedUnitParams(i, e.target.value)}
-                                                            onBlur={(e) => this.setSchedUnitParams(i, e.target.value)}/>
+                                                            value={this.state[i].missingFields}
+                                                            onChange={(e) => this.setNoOfMissingFields(i, e.target.value)}/>
                                                     </div>
                                                 </div>
                                             ) : (
@@ -550,8 +609,7 @@ export class SchedulingUnitCreate extends Component {
                                                             tooltip="No. of Missing Stations" tooltipOptions={this.tooltipOptions} maxLength="128"
                                                             placeholder="No. of Missing Stations"
                                                             ref={input => {this.nameInput = input;}}
-                                                            onChange={(e) => this.setSchedUnitParams(i, e.target.value)}
-                                                            onBlur={(e) => this.setSchedUnitParams(i, e.target.value)}/>
+                                                            onChange={(e) => this.setNoOfMissingFields(i, e.target.value)}/>
                                                     </div>
                                                 </div>
                                             )
@@ -568,7 +626,7 @@ export class SchedulingUnitCreate extends Component {
                                     </div>
                                 </OverlayPanel>
                             </fieldset>
-                        </div>
+                        </div>}
                         
                     </div>
                     {this.state.constraintSchema && <div className="p-fluid">

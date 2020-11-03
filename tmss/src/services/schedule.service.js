@@ -212,7 +212,7 @@ const ScheduleService = {
             return [];
         };
     },
-    saveSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit, constraint) {
+    saveSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit, constraint, state) {
         try {
             // Create the scheduling unit draft with observation strategy and scheduling set
             const url = `/api/scheduling_unit_observing_strategy_template/${observStrategy.id}/create_scheduling_unit/?scheduling_set_id=${schedulingUnit.scheduling_set_id}&name=${schedulingUnit.name}&description=${schedulingUnit.description}`
@@ -222,7 +222,13 @@ const ScheduleService = {
                 // Update the newly created SU draft requirement_doc with captured parameter values
                 schedulingUnit.requirements_doc = observStrategy.template;
                 schedulingUnit.requirements_doc.tasks['Target Observation'].specifications_doc.station_groups.forEach(i => {
-                    // setting number here
+                    (state.selectedStations || []).forEach(key => {
+                        const station = state[key] ? state[key].stations : [];
+                        const max_nr_missing = state[key] ? state[key].missingFields : 0;
+                        if (i.stations.length === station.length && i.stations[0] === station[0]) {
+                            i.max_nr_missing = parseInt(max_nr_missing);
+                        }
+                    });
                 });
                 schedulingUnit.scheduling_constraints_doc = constraint.scheduling_constraints_doc;
                 schedulingUnit.scheduling_constraints_template_id = constraint.id;
@@ -330,16 +336,27 @@ const ScheduleService = {
       },
     getStationGroup: async function() {
         try {
-            const response = await axios.get('/api/station_type/');
-            return response.data.results;
+            // const response = await axios.get('/api/station_type/');
+            // return response.data.results;
+            return [{
+                value: 'dutch'
+            },{
+                value: 'international'
+            },{
+                value: 'core'
+            },{
+                value: 'remote'
+            },{
+                value: 'superterp'
+            }]
         }   catch(error) {
             console.error(error);
             return [];
         };
     },
-    getStations: async function() {
+    getStations: async function(e) {
         try {
-            const response = await axios.get('/api/station_groups/stations/1/dutch');
+            const response = await axios.get(`/api/station_groups/stations/1/${e}`);
             return response.data;
         }   catch(error) {
             console.error(error);
