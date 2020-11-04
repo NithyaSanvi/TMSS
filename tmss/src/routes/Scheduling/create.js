@@ -43,6 +43,7 @@ export class SchedulingUnitCreate extends Component {
             validEditor: false,                     // For JSON editor validation
             validFields: {},                        // For Form Validation
             selectedStations: [],
+            customStations: [],
             customSelectedStations: [],
             stations: [],
             noOfMissingFields: {},
@@ -96,6 +97,9 @@ export class SchedulingUnitCreate extends Component {
             this.taskTemplates = responses[3];
             this.constraintTemplates = responses[4];
             this.stations = responses[5];
+            this.stations.forEach(st => {
+                this.getStations(st.value);
+            });
             this.stations.push({
                 value: 'Custom'
             });
@@ -395,22 +399,21 @@ export class SchedulingUnitCreate extends Component {
         if (this.state[e]) {
             return;
         }
-        this.setState({ [e] : { fetchingStations: true } });
         const response = await ScheduleService.getStations(e);
-        const observStrategy = _.find(this.observStrategies, {'id': this.state.selectedStrategyId});
-        const stationGroups = observStrategy.template.tasks['Target Observation'].specifications_doc.station_groups; 
+        const stationGroups = this.observStrategies[0].template.tasks['Target Observation'].specifications_doc.station_groups; 
         const missingFields = stationGroups.find(i => {
             if (i.stations.length === response.stations.length && i.stations[0] === response.stations[0]) {
+                i.stationType = e;
                 return true;
             }
             return false;
-        })
+        });
         this.setState({
             [e]: {
                 stations: response.stations,
-                fetchingStations: false,
                 missingFields: missingFields ? missingFields.max_nr_missing : ''
-            }
+            },
+            customStations: [...this.state.customStations, ...response.stations],
         });
     }
 
@@ -418,15 +421,20 @@ export class SchedulingUnitCreate extends Component {
         this.op.toggle(e);
         this.setState({
             stations: (this.state[key] && this.state[key].stations ) || [],
-            fetchingStations: (this.state[key] && this.state[key].fetchingStations ) || false
-        })
+        });
     }
 
     async getStationGroup(e) {
+        if (e.value.includes('Custom') && !this.state.selectedStations.includes('Custom')) {
+            const custom = this.observStrategies[0].template.tasks['Target Observation'].specifications_doc.station_groups.find(i => !i.stationType); 
+            this.setState({
+                customSelectedStations: custom.stations,
+                [e.value]: {
+                    missingFields: custom.max_nr_missing
+                }
+            });
+        }
         this.setState({selectedStations: e.value});
-        e.value.forEach((i) => {
-            this.getStations(i);
-        });
     }
 
     setNoOfMissingFields(key, value) {
@@ -554,7 +562,7 @@ export class SchedulingUnitCreate extends Component {
                             
                             </div> 
                         </div>
-                       {this.state.selectedStrategyId && <div className="p-field p-grid grouping">
+                       <div className="p-field p-grid grouping">
                             <fieldset>
                                 <legend>
                                     <label>Stations:<span style={{color:'red'}}>*</span></label>
@@ -598,7 +606,7 @@ export class SchedulingUnitCreate extends Component {
                                                             <MultiSelect data-testid="stations" id="stations"  filter={true}
                                                                 tooltip="Select Stations" tooltipOptions={this.tooltipOptions}
                                                                 value={this.state.customSelectedStations} 
-                                                                options={this.customStations} 
+                                                                options={this.state.customStations} 
                                                                 placeholder="Select Stations"
                                                                 onChange={(e) => this.setState({customSelectedStations: e.value})}
                                                             />
@@ -608,6 +616,7 @@ export class SchedulingUnitCreate extends Component {
                                                         <InputText id="schedUnitName" data-testid="name" 
                                                             tooltip="No. of Missing Stations" tooltipOptions={this.tooltipOptions} maxLength="128"
                                                             placeholder="No. of Missing Stations"
+                                                            value={this.state[i] && this.state[i].missingFields ? this.state[i].missingFields : ''}
                                                             ref={input => {this.nameInput = input;}}
                                                             onChange={(e) => this.setNoOfMissingFields(i, e.target.value)}/>
                                                     </div>
@@ -626,8 +635,7 @@ export class SchedulingUnitCreate extends Component {
                                     </div>
                                 </OverlayPanel>
                             </fieldset>
-                        </div>}
-                        
+                        </div>
                     </div>
                     {this.state.constraintSchema && <div className="p-fluid">
                         <div className="p-grid">
