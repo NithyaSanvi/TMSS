@@ -222,6 +222,7 @@ const ScheduleService = {
                 // Update the newly created SU draft requirement_doc with captured parameter values
                 schedulingUnit.requirements_doc = observStrategy.template;
                 schedulingUnit.requirements_doc.tasks['Target Observation'].specifications_doc.station_groups.forEach(i => {
+                    delete i.stationType;
                     (state.selectedStations || []).forEach(key => {
                         const station = state[key] ? state[key].stations : [];
                         const max_nr_missing = state[key] ? state[key].missingFields : 0;
