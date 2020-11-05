@@ -257,9 +257,25 @@ const ScheduleService = {
         };
     },
     
-    updateSUDraftFromObservStrategy: async function(observStrategy,schedulingUnit,tasks,tasksToUpdate) {
+    updateSUDraftFromObservStrategy: async function(observStrategy,schedulingUnit,tasks,tasksToUpdate, state) {
         try {
             delete schedulingUnit['duration'];
+            const station_groups = [];
+            (state.selectedStations || []).forEach(key => {
+                let station_group = {};
+                const stations = state[key] ? state[key].stations : [];
+                const max_nr_missing = parseInt(state[key] ? state[key].missingFields : 0);
+                station_group = {
+                    stations,
+                    max_nr_missing
+                };  
+                if (key === 'Custom') {
+                    station_group.stations = state.customSelectedStations;
+                }
+                station_groups.push(station_group);                 
+            });
+            debugger
+            schedulingUnit.requirements_doc.tasks['Target Observation'].specifications_doc.station_groups = station_groups;
             schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
             for (const taskToUpdate in tasksToUpdate) {
                 let task = tasks.find(task => { return task.name === taskToUpdate});
