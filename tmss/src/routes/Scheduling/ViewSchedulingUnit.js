@@ -296,23 +296,12 @@ class ViewSchedulingUnit extends Component{
                     </div>
                 </>
                 }
-                <div className="p-field p-grid grouping p-fluid">
+                {this.state.selectedStations.length ? <div className="p-field p-grid grouping p-fluid">
                     <fieldset>
                         <legend>
-                            <label>Stations:<span style={{color:'red'}}>*</span></label>
-                        </legend>
-                        <div className="col-lg-3 col-md-3 col-sm-12" data-testid="stations">
-                            <MultiSelect data-testid="stations" id="stations" optionLabel="value" optionValue="value" filter={true}
-                                tooltip="Select Stations" tooltipOptions={this.tooltipOptions}
-                                value={this.state.selectedStations} 
-                                options={this.state.stationOptions} 
-                                placeholder="Select Stations"
-                                disabled
-                                onChange={(e) => this.getStationGroup(e.value)}
-                            />
-                        </div>
-                        {this.state.selectedStations.length ? <div className="col-sm-12 selected_stations" data-testid="selected_stations">
                             <label>Selected Stations:</label>
+                        </legend>
+                        <div className="col-sm-12 selected_stations" data-testid="selected_stations">
                             <div className="col-sm-12 p-0 d-flex flex-wrap">
                                 {this.state.selectedStations.map(i => {
                                     return i !== 'Custom' ? (
@@ -364,7 +353,7 @@ class ViewSchedulingUnit extends Component{
                                 })}
                             </div>
                             
-                        </div> : null}
+                        </div> 
                         <OverlayPanel ref={(el) => this.op = el} dismissable  style={{width: '450px'}}>
                             <div className="station-container">
                                 {this.state.fetchingStations && <span>Loading...</span>}
@@ -374,7 +363,7 @@ class ViewSchedulingUnit extends Component{
                             </div>
                         </OverlayPanel>
                     </fieldset>
-                </div>
+                </div>: null}
                 {this.state.scheduleunit && this.state.scheduleunit.scheduling_constraints_doc && <SchedulingConstraint disable constraintTemplate={this.state.constraintSchema} initValue={this.state.scheduleunit.scheduling_constraints_doc} />}
                 <div>
                     <h3>Tasks Details</h3>
