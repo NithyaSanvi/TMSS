@@ -101,9 +101,6 @@ export class SchedulingUnitCreate extends Component {
             this.taskTemplates = responses[3];
             this.constraintTemplates = responses[4];
             this.stations = responses[5];
-            this.stations.push({
-                value: 'Custom'
-            });
              //  Setting first value as constraint template
              this.constraintStrategy(this.constraintTemplates[0]);
             if (this.state.schedulingUnit.project) {
@@ -126,6 +123,23 @@ export class SchedulingUnitCreate extends Component {
         this.setState({schedulingUnit: schedulingUnit, schedulingSets: projectSchedSets, validForm: this.validateForm('project')});
     }
 
+    getAllStations() {
+        const promises = [];
+
+        this.stations.forEach(st => {
+            promises.push(ScheduleService.getStations(st.value))
+        });
+        Promise.all(promises).then(responses => {
+            responses.forEach((response, index) => {
+                this.getStations(this.stations[index].value, response);
+            });
+            this.stations.push({
+                value: 'Custom'
+            });
+            this.getStations('Custom');
+        });
+    }
+
     /**
      * Function called when observation strategy template is changed. 
      * It generates the JSON schema for JSON editor and defult vales for the parameters to be captured
@@ -133,11 +147,7 @@ export class SchedulingUnitCreate extends Component {
      */
     async changeStrategy (strategyId) {
         this.setState({ selectedStrategyId: strategyId, stationOptions: this.stations}, () => {
-            this.stations.forEach(st => {
-                if (st.value !== 'Custom') {
-                    this.getStations(st.value);
-                }
-            });
+            this.getAllStations();
         });
         const observStrategy = _.find(this.observStrategies, {'id': strategyId});
         const tasks = observStrategy.template.tasks;    
@@ -250,8 +260,6 @@ export class SchedulingUnitCreate extends Component {
         this.setState({schedulingUnit: schedulingUnit, validForm: this.validateForm(key), validEditor: this.validateEditor()});
         this.validateEditor();
     }
-
-   
 
     /**
      * JEditor's function that to be called when parent wants to trigger change in the JSON Editor
@@ -402,11 +410,16 @@ export class SchedulingUnitCreate extends Component {
         this.state.editorFunction();
     }
 
-    async getStations(e) {
-        if (this.state[e]) {
+    getStations(e, response) {
+        let selectedStations;
+        if (e === 'Custom') {
+            selectedStations = [...this.state.selectedStations, e];
+            if (!selectedStations.includes('Custom')) {
+                selectedStations = ['Custom', ...selectedStations];
+            }
+            this.getStationGroup(selectedStations); 
             return;
         }
-        const response = await ScheduleService.getStations(e);
         const observStrategy = _.find(this.observStrategies, {'id': this.state.selectedStrategyId});
         const stationGroups = observStrategy.template.tasks['Target Observation'].specifications_doc.station_groups; 
         const missingFields = stationGroups.find(i => {
@@ -416,6 +429,10 @@ export class SchedulingUnitCreate extends Component {
             }
             return false;
         });
+        if (missingFields) {
+            selectedStations = [...this.state.selectedStations, e];
+            this.getStationGroup(selectedStations);
+        }
         this.setState({
             [e]: {
                 stations: response.stations,
@@ -436,7 +453,7 @@ export class SchedulingUnitCreate extends Component {
     }
 
     async getStationGroup(e) {
-        if (e.value.includes('Custom') && !this.state.selectedStations.includes('Custom')) {
+        if (e.includes('Custom') && !this.state.selectedStations.includes('Custom')) {
             const observStrategy = _.find(this.observStrategies, {'id': this.state.selectedStrategyId});
             const stationGroups = observStrategy.template.tasks['Target Observation'].specifications_doc.station_groups; 
             const custom = stationGroups.find(i => !i.stationType); 
@@ -448,7 +465,7 @@ export class SchedulingUnitCreate extends Component {
                 }
             });
         }
-        this.setState({selectedStations: e.value});
+        this.setState({selectedStations: e});
     }
 
     setNoOfMissingFields(key, value) {
@@ -587,7 +604,7 @@ export class SchedulingUnitCreate extends Component {
                                         value={this.state.selectedStations} 
                                         options={this.state.stationOptions} 
                                         placeholder="Select Stations"
-                                        onChange={this.getStationGroup}
+                                        onChange={(e) => this.getStationGroup(e.value)}
                                     />
                                 </div>
                                 {this.state.selectedStations.length ? <div className="col-sm-12 selected_stations" data-testid="selected_stations">
@@ -606,7 +623,7 @@ export class SchedulingUnitCreate extends Component {
                                                             tooltip="No. of Missing Stations" tooltipOptions={this.tooltipOptions} maxLength="128"
                                                             placeholder="No. of Missing Stations"
                                                             ref={input => {this.nameInput = input;}}
-                                                            value={this.state[i].missingFields}
+                                                            value={this.state[i] && this.state[i].missingFields ? this.state[i].missingFields : ''}
                                                             onChange={(e) => this.setNoOfMissingFields(i, e.target.value)}/>
                                                     </div>
                                                 </div>
