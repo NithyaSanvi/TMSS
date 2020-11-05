@@ -47,7 +47,8 @@ export class SchedulingUnitCreate extends Component {
             customSelectedStations: [],
             stations: [],
             noOfMissingFields: {},
-            missingFieldsErrors: []
+            missingFieldsErrors: [],
+            stationOptions: []
         };
         this.customStations = ['test'];
         this.projects = [];                         // All projects to load project dropdown
@@ -97,9 +98,6 @@ export class SchedulingUnitCreate extends Component {
             this.taskTemplates = responses[3];
             this.constraintTemplates = responses[4];
             this.stations = responses[5];
-            this.stations.forEach(st => {
-                this.getStations(st.value);
-            });
             this.stations.push({
                 value: 'Custom'
             });
@@ -131,7 +129,13 @@ export class SchedulingUnitCreate extends Component {
      * @param {number} strategyId 
      */
     async changeStrategy (strategyId) {
-        this.setState({ selectedStrategyId: strategyId})
+        this.setState({ selectedStrategyId: strategyId, stationOptions: this.stations}, () => {
+            this.stations.forEach(st => {
+                if (st.value !== 'Custom') {
+                    this.getStations(st.value);
+                }
+            });
+        });
         const observStrategy = _.find(this.observStrategies, {'id': strategyId});
         const tasks = observStrategy.template.tasks;    
         let paramsOutput = {};
@@ -400,7 +404,8 @@ export class SchedulingUnitCreate extends Component {
             return;
         }
         const response = await ScheduleService.getStations(e);
-        const stationGroups = this.observStrategies[0].template.tasks['Target Observation'].specifications_doc.station_groups; 
+        const observStrategy = _.find(this.observStrategies, {'id': this.state.selectedStrategyId});
+        const stationGroups = observStrategy.template.tasks['Target Observation'].specifications_doc.station_groups; 
         const missingFields = stationGroups.find(i => {
             if (i.stations.length === response.stations.length && i.stations[0] === response.stations[0]) {
                 i.stationType = e;
@@ -571,7 +576,7 @@ export class SchedulingUnitCreate extends Component {
                                     <MultiSelect data-testid="stations" id="stations" optionLabel="value" optionValue="value" filter={true}
                                         tooltip="Select Stations" tooltipOptions={this.tooltipOptions}
                                         value={this.state.selectedStations} 
-                                        options={this.stations} 
+                                        options={this.state.stationOptions} 
                                         placeholder="Select Stations"
                                         onChange={this.getStationGroup}
                                     />
