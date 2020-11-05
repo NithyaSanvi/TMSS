@@ -43,6 +43,9 @@ export class SchedulingUnitCreate extends Component {
             validEditor: false,                     // For JSON editor validation
             validFields: {},                        // For Form Validation
             selectedStations: [],
+            Custom: {
+                stations: []
+            },
             customStations: [],
             customSelectedStations: [],
             stations: [],
@@ -418,6 +421,9 @@ export class SchedulingUnitCreate extends Component {
                 stations: response.stations,
                 missingFields: missingFields ? missingFields.max_nr_missing : ''
             },
+            ['Custom']: {
+                stations: [...this.state['Custom'].stations, ...response.stations], 
+            },
             customStations: [...this.state.customStations, ...response.stations],
         });
     }
@@ -431,11 +437,14 @@ export class SchedulingUnitCreate extends Component {
 
     async getStationGroup(e) {
         if (e.value.includes('Custom') && !this.state.selectedStations.includes('Custom')) {
-            const custom = this.observStrategies[0].template.tasks['Target Observation'].specifications_doc.station_groups.find(i => !i.stationType); 
+            const observStrategy = _.find(this.observStrategies, {'id': this.state.selectedStrategyId});
+            const stationGroups = observStrategy.template.tasks['Target Observation'].specifications_doc.station_groups; 
+            const custom = stationGroups.find(i => !i.stationType); 
             this.setState({
                 customSelectedStations: custom.stations,
-                [e.value]: {
-                    missingFields: custom.max_nr_missing
+                ['Custom']: {
+                    missingFields: custom.max_nr_missing,
+                    ...this.state['Custom']
                 }
             });
         }
@@ -619,6 +628,7 @@ export class SchedulingUnitCreate extends Component {
                                                     </div>
                                                     <div className="col-sm-6 custom-field">
                                                         <InputText id="schedUnitName" data-testid="name" 
+                                                            className={(this.state[i] && this.state[i].error) ?'input-error':''}
                                                             tooltip="No. of Missing Stations" tooltipOptions={this.tooltipOptions} maxLength="128"
                                                             placeholder="No. of Missing Stations"
                                                             value={this.state[i] && this.state[i].missingFields ? this.state[i].missingFields : ''}
