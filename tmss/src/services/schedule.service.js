@@ -100,15 +100,15 @@ const ScheduleService = {
                 scheduletask['actionpath'] = '/task/view/draft/'+task['id'];
                 scheduletask['blueprint_draft'] = task['task_blueprints'];
                 scheduletask['status'] = task['status'];
-
               
+
                 //fetch task draft details
                 for(const key of commonkeys){
                     scheduletask[key] = task[key];
                 }
                 scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                 scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-                
+                scheduletask['specifications_doc'] = task['specifications_doc'];
                 scheduletask.duration = moment.utc((scheduletask.duration || 0)*1000).format('HH:mm:ss'); 
                 scheduletask.relative_start_time = moment.utc(scheduletask.relative_start_time*1000).format('HH:mm:ss'); 
                 scheduletask.relative_stop_time = moment.utc(scheduletask.relative_stop_time*1000).format('HH:mm:ss'); 
@@ -221,16 +221,21 @@ const ScheduleService = {
             if (schedulingUnit && schedulingUnit.id) {
                 // Update the newly created SU draft requirement_doc with captured parameter values
                 schedulingUnit.requirements_doc = observStrategy.template;
-                schedulingUnit.requirements_doc.tasks['Target Observation'].specifications_doc.station_groups.forEach(i => {
-                    delete i.stationType;
-                    (state.selectedStations || []).forEach(key => {
-                        const station = state[key] ? state[key].stations : [];
-                        const max_nr_missing = state[key] ? state[key].missingFields : 0;
-                        if (i.stations.length === station.length && i.stations[0] === station[0]) {
-                            i.max_nr_missing = parseInt(max_nr_missing);
-                        }
-                    });
+                const station_groups = [];
+                (state.selectedStations || []).forEach(key => {
+                    let station_group = {};
+                    const stations = state[key] ? state[key].stations : [];
+                    const max_nr_missing = parseInt(state[key] ? state[key].missingFields : 0);
+                    station_group = {
+                        stations,
+                        max_nr_missing
+                    };  
+                    if (key === 'Custom') {
+                        station_group.stations = state.customSelectedStations;
+                    }
+                    station_groups.push(station_group);                 
                 });
+                schedulingUnit.requirements_doc.tasks['Target Observation'].specifications_doc.station_groups = station_groups;
                 schedulingUnit.scheduling_constraints_doc = constraint.scheduling_constraints_doc;
                 schedulingUnit.scheduling_constraints_template_id = constraint.id;
                 schedulingUnit.scheduling_constraints_template = constraint.constraint.url;

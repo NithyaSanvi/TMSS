@@ -1,8 +1,12 @@
 import React, { Component } from 'react'
 // import {Link} from 'react-router-dom'
+import _ from 'lodash';
 import 'primeflex/primeflex.css';
 import { Chips } from 'primereact/chips';
-
+import { Button } from 'primereact/button';
+import {InputText} from 'primereact/inputtext';
+import {MultiSelect} from 'primereact/multiselect';
+import { OverlayPanel } from 'primereact/overlaypanel';
 import AppLoader from "./../../layout/components/AppLoader";
 import PageHeader from '../../layout/components/PageHeader';
 
@@ -24,7 +28,16 @@ class ViewSchedulingUnit extends Component{
             paths: [{
                 "View": "/task",
             }],
-
+            Custom: {
+                stations: []
+            },
+            selectedStations: [],
+            stationOptions: [],
+            customStations: [],
+            customSelectedStations: [],
+            stations: [],
+            noOfMissingFields: {},
+            missingFieldsErrors: [],
             defaultcolumns: [ {
                 status_logs: "Status Logs",
                 tasktype:{
@@ -75,6 +88,7 @@ class ViewSchedulingUnit extends Component{
         this.actions = [
             {icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', link: this.props.history.goBack} 
         ];
+        this.stations = []
         this.constraintTemplates = [];
         if (this.props.match.params.type === 'draft') {
             this.actions.unshift({icon: 'fa-edit', title: 'Click to edit',  props : { pathname:`/schedulingunit/edit/${ this.props.match.params.id}`}
@@ -90,7 +104,7 @@ class ViewSchedulingUnit extends Component{
         }
        }
 
-    componentDidMount(){ 
+    async componentDidMount(){ 
         let schedule_id = this.state.scheduleunitId;
         let schedule_type = this.state.scheduleunitType;
         if (schedule_type && schedule_id) {
@@ -101,6 +115,8 @@ class ViewSchedulingUnit extends Component{
                     </button>
                 );
             };
+            this.stations = await ScheduleService.getStationGroup();
+            this.setState({stationOptions: this.stations});
             this.getScheduleUnit(schedule_type, schedule_id)
             .then(schedulingUnit =>{
                 if (schedulingUnit) {
@@ -114,11 +130,13 @@ class ViewSchedulingUnit extends Component{
                             task.status_logs = task.tasktype === "Blueprint"?subtaskComponent(task):"";
                             return task;
                         });
+                        const targetObservation = tasks.find(task => task.name === 'Target Observation');
                         this.setState({
                             scheduleunit : schedulingUnit,
                             schedule_unit_task : tasks,
                             isLoading: false,
-                        });
+                            targetObservation
+                        }, this.getAllStations);
                     });
                 }   else {
                     this.setState({
@@ -128,7 +146,80 @@ class ViewSchedulingUnit extends Component{
             });
 		}
     }
-    
+
+    getAllStations() {
+        const promises = [];
+
+        this.stations.forEach(st => {
+            promises.push(ScheduleService.getStations(st.value))
+        });
+        Promise.all(promises).then(responses => {
+            responses.forEach((response, index) => {
+                this.getStations(this.stations[index].value, response);
+            });
+            this.stations.push({
+                value: 'Custom'
+            });
+            this.getStations('Custom');
+        });
+    }
+
+    getStations(e, response) {
+        let selectedStations;
+        if (e === 'Custom') {
+            selectedStations = [...this.state.selectedStations, e];
+            if (!selectedStations.includes('Custom')) {
+                selectedStations = ['Custom', ...selectedStations];
+            }
+            this.getStationGroup(selectedStations); 
+            return;
+        }
+        const stationGroups = this.state.targetObservation.specifications_doc.station_groups; 
+        const missingFields = stationGroups.find(i => {
+            if (i.stations.length === response.stations.length && i.stations[0] === response.stations[0]) {
+                i.stationType = e;
+                return true;
+            }
+            return false;
+        });
+        if (missingFields) {
+            selectedStations = [...this.state.selectedStations, e];
+            this.getStationGroup(selectedStations);
+        }
+        this.setState({
+            [e]: {
+                stations: response.stations,
+                missingFields: missingFields ? missingFields.max_nr_missing : ''
+            },
+            ['Custom']: {
+                stations: [...this.state['Custom'].stations, ...response.stations], 
+            },
+            customStations: [...this.state.customStations, ...response.stations],
+        });
+    }
+
+    async showStations(e, key) {
+        this.op.toggle(e);
+        this.setState({
+            stations: (this.state[key] && this.state[key].stations ) || [],
+        });
+    }
+
+    async getStationGroup(e) {
+        if (e.includes('Custom') && !this.state.selectedStations.includes('Custom')) {
+            const stationGroups = this.state.targetObservation.specifications_doc.station_groups; 
+            const custom = stationGroups.find(i => !i.stationType); 
+            this.setState({
+                customSelectedStations: custom.stations,
+                ['Custom']: {
+                    missingFields: custom.max_nr_missing,
+                    ...this.state['Custom']
+                }
+            });
+        }
+        this.setState({selectedStations: e});
+    }
+   
     getScheduleUnitTasks(type, scheduleunit){
         if(type === 'draft')
             return ScheduleService.getTasksBySchedulingUnit(scheduleunit.id);
@@ -204,7 +295,86 @@ class ViewSchedulingUnit extends Component{
                         </div>
                     </div>
                 </>
-			    }
+                }
+                <div className="p-field p-grid grouping p-fluid">
+                    <fieldset>
+                        <legend>
+                            <label>Stations:<span style={{color:'red'}}>*</span></label>
+                        </legend>
+                        <div className="col-lg-3 col-md-3 col-sm-12" data-testid="stations">
+                            <MultiSelect data-testid="stations" id="stations" optionLabel="value" optionValue="value" filter={true}
+                                tooltip="Select Stations" tooltipOptions={this.tooltipOptions}
+                                value={this.state.selectedStations} 
+                                options={this.state.stationOptions} 
+                                placeholder="Select Stations"
+                                disabled
+                                onChange={(e) => this.getStationGroup(e.value)}
+                            />
+                        </div>
+                        {this.state.selectedStations.length ? <div className="col-sm-12 selected_stations" data-testid="selected_stations">
+                            <label>Selected Stations:</label>
+                            <div className="col-sm-12 p-0 d-flex flex-wrap">
+                                {this.state.selectedStations.map(i => {
+                                    return i !== 'Custom' ? (
+                                        <div className="p-field p-grid col-md-6" key={i}>
+                                            <label className="col-sm-6 text-caps">
+                                                {i}
+                                                <Button icon="pi pi-info-circle" className="p-button-rounded p-button-secondary p-button-text info" onClick={(e) => this.showStations(e, i)} />
+                                            </label>
+                                            <div className="col-sm-6">
+                                                <InputText id="schedUnitName" data-testid="name" 
+                                                    className={(this.state[i] && this.state[i].error) ?'input-error':''}
+                                                    tooltip="No. of Missing Stations" tooltipOptions={this.tooltipOptions} maxLength="128"
+                                                    placeholder="No. of Missing Stations"
+                                                    ref={input => {this.nameInput = input;}}
+                                                    disabled
+                                                    value={this.state[i] && this.state[i].missingFields ? this.state[i].missingFields : ''}
+                                                    onChange={(e) => this.setNoOfMissingFields(i, e.target.value)}/>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="p-field p-grid col-md-12" key={i}>
+                                            <div className="col-md-6 p-field p-grid">
+                                                <label className="col-sm-6 text-caps custom-label">
+                                                    {i}
+                                                </label>
+                                                <div className="col-sm-6 pr-8 custom-value">
+                                                    <MultiSelect data-testid="stations" id="stations"  filter={true}
+                                                        tooltip="Select Stations" tooltipOptions={this.tooltipOptions}
+                                                        value={this.state.customSelectedStations} 
+                                                        options={this.state.customStations} 
+                                                        placeholder="Select Stations"
+                                                        disabled
+                                                        onChange={(e) => this.setState({customSelectedStations: e.value})}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="col-sm-6 custom-field">
+                                                <InputText id="schedUnitName" data-testid="name" 
+                                                    className={(this.state[i] && this.state[i].error) ?'input-error':''}
+                                                    tooltip="No. of Missing Stations" tooltipOptions={this.tooltipOptions} maxLength="128"
+                                                    placeholder="No. of Missing Stations"
+                                                    value={this.state[i] && this.state[i].missingFields ? this.state[i].missingFields : ''}
+                                                    ref={input => {this.nameInput = input;}}
+                                                    disabled
+                                                    onChange={(e) => this.setNoOfMissingFields(i, e.target.value)}/>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                            
+                        </div> : null}
+                        <OverlayPanel ref={(el) => this.op = el} dismissable  style={{width: '450px'}}>
+                            <div className="station-container">
+                                {this.state.fetchingStations && <span>Loading...</span>}
+                                {this.state.stations.map(i => (
+                                    <label>{i}</label>
+                                ))}
+                            </div>
+                        </OverlayPanel>
+                    </fieldset>
+                </div>
                 {this.state.scheduleunit && this.state.scheduleunit.scheduling_constraints_doc && <SchedulingConstraint disable constraintTemplate={this.state.constraintSchema} initValue={this.state.scheduleunit.scheduling_constraints_doc} />}
                 <div>
                     <h3>Tasks Details</h3>
