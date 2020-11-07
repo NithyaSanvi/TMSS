@@ -6,7 +6,7 @@ import {InputText} from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import UIConstants from '../../utils/ui.constants';
 import ScheduleService from '../../services/schedule.service';
-
+/* eslint-disable react-hooks/exhaustive-deps */
 /*
 const props = {
     selectedStations,
@@ -90,7 +90,7 @@ export default (props) => {
                     stations: response.stations,
                     missingFields: missingFields ? missingFields.max_nr_missing : ''
                 },
-                ['Custom']: {
+                Custom: {
                     stations: [...copyState['Custom'].stations, ...response.stations], 
                 },
             };
@@ -107,7 +107,7 @@ export default (props) => {
         const custom = stationGroups.find(i => !i.stationType);
         copyState = {
             ...copyState,
-            ['Custom']: {
+            Custom: {
                 ...copyState['Custom'],
                 missingFields: custom.max_nr_missing
             },
