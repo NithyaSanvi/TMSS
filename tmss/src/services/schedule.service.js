@@ -274,7 +274,6 @@ const ScheduleService = {
                 }
                 station_groups.push(station_group);                 
             });
-            debugger
             schedulingUnit.requirements_doc.tasks['Target Observation'].specifications_doc.station_groups = station_groups;
             schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
             for (const taskToUpdate in tasksToUpdate) {

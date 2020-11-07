@@ -9,17 +9,16 @@ import {Dropdown} from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import {Dialog} from 'primereact/components/dialog/Dialog';
 import {Growl} from 'primereact/components/growl/Growl';
-import {MultiSelect} from 'primereact/multiselect';
 import AppLoader from '../../layout/components/AppLoader';
 import Jeditor from '../../components/JSONEditor/JEditor';
 import UnitConversion from '../../utils/unit.converter';
-import { OverlayPanel } from 'primereact/overlaypanel';
 import ProjectService from '../../services/project.service';
 import ScheduleService from '../../services/schedule.service';
 import TaskService from '../../services/task.service';
 import UIConstants from '../../utils/ui.constants';
 import PageHeader from '../../layout/components/PageHeader';
 import SchedulingConstraint from './Scheduling.Constraints';
+import Stations from './Stations';
 /**
  * Component to create a new SchedulingUnit from Observation strategy template
  */
@@ -42,18 +41,9 @@ export class SchedulingUnitCreate extends Component {
             constraintSchema:null,                  
             validEditor: false,                     // For JSON editor validation
             validFields: {},                        // For Form Validation
-            selectedStations: [],
-            Custom: {
-                stations: []
-            },
-            customStations: [],
-            customSelectedStations: [],
-            stations: [],
-            noOfMissingFields: {},
             missingFieldsErrors: [],
             stationOptions: []
         };
-        this.customStations = ['test'];
         this.projects = [];                         // All projects to load project dropdown
         this.schedulingSets = [];                   // All scheduling sets to be filtered for project
         this.observStrategies = [];                 // All Observing strategy templates
@@ -81,9 +71,6 @@ export class SchedulingUnitCreate extends Component {
         this.saveSchedulingUnit = this.saveSchedulingUnit.bind(this);
         this.cancelCreate = this.cancelCreate.bind(this);
         this.reset = this.reset.bind(this);
-        this.showStations = this.showStations.bind(this);
-        this.getStationGroup = this.getStationGroup.bind(this);
-        this.setNoOfMissingFields = this.setNoOfMissingFields.bind(this);
     }
 
     componentDidMount() {
@@ -123,32 +110,13 @@ export class SchedulingUnitCreate extends Component {
         this.setState({schedulingUnit: schedulingUnit, schedulingSets: projectSchedSets, validForm: this.validateForm('project')});
     }
 
-    getAllStations() {
-        const promises = [];
-
-        this.stations.forEach(st => {
-            promises.push(ScheduleService.getStations(st.value))
-        });
-        Promise.all(promises).then(responses => {
-            responses.forEach((response, index) => {
-                this.getStations(this.stations[index].value, response);
-            });
-            this.stations.push({
-                value: 'Custom'
-            });
-            this.getStations('Custom');
-        });
-    }
-
     /**
      * Function called when observation strategy template is changed. 
      * It generates the JSON schema for JSON editor and defult vales for the parameters to be captured
      * @param {number} strategyId 
      */
     async changeStrategy (strategyId) {
-        this.setState({ selectedStrategyId: strategyId, stationOptions: this.stations}, () => {
-            this.getAllStations();
-        });
+        this.setState({ selectedStrategyId: strategyId });
         const observStrategy = _.find(this.observStrategies, {'id': strategyId});
         const tasks = observStrategy.template.tasks;    
         let paramsOutput = {};
@@ -410,86 +378,18 @@ export class SchedulingUnitCreate extends Component {
         this.state.editorFunction();
     }
 
-    getStations(e, response) {
-        let selectedStations;
-        if (e === 'Custom') {
-            selectedStations = [...this.state.selectedStations, e];
-            if (!selectedStations.includes('Custom')) {
-                selectedStations = ['Custom', ...selectedStations];
-            }
-            this.getStationGroup(selectedStations); 
-            return;
-        }
-        const observStrategy = _.find(this.observStrategies, {'id': this.state.selectedStrategyId});
-        const stationGroups = observStrategy.template.tasks['Target Observation'].specifications_doc.station_groups; 
-        const missingFields = stationGroups.find(i => {
-            if (i.stations.length === response.stations.length && i.stations[0] === response.stations[0]) {
-                i.stationType = e;
-                return true;
-            }
-            return false;
-        });
-        if (missingFields) {
-            selectedStations = [...this.state.selectedStations, e];
-            this.getStationGroup(selectedStations);
-        }
+    onUpdateStations = (state, selectedStations, missingFieldsErrors, customSelectedStations) => {
         this.setState({
-            [e]: {
-                stations: response.stations,
-                missingFields: missingFields ? missingFields.max_nr_missing : ''
-            },
-            ['Custom']: {
-                stations: [...this.state['Custom'].stations, ...response.stations], 
-            },
-            customStations: [...this.state.customStations, ...response.stations],
-        });
-    }
-
-    async showStations(e, key) {
-        this.op.toggle(e);
-        this.setState({
-            stations: (this.state[key] && this.state[key].stations ) || [],
-        });
-    }
-
-    async getStationGroup(e) {
-        if (e.includes('Custom') && !this.state.selectedStations.includes('Custom')) {
-            const observStrategy = _.find(this.observStrategies, {'id': this.state.selectedStrategyId});
-            const stationGroups = observStrategy.template.tasks['Target Observation'].specifications_doc.station_groups; 
-            const custom = stationGroups.find(i => !i.stationType); 
-            this.setState({
-                customSelectedStations: custom.stations,
-                ['Custom']: {
-                    missingFields: custom.max_nr_missing,
-                    ...this.state['Custom']
-                }
-            });
-        }
-        this.setState({selectedStations: e});
-    }
-
-    setNoOfMissingFields(key, value) {
-        let missingFieldsErrors = this.state.missingFieldsErrors;
-        if (value > this.state[key].stations.length) {
-            if (!missingFieldsErrors.includes(key)) {
-                missingFieldsErrors.push(key);
-            }
-        } else {
-            missingFieldsErrors = missingFieldsErrors.filter(i => i !== key);
-        }
-        this.setState({
-            [key]: {
-                ...this.state[key],
-                missingFields: value,
-                error: value > this.state[key].stations.length
-            },
-            missingFieldsErrors: missingFieldsErrors
+            ...state,
+            selectedStations,
+            missingFieldsErrors,
+            customSelectedStations
         }, () => {
             this.setState({
                 validForm: this.validateForm()
             });
         });
-    }
+    };
 
     render() {
         if (this.state.redirect) {
@@ -593,81 +493,11 @@ export class SchedulingUnitCreate extends Component {
                             
                             </div> 
                         </div>
-                       <div className="p-field p-grid grouping">
-                            <fieldset>
-                                <legend>
-                                    <label>Stations:<span style={{color:'red'}}>*</span></label>
-                                </legend>
-                                <div className="col-lg-3 col-md-3 col-sm-12" data-testid="stations">
-                                    <MultiSelect data-testid="stations" id="stations" optionLabel="value" optionValue="value" filter={true}
-                                        tooltip="Select Stations" tooltipOptions={this.tooltipOptions}
-                                        value={this.state.selectedStations} 
-                                        options={this.state.stationOptions} 
-                                        placeholder="Select Stations"
-                                        onChange={(e) => this.getStationGroup(e.value)}
-                                    />
-                                </div>
-                                {this.state.selectedStations.length ? <div className="col-sm-12 selected_stations" data-testid="selected_stations">
-                                    <label>Selected Stations:</label>
-                                    <div className="col-sm-12 p-0 d-flex flex-wrap">
-                                        {this.state.selectedStations.map(i => {
-                                            return i !== 'Custom' ? (
-                                                <div className="p-field p-grid col-md-6" key={i}>
-                                                    <label className="col-sm-6 text-caps">
-                                                        {i}
-                                                        <Button icon="pi pi-info-circle" className="p-button-rounded p-button-secondary p-button-text info" onClick={(e) => this.showStations(e, i)} />
-                                                    </label>
-                                                    <div className="col-sm-6">
-                                                        <InputText id="schedUnitName" data-testid="name" 
-                                                            className={(this.state[i] && this.state[i].error) ?'input-error':''}
-                                                            tooltip="No. of Missing Stations" tooltipOptions={this.tooltipOptions} maxLength="128"
-                                                            placeholder="No. of Missing Stations"
-                                                            ref={input => {this.nameInput = input;}}
-                                                            value={this.state[i] && this.state[i].missingFields ? this.state[i].missingFields : ''}
-                                                            onChange={(e) => this.setNoOfMissingFields(i, e.target.value)}/>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="p-field p-grid col-md-12" key={i}>
-                                                    <div className="col-md-6 p-field p-grid">
-                                                        <label className="col-sm-6 text-caps custom-label">
-                                                            {i}
-                                                        </label>
-                                                        <div className="col-sm-6 pr-8 custom-value">
-                                                            <MultiSelect data-testid="stations" id="stations"  filter={true}
-                                                                tooltip="Select Stations" tooltipOptions={this.tooltipOptions}
-                                                                value={this.state.customSelectedStations} 
-                                                                options={this.state.customStations} 
-                                                                placeholder="Select Stations"
-                                                                onChange={(e) => this.setState({customSelectedStations: e.value})}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    <div className="col-sm-6 custom-field">
-                                                        <InputText id="schedUnitName" data-testid="name" 
-                                                            className={(this.state[i] && this.state[i].error) ?'input-error':''}
-                                                            tooltip="No. of Missing Stations" tooltipOptions={this.tooltipOptions} maxLength="128"
-                                                            placeholder="No. of Missing Stations"
-                                                            value={this.state[i] && this.state[i].missingFields ? this.state[i].missingFields : ''}
-                                                            ref={input => {this.nameInput = input;}}
-                                                            onChange={(e) => this.setNoOfMissingFields(i, e.target.value)}/>
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                    
-                                </div> : null}
-                                <OverlayPanel ref={(el) => this.op = el} dismissable  style={{width: '450px'}}>
-                                    <div className="station-container">
-                                        {this.state.fetchingStations && <span>Loading...</span>}
-                                        {this.state.stations.map(i => (
-                                            <label>{i}</label>
-                                        ))}
-                                    </div>
-                                </OverlayPanel>
-                            </fieldset>
-                        </div>
+                        <Stations
+                            selectedStrategyId={this.state.selectedStrategyId}
+                            observStrategies={this.observStrategies}
+                            onUpdateStations={this.onUpdateStations.bind(this)}
+                        />
                     </div>
                     {this.state.constraintSchema && <div className="p-fluid">
                         <div className="p-grid">
