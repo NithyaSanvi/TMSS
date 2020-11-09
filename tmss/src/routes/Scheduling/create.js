@@ -316,6 +316,21 @@ export class SchedulingUnitCreate extends Component {
        /* for (let type in constStrategy.sky.transit_offset) {
             constStrategy.sky.transit_offset[type] = constStrategy.sky.transit_offset[type] * 60;
         }*/
+
+        const station_groups = [];
+        (this.state.selectedStations || []).forEach(key => {
+            let station_group = {};
+            const stations = this.state[key] ? this.state[key].stations : [];
+            const max_nr_missing = parseInt(this.state[key] ? this.state[key].missingFields : 0);
+            station_group = {
+                stations,
+                max_nr_missing
+            };  
+            if (key === 'Custom') {
+                station_group.stations = this.state.customSelectedStations;
+            }
+            station_groups.push(station_group);                 
+        });
         
         UnitConversion.degreeToRadians(constStrategy.sky);
             
@@ -325,7 +340,7 @@ export class SchedulingUnitCreate extends Component {
             $refs.set(observStrategy.template.parameters[index]['refs'][0], this.state.paramsOutput['param_' + index]);
         });
         const const_strategy = {scheduling_constraints_doc: constStrategy, id: this.constraintTemplates[0].id, constraint: this.constraintTemplates[0]};
-        const schedulingUnit = await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, const_strategy, this.state);
+        const schedulingUnit = await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, const_strategy, station_groups);
         if (schedulingUnit) {
             // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks created successfully!'});
             const dialog = {header: 'Success', detail: 'Scheduling Unit and Tasks are created successfully. Do you want to create another Scheduling Unit?'};

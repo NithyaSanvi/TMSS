@@ -309,7 +309,21 @@ export class EditSchedulingUnit extends Component {
             });
             const schUnit = { ...this.state.schedulingUnit };
             schUnit.scheduling_constraints_doc = constStrategy;
-            const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy,schUnit,this.state.taskDrafts, this.state.tasksToUpdate, this.state);
+            const station_groups = [];
+            (this.state.selectedStations || []).forEach(key => {
+                let station_group = {};
+                const stations = this.state[key] ? this.state[key].stations : [];
+                const max_nr_missing = parseInt(this.state[key] ? this.state[key].missingFields : 0);
+                station_group = {
+                    stations,
+                    max_nr_missing
+                };  
+                if (key === 'Custom') {
+                    station_group.stations = this.state.customSelectedStations;
+                }
+                station_groups.push(station_group);                 
+            });
+            const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy,schUnit,this.state.taskDrafts, this.state.tasksToUpdate, station_groups);
             if (schedulingUnit) {
                 // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks edited successfully!'});
                 this.props.history.push({
