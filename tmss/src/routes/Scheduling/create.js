@@ -135,6 +135,9 @@ export class SchedulingUnitCreate extends Component {
             const taskTemplate = _.find(this.taskTemplates, {'name': task['specifications_template']});
             schema['$id'] = taskTemplate.schema['$id'];
             schema['$schema'] = taskTemplate.schema['$schema'];
+            // if (task['specifications_template'] === 'target observation') {
+            //     this.setState({ stationGroup: taskTemplate.schema.properties.station_groups.default });
+            // }
             let index = 0;
             for (const param of observStrategy.template.parameters) {
                 if (param.refs[0].indexOf(`/tasks/${taskName}`) > 0) {

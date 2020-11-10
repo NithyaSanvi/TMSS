@@ -95,6 +95,9 @@ export class EditSchedulingUnit extends Component {
 
             // Identify the task specification template of every task in the strategy template
             const taskTemplate = _.find(this.taskTemplates, {'name': task['specifications_template']});
+            // if (task['specifications_template'] === 'target observation') {
+            //     this.setState({ stationGroup: taskTemplate.schema.properties.station_groups.default });
+            // }
             schema['$id'] = taskTemplate.schema['$id'];
             schema['$schema'] = taskTemplate.schema['$schema'];
             let index = 0;

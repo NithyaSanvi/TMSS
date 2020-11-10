@@ -104,18 +104,22 @@ export default (props) => {
             ...copyState,
             Custom: {
                 ...copyState['Custom'],
-                missingFields: custom.max_nr_missing
+                missingFields: custom ? custom.max_nr_missing : ''
             },
         };
         setSelectedStationGroup([...cpSelectedStations, 'Custom']);
         setState(copyState);
-        setCustomSelectedStations(custom.stations);
+        setCustomSelectedStations(custom ? custom.stations : []);
         let custom_stations = Array.from(copyCustomStations);
         // Changing array of sting into array of objects to support filter in primereact multiselect
         custom_stations = custom_stations.map(i => ({ value: i })); 
         setCustomStations(custom_stations);
+        // const missing_fields_errors = [...missingFieldsErrors];
+        // if (!custom || !custom.stations.length) {
+        //     missing_fields_errors.push('Custom');
+        // }
         if (props.onUpdateStations) {
-            props.onUpdateStations(copyState, [...cpSelectedStations, 'Custom'], missingFieldsErrors, custom.stations);
+            props.onUpdateStations(copyState, [...cpSelectedStations, 'Custom'], missingFieldsErrors, custom ? custom.stations : []);
         }
     };
 
@@ -154,7 +158,7 @@ export default (props) => {
      */
     const setNoOfMissingFields = (key, value) => {
         let cpMissingFieldsErrors = [...missingFieldsErrors];
-        if (value > state[key].stations.length || value === '') {
+        if (value > state[key].stations.length || value === '' || (key === 'Custom' && !customSelectedStations.length)) {
             if (!cpMissingFieldsErrors.includes(key)) {
                 cpMissingFieldsErrors.push(key);
             }
