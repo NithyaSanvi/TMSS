@@ -42,7 +42,8 @@ export class SchedulingUnitCreate extends Component {
             validEditor: false,                     // For JSON editor validation
             validFields: {},                        // For Form Validation
             missingFieldsErrors: [],
-            stationOptions: []
+            stationOptions: [],
+            stationGroup: []
         };
         this.projects = [];                         // All projects to load project dropdown
         this.schedulingSets = [];                   // All scheduling sets to be filtered for project
@@ -116,8 +117,9 @@ export class SchedulingUnitCreate extends Component {
      * @param {number} strategyId 
      */
     async changeStrategy (strategyId) {
-        this.setState({ selectedStrategyId: strategyId });
         const observStrategy = _.find(this.observStrategies, {'id': strategyId});
+        const station_group = observStrategy.template.tasks['Target Observation'].specifications_doc.station_groups; 
+        this.setState({ stationGroup: station_group });
         const tasks = observStrategy.template.tasks;    
         let paramsOutput = {};
         let schema = { type: 'object', additionalProperties: false, 
@@ -509,8 +511,7 @@ export class SchedulingUnitCreate extends Component {
                             </div> 
                         </div>
                         <Stations
-                            selectedStrategyId={this.state.selectedStrategyId}
-                            observStrategies={this.observStrategies}
+                            stationGroup={this.state.stationGroup}
                             onUpdateStations={this.onUpdateStations.bind(this)}
                         />
                     </div>

@@ -69,7 +69,8 @@ class ViewSchedulingUnit extends Component{
                 "Relative Start Time (HH:mm:ss)": "filter-input-75",
                 "Relative End Time (HH:mm:ss)": "filter-input-75",
                 "Status":"filter-input-100"
-            }]
+            }],
+            stationGroup: []
         }
         this.actions = [
             {icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', link: this.props.history.goBack} 
@@ -121,7 +122,7 @@ class ViewSchedulingUnit extends Component{
                             scheduleunit : schedulingUnit,
                             schedule_unit_task : tasks,
                             isLoading: false,
-                            targetObservation
+                            stationGroup: targetObservation.specifications_doc.station_groups
                         }, this.getAllStations);
                     });
                 }   else {
@@ -210,8 +211,7 @@ class ViewSchedulingUnit extends Component{
                 </>
                 }
                 {<Stations
-                    selectedStrategyId={this.state.selectedStrategyId}
-                    observStrategies={this.observStrategies}
+                    stationGroup={this.state.stationGroup}
                     targetObservation={this.state.targetObservation}
                     view
                 />}

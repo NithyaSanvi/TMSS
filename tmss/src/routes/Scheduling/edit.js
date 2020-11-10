@@ -41,7 +41,8 @@ export class EditSchedulingUnit extends Component {
             validEditor: false,                     // For JSON editor validation
             validFields: {},                        // For Form Validation 
             observStrategyVisible: false,
-            missingFieldsErrors: []                   
+            missingFieldsErrors: [],
+            stationGroup: []                   
         }
         this.projects = [];                         // All projects to load project dropdown
         this.schedulingSets = [];                   // All scheduling sets to be filtered for project
@@ -76,7 +77,6 @@ export class EditSchedulingUnit extends Component {
      * @param {number} strategyId 
      */
     async changeStrategy (strategyId) {
-        this.setState({ selectedStrategyId: strategyId });
         let tasksToUpdate = {};
         const observStrategy = _.find(this.observStrategies, {'id': strategyId});
         const tasks = observStrategy.template.tasks;    
@@ -159,6 +159,10 @@ export class EditSchedulingUnit extends Component {
                             observStrategyVisible: responses[4].observation_strategy_template_id?true:false });
             if (responses[4].observation_strategy_template_id) {
                 this.changeStrategy(responses[4].observation_strategy_template_id);
+                const targetObservation = responses[5].data.results.find(task => task.name === 'Target Observation');
+                this.setState({
+                    stationGroup: targetObservation.specifications_doc.station_groups
+                });
             }
             if (this.state.schedulingUnit.project) {
                 const projectSchedSets = _.filter(this.schedulingSets, {'project_id': this.state.schedulingUnit.project});
@@ -465,8 +469,7 @@ export class EditSchedulingUnit extends Component {
                     </div>
 
                     <Stations
-                        selectedStrategyId={this.state.selectedStrategyId}
-                        observStrategies={this.observStrategies}
+                        stationGroup={this.state.stationGroup}
                         onUpdateStations={this.onUpdateStations.bind(this)}
                     />
 

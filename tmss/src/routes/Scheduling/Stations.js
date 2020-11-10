@@ -35,46 +35,46 @@ export default (props) => {
     });
     
     useEffect(() => {
-        if (props.selectedStrategyId || props.targetObservation) {
+        if (props.stationGroup && props.stationGroup.length) {
             getAllStations();
         }
-    }, [props.selectedStrategyId, props.targetObservation]);
+    }, [props.stationGroup]);
 
+    /**
+     * Fetches all stations
+     */
     const getAllStations = async () => {
-        const stationList = await ScheduleService.getStationGroup();
+        const stationGroup = await ScheduleService.getStationGroup();
         
         const promises = [];
-        stationList.forEach(st => {
+        stationGroup.forEach(st => {
             promises.push(ScheduleService.getStations(st.value))
         });
         Promise.all(promises).then(responses => {
-            getStationsDetails(stationList, responses);
+            getStationsDetails(stationGroup, responses);
         });
-        setStationOptions(stationList);
+        setStationOptions(stationGroup);
     };
 
-    const getStationsDetails = (stationList, responses) => {
+    /**
+     * Cosntruct and set appropriate values to stations
+     * like error, missing fields, etc.
+     */
+    const getStationsDetails = (stations, responses) => {
         let copyState = {
             Custom: {
                 stations: []  
             }
         };
         let copyCustomStations = [];
-        stationList.push({
+        stations.push({
             value: 'Custom'
         });
-        setStationOptions(stationList);
+        setStationOptions(stations);
         let cpSelectedStations = [];
         responses.forEach((response, index) => {
-            const e = stationList[index].value;
-            let stationGroups;
-            if (!props.targetObservation) {
-                const observStrategy = _.find(props.observStrategies, {'id': props.selectedStrategyId});
-                stationGroups = observStrategy.template.tasks['Target Observation'].specifications_doc.station_groups; 
-            } else {
-                stationGroups = props.targetObservation.specifications_doc.station_groups; 
-            }
-            const missingFields = stationGroups.find(i => {
+            const e = stations[index].value;
+            const missingFields = props.stationGroup.find(i => {
                 if (i.stations.length === response.stations.length && i.stations[0] === response.stations[0]) {
                     i.stationType = e;
                     return true;
@@ -97,14 +97,7 @@ export default (props) => {
             copyCustomStations = [...copyCustomStations, ...response.stations];
         });
         // Find the custom one
-        const observStrategy = _.find(props.observStrategies, {'id': props.selectedStrategyId});
-        let stationGroups;
-        if (!props.targetObservation) {
-            stationGroups = observStrategy.template.tasks['Target Observation'].specifications_doc.station_groups; 
-        } else {
-            stationGroups = props.targetObservation.specifications_doc.station_groups;
-        }
-        const custom = stationGroups.find(i => !i.stationType);
+        const custom = props.stationGroup.find(i => !i.stationType);
         copyState = {
             ...copyState,
             Custom: {
@@ -121,25 +114,42 @@ export default (props) => {
         }
     };
 
-    const setSelectedStationGroup = (e) => {
-        setSelectedStations(e);
+    /**
+     * Method will trigger on change of station group multiselect.
+     * Same timw will update the parent component also
+     * *param value* -> array of string 
+     */
+    const setSelectedStationGroup = (value) => {
+        setSelectedStations(value);
         if (props.onUpdateStations) {
-            props.onUpdateStations(state, e, missingFieldsErrors, customSelectedStations);
+            props.onUpdateStations(state, value, missingFieldsErrors, customSelectedStations);
         }
     };
 
+    /**
+     * Method will trigger on change of custom station dropdown.
+     */
     const onChangeCustomSelectedStations = (value) => {
         setCustomSelectedStations(value);
     };
 
-    const showStations = (e, key) => {
-        op.toggle(e);
+    /**
+     * Method will trigger on click of info icon to show overlay
+     * param event -> htmlevent object
+     * param key -> string - selected station
+     */
+    const showStations = (event, key) => {
+        op.toggle(event);
         setStations((state[key] && state[key].stations ) || []);
     };
 
+    /**
+     * Method will trigger on change of missing fields.
+     * Will store all fields error in array of string to enable/disable save button.
+     */
     const setNoOfMissingFields = (key, value) => {
         let cpMissingFieldsErrors = [...missingFieldsErrors];
-        if (value > state[key].stations.length) {
+        if (value > state[key].stations.length || value === '') {
             if (!cpMissingFieldsErrors.includes(key)) {
                 cpMissingFieldsErrors.push(key);
             }
@@ -152,9 +162,12 @@ export default (props) => {
             [key]: {
                 ...state[key],
                 missingFields: value,
-                error: value > state[key].stations.length
+                error: value > state[key].stations.length || value === ''
             },
         };
+        if (key === 'Custom') {
+            copyState[key].error = value > customSelectedStations.length;
+        }
         setState(copyState);
         if (props.onUpdateStations) {
             props.onUpdateStations(copyState, selectedStations, cpMissingFieldsErrors, customSelectedStations);
@@ -167,14 +180,19 @@ export default (props) => {
                 <legend>
                     <label>Stations:<span style={{color:'red'}}>*</span></label>
                 </legend>
-                {!props.view && <div className="col-lg-3 col-md-3 col-sm-12" data-testid="stations">
-                    <MultiSelect data-testid="stations" id="stations" optionLabel="value" optionValue="value" filter={true}
-                        tooltip="Select Stations" tooltipOptions={tooltipOptions}
-                        value={selectedStations} 
-                        options={stationOptions} 
-                        placeholder="Select Stations"
-                        onChange={(e) => setSelectedStationGroup(e.value)}
-                    />
+                {!props.view && <div className="col-sm-12 p-field p-grid" data-testid="stations">
+                    <div className="col-md-6 d-flex">
+                        <label htmlFor="schedUnitName" className="col-sm-6 station_header">Stations</label>
+                        <div className="col-sm-6">
+                            <MultiSelect data-testid="stations" id="stations" optionLabel="value" optionValue="value" filter={true}
+                                tooltip="Select Stations" tooltipOptions={tooltipOptions}
+                                value={selectedStations} 
+                                options={stationOptions} 
+                                placeholder="Select Stations"
+                                onChange={(e) => setSelectedStationGroup(e.value)}
+                            />
+                        </div>
+                    </div>
                 </div>}
                 {selectedStations.length ? <div className="col-sm-12 selected_stations" data-testid="selected_stations">
                     {!props.view && <label>Selected Stations:</label>}
@@ -191,9 +209,10 @@ export default (props) => {
                                             className={(state[i] && state[i].error) ?'input-error':''}
                                             tooltip="No. of Missing Stations" tooltipOptions={tooltipOptions} maxLength="128"
                                             placeholder="No. of Missing Stations"
-                                            value={state[i] && state[i].missingFields ? state[i].missingFields : ''}
+                                            value={state[i] ? state[i].missingFields : ''}
                                             disabled={props.view}
                                             onChange={(e) => setNoOfMissingFields(i, e.target.value)}/>
+                                        {(state[i] && state[i].error) && <span className="error-message">{state[i].missingFields ? `Max. no of missing stations is ${state[i] ? state[i].stations.length : 0}` : 'Max. no of missing fields required'}</span>}
                                     </div>
                                 </div>
                             ) : (
@@ -218,9 +237,10 @@ export default (props) => {
                                             className={(state[i] && state[i].error) ?'input-error':''}
                                             tooltip="No. of Missing Stations" tooltipOptions={tooltipOptions} maxLength="128"
                                             placeholder="No. of Missing Stations"
-                                            value={state[i] && state[i].missingFields ? state[i].missingFields : ''}
+                                            value={state[i] ? state[i].missingFields : ''}
                                             disabled={props.view}
                                             onChange={(e) => setNoOfMissingFields(i, e.target.value)}/>
+                                            {(state[i] && state[i].error) && <span className="error-message">{state[i].missingFields ? `Max. no of missing stations is ${customSelectedStations.length}` : 'Max. no of missing fields required'}</span>}
                                     </div>
                                 </div>
                             )
