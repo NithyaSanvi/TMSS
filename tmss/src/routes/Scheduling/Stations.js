@@ -57,8 +57,9 @@ export default (props) => {
     };
 
     /**
-     * Cosntruct and set appropriate values to stations
+     * Cosntruct and set appropriate values to each station by finding station from station_group
      * like error, missing fields, etc.
+     * Also will construct stations for custom group by merging all the stations
      */
     const getStationsDetails = (stations, responses) => {
         let copyState = {
@@ -94,7 +95,8 @@ export default (props) => {
                     stations: [...copyState['Custom'].stations, ...response.stations], 
                 },
             };
-            copyCustomStations = [...copyCustomStations, ...response.stations];
+            // Setting in Set to avoid duplicate, otherwise have to loop multiiple times.
+            copyCustomStations = new Set([...copyCustomStations, ...response.stations]);
         });
         // Find the custom one
         const custom = props.stationGroup.find(i => !i.stationType);
@@ -108,7 +110,10 @@ export default (props) => {
         setSelectedStationGroup([...cpSelectedStations, 'Custom']);
         setState(copyState);
         setCustomSelectedStations(custom.stations);
-        setCustomStations(copyCustomStations);
+        let custom_stations = Array.from(copyCustomStations);
+        // Changing array of sting into array of objects to support filter in primereact multiselect
+        custom_stations = custom_stations.map(i => ({ value: i })); 
+        setCustomStations(custom_stations);
         if (props.onUpdateStations) {
             props.onUpdateStations(copyState, [...cpSelectedStations, 'Custom'], missingFieldsErrors, custom.stations);
         }
@@ -222,12 +227,14 @@ export default (props) => {
                                             {i}
                                         </label>
                                         <div className="col-sm-6 pr-8 custom-value">
-                                            <MultiSelect data-testid="stations" id="stations" filter={true}
+                                            <MultiSelect data-testid="custom_stations" id="custom_stations" filter
                                                 tooltip="Select Stations" tooltipOptions={tooltipOptions}
                                                 value={customSelectedStations} 
                                                 options={customStations} 
                                                 placeholder="Select Stations"
                                                 disabled={props.view}
+                                                optionLabel="value"
+                                                optionValue="value" 
                                                 onChange={(e) => onChangeCustomSelectedStations(e.value)}
                                             />
                                         </div>

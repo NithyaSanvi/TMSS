@@ -167,9 +167,7 @@ export class SchedulingUnitCreate extends Component {
                     }
                 }
                 index++;
-               
             }
-            
         }
         this.setState({observStrategy: observStrategy, paramsSchema: schema, paramsOutput: paramsOutput});
 
