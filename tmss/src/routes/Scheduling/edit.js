@@ -42,7 +42,8 @@ export class EditSchedulingUnit extends Component {
             validFields: {},                        // For Form Validation 
             observStrategyVisible: false,
             missingFieldsErrors: [],
-            stationGroup: []                   
+            stationGroup: [],
+            customSelectedStations: []
         }
         this.projects = [];                         // All projects to load project dropdown
         this.schedulingSets = [];                   // All scheduling sets to be filtered for project
@@ -272,7 +273,7 @@ export class EditSchedulingUnit extends Component {
         if (Object.keys(validFields).length === Object.keys(this.formRules).length) {
             validForm = true;
         }
-        return validForm && !this.state.missingFieldsErrors.length;;
+        return validForm && !this.state.missingFieldsErrors;
     }
 
     /**
@@ -325,10 +326,13 @@ export class EditSchedulingUnit extends Component {
                     stations,
                     max_nr_missing
                 };  
-                if (key === 'Custom') {
-                    station_group.stations = this.state.customSelectedStations;
-                }
                 station_groups.push(station_group);                 
+            });
+            this.state.customSelectedStations.forEach(station => {
+                station_groups.push({
+                    stations: station.stations,
+                    max_nr_missing: station.max_nr_missing
+                });
             });
             const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy,schUnit,this.state.taskDrafts, this.state.tasksToUpdate, station_groups);
             if (schedulingUnit) {

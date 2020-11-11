@@ -32,6 +32,7 @@ export class SchedulingUnitCreate extends Component {
             redirect: null,                         // URL to redirect
             errors: [],                             // Form Validation errors
             schedulingSets: [],                     // Scheduling set of the selected project
+            customSelectedStations: [],
             schedulingUnit: {
                 project: (props.match?props.match.params.project:null) || null,
             },
@@ -286,7 +287,7 @@ export class SchedulingUnitCreate extends Component {
         if (Object.keys(validFields).length === Object.keys(this.formRules).length) {
             validForm = true;
         }
-        return validForm && !this.state.missingFieldsErrors.length;
+        return validForm && !this.state.missingFieldsErrors;
     }
     
     /**
@@ -329,12 +330,14 @@ export class SchedulingUnitCreate extends Component {
                 stations,
                 max_nr_missing
             };  
-            if (key === 'Custom') {
-                station_group.stations = this.state.customSelectedStations;
-            }
             station_groups.push(station_group);                 
         });
-        
+        this.state.customSelectedStations.forEach(station => {
+            station_groups.push({
+                stations: station.stations,
+                max_nr_missing: station.max_nr_missing
+            });
+        });
         UnitConversion.degreeToRadians(constStrategy.sky);
             
         let observStrategy = _.cloneDeep(this.state.observStrategy);
