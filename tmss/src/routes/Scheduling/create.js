@@ -38,7 +38,7 @@ export class SchedulingUnitCreate extends Component {
             missingStationFieldsErrors: [],         // Validation for max no.of missing station
             stationOptions: [],
             stationGroup: [],
-            customSelectedStations: [],             // custom stations
+            customSelectedStations: [],      
             schedulingUnit: {
                 project: (props.match?props.match.params.project:null) || null,
             },
@@ -392,7 +392,8 @@ export class SchedulingUnitCreate extends Component {
             validEditor: false,
             validFields: {},
             constraintSchema: null,
-            touched:false
+            touched:false,
+            stationGroup: []
         }, () => {
             this.constraintStrategy(this.constraintTemplates[0]);
         });
@@ -516,8 +517,8 @@ export class SchedulingUnitCreate extends Component {
                             </div> 
                         </div>
                         <Stations
-                             stationGroup={this.state.stationGroup}
-                             onUpdateStations={this.onUpdateStations.bind(this)}
+                            stationGroup={this.state.stationGroup}
+                            onUpdateStations={this.onUpdateStations.bind(this)}
                         />
                        </div>
                     {this.state.constraintSchema && <div className="p-fluid">

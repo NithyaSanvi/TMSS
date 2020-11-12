@@ -36,8 +36,20 @@ export default (props) => {
     useEffect(() => {
         if (props.stationGroup && props.stationGroup.length) {
             getAllStations();
+        } else {
+            reset();
         }
     }, [props.stationGroup]);
+
+    // Restting the stations
+    const reset = () => {
+        setStations([]);
+        setSelectedStations([]);
+        setStationOptions([]);
+        setCustomStations([]);
+        setCustomStationsOptions([]);
+        setmissing_StationFieldsErrors([]);
+    };
 
     /**
      * Fetches all stations
