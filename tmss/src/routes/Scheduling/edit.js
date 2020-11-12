@@ -271,7 +271,7 @@ export class EditSchedulingUnit extends Component {
         if (Object.keys(validFields).length === Object.keys(this.formRules).length) {
             validForm = true;
         }
-        return validForm && !this.state.missingFieldsErrors;
+        return validForm && !this.state.missingStationFieldsErrors;
     }
 
     /**

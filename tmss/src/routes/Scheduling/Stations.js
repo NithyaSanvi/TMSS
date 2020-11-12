@@ -70,21 +70,21 @@ export default (props) => {
         setStationOptions(stations);
         let selected_Stations = [];
         responses.forEach((response, index) => {
-            const e = stations[index].value;
+            const StationName = stations[index].value;
             const missing_StationFields = props.stationGroup.find(i => {
                 if (i.stations.length === response.stations.length && i.stations[0] === response.stations[0]) {
-                    i.stationType = e;
+                    i.stationType = StationName;
                     return true;
                 }
                 return false;
             });
             // Missing fields present then it matched with station type otherwise its a custom...
             if (missing_StationFields) {
-                selected_Stations = [...selected_Stations, e];
+                selected_Stations = [...selected_Stations, StationName];
             }
             stationState ={
                 ...stationState,
-                [e]: {
+                [StationName]: {
                     stations: response.stations,
                     missing_StationFields: missing_StationFields ? missing_StationFields.max_nr_missing : ''
                 },
@@ -103,15 +103,10 @@ export default (props) => {
         setCustomStations(custom_stations);
         setSelectedStationGroup([...selected_Stations]);
         setState(stationState);
-        // setCustomSelectedStations(custom ? custom.stations : []);
         let custom_stations_options = Array.from(custom_Stations);
         // Changing array of sting into array of objects to support filter in primereact multiselect
         custom_stations_options = custom_stations_options.map(i => ({ value: i })); 
         setCustomStationsOptions(custom_stations_options);
-        // const missing_fields_errors = [...missing_StationFieldsErrors];
-        // if (!custom || !custom.stations.length) {
-        //     missing_fields_errors.push('Custom');
-        // }
         if (props.onUpdateStations) {
             updateSchedulingComp(stationState, [...selected_Stations], missing_StationFieldsErrors, customStations);
         }
@@ -216,6 +211,7 @@ export default (props) => {
 
     const updateSchedulingComp = (param_State, param_SelectedStations, param_missing_StationFieldsErrors, param_Custom_selected_options) => {
         const isError = param_missing_StationFieldsErrors.length || param_Custom_selected_options.filter(i => i.error).length;
+        debugger
         props.onUpdateStations(param_State, param_SelectedStations, isError, param_Custom_selected_options);
     };
     /**

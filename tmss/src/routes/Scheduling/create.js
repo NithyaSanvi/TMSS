@@ -399,13 +399,12 @@ export class SchedulingUnitCreate extends Component {
         this.state.editorFunction();
     }
 
-    onUpdateStations = (state, selectedStations, missing_StationFieldsErrors, customSelectedStations) => {
+    onUpdateStations = (state, selectedStations, missingStationFieldsErrors, customSelectedStations) => {
         this.setState({
             ...state,
             selectedStations,
-            missing_StationFieldsErrors,
+            missingStationFieldsErrors,
             customSelectedStations
-           
         }, () => {
             this.setState({
                 validForm: this.validateForm()
