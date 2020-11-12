@@ -14,13 +14,14 @@ import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
 import Jeditor from '../../components/JSONEditor/JEditor';
 import UnitConversion from '../../utils/unit.converter';
+import Stations from './Stations';
 
 import ProjectService from '../../services/project.service';
 import ScheduleService from '../../services/schedule.service';
 import TaskService from '../../services/task.service';
 import UIConstants from '../../utils/ui.constants';
 import SchedulingConstraint from './Scheduling.Constraints';
-import Stations from './Stations';
+
 /**
  * Compoenent to edit scheduling unit draft
  */
@@ -41,9 +42,9 @@ export class EditSchedulingUnit extends Component {
             validEditor: false,                     // For JSON editor validation
             validFields: {},                        // For Form Validation 
             observStrategyVisible: false,
-            missingFieldsErrors: [],
+            missingFieldsErrors: [],                // Validation for max no.of missing station
             stationGroup: [],
-            customSelectedStations: []
+            customSelectedStations: []              // Custom Stations    
         }
         this.projects = [];                         // All projects to load project dropdown
         this.schedulingSets = [];                   // All scheduling sets to be filtered for project
@@ -96,9 +97,6 @@ export class EditSchedulingUnit extends Component {
 
             // Identify the task specification template of every task in the strategy template
             const taskTemplate = _.find(this.taskTemplates, {'name': task['specifications_template']});
-            // if (task['specifications_template'] === 'target observation') {
-            //     this.setState({ stationGroup: taskTemplate.schema.properties.station_groups.default });
-            // }
             schema['$id'] = taskTemplate.schema['$id'];
             schema['$schema'] = taskTemplate.schema['$schema'];
             let index = 0;
@@ -326,14 +324,9 @@ export class EditSchedulingUnit extends Component {
                     stations,
                     max_nr_missing
                 };  
-                station_groups.push(station_group);                 
+               station_groups.push(station_group);                 
             });
-            this.state.customSelectedStations.forEach(station => {
-                station_groups.push({
-                    stations: station.stations,
-                    max_nr_missing: station.max_nr_missing
-                });
-            });
+            
             const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy,schUnit,this.state.taskDrafts, this.state.tasksToUpdate, station_groups);
             if (schedulingUnit) {
                 // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks edited successfully!'});
@@ -347,9 +340,8 @@ export class EditSchedulingUnit extends Component {
             this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Template Missing.'});
         }
     }
-
     
-   
+    
     /**
      * Cancel SU creation and redirect
      */
@@ -360,12 +352,12 @@ export class EditSchedulingUnit extends Component {
     constraintStrategy(schema, initValue){
        this.setState({ constraintSchema: schema, initValue: initValue});
     }
-
-    onUpdateStations = (state, selectedStations, missingFieldsErrors, customSelectedStations) => {
+  
+    onUpdateStations = (state, selectedStations, missingStationFieldsErrors, customSelectedStations) => {
         this.setState({
             ...state,
             selectedStations,
-            missingFieldsErrors,
+            missingStationFieldsErrors,
             customSelectedStations
         }, () => {
             this.setState({
@@ -373,7 +365,7 @@ export class EditSchedulingUnit extends Component {
             });
         });
     };
-  
+
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -475,10 +467,12 @@ export class EditSchedulingUnit extends Component {
                         </div>
                     </div>
 
+                    
                     <Stations
                         stationGroup={this.state.stationGroup}
                         onUpdateStations={this.onUpdateStations.bind(this)}
                     />
+
 
                     {this.state.constraintSchema && <div className="p-fluid">
                         <div className="p-grid">

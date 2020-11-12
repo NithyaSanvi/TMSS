@@ -26,7 +26,7 @@ export default (props) => {
     const [customStations, setCustomStations] = useState([]);
     const [customStationsOptions, setCustomStationsOptions] = useState([]);
     const [stations, setStations] = useState([]);
-    const [missingFieldsErrors, setMissingFieldsErrors] = useState([]);
+    const [missing_StationFieldsErrors, setmissing_StationFieldsErrors] = useState([]);
     const [state, setState] = useState({
         Custom: {
             stations: []
@@ -61,17 +61,17 @@ export default (props) => {
      * Also will construct stations for custom group by merging all the stations
      */
     const getStationsDetails = (stations, responses) => {
-        let copyState = {
+        let stationState = {
             Custom: {
                 stations: []  
             }
         };
-        let copyCustomStations = [];
+        let custom_Stations = [];
         setStationOptions(stations);
-        let cpSelectedStations = [];
+        let selected_Stations = [];
         responses.forEach((response, index) => {
             const e = stations[index].value;
-            const missingFields = props.stationGroup.find(i => {
+            const missing_StationFields = props.stationGroup.find(i => {
                 if (i.stations.length === response.stations.length && i.stations[0] === response.stations[0]) {
                     i.stationType = e;
                     return true;
@@ -79,41 +79,41 @@ export default (props) => {
                 return false;
             });
             // Missing fields present then it matched with station type otherwise its a custom...
-            if (missingFields) {
-                cpSelectedStations = [...cpSelectedStations, e];
+            if (missing_StationFields) {
+                selected_Stations = [...selected_Stations, e];
             }
-            copyState ={
-                ...copyState,
+            stationState ={
+                ...stationState,
                 [e]: {
                     stations: response.stations,
-                    missingFields: missingFields ? missingFields.max_nr_missing : ''
+                    missing_StationFields: missing_StationFields ? missing_StationFields.max_nr_missing : ''
                 },
                 Custom: {
-                    stations: [...copyState['Custom'].stations, ...response.stations], 
+                    stations: [...stationState['Custom'].stations, ...response.stations], 
                 },
             };
             // Setting in Set to avoid duplicate, otherwise have to loop multiiple times.
-            copyCustomStations = new Set([...copyCustomStations, ...response.stations]);
+            custom_Stations = new Set([...custom_Stations, ...response.stations]);
         });
         // Find the custom one
         const custom_stations = props.stationGroup.filter(i => !i.stationType);
-        copyState = {
-            ...copyState
+        stationState = {
+            ...stationState
         };
         setCustomStations(custom_stations);
-        setSelectedStationGroup([...cpSelectedStations]);
-        setState(copyState);
+        setSelectedStationGroup([...selected_Stations]);
+        setState(stationState);
         // setCustomSelectedStations(custom ? custom.stations : []);
-        let custom_stations_options = Array.from(copyCustomStations);
+        let custom_stations_options = Array.from(custom_Stations);
         // Changing array of sting into array of objects to support filter in primereact multiselect
         custom_stations_options = custom_stations_options.map(i => ({ value: i })); 
         setCustomStationsOptions(custom_stations_options);
-        // const missing_fields_errors = [...missingFieldsErrors];
+        // const missing_fields_errors = [...missing_StationFieldsErrors];
         // if (!custom || !custom.stations.length) {
         //     missing_fields_errors.push('Custom');
         // }
         if (props.onUpdateStations) {
-            updateSchedulingComp(copyState, [...cpSelectedStations], missingFieldsErrors, customStations);
+            updateSchedulingComp(stationState, [...selected_Stations], missing_StationFieldsErrors, customStations);
         }
     };
 
@@ -125,7 +125,7 @@ export default (props) => {
     const setSelectedStationGroup = (value) => {
         setSelectedStations(value);
         if (props.onUpdateStations) {
-            updateSchedulingComp(state, value, missingFieldsErrors, customStations);
+            updateSchedulingComp(state, value, missing_StationFieldsErrors, customStations);
         }
     };
 
@@ -141,7 +141,7 @@ export default (props) => {
             custom_selected_options[index].error = false;
         }
         setCustomStations(custom_selected_options);
-        updateSchedulingComp(state, value, missingFieldsErrors, custom_selected_options);
+        updateSchedulingComp(state, value, missing_StationFieldsErrors, custom_selected_options);
     };
 
     /**
@@ -158,27 +158,27 @@ export default (props) => {
      * Method will trigger on change of missing fields.
      * Will store all fields error in array of string to enable/disable save button.
      */
-    const setNoOfMissingFields = (key, value) => {
-        let cpMissingFieldsErrors = [...missingFieldsErrors];
+    const setNoOfmissing_StationFields = (key, value) => {
+        let cpmissing_StationFieldsErrors = [...missing_StationFieldsErrors];
         if (value > state[key].stations.length || value === '') {
-            if (!cpMissingFieldsErrors.includes(key)) {
-                cpMissingFieldsErrors.push(key);
+            if (!cpmissing_StationFieldsErrors.includes(key)) {
+                cpmissing_StationFieldsErrors.push(key);
             }
         } else {
-            cpMissingFieldsErrors = cpMissingFieldsErrors.filter(i => i !== key);
+            cpmissing_StationFieldsErrors = cpmissing_StationFieldsErrors.filter(i => i !== key);
         }
-        setMissingFieldsErrors(cpMissingFieldsErrors);
-        const copyState = {
+        setmissing_StationFieldsErrors(cpmissing_StationFieldsErrors);
+        const stationState = {
             ...state,
             [key]: {
                 ...state[key],
-                missingFields: value,
+                missing_StationFields: value,
                 error: value > state[key].stations.length || value === ''
             },
         };
-        setState(copyState);
+        setState(stationState);
         if (props.onUpdateStations) {
-            updateSchedulingComp(copyState, selectedStations, cpMissingFieldsErrors, customStations);
+            updateSchedulingComp(stationState, selectedStations, cpmissing_StationFieldsErrors, customStations);
         }
     }
 
@@ -197,7 +197,7 @@ export default (props) => {
         custom_selected_options[index].touched = true;
         custom_selected_options[index].max_nr_missing = value;
         setCustomStations(custom_selected_options);
-        updateSchedulingComp(state, selectedStations, missingFieldsErrors, custom_selected_options);
+        updateSchedulingComp(state, selectedStations, missing_StationFieldsErrors, custom_selected_options);
     };
 
     /**
@@ -211,12 +211,12 @@ export default (props) => {
             error: true
         });
         setCustomStations(custom_selected_options);
-        updateSchedulingComp(state, selectedStations, missingFieldsErrors, custom_selected_options);
+        updateSchedulingComp(state, selectedStations, missing_StationFieldsErrors, custom_selected_options);
     };
 
-    const updateSchedulingComp = (pState, pSelectedStations, pMissingFieldsErrors, pCustom_selected_options) => {
-        const isError = pMissingFieldsErrors.length || pCustom_selected_options.filter(i => i.error).length;
-        props.onUpdateStations(pState, pSelectedStations, isError, pCustom_selected_options);
+    const updateSchedulingComp = (param_State, param_SelectedStations, param_missing_StationFieldsErrors, param_Custom_selected_options) => {
+        const isError = param_missing_StationFieldsErrors.length || param_Custom_selected_options.filter(i => i.error).length;
+        props.onUpdateStations(param_State, param_SelectedStations, isError, param_Custom_selected_options);
     };
     /**
      * Method to remove the custom stations
@@ -226,18 +226,18 @@ export default (props) => {
         const custom_selected_options = [...customStations];
         custom_selected_options.splice(index,1);
         setCustomStations(custom_selected_options);
-        updateSchedulingComp(state, selectedStations, missingFieldsErrors, custom_selected_options);
+        updateSchedulingComp(state, selectedStations, missing_StationFieldsErrors, custom_selected_options);
     };
 
     return (
         <div className="p-field p-grid grouping p-fluid">
             <fieldset>
                 <legend>
-                    <label>Stations:<span style={{color:'red'}}>*</span></label>
+                    <label>Stations<span style={{color:'red'}}>*</span></label>
                 </legend>
                 {!props.view && <div className="col-sm-12 p-field p-grid" data-testid="stations">
                     <div className="col-md-6 d-flex">
-                        <label htmlFor="schedUnitName" className="col-sm-6 station_header">Stations</label>
+                        <label htmlFor="stationgroup" className="col-sm-6 station_header">Station Groups</label>
                         <div className="col-sm-6">
                             <MultiSelect data-testid="stations" id="stations" optionLabel="value" optionValue="value" filter={true}
                                 tooltip="Select Stations" tooltipOptions={tooltipOptions}
@@ -253,7 +253,7 @@ export default (props) => {
                     </div>
                 </div>}
                 {selectedStations.length ? <div className="col-sm-12 selected_stations" data-testid="selected_stations">
-                    {!props.view && <label>Selected Stations:</label>}
+                    {!props.view && <label>Maximum Number Of Missing Stations for Selected Groups</label>}
                     <div className="col-sm-12 p-0 d-flex flex-wrap">
                         {selectedStations.map(i => ( 
                                 <div className="p-field p-grid col-md-6" key={i}>
@@ -262,14 +262,14 @@ export default (props) => {
                                         <Button icon="pi pi-info-circle" className="p-button-rounded p-button-secondary p-button-text info" onClick={(e) => showStations(e, i)} />
                                     </label>
                                     <div className="col-sm-6">
-                                        <InputText id="schedUnitName" data-testid="name" 
+                                        <InputText id="missingstation" data-testid="name" 
                                             className={(state[i] && state[i].error) ?'input-error':''}
-                                            tooltip="No. of Missing Stations" tooltipOptions={tooltipOptions} maxLength="128"
-                                            placeholder="No. of Missing Stations"
-                                            value={state[i] ? state[i].missingFields : ''}
+                                            tooltip="Max No. of Missing Stations" tooltipOptions={tooltipOptions} maxLength="128"
+                                            placeholder="Max No. of Missing Stations"
+                                            value={state[i] ? state[i].missing_StationFields : ''}
                                             disabled={props.view}
-                                            onChange={(e) => setNoOfMissingFields(i, e.target.value)}/>
-                                        {(state[i] && state[i].error) && <span className="error-message">{state[i].missingFields ? `Max. no of missing stations is ${state[i] ? state[i].stations.length : 0}` : 'Max. no of missing fields required'}</span>}
+                                            onChange={(e) => setNoOfmissing_StationFields(i, e.target.value)}/>
+                                        {(state[i] && state[i].error) && <span className="error-message">{state[i].missing_StationFields ? `Max. no of missing stations is ${state[i] ? state[i].stations.length : 0}` : 'Max. no of missing stations required'}</span>}
                                     </div>
                                 </div>
                             ))}
@@ -294,15 +294,23 @@ export default (props) => {
                                             />
                                         </div>
                                     </div>
-                                    <div className="col-sm-6 custom-field">
-                                        <InputText id="schedUnitName" data-testid="name" 
-                                            className={(stat.error && stat.touched) ?'input-error':''}
-                                            tooltip="No. of Missing Stations" tooltipOptions={tooltipOptions} maxLength="128"
-                                            placeholder="No. of Missing Stations"
+                                    <div className="col-md-6 p-field p-grid">
+                                        <label className="col-sm-6 customMissingStationLabel">
+                                            Maximum No. Of Missing Stations
+                                        </label>
+                                    <div className="col-sm-6 pr-8 custom-field">
+                                        <InputText id="missingStation" data-testid="name" 
+                                           className={(stat.error && stat.touched) ?'input-error':''}
+                                            tooltip="Max Number of Missing Stations" tooltipOptions={tooltipOptions} 
+                                            placeholder="Max Number of Missing Stations"
                                             value={stat.max_nr_missing}
                                             disabled={props.view}
                                             onChange={(e) => setMissingFieldsForCustom(e.target.value, index)}/>
-                                            {(stat.error && stat.touched) && <span className="error-message">{stat.max_nr_missing ? `Max. no of missing stations is ${stat.stations.length}` : 'Max. no of missing fields required'}</span>}
+                                            {(stat.error && stat.touched) && <span className="error-message">{stat.max_nr_missing ? `Max. no of missing stations is ${stat.stations.length}` : 'Max. no of missing stations required'}</span>}
+                                             {props.view &&
+                                            <span className="info">Max No. of Missing Stations</span>}
+                                    
+                                    </div>
                                     </div>
                                 </div>
                             ))}

@@ -187,7 +187,7 @@ export class ProjectView extends Component {
                                     </div>
                                 </div>
                             </div>
-                            <SchedulingUnitList project={this.state.project.name} hideProjectColumn/>
+                            <SchedulingUnitList project={this.state.project.name}/>
                         </div>
                     </React.Fragment>
                 }

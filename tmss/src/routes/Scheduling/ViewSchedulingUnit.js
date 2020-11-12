@@ -1,6 +1,8 @@
 import React, { Component } from 'react'
+// import {Link} from 'react-router-dom'
 import 'primeflex/primeflex.css';
 import { Chips } from 'primereact/chips';
+
 import AppLoader from "./../../layout/components/AppLoader";
 import PageHeader from '../../layout/components/PageHeader';
 
@@ -23,7 +25,7 @@ class ViewSchedulingUnit extends Component{
             paths: [{
                 "View": "/task",
             }],
-            missingFieldsErrors: [],
+           missingStationFieldsErrors: [],
             defaultcolumns: [ {
                 status_logs: "Status Logs",
                 tasktype:{
@@ -75,7 +77,7 @@ class ViewSchedulingUnit extends Component{
         this.actions = [
             {icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', link: this.props.history.goBack} 
         ];
-        this.stations = []
+        this.stations = [];
         this.constraintTemplates = [];
         if (this.props.match.params.type === 'draft') {
             this.actions.unshift({icon: 'fa-edit', title: 'Click to edit',  props : { pathname:`/schedulingunit/edit/${ this.props.match.params.id}`}
@@ -123,7 +125,7 @@ class ViewSchedulingUnit extends Component{
                             schedule_unit_task : tasks,
                             isLoading: false,
                             stationGroup: targetObservation.specifications_doc.station_groups
-                        }, this.getAllStations);
+                    }, this.getAllStations);
                     });
                 }   else {
                     this.setState({
@@ -133,7 +135,7 @@ class ViewSchedulingUnit extends Component{
             });
 		}
     }
-   
+
     getScheduleUnitTasks(type, scheduleunit){
         if(type === 'draft')
             return ScheduleService.getTasksBySchedulingUnit(scheduleunit.id);
@@ -209,12 +211,14 @@ class ViewSchedulingUnit extends Component{
                         </div>
                     </div>
                 </>
-                }
-                {<Stations
+			    }
+               
+                 {<Stations
                     stationGroup={this.state.stationGroup}
                     targetObservation={this.state.targetObservation}
                     view
                 />}
+
                 {this.state.scheduleunit && this.state.scheduleunit.scheduling_constraints_doc && <SchedulingConstraint disable constraintTemplate={this.state.constraintSchema} initValue={this.state.scheduleunit.scheduling_constraints_doc} />}
                 <div>
                     <h3>Tasks Details</h3>

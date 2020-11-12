@@ -9,9 +9,11 @@ import {Dropdown} from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import {Dialog} from 'primereact/components/dialog/Dialog';
 import {Growl} from 'primereact/components/growl/Growl';
+
 import AppLoader from '../../layout/components/AppLoader';
 import Jeditor from '../../components/JSONEditor/JEditor';
 import UnitConversion from '../../utils/unit.converter';
+
 import ProjectService from '../../services/project.service';
 import ScheduleService from '../../services/schedule.service';
 import TaskService from '../../services/task.service';
@@ -19,6 +21,7 @@ import UIConstants from '../../utils/ui.constants';
 import PageHeader from '../../layout/components/PageHeader';
 import SchedulingConstraint from './Scheduling.Constraints';
 import Stations from './Stations';
+
 /**
  * Component to create a new SchedulingUnit from Observation strategy template
  */
@@ -32,7 +35,10 @@ export class SchedulingUnitCreate extends Component {
             redirect: null,                         // URL to redirect
             errors: [],                             // Form Validation errors
             schedulingSets: [],                     // Scheduling set of the selected project
-            customSelectedStations: [],
+            missingStationFieldsErrors: [],         // Validation for max no.of missing station
+            stationOptions: [],
+            stationGroup: [],
+            customSelectedStations: [],             // custom stations
             schedulingUnit: {
                 project: (props.match?props.match.params.project:null) || null,
             },
@@ -42,9 +48,6 @@ export class SchedulingUnitCreate extends Component {
             constraintSchema:null,                  
             validEditor: false,                     // For JSON editor validation
             validFields: {},                        // For Form Validation
-            missingFieldsErrors: [],
-            stationOptions: [],
-            stationGroup: []
         };
         this.projects = [];                         // All projects to load project dropdown
         this.schedulingSets = [];                   // All scheduling sets to be filtered for project
@@ -81,8 +84,7 @@ export class SchedulingUnitCreate extends Component {
                             ScheduleService.getObservationStrategies(),
                             TaskService.getTaskTemplates(),
                             ScheduleService.getSchedulingConstraintTemplates(),
-                            ScheduleService.getStationGroup()
-                        ]
+                            ScheduleService.getStationGroup()]
         Promise.all(promises).then(responses => {
             this.projects = responses[0];
             this.schedulingSets = responses[1];
@@ -90,7 +92,7 @@ export class SchedulingUnitCreate extends Component {
             this.taskTemplates = responses[3];
             this.constraintTemplates = responses[4];
             this.stations = responses[5];
-             //  Setting first value as constraint template
+            //  Setting first value as constraint template
              this.constraintStrategy(this.constraintTemplates[0]);
             if (this.state.schedulingUnit.project) {
                 const projectSchedSets = _.filter(this.schedulingSets, {'project_id': this.state.schedulingUnit.project});
@@ -111,7 +113,7 @@ export class SchedulingUnitCreate extends Component {
         schedulingUnit.project = projectName;
         this.setState({schedulingUnit: schedulingUnit, schedulingSets: projectSchedSets, validForm: this.validateForm('project')});
     }
-
+    
     /**
      * Function called when observation strategy template is changed. 
      * It generates the JSON schema for JSON editor and defult vales for the parameters to be captured
@@ -136,9 +138,6 @@ export class SchedulingUnitCreate extends Component {
             const taskTemplate = _.find(this.taskTemplates, {'name': task['specifications_template']});
             schema['$id'] = taskTemplate.schema['$id'];
             schema['$schema'] = taskTemplate.schema['$schema'];
-            // if (task['specifications_template'] === 'target observation') {
-            //     this.setState({ stationGroup: taskTemplate.schema.properties.station_groups.default });
-            // }
             let index = 0;
             for (const param of observStrategy.template.parameters) {
                 if (param.refs[0].indexOf(`/tasks/${taskName}`) > 0) {
@@ -171,7 +170,9 @@ export class SchedulingUnitCreate extends Component {
                     }
                 }
                 index++;
+               
             }
+            
         }
         this.setState({observStrategy: observStrategy, paramsSchema: schema, paramsOutput: paramsOutput});
 
@@ -287,7 +288,7 @@ export class SchedulingUnitCreate extends Component {
         if (Object.keys(validFields).length === Object.keys(this.formRules).length) {
             validForm = true;
         }
-        return validForm && !this.state.missingFieldsErrors;
+        return validForm && !this.state.missingStationFieldsErrors;
     }
     
     /**
@@ -317,10 +318,7 @@ export class SchedulingUnitCreate extends Component {
                 }
             }
         }
-       /* for (let type in constStrategy.sky.transit_offset) {
-            constStrategy.sky.transit_offset[type] = constStrategy.sky.transit_offset[type] * 60;
-        }*/
-
+       
         const station_groups = [];
         (this.state.selectedStations || []).forEach(key => {
             let station_group = {};
@@ -332,12 +330,14 @@ export class SchedulingUnitCreate extends Component {
             };  
             station_groups.push(station_group);                 
         });
+
         this.state.customSelectedStations.forEach(station => {
             station_groups.push({
                 stations: station.stations,
                 max_nr_missing: station.max_nr_missing
             });
         });
+        
         UnitConversion.degreeToRadians(constStrategy.sky);
             
         let observStrategy = _.cloneDeep(this.state.observStrategy);
@@ -399,16 +399,18 @@ export class SchedulingUnitCreate extends Component {
         this.state.editorFunction();
     }
 
-    onUpdateStations = (state, selectedStations, missingFieldsErrors, customSelectedStations) => {
+    onUpdateStations = (state, selectedStations, missing_StationFieldsErrors, customSelectedStations) => {
         this.setState({
             ...state,
             selectedStations,
-            missingFieldsErrors,
+            missing_StationFieldsErrors,
             customSelectedStations
+           
         }, () => {
             this.setState({
                 validForm: this.validateForm()
             });
+
         });
     };
 
@@ -515,10 +517,10 @@ export class SchedulingUnitCreate extends Component {
                             </div> 
                         </div>
                         <Stations
-                            stationGroup={this.state.stationGroup}
-                            onUpdateStations={this.onUpdateStations.bind(this)}
+                             stationGroup={this.state.stationGroup}
+                             onUpdateStations={this.onUpdateStations.bind(this)}
                         />
-                    </div>
+                       </div>
                     {this.state.constraintSchema && <div className="p-fluid">
                         <div className="p-grid">
                             <div className="p-col-12">

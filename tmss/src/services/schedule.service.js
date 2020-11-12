@@ -100,8 +100,8 @@ const ScheduleService = {
                 scheduletask['actionpath'] = '/task/view/draft/'+task['id'];
                 scheduletask['blueprint_draft'] = task['task_blueprints'];
                 scheduletask['status'] = task['status'];
-              
 
+              
                 //fetch task draft details
                 for(const key of commonkeys){
                     scheduletask[key] = task[key];
@@ -212,7 +212,7 @@ const ScheduleService = {
             return [];
         };
     },
-    saveSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit, constraint, station_groups) {
+    saveSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit, constraint,station_groups) {
         try {
             // Create the scheduling unit draft with observation strategy and scheduling set
             const url = `/api/scheduling_unit_observing_strategy_template/${observStrategy.id}/create_scheduling_unit/?scheduling_set_id=${schedulingUnit.scheduling_set_id}&name=${schedulingUnit.name}&description=${schedulingUnit.description}`
@@ -243,10 +243,10 @@ const ScheduleService = {
         };
     },
     
-                
-    updateSUDraftFromObservStrategy: async function(observStrategy,schedulingUnit,tasks,tasksToUpdate, station_groups) {
+    updateSUDraftFromObservStrategy: async function(observStrategy,schedulingUnit,tasks,tasksToUpdate,station_groups) {
         try {
             delete schedulingUnit['duration'];
+           
             schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
             for (const taskToUpdate in tasksToUpdate) {
                 let task = tasks.find(task => { return task.name === taskToUpdate});
@@ -330,21 +330,21 @@ const ScheduleService = {
           console.error('[project.services.getSchedulingUnitBySet]',error);
         }
       },
-    getStationGroup: async function() {
+      getStationGroup: async function() {
         try {
-            // const response = await axios.get('/api/station_type/');
-            // return response.data.results;
-            return [{
-                value: 'dutch'
-            },{
-                value: 'international'
-            },{
-                value: 'core'
-            },{
-                value: 'remote'
-            },{
-                value: 'superterp'
-            }]
+          //  const response = await axios.get('/api/station_type/');
+          //  return response.data.results;
+          return [{
+            value: 'Dutch'
+        },{
+            value: 'International'
+        },{
+            value: 'Core'
+        },{
+            value: 'Remote'
+        },{
+            value: 'Superterp'
+        }]
         }   catch(error) {
             console.error(error);
             return [];
@@ -352,7 +352,8 @@ const ScheduleService = {
     },
     getStations: async function(e) {
         try {
-            const response = await axios.get(`/api/station_groups/stations/1/${e}`);
+           // const response = await axios.get('/api/station_groups/stations/1/dutch');
+           const response = await axios.get(`/api/station_groups/stations/1/${e}`);
             return response.data;
         }   catch(error) {
             console.error(error);
@@ -360,6 +361,5 @@ const ScheduleService = {
         }
     },
 }
-
 
 export default ScheduleService;
