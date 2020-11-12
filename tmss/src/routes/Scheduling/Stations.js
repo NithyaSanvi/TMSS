@@ -136,7 +136,7 @@ export default (props) => {
             custom_selected_options[index].error = false;
         }
         setCustomStations(custom_selected_options);
-        updateSchedulingComp(state, value, missing_StationFieldsErrors, custom_selected_options);
+        updateSchedulingComp(state, selectedStations, missing_StationFieldsErrors, custom_selected_options);
     };
 
     /**
