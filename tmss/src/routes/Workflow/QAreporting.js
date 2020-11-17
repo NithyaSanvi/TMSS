@@ -11,7 +11,6 @@ import ScheduleService from '../../services/schedule.service';
 import { Link } from 'react-router-dom';
 
 class QAreporting extends Component{
-   
     constructor(props) {
         super(props);
         this.state={};
@@ -27,11 +26,13 @@ class QAreporting extends Component{
     }
 
     onSave() {
-
+        this.props.history.push({
+            pathname: `/schedulingunit/1/workflow/view`,
+        });
     }
 
     handleChange(e) {
-        console.log(e);
+        localStorage.setItem('report_qa', e);
     }
 
     render() {
