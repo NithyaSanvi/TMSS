@@ -15,6 +15,8 @@ class QAreporting extends Component{
     constructor(props) {
         super(props);
         this.state={};
+        this.onSave = this.onSave.bind(this);
+        this.handleChange = this.handleChange.bind(this);
     }
 
     componentDidMount() {
@@ -22,6 +24,14 @@ class QAreporting extends Component{
             .then(schedulingUnit => {
                 this.setState({schedulingUnit: schedulingUnit});
             })
+    }
+
+    onSave() {
+
+    }
+
+    handleChange(e) {
+        console.log(e);
     }
 
     render() {
@@ -71,6 +81,7 @@ class QAreporting extends Component{
                                 <label htmlFor="comments" >Comments</label>
                                 <div className="col-lg-12 col-md-12 col-sm-12"></div>
                                     <SunEditor  height="250" enableToolbar={true}
+                                    onChange={this.handleChange}
                                     setOptions={{
                                         buttonList: [
                                         ['undo', 'redo', 'bold', 'underline', 'fontColor', 'table', 'link', 'image', 'video','italic', 'strike', 'subscript', 
@@ -81,7 +92,7 @@ class QAreporting extends Component{
                             </div>
                             <div className="p-grid" style={{marginTop: '20px'}}>
                                 <div className="p-col-1">
-                                    <Button label="Save" className="p-button-primary" icon="pi pi-check" />
+                                    <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.onSave}/>
                                 </div>
                                 <div className="p-col-1">
                                     <Button label="Cancel" className="p-button-danger" icon="pi pi-times" />

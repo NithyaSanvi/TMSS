@@ -17,6 +17,7 @@ import { CycleList, CycleCreate, CycleView, CycleEdit } from './Cycle';
 import {TimelineView, WeekTimelineView} from './Timeline';
 import SchedulingSetCreate from './Scheduling/create.scheduleset';
 import QAreporting from './Workflow/QAreporting';
+import QAsos from './Workflow/QAsos';
 
 export const routes = [
     {
