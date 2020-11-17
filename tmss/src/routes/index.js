@@ -160,7 +160,7 @@ export const routes = [
        title: 'QA Reporting (TO)'
     },
     {
-        path:"/schedulingunit/:id/workflow",
+        path:"/schedulingunit/:id/workflow/view",
         component: QAsos,
         name: 'QA Reporting (SOS/SDOC)',
         title: 'QA Reporting (SOS/SDOC)'
