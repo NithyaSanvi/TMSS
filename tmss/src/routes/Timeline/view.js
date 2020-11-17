@@ -4,6 +4,7 @@ import moment from 'moment';
 import _ from 'lodash';
 
 // import SplitPane, { Pane }  from 'react-split-pane';
+import {InputSwitch} from 'primereact/inputswitch';
 
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
@@ -44,6 +45,7 @@ export class TimelineView extends Component {
             suTaskList:[],
             isSummaryLoading: false
         }
+        this.STATUS_BEFORE_SCHEDULED = ['defining', 'defined', 'schedulable'];  // Statuses before scheduled to get station_group
 
         this.onItemClick = this.onItemClick.bind(this);
         this.closeSUDets = this.closeSUDets.bind(this);
@@ -59,11 +61,11 @@ export class TimelineView extends Component {
                             ScheduleService.getSchedulingUnitDraft(),
                             ScheduleService.getSchedulingSets(),
                             UtilService.getUTC()] ;
-        Promise.all(promises).then(responses => {
+        Promise.all(promises).then(async(responses) => {
             const projects = responses[0];
             const suBlueprints = _.sortBy(responses[1].data.results, 'name');
             const suDrafts = responses[2].data.results;
-            const suSets = responses[3]
+            const suSets = responses[3];
             const group = [], items = [];
             const currentUTC = moment.utc(responses[4]);
             const defaultStartTime = currentUTC.clone().add(-24, 'hours');      // Default start time, this should be updated if default view is changed.
@@ -77,19 +79,28 @@ export class TimelineView extends Component {
                         const suBlueprint = _.find(suBlueprints, {'id': suBlueprintId});
                         suBlueprint['actionpath'] = `/schedulingunit/view/blueprint/${suBlueprintId}`;
                         suBlueprint.suDraft = suDraft;
-                        suBlueprint.project = project;
+                        suBlueprint.project = project.name;
                         suBlueprint.suSet = suSet;
                         suBlueprint.durationInSec = suBlueprint.duration;
                         suBlueprint.duration = UnitConverter.getSecsToHHmmss(suBlueprint.duration);
+                        // Load subtasks also to get stations from subtask if status is before scheduled
+                        const loadSubtasks = this.STATUS_BEFORE_SCHEDULED.indexOf(suBlueprint.status.toLowerCase()) < 0 ;
                         // Select only blueprints with start_time and stop_time in the default time limit
                         if (suBlueprint.start_time && 
                             (moment.utc(suBlueprint.start_time).isBetween(defaultStartTime, defaultEndTime) ||
                              moment.utc(suBlueprint.stop_time).isBetween(defaultStartTime, defaultEndTime))) {
+                            // suBlueprint.tasks = await ScheduleService.getTaskBlueprintsBySchedulingUnit(suBlueprint, true);
+                            suBlueprint.tasks = await ScheduleService.getTaskBlueprintsBySchedulingUnit(suBlueprint, true, loadSubtasks);
                             items.push(this.getTimelineItem(suBlueprint));
                             if (!_.find(group, {'id': suDraft.id})) {
                                 group.push({'id': suDraft.id, title: suDraft.name});
                             }
                             suList.push(suBlueprint);
+                        }   else if (suBlueprint.start_time) {  // For other SUs with start_time load details asynchronously
+                            ScheduleService.getTaskBlueprintsBySchedulingUnit(suBlueprint, true, loadSubtasks)
+                                .then(tasks => {
+                                    suBlueprint.tasks = tasks;
+                            })
                         }
                     }
                 }
@@ -108,11 +119,11 @@ export class TimelineView extends Component {
     getTimelineItem(suBlueprint) {
         // Temporary for testing
         const diffOfCurrAndStart = moment().diff(moment(suBlueprint.stop_time), 'seconds');
-        suBlueprint.status = diffOfCurrAndStart>=0?"FINISHED":"DEFINED";
+        // suBlueprint.status = diffOfCurrAndStart>=0?"FINISHED":"DEFINED";
         let item = { id: suBlueprint.id, 
             group: suBlueprint.suDraft.id,
-            title: `${suBlueprint.project.name} - ${suBlueprint.suDraft.name} - ${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs`,
-            project: suBlueprint.project.name,
+            title: `${suBlueprint.project} - ${suBlueprint.suDraft.name} - ${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs`,
+            project: suBlueprint.project,
             name: suBlueprint.suDraft.name,
             duration: suBlueprint.durationInSec?`${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs`:"",
             start_time: moment.utc(suBlueprint.start_time),
@@ -136,7 +147,7 @@ export class TimelineView extends Component {
                 suTaskList: !fetchDetails?this.state.suTaskList:[],
                 canExtendSUList: false, canShrinkSUList:false});
             if (fetchDetails) {
-                const suBlueprint = _.find(this.state.suBlueprints, {id: item.id});
+                const suBlueprint = _.find(this.state.suBlueprints, {id: (this.state.stationView?parseInt(item.id.split('-')[0]):item.id)});
                 ScheduleService.getTaskBlueprintsBySchedulingUnit(suBlueprint, true)
                     .then(taskList => {
                         for (let task of taskList) {
@@ -146,6 +157,11 @@ export class TimelineView extends Component {
                             }
                         }
                         this.setState({suTaskList: _.sortBy(taskList, "id"), isSummaryLoading: false})
+                    });
+                // Get the scheduling constraint template of the selected SU block
+                ScheduleService.getSchedulingConstraintTemplate(suBlueprint.suDraft.scheduling_constraints_template_id)
+                    .then(suConstraintTemplate => {
+                        this.setState({suConstraintTemplate: suConstraintTemplate});
                     });
             }
         }
@@ -163,17 +179,24 @@ export class TimelineView extends Component {
      * @param {moment} startTime 
      * @param {moment} endTime 
      */
-    dateRangeCallback(startTime, endTime) {
+    async dateRangeCallback(startTime, endTime) {
         let suBlueprintList = [], group=[], items = [];
         if (startTime && endTime) {
             for (const suBlueprint of this.state.suBlueprints) {
                 if (moment.utc(suBlueprint.start_time).isBetween(startTime, endTime) 
                         || moment.utc(suBlueprint.stop_time).isBetween(startTime, endTime)) {
-                    suBlueprintList.push(suBlueprint);
-                    items.push(this.getTimelineItem(suBlueprint));
-                    if (!_.find(group, {'id': suBlueprint.suDraft.id})) {
-                        group.push({'id': suBlueprint.suDraft.id, title: suBlueprint.suDraft.name});
+                    let timelineItem = this.getTimelineItem(suBlueprint);
+                    if (this.state.stationView) {
+                        const loadSubtasks = this.STATUS_BEFORE_SCHEDULED.indexOf(suBlueprint.status.toLowerCase()) < 0 ;
+                        suBlueprint.tasks = await ScheduleService.getTaskBlueprintsBySchedulingUnit(suBlueprint, true, loadSubtasks);
+                        this.getStationItemGroups(suBlueprint, timelineItem, group, items);
+                    }   else {
+                        items.push(timelineItem);
+                        if (!_.find(group, {'id': suBlueprint.suDraft.id})) {
+                            group.push({'id': suBlueprint.suDraft.id, title: suBlueprint.suDraft.name});
+                        }
                     }
+                    suBlueprintList.push(suBlueprint);
                 } 
             }
         }   else {
@@ -184,7 +207,48 @@ export class TimelineView extends Component {
         this.setState({suBlueprintList: _.filter(suBlueprintList, (suBlueprint) => {return suBlueprint.start_time!=null})});
         // On range change close the Details pane
         // this.closeSUDets();
-        return {group: group, items: items};
+        return {group: _.sortBy(group,'id'), items: items};
+    }
+
+    /**
+     * To get items and groups for station view
+     * @param {Object} suBlueprint 
+     * @param {Object} timelineItem 
+     * @param {Array} group 
+     * @param {Array} items 
+     */
+    getStationItemGroups(suBlueprint, timelineItem, group, items) {
+        /** Get all observation tasks */
+        const observtionTasks = _.filter(suBlueprint.tasks, (task) => { return task.template.type_value.toLowerCase() === "observation"});
+        let stations = [];
+        for (const observtionTask of observtionTasks) {
+            /** If the status of SU is before scheduled, get all stations from the station_groups from the task specification_docs */
+            if (this.STATUS_BEFORE_SCHEDULED.indexOf(suBlueprint.status.toLowerCase()) >= 0
+                && observtionTask.specifications_doc.station_groups) {
+                for (const grpStations of _.map(observtionTask.specifications_doc.station_groups, "stations")) {
+                    stations = _.concat(stations, grpStations);
+                }
+            }   else if (this.STATUS_BEFORE_SCHEDULED.indexOf(suBlueprint.status.toLowerCase()) < 0 
+                            && observtionTask.subTasks) {
+                /** If the status of SU is scheduled or after get the stations from the subtask specification tasks */
+                for (const subtask of observtionTask.subTasks) {
+                    if (subtask.specifications_doc.stations) {
+                        stations = _.concat(stations, subtask.specifications_doc.stations.station_list);
+                    }
+                }
+            }
+        }
+        stations = _.uniq(stations);
+        /** Group the items by station */
+        for (const station of stations) {
+            let stationItem = _.cloneDeep(timelineItem);
+            stationItem.id = `${stationItem.id}-${station}`;
+            stationItem.group = station;
+            items.push(stationItem);
+            if (!_.find(group, {'id': station})) {
+                group.push({'id': station, title: station});
+            }
+        }
     }
 
     /**
@@ -215,14 +279,24 @@ export class TimelineView extends Component {
         const suBlueprints = this.state.suBlueprints;
         for (const data of filteredData) {
             const suBlueprint = _.find(suBlueprints, {actionpath: data.actionpath});
-            items.push(this.getTimelineItem(suBlueprint));
-            if (!_.find(group, {'id': suBlueprint.suDraft.id})) {
-                group.push({'id': suBlueprint.suDraft.id, title: suBlueprint.suDraft.name});
+            let timelineItem = this.getTimelineItem(suBlueprint);
+            if (this.state.stationView) {
+                this.getStationItemGroups(suBlueprint, timelineItem, group, items);
+            }   else {
+                items.push(timelineItem);
+                if (!_.find(group, {'id': suBlueprint.suDraft.id})) {
+                    group.push({'id': suBlueprint.suDraft.id, title: suBlueprint.suDraft.name});
+                }
             }
         }
         if (this.timeline) {
-            this.timeline.updateTimeline({group: group, items: items});
+            this.timeline.updateTimeline({group: _.sortBy(group,"id"), items: items});
         }
+    }
+
+    setStationView(e) {
+        this.closeSUDets();
+        this.setState({stationView: e.value});
     }
 
     render() {
@@ -234,7 +308,7 @@ export class TimelineView extends Component {
         const canShrinkSUList = this.state.canShrinkSUList;
         let suBlueprint = null;
         if (isSUDetsVisible) {
-            suBlueprint = _.find(this.state.suBlueprints, {id: this.state.selectedItem.id});
+            suBlueprint = _.find(this.state.suBlueprints, {id:  this.state.stationView?parseInt(this.state.selectedItem.id.split('-')[0]):this.state.selectedItem.id});
         }
         return (
             <React.Fragment>
@@ -249,7 +323,7 @@ export class TimelineView extends Component {
                                     data={this.state.suBlueprintList} 
                                     defaultcolumns={[{name: "Name",
                                                         start_time:"Start Time", stop_time:"End Time"}]}
-                                    optionalcolumns={[{description: "Description", duration:"Duration (HH:mm:ss)", actionpath: "actionpath"}]}
+                                    optionalcolumns={[{project:"Project",description: "Description", duration:"Duration (HH:mm:ss)", actionpath: "actionpath"}]}
                                     columnclassname={[{"Start Time":"filter-input-50", "End Time":"filter-input-50",
                                                         "Duration (HH:mm:ss)" : "filter-input-50",}]}
                                     defaultSortColumn= {[{id: "Start Time", desc: false}]}
@@ -274,12 +348,18 @@ export class TimelineView extends Component {
                                         <i className="pi pi-step-forward"></i>
                                     </button>
                                 </div> 
+                                <div className="timeline-view-toolbar">
+                                    <label>Station View</label>
+                                    <InputSwitch checked={this.state.stationView} onChange={(e) => {this.setStationView(e)}} />
+                                </div>
                                 <Timeline ref={(tl)=>{this.timeline=tl}} 
                                         group={this.state.group} 
                                         items={this.state.items}
                                         currentUTC={this.state.currentUTC}
                                         rowHeight={30} itemClickCallback={this.onItemClick}
-                                        dateRangeCallback={this.dateRangeCallback}></Timeline>
+                                        dateRangeCallback={this.dateRangeCallback}
+                                        showSunTimings={!this.state.stationView}
+                                        className="timeline-toolbar-margin-top-0"></Timeline>
                             </div>
                             {/* Details Panel */}
                             {this.state.isSUDetsVisible &&
@@ -287,6 +367,7 @@ export class TimelineView extends Component {
                                      style={{borderLeft: "1px solid #efefef", marginTop: "0px", backgroundColor: "#f2f2f2"}}>
                                     {this.state.isSummaryLoading?<AppLoader /> :
                                         <SchedulingUnitSummary schedulingUnit={suBlueprint} suTaskList={this.state.suTaskList}
+                                                constraintsTemplate={this.state.suConstraintTemplate}
                                                 closeCallback={this.closeSUDets}></SchedulingUnitSummary>
                                     }
                                 </div>

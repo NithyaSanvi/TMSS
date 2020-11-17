@@ -1,9 +1,33 @@
+.sticky {
+    position: sticky;
+    top:49px;
+    z-index:1000;
+}
+
 .rct-sidebar-row {
     font-size: 14px;
 }
 
 .react-calendar-timeline .rct-header-root {
     background-color: #f0f0f0;
+}
+
+.rct-item {
+    border: none !important;
+}
+
+.timeline-view-toolbar {
+    margin-left: 10px;
+}
+
+.timeline-view-toolbar label {
+    margin-bottom: 0px;
+    vertical-align: top;
+    margin-right: 10px;
+}
+
+.timeline-toolbar-margin-top-0 {
+    margin-top: 0px !important;
 }
 
 .timeline-toolbar {
@@ -37,7 +61,7 @@
 }
 
 .timeline-filters button {
-    width: auto !important;
+    // width: auto !important;
 }
 
 .timeline-week-span {

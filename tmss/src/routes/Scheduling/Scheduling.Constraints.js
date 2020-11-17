@@ -116,8 +116,12 @@ export default (props) => {
                 list.push('disable-field');
             }
             ref.editors['root.time.at'].container.className = list.join(' ');
+            Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = true);
+            Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = true);
         } else {
             ref.editors['root.time.at'].container.className = ref.editors['root.time.at'].container.className.replace('disable-field', '');
+            Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = false);
+            Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = false);
         }
         if (props.callback) {
             props.callback(jsonOutput, errors);
@@ -183,6 +187,7 @@ export default (props) => {
                 callback: onEditForm,
                 initValue: initialValue,
                 disabled: props.disable,
+                formatOutput: props.formatOutput,
                 parentFunction: parentFunction
             })}
         </>

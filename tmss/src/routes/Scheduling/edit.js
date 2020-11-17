@@ -42,7 +42,7 @@ export class EditSchedulingUnit extends Component {
             validEditor: false,                     // For JSON editor validation
             validFields: {},                        // For Form Validation 
             observStrategyVisible: false,
-            missingFieldsErrors: [],                // Validation for max no.of missing station
+            missingStationFieldsErrors: [],                // Validation for max no.of missing station
             stationGroup: [],
             customSelectedStations: []              // Custom Stations    
         }
@@ -315,6 +315,7 @@ export class EditSchedulingUnit extends Component {
             });
             const schUnit = { ...this.state.schedulingUnit };
             schUnit.scheduling_constraints_doc = constStrategy;
+            //station 
             const station_groups = [];
             (this.state.selectedStations || []).forEach(key => {
                 let station_group = {};
@@ -326,7 +327,6 @@ export class EditSchedulingUnit extends Component {
                 };  
                station_groups.push(station_group);                 
             });
-
             this.state.customSelectedStations.forEach(station => {
                 station_groups.push({
                     stations: station.stations,

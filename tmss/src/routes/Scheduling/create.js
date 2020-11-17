@@ -35,10 +35,10 @@ export class SchedulingUnitCreate extends Component {
             redirect: null,                         // URL to redirect
             errors: [],                             // Form Validation errors
             schedulingSets: [],                     // Scheduling set of the selected project
-            missingStationFieldsErrors: [],         // Validation for max no.of missing station
+            missing_StationFieldsErrors: [],         // Validation for max no.of missing station
             stationOptions: [],
             stationGroup: [],
-            customSelectedStations: [],      
+            customSelectedStations: [],             // custom stations
             schedulingUnit: {
                 project: (props.match?props.match.params.project:null) || null,
             },
@@ -318,7 +318,7 @@ export class SchedulingUnitCreate extends Component {
                 }
             }
         }
-       
+       //station
         const station_groups = [];
         (this.state.selectedStations || []).forEach(key => {
             let station_group = {};
@@ -334,7 +334,7 @@ export class SchedulingUnitCreate extends Component {
         this.state.customSelectedStations.forEach(station => {
             station_groups.push({
                 stations: station.stations,
-                max_nr_missing: parseInt(station.max_nr_missing)
+                max_nr_missing:parseInt(station.max_nr_missing)
             });
         });
         
@@ -384,28 +384,33 @@ export class SchedulingUnitCreate extends Component {
                 name: '',
                 description: '',
                 project: this.props.match.params.project || null,
-                scheduling_constraints_template_id: this.constraintTemplates[0].id
-            },
+                scheduling_constraints_template_id: this.constraintTemplates[0].id,
+             },
             projectDisabled: (this.props.match.params.project? true:false),
             observStrategy: {},
+            selectedStations:{},
             paramsOutput: null,
             validEditor: false,
             validFields: {},
             constraintSchema: null,
+            selectedStations: null,
             touched:false,
             stationGroup: []
-        }, () => {
+           }, () => {
             this.constraintStrategy(this.constraintTemplates[0]);
         });
+       
         this.state.editorFunction();
+      
     }
 
-    onUpdateStations = (state, selectedStations, missingStationFieldsErrors, customSelectedStations) => {
+    onUpdateStations = (state, selectedStations, missing_StationFieldsErrors, customSelectedStations) => {
         this.setState({
             ...state,
             selectedStations,
-            missingStationFieldsErrors,
+            missing_StationFieldsErrors,
             customSelectedStations
+           
         }, () => {
             this.setState({
                 validForm: this.validateForm()

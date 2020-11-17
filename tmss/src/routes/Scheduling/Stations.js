@@ -1,3 +1,5 @@
+
+  
 import React, { useState, useEffect } from 'react';
 import _ from 'lodash';
 import {MultiSelect} from 'primereact/multiselect';
@@ -36,7 +38,7 @@ export default (props) => {
     useEffect(() => {
         if (props.stationGroup && props.stationGroup.length) {
             getAllStations();
-        } else {
+         } else {
             reset();
         }
     }, [props.stationGroup]);
@@ -104,7 +106,7 @@ export default (props) => {
                     stations: [...stationState['Custom'].stations, ...response.stations], 
                 },
             };
-            // Setting in Set to avoid duplicate, otherwise have to loop multiiple times.
+            // Setting in Set to avoid duplicate, otherwise have to loop multiple times.
             custom_Stations = new Set([...custom_Stations, ...response.stations]);
         });
         // Find the custom one
@@ -261,7 +263,7 @@ export default (props) => {
                     </div>
                 </div>}
                 {selectedStations.length ? <div className="col-sm-12 selected_stations" data-testid="selected_stations">
-                    {!props.view && <label>Maximum Number Of Missing Stations for Selected Groups</label>}
+                    {<div className="col-sm-12"><label style={{paddingLeft: '8px'}}>Maximum number of stations that can be missed in the selected groups</label></div>}
                     <div className="col-sm-12 p-0 d-flex flex-wrap">
                         {selectedStations.map(i => ( 
                                 <div className="p-field p-grid col-md-6" key={i}>
@@ -283,7 +285,7 @@ export default (props) => {
                             ))}
                             {customStations.map((stat, index) => (
                                 <div className="p-field p-grid col-md-12 custom-station-wrapper" key={index}>
-                                    {!props.view && <Button icon="pi pi-times" className="p-button-rounded p-button-secondary p-button-text custom-remove" onClick={() => removeCustomStations(index)} />}
+                                    {!props.view && <Button icon="pi pi-trash" className="p-button-secondary p-button-text custom-remove" onClick={() => removeCustomStations(index)} />}
 
                                     <div className="col-md-6 p-field p-grid">
                                         <label className="col-sm-6 text-caps custom-label">
@@ -315,8 +317,8 @@ export default (props) => {
                                             disabled={props.view}
                                             onChange={(e) => setMissingFieldsForCustom(e.target.value, index)}/>
                                             {(stat.error && stat.touched) && <span className="error-message">{stat.max_nr_missing ? `Max. no of missing stations is ${stat.stations.length}` : 'Max. no of missing stations required'}</span>}
-                                             {props.view &&
-                                            <span className="info">Max No. of Missing Stations</span>}
+                                             {/* {props.view &&
+                                            <span className="info">Max No. of Missing Stations</span>} */}
                                     
                                     </div>
                                     </div>

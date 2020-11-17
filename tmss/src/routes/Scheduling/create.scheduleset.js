@@ -2,8 +2,6 @@ import React, {Component} from 'react';
 import { Link, Redirect } from 'react-router-dom';
 import _ from 'lodash';
 
-import PageHeader from '../../layout/components/PageHeader';
-
 import {Dropdown} from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import {Dialog} from 'primereact/components/dialog/Dialog';
@@ -24,9 +22,9 @@ import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
 import UnitConverter from '../../utils/unit.converter'
 import Validator from  '../../utils/validator';
-
+import PageHeader from '../../layout/components/PageHeader';
 /**
- * Component to create / update Scheduling Unit Draft using Spreadsheet
+ * Component to create / update Scheduling Unit Drafts using Spreadsheet
  */
 export class SchedulingSetCreate extends Component {
     constructor(props) {
@@ -37,27 +35,22 @@ export class SchedulingSetCreate extends Component {
         this.tmpRowData = [];
  
         this.state = {
-
             projectDisabled: (props.match?(props.match.params.project? true:false):false),
             isLoading: true,                        // Flag for loading spinner
             dialog: { header: '', detail: ''},      // Dialog properties
             redirect: null,                         // URL to redirect
             errors: [],                             // Form Validation errors
             clipboard: [],                          // Maintaining grid data while Ctrl+C/V
-
             schedulingUnit: {
                 project: (props.match?props.match.params.project:null) || null,
             },
-
             schedulingSets: [],
             schedulingUnitList: [],
             selectedSchedulingSetId: null,
-          //  selectedStrategyId: null,
-           // selectedProjectId: null,
             observStrategy: {},
             totalCount: 0,
-            validEditor: false,                     // For JSON editor validation
-            validFields: {},                        // For Form Validation
+            validEditor: false,
+            validFields: {}, 
             noOfSU: 10,
             //ag-grid
             columnMap: [],
@@ -81,7 +74,7 @@ export class SchedulingSetCreate extends Component {
                 editable: true, flex: 1, sortable: true, minWidth: 100, resizable: true,
               },
             rowSelection: 'multiple',
-            // ag grid show row index
+            // ag grid to show row index
             components: {
                 rowIdRenderer: function (params) {
                 return 1 + params.rowIndex;
@@ -103,7 +96,7 @@ export class SchedulingSetCreate extends Component {
         this.cancelCreate = this.cancelCreate.bind(this);
         this.clipboardEvent = this.clipboardEvent.bind(this);
         this.reset = this.reset.bind(this);
-
+        
         this.projects = [];                         // All projects to load project dropdown
         this.schedulingSets = [];                   // All scheduling sets to be filtered for project
         this.observStrategies = [];                 // All Observing strategy templates
@@ -204,6 +197,9 @@ export class SchedulingSetCreate extends Component {
         this.state.gridApi.redrawRows();
     }
    
+    /**
+     * Resolve JSON Schema
+     */
    async resolveSchema(schema){
         let properties = schema.properties;
         schema.definitions = schema.definitions?schema.definitions:{};
@@ -247,11 +243,93 @@ export class SchedulingSetCreate extends Component {
         return schema;
     }
 
+   
     /**
      * Function to generate AG-Grid column definition. 
      * @param {number} strategyId 
      */
-    async createGridColums(scheduleUnit){
+    async createGridColumns(scheduleUnit){
+        let schema = await this.getTaskSchema(scheduleUnit);
+        schema = await this.resolveSchema(schema);
+        // AG Grid Cell Specific Properties
+        const cellProps =[];
+        cellProps['angle1'] = {type:'numberValueColumn', cellRenderer: 'timeInputMask',cellEditor: 'timeInputMask', valueSetter: 'valueSetter' };
+        cellProps['angle2'] = {type:'numberValueColumn', cellRenderer: 'degreeInputMask',cellEditor: 'degreeInputMask', valueSetter: 'valueSetter' };
+        cellProps['angle3'] = {cellEditor: 'numericEditor',};
+        cellProps['direction_type'] = {cellEditor: 'agSelectCellEditor',default: schema.definitions.pointing.properties.direction_type.default,
+                cellEditorParams: {
+                    values: schema.definitions.pointing.properties.direction_type.enum,
+                }, 
+            };
+        //Ag-grid Colums definition
+
+        let colKeyOrder = [];
+        let columnMap = [];
+        let colProperty = {};
+        let columnDefs = [
+            { // Row Index 
+              headerName: '',
+              editable: false,
+              maxWidth: 60,
+              cellRenderer: 'rowIdRenderer',
+              pinned: 'left',
+              lockPosition: true,
+              suppressSizeToFit: true,
+            },
+            {
+              headerName: 'Scheduling Unit',
+              children: [
+                {headerName: 'Name',field: 'suname'},
+                {headerName: 'Description',field: 'sudesc'}
+              ],
+              }
+        ];
+        colKeyOrder.push("suname");
+        colKeyOrder.push("sudesc");
+
+        colProperty ={'ID':'id', 'Name':'suname', 'Description':'sudesc'};
+        columnMap['Scheduling Unit'] = colProperty;
+         
+        let definitions = schema.definitions.pointing.properties;
+        let properties = schema.properties;
+        const propsKeys = Object.keys(properties);
+        for(const propKey of propsKeys){
+            let property = properties[propKey];
+            let childern = [];
+            colProperty = {};
+            
+            let childalias = property.title;
+            childalias = _.lowerCase(childalias).split(' ').map(x => x[0]).join('');
+            const paramKeys = Object.keys(property.default);
+            paramKeys.forEach(key =>{
+                colProperty[key] = childalias+key;
+                let cellAttr = {};
+                cellAttr['headerName'] = definitions[key].title;
+                cellAttr['field'] = childalias+key;
+                colKeyOrder.push(childalias+key);
+                let cellKeys =  Object.keys(cellProps[key]);
+                for(const cellKey of cellKeys){
+                    cellAttr[cellKey] = cellProps[key][cellKey];
+                };
+                childern.push(cellAttr);
+            })
+            columnDefs.push({
+                headerName:property.title,
+                children:childern
+            })
+            columnMap[property.title] = colProperty;
+        }
+        colProperty ={'From':'bfrom', 'Until':'buntil'};
+        columnMap['Between'] = colProperty;
+        this.setState({
+            columnDefs:columnDefs,
+            columnMap:columnMap,
+            colKeyOrder:colKeyOrder
+        })
+
+    }
+    
+    async getTaskSchema(scheduleUnit){
         let strategyId = scheduleUnit.observation_strategy_template_id;
         let tasksToUpdate = {};
         const observStrategy = _.find(this.observStrategies, {'id': strategyId});
@@ -311,78 +389,9 @@ export class SchedulingSetCreate extends Component {
                 index++;
             }
         }
-
-        schema = await this.resolveSchema(schema);
-        // AG Grid Cell Specific Properties
-        const cellProps =[];
-        cellProps['angle1'] = {type:'numberValueColumn', cellRenderer: 'timeInputMask',cellEditor: 'timeInputMask' };
-        cellProps['angle2'] = {type:'numberValueColumn', cellRenderer: 'degreeInputMask',cellEditor: 'degreeInputMask' };
-        cellProps['angle3'] = {cellEditor: 'numericEditor',};
-        cellProps['direction_type'] = {cellEditor: 'agSelectCellEditor',default: schema.definitions.pointing.properties.direction_type.default,
-                cellEditorParams: {
-                    values: schema.definitions.pointing.properties.direction_type.enum,
-                }, 
-            };
-        //Ag-grid Colums definition
-        let columnMap = [];
-        let colProperty = {};
-        let columnDefs = [
-            { // Row Index 
-              headerName: '',
-              editable: false,
-              maxWidth: 60,
-              cellRenderer: 'rowIdRenderer',
-              pinned: 'left',
-              lockPosition: true,
-              suppressSizeToFit: true,
-            },
-            {
-              headerName: 'Scheduling Unit',
-              children: [
-                {headerName: 'Name',field: 'suname'},
-                {headerName: 'Description',field: 'sudesc'}
-              ],
-              }
-        ];
-
-        colProperty ={'ID':'id', 'Name':'suname', 'Description':'sudesc'};
-        columnMap['Scheduling Unit'] = colProperty;
-         
-        let definitions = schema.definitions.pointing.properties;
-        let properties = schema.properties;
-        const propsKeys = Object.keys(properties);
-        for(const propKey of propsKeys){
-            let property = properties[propKey];
-            let childern = [];
-            colProperty = {};
-            
-            let childalais = property.title;
-            childalais = _.lowerCase(childalais).split(' ').map(x => x[0]).join('');
-            const paramKeys = Object.keys(property.default);
-            paramKeys.forEach(key =>{
-                colProperty[key] = childalais+key;
-                let cellAttr = {};
-                cellAttr['headerName'] = definitions[key].title;
-                cellAttr['field'] = childalais+key;
-
-                let cellKeys =  Object.keys(cellProps[key]);
-                for(const cellKey of cellKeys){
-                    cellAttr[cellKey] = cellProps[key][cellKey];
-                };
-                childern.push(cellAttr);
-            })
-            columnDefs.push({
-                headerName:property.title,
-                children:childern
-            })
-            columnMap[property.title] = colProperty;
-        }
-        this.setState({
-            columnDefs:columnDefs,
-            columnMap:columnMap,
-        })
+        return schema;
     }
-    
+
 
     /**
      * Function to prepare ag-grid row data. 
@@ -391,15 +400,11 @@ export class SchedulingSetCreate extends Component {
         if(this.state.schedulingUnitList.length===0){
             return;
         }
-       // const observStrategy = _.find(this.observStrategies, {'id': this.state.schedulingUnitList[0].observation_strategy_template_id});
-       // this.setState({observStrategy: observStrategy});
-
         this.tmpRowData = [];
         let totalSU = this.state.noOfSU;
         let paramsOutput = {};
         //refresh column header
-        await this.createGridColums(this.state.schedulingUnitList[0]);
-
+        await this.createGridColumns(this.state.schedulingUnitList[0]);
         let observationPropsList = [];
         for(const scheduleunit of this.state.schedulingUnitList){
             let observationProps = {
@@ -467,7 +472,7 @@ export class SchedulingSetCreate extends Component {
      * @param {Stirng} cell -> contains Row ID, Column Name, Value, isDegree
      */
     async updateAngle(rowIndex, field, value, isDegree, isValid){
-        let row = this.state.rowData[rowIndex]
+        let row = this.state.rowData[rowIndex];
         row[field] = value;
         row['isValid'] = isValid;
         //Convertverted value for Angle 1 & 2, set in SU Row 
@@ -477,10 +482,37 @@ export class SchedulingSetCreate extends Component {
         await this.setState({
            rowData: tmpRowData
         });
-      //  console.log('rowdata', this.state.rowData)
+         
       }
     
-    
+    /**
+     * Read Data from clipboard
+     */
+    async readClipBoard(){
+        try{
+            const queryOpts = { name: 'clipboard-read', allowWithoutGesture: true };
+            const permissionStatus = await navigator.permissions.query(queryOpts);
+            let data = await navigator.clipboard.readText();
+            return data;
+        }catch(err){
+            console.log("Error",err);
+        }
+    }  
+
+    /**
+     * Check the content is JSON format
+     * @param {*} jsonData 
+     */
+    async isJsonData(jsonData){
+        try{
+            let jsonObj = JSON.parse(jsonData);
+            return true;
+        }catch(err){
+            console.log("error :",err)
+            return false;
+        }
+    }  
+
       /**
      * Copy data to/from clipboard
      * @param {*} e 
@@ -490,42 +522,77 @@ export class SchedulingSetCreate extends Component {
         var ctrl = e.ctrlKey ? e.ctrlKey : ((key === 17) ? true : false); // ctrl detection
         if ( key == 86 && ctrl ) {
             // Ctrl+V
-            let emptyRow = this.state.emptyRow;
             this.tmpRowData = this.state.rowData;
             let dataRowCount = this.state.totalCount;
-            for(const row of this.state.clipboard){
-                let copyRow = _.cloneDeep(row);
-                copyRow['id'] = 0;
-                this.tmpRowData[dataRowCount] = copyRow; 
-                dataRowCount++;
-            }
-                       
-            let tmpNoOfSU= this.state.noOfSU;
-            if(dataRowCount >= tmpNoOfSU){
-                tmpNoOfSU = dataRowCount+10;
-                //Create additional empty row at the end
-                for(let i= this.tmpRowData.length; i<=tmpNoOfSU; i++){
-                    this.tmpRowData.push(emptyRow);
+            try {
+                let clipboardData = '';
+                try{
+                     //Read Clipboard Data
+                    clipboardData = await this.readClipBoard();
+                }catch(err){
+                    console.log("error :",err);
                 }
-            }
+              if(clipboardData){
+                    let suGridRowData= this.state.emptyRow;
+                    clipboardData = _.trim(clipboardData);
+                    let suRows = clipboardData.split("\n");
+                    suRows.forEach(line =>{
+                        let colCount = 0;
+                        suGridRowData ={};
+                        let suRow = line.split("\t");
+                        suGridRowData['id']= 0;
+                        suGridRowData['isValid']= true;
+                        for(const key of this.state.colKeyOrder){
+                            suGridRowData[key]= suRow[colCount];
+                            colCount++;
+                        }
+                        this.tmpRowData[dataRowCount]= (suGridRowData);
+                        dataRowCount++
+                    }) 
+                }
+                let emptyRow = this.state.emptyRow;
+                let tmpNoOfSU= this.state.noOfSU;
+                if(dataRowCount >= tmpNoOfSU){
+                    tmpNoOfSU = dataRowCount+10;
+                    //Create additional empty row at the end
+                    for(let i= this.tmpRowData.length; i<=tmpNoOfSU; i++){
+                        this.tmpRowData.push(emptyRow);
+                    }
+                }
 
-            await this.setState({
-                rowData: this.tmpRowData,
-                noOfSU: this.tmpRowData.length,
-                totalCount: dataRowCount,
-            })
+                await this.setState({
+                    rowData: this.tmpRowData,
+                    noOfSU: this.tmpRowData.length,
+                    totalCount: dataRowCount,
+                })
+                
+                this.state.gridApi.setRowData(this.state.rowData);
+                this.state.gridApi.redrawRows();
 
-            this.state.gridApi.setRowData(this.state.rowData)
-            this.state.gridApi.redrawRows();
+              }catch (err) {
+                console.error('Error: ', err);
+              }
              
         } else if ( key == 67 && ctrl ) {
-            //Ctrl+C = Store the data into local state
+            //Ctrl+C
             var selectedRows = this.state.gridApi.getSelectedRows();
-            this.setState({
-                clipboard : selectedRows
-            })
+            let clipboardData = '';
+            for(const rowData of selectedRows){
+                var line = '';
+                for(const key of this.state.colKeyOrder){
+                    line += rowData[key] + '\t';
+                }
+                line = _.trim(line);
+                clipboardData += line + '\r\n'; 
+            }
+            clipboardData = _.trim(clipboardData);
+            const queryOpts = { name: 'clipboard-write', allowWithoutGesture: true };
+            await navigator.permissions.query(queryOpts);
+            await navigator.clipboard.writeText(clipboardData);
         }
     }
+
+
     /**
      * Function to create Scheduling unit
      */
@@ -571,12 +638,11 @@ export class SchedulingSetCreate extends Component {
                     index++;
                 } 
                 if(!validRow){
-                    continue
+                    continue;
                 }
                 observStrategy.template.parameters.forEach(async(param, index) => {
                     $refs.set(observStrategy.template.parameters[index]['refs'][0], paramsOutput['param_' + index]);
                 });
-                
                 if(suRow.id >0 && suRow.suname.length>0 && suRow.sudesc.length>0){
                     newSU = _.find(this.state.schedulingUnitList, {'id': suRow.id}); 
                     newSU['name'] = suRow.suname;
@@ -597,14 +663,8 @@ export class SchedulingSetCreate extends Component {
             if((newSUCount+existingSUCount)>0){
                 const dialog = {header: 'Success', detail: '['+newSUCount+'] Scheduling Units are created & ['+existingSUCount+'] Scheduling Units are updated successfully.'};
                 this.setState({  dialogVisible: true, dialog: dialog});
-             /*   let schedulingUnitList= await ScheduleService.getSchedulingBySet(this.state.selectedSchedulingSetId);
-                schedulingUnitList = _.filter(schedulingUnitList,{'observation_strategy_template_id': this.state.observStrategy.id}) ;
-                this.setState({
-                    schedulingUnitList:  schedulingUnitList
-                })
-                this.prepareScheduleUnitListForGrid();*/
             }else{
-                this.growl.show({severity: 'error', summary: 'Warring', detail: 'Scheduling Units are not create/update '});
+                this.growl.show({severity: 'error', summary: 'Warning', detail: 'No Scheduling Units create/update '});
             }
         }catch(err){
             this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to create/update Scheduling Units'});
@@ -612,19 +672,18 @@ export class SchedulingSetCreate extends Component {
     }
  
     /**
-     * Refresh the grid with updated data, it helps to make next update to make immediatly for the same filter
+     * Refresh the grid with updated data
      */
     async reset() {
-        //this.setState({dialogVisible: false});
         let schedulingUnitList= await ScheduleService.getSchedulingBySet(this.state.selectedSchedulingSetId);
-                schedulingUnitList = _.filter(schedulingUnitList,{'observation_strategy_template_id': this.state.observStrategy.id}) ;
-                this.setState({
-                    schedulingUnitList:  schedulingUnitList,
-                    dialogVisible: false
-                })
-               await this.prepareScheduleUnitListForGrid();
-                this.state.gridApi.setRowData(this.state.rowData)
-                this.state.gridApi.redrawRows();
+        schedulingUnitList = _.filter(schedulingUnitList,{'observation_strategy_template_id': this.state.observStrategy.id}) ;
+        this.setState({
+            schedulingUnitList:  schedulingUnitList,
+            dialogVisible: false
+        })
+        await this.prepareScheduleUnitListForGrid();
+        this.state.gridApi.setRowData(this.state.rowData);
+        this.state.gridApi.redrawRows();
     }
 
     /**
@@ -634,15 +693,16 @@ export class SchedulingSetCreate extends Component {
         this.setState({redirect: '/schedulingunit'});
     }
 
-    onGridReady (params) { 
-        this.setState({
+   async onGridReady (params) { 
+        await this.setState({
             gridApi:params.api,
             gridColumnApi:params.columnApi,
         })
+        this.state.gridApi.hideOverlay();
     }
  
    async setNoOfSUint(value){
-       if(value>=0 && value<501){
+       if(value >= 0 && value < 501){
             await this.setState({
                 noOfSU: value
             })
@@ -701,7 +761,8 @@ export class SchedulingSetCreate extends Component {
     validateEditor() {
         return this.validEditor?true:false;
     }
-    
+     
+
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -772,27 +833,27 @@ export class SchedulingSetCreate extends Component {
                             </div>
                         </div>
                         <>
-                        <div className="ag-theme-alpine" style={ { height: '500px', marginBottom: '10px' } } onKeyDown={this.clipboardEvent}>
-                            <AgGridReact 
-                            suppressClipboardPaste={false}
-                                columnDefs={this.state.columnDefs}
-                                columnTypes={this.state.columnTypes}
-                                defaultColDef={this.state.defaultColDef}
-                                rowSelection={this.state.rowSelection}
-                                onGridReady={this.onGridReady}
-                                rowData={this.state.rowData}
-                                frameworkComponents={this.state.frameworkComponents}
-                                context={this.state.context} 
-                                components={this.state.components}
-                                modules={this.state.modules}        
-                                enableRangeSelection={true}
-                                rowSelection={this.state.rowSelection}
-  
-                                //onSelectionChanged={this.onSelectionChanged.bind(this)}
-                            >
-                             
-                            </AgGridReact>
-                        </div>
+                        {this.state.observStrategy.id && 
+                            <div className="ag-theme-alpine" style={ { height: '500px', marginBottom: '10px' } } onKeyDown={this.clipboardEvent}>
+                                <AgGridReact 
+                                suppressClipboardPaste={false}
+                                    columnDefs={this.state.columnDefs}
+                                    columnTypes={this.state.columnTypes}
+                                    defaultColDef={this.state.defaultColDef}
+                                    rowSelection={this.state.rowSelection}
+                                    onGridReady={this.onGridReady}
+                                    rowData={this.state.rowData}
+                                    frameworkComponents={this.state.frameworkComponents}
+                                    context={this.state.context} 
+                                    components={this.state.components}
+                                    modules={this.state.modules}        
+                                    enableRangeSelection={true}
+                                    rowSelection={this.state.rowSelection}
+                                >
+                                
+                                </AgGridReact>
+                            </div>
+                        }
                         </>
                         <div className="p-grid p-justify-start">
                             <div className="p-col-1">

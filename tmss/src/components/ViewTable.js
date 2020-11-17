@@ -683,7 +683,7 @@ optionaldataheader.forEach(header => {
     columns.push({
       Header: isString ? optionalheader[0][header] : optionalheader[0][header].name,
       id: isString ? header : optionalheader[0][header].name,
-      accessor: header,
+      accessor: isString ? header : optionalheader[0][header].name, 
       filter: filtertype,
       Filter: filterFn,
       isVisible: false,

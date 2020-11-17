@@ -109,8 +109,34 @@
 .hide {
     display: none !important;
 }
+.grouping {
+    padding: 0 15px;
+}
+.grouping fieldset {
+    border-width: 1px;
+    border-style: double;
+    border-color: #ccc;
+    border-image: initial;
+    padding: 10px;
+    width: 100%;
+}
+.grouping legend {
+    width: auto;
+}
 
-
+.comments{
+    margin: 90px;
+    position: absolute;
+    margin-left: 15px;
+}
+.qaButton{
+    margin-left: 0;
+    position: relative;
+    top: 350px;
+}
+.plots{
+    padding-left: 2px;
+}
 
 
 

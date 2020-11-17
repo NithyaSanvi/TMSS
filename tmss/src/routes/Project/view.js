@@ -179,7 +179,7 @@ export class ProjectView extends Component {
                             <div className="p-field p-grid resource-input-grid">
                                 <ResourceDisplayList projectQuota={this.state.projectQuota}  unitMap={this.resourceUnitMap} />
                             </div>
-                            {/* Show Schedule Unit blongest to Project */}
+                            {/* Show Schedule Unit belongs to Project */}
                             <div className="p-fluid">
                                 <div className="p-field p-grid">
                                     <div className="col-lg-3 col-md-3 col-sm-12">
@@ -187,7 +187,7 @@ export class ProjectView extends Component {
                                     </div>
                                 </div>
                             </div>
-                            <SchedulingUnitList project={this.state.project.name}/>
+                            <SchedulingUnitList project={this.state.project.name} hideProjectColumn/>
                         </div>
                     </React.Fragment>
                 }

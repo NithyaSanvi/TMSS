@@ -53,24 +53,31 @@ const ScheduleService = {
             return null;
         }
     },
-    getTaskBlueprintById: async function(id, loadTemplate){
+    getTaskBlueprintById: async function(id, loadTemplate, loadSubtasks){
         let result;
         try {
             result = await axios.get('/api/task_blueprint/'+id);
             if (result.data && loadTemplate) {
                 result.data.template = await TaskService.getTaskTemplate(result.data.specifications_template_id);
             }
+            if (result.data && loadSubtasks) {
+                let subTasks = [];
+                for (const subtaskId of result.data.subtasks_ids) {
+                    subTasks.push((await TaskService.getSubtaskDetails(subtaskId)));
+                }
+                result.data.subTasks = subTasks;
+            }
         }   catch(error) {
             console.error('[schedule.services.getTaskBlueprintById]',error);
         }
         return result;
     },
-    getTaskBlueprintsBySchedulingUnit: async function(scheduleunit, loadTemplate){
+    getTaskBlueprintsBySchedulingUnit: async function(scheduleunit, loadTemplate, loadSubtasks){
         // there no single api to fetch associated task_blueprint, so iteare the task_blueprint id to fetch associated task_blueprint
         let taskblueprintsList = [];
         if(scheduleunit.task_blueprints_ids){
             for(const id of scheduleunit.task_blueprints_ids){
-               await this.getTaskBlueprintById(id, loadTemplate).then(response =>{
+               await this.getTaskBlueprintById(id, loadTemplate, loadSubtasks).then(response =>{
                     let taskblueprint = response.data;
                     taskblueprint['tasktype'] = 'Blueprint';
                     taskblueprint['actionpath'] = '/task/view/blueprint/'+taskblueprint['id'];
@@ -210,6 +217,15 @@ const ScheduleService = {
         }   catch(error) {
             console.error(error);
             return [];
+        };
+    },
+    getSchedulingConstraintTemplate: async function(id){
+        try {
+            const response = await axios.get(`/api/scheduling_constraints_template/${id}`);
+            return response.data;
+        }   catch(error) {
+            console.error(error);
+            return null;
         };
     },
     saveSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit, constraint,station_groups) {
@@ -360,6 +376,14 @@ const ScheduleService = {
             return [];
         }
     },
+      getProjectList: async function() {
+        try {
+          const response = await axios.get('/api/project/');
+          return response.data.results;
+        } catch (error) {
+          console.error('[project.services.getProjectList]',error);
+        }
+      }
 }
 
 export default ScheduleService;

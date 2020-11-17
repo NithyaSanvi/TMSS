@@ -85,7 +85,7 @@ export class WeekTimelineView extends Component {
                         const suBlueprint = _.find(suBlueprints, {'id': suBlueprintId});
                         suBlueprint['actionpath'] = `/schedulingunit/view/blueprint/${suBlueprintId}`;
                         suBlueprint.suDraft = suDraft;
-                        suBlueprint.project = project;
+                        suBlueprint.project = project.name;
                         suBlueprint.suSet = suSet;
                         suBlueprint.durationInSec = suBlueprint.duration;
                         suBlueprint.duration = UnitConverter.getSecsToHHmmss(suBlueprint.duration);
@@ -139,13 +139,13 @@ export class WeekTimelineView extends Component {
         let item = { id: `${suBlueprint.id}-${suBlueprint.start_time}`, 
             // group: suBlueprint.suDraft.id,
             group: moment.utc(suBlueprint.start_time).format("MMM DD ddd"),
-            title: `${suBlueprint.project.name} - ${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs - ${antennaSet}`,
-            project: suBlueprint.project.name,
+            title: `${suBlueprint.project} - ${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs - ${antennaSet}`,
+            project: suBlueprint.project,
             name: suBlueprint.suDraft.name,
             band: antennaSet,
             duration: suBlueprint.durationInSec?`${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs`:"",
-            start_time: moment.utc(`${displayDate.format('MM-DD-YYYY')} ${suBlueprint.start_time.split('T')[1]}`),
-            end_time: moment.utc(`${displayDate.format('MM-DD-YYYY')} ${suBlueprint.stop_time.split('T')[1]}`),
+            start_time: moment.utc(`${displayDate.format('YYYY-MM-DD')} ${suBlueprint.start_time.split('T')[1]}`),
+            end_time: moment.utc(`${displayDate.format('YYYY-MM-DD')} ${suBlueprint.stop_time.split('T')[1]}`),
             bgColor: suBlueprint.status? STATUS_COLORS[suBlueprint.status.toUpperCase()]:"#2196f3",
             selectedBgColor: suBlueprint.status? STATUS_COLORS[suBlueprint.status.toUpperCase()]:"#2196f3"}; 
         return item;
@@ -175,6 +175,11 @@ export class WeekTimelineView extends Component {
                             }
                         }
                         this.setState({suTaskList: _.sortBy(taskList, "id"), isSummaryLoading: false})
+                    });
+                // Get the scheduling constraint template of the selected SU block
+                ScheduleService.getSchedulingConstraintTemplate(suBlueprint.suDraft.scheduling_constraints_template_id)
+                    .then(suConstraintTemplate => {
+                        this.setState({suConstraintTemplate: suConstraintTemplate});
                     });
             }
         }
@@ -313,7 +318,7 @@ export class WeekTimelineView extends Component {
                                     data={this.state.suBlueprintList} 
                                     defaultcolumns={[{name: "Name",
                                                         start_time:"Start Time", stop_time:"End Time"}]}
-                                    optionalcolumns={[{description: "Description", duration:"Duration (HH:mm:ss)", actionpath: "actionpath"}]}
+                                    optionalcolumns={[{project:"Project",description: "Description", duration:"Duration (HH:mm:ss)",actionpath: "actionpath"}]}
                                     columnclassname={[{"Name":"filter-input-100", "Start Time":"filter-input-50", "End Time":"filter-input-50",
                                                         "Duration (HH:mm:ss)" : "filter-input-50",}]}
                                     defaultSortColumn= {[{id: "Start Time", desc: false}]}
@@ -359,6 +364,7 @@ export class WeekTimelineView extends Component {
                                      style={{borderLeft: "1px solid #efefef", marginTop: "0px", backgroundColor: "#f2f2f2"}}>
                                     {this.state.isSummaryLoading?<AppLoader /> :
                                         <SchedulingUnitSummary schedulingUnit={suBlueprint} suTaskList={this.state.suTaskList}
+                                                constraintsTemplate={this.state.suConstraintTemplate}
                                                 closeCallback={this.closeSUDets}
                                                 location={this.props.location}></SchedulingUnitSummary>
                                     }

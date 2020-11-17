@@ -9,37 +9,42 @@ import ScheduleService from '../../services/schedule.service';
 class SchedulingUnitList extends Component{
      
     constructor(props){
-        super(props)
+       super(props)
+       const defaultcolumns = {
+        type:{
+            name:"Type",
+            filter:"select"
+        },
+        name:"Name",
+        description:"Description",
+        project:"Project",
+        created_at:{
+            name:"Created At",
+            filter: "date"
+        },
+        updated_at:{
+            name:"Updated At",
+            filter: "date"
+        },
+        requirements_template_id:{
+            name: "Template",
+            filter: "select"
+        },
+        start_time:"Start Time",
+        stop_time:"End time",
+        duration:"Duration (HH:mm:ss)",
+        status:"Status"
+        };
+        if (props.hideProjectColumn) {
+            delete defaultcolumns['project'];
+        }
         this.state = {
             scheduleunit: [],
             paths: [{
                 "View": "/schedulingunit/view",
             }],
             isLoading: true,
-            defaultcolumns: [ {
-                type:{
-                    name:"Type",
-                    filter:"select"
-                },
-                name:"Name",
-                description:"Description",
-                created_at:{
-                    name:"Created At",
-                    filter: "date"
-                },
-                updated_at:{
-                    name:"Updated At",
-                    filter: "date"
-                },
-                requirements_template_id:{
-                    name: "Template",
-                    filter: "select"
-                },
-                start_time:"Start Time",
-                stop_time:"End time",
-                duration:"Duration (HH:mm:ss)",
-                status:"Status"
-                }],
+            defaultcolumns: [defaultcolumns],
             optionalcolumns:  [{
                 actionpath:"actionpath",
             }],
@@ -57,25 +62,30 @@ class SchedulingUnitList extends Component{
         //Get SU Draft/Blueprints for the Project ID. This request is coming from view Project page. Otherwise it will show all SU
         let project = this.props.project;
         if(project){
-            let scheduleunits = await ScheduleService.getSchedulingListByProject(project);
-            if(scheduleunits){
+           let scheduleunits = await ScheduleService.getSchedulingListByProject(project);
+        if(scheduleunits){
                 this.setState({
                     scheduleunit: scheduleunits, isLoading: false
                 });
             }
-        }else{
+        }else{ 
+            const schedulingSet = await ScheduleService.getSchedulingSets();
+            const projects = await ScheduleService.getProjectList();
             const bluePrint = await ScheduleService.getSchedulingUnitBlueprint();
             ScheduleService.getSchedulingUnitDraft().then(scheduleunit =>{
                 const output = [];
                 var scheduleunits = scheduleunit.data.results;
                 for( const scheduleunit  of scheduleunits){
+                    const suSet = schedulingSet.find((suSet) => { return  scheduleunit.scheduling_set_id === suSet.id });
+                    const project = projects.find((project) => { return suSet.project_id === project.name});
                     const blueprintdata = bluePrint.data.results.filter(i => i.draft_id === scheduleunit.id);
                     blueprintdata.map(blueP => { 
-                        blueP.duration = moment.utc((blueP.duration || 0)*1000).format('HH:mm:ss'); 
+                        blueP.duration = moment.utc((blueP.duration || 0)*1000).format('HH:mm:ss');
                         blueP.type="Blueprint"; 
                         blueP['actionpath'] ='/schedulingunit/view/blueprint/'+blueP.id;
                         blueP['created_at'] = moment(blueP['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                         blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                        blueP.project = project.name;
                         return blueP; 
                     });
                     output.push(...blueprintdata);
@@ -84,6 +94,7 @@ class SchedulingUnitList extends Component{
                     scheduleunit['duration'] = moment.utc((scheduleunit.duration || 0)*1000).format('HH:mm:ss');
                     scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                     scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                    scheduleunit.project = project.name;
                     output.push(scheduleunit);
                 }
                 this.setState({

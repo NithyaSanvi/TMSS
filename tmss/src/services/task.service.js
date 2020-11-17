@@ -169,7 +169,7 @@ const TaskService = {
         let subtaskTemplates = {};
         const taskDetails = (await axios.get(`/api/task_blueprint/${taskId}`)).data;
         for (const subtaskId of taskDetails.subtasks_ids) {
-          const subtaskDetails = (await axios.get(`/api/subtask/${subtaskId}`)).data;
+          const subtaskDetails = await this.getSubtaskDetails(subtaskId);
           const subtaskLogs = await this.getSubtaskStatusLogs(subtaskId);
           let template = subtaskTemplates[subtaskDetails.specifications_template_id];
           if (!template) {
@@ -194,7 +194,13 @@ const TaskService = {
         console.error(error);
       }
     },
-    
+    getSubtaskDetails: async function(subtaskId) {
+      try {
+        return (await axios.get(`/api/subtask/${subtaskId}`)).data;
+      } catch(error) {
+        console.error(error);
+      }
+    }
 }
 
 export default TaskService;

@@ -15,7 +15,8 @@ import SchedulingUnitCreate from './Scheduling/create';
 import EditSchedulingUnit from './Scheduling/edit';
 import { CycleList, CycleCreate, CycleView, CycleEdit } from './Cycle';
 import {TimelineView, WeekTimelineView} from './Timeline';
-import SchedulingSetCreate from './Scheduling/create.scheduleset'
+import SchedulingSetCreate from './Scheduling/create.scheduleset';
+import QAreporting from './Workflow/QAreporting';
 
 export const routes = [
     {
@@ -150,7 +151,19 @@ export const routes = [
         path: "/schedulingset/schedulingunit/create",
         component: SchedulingSetCreate,
         name: 'Scheduling Set Add'
-    } 
+    },
+    {
+       path: "/schedulingunit/:id/workflow",
+       component: QAreporting,
+       name: 'QA Reporting (TO)',
+       title: 'QA Reporting (TO)'
+    },
+    {
+        path:"/schedulingunit/:id/workflow",
+        component: QAsos,
+        name: 'QA Reporting (SOS/SDOC)',
+        title: 'QA Reporting (SOS/SDOC)'
+    }
 ];
 
 export const RoutedContent = () => {
