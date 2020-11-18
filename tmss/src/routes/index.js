@@ -17,7 +17,7 @@ import { CycleList, CycleCreate, CycleView, CycleEdit } from './Cycle';
 import {TimelineView, WeekTimelineView} from './Timeline';
 import SchedulingSetCreate from './Scheduling/create.scheduleset';
 import QAreporting from './Workflow/QAreporting';
-import QAsos from './Workflow/QAsos';
+import Workflow from './Workflow';
 import PIverification from './Workflow/PIverification';
 import DecideAcceptance from './Workflow/DecideAcceptance';
 
@@ -158,29 +158,10 @@ export const routes = [
     },
     {
        path: "/schedulingunit/:id/workflow",
-       component: QAreporting,
-       name: 'QA Reporting (TO)',
+       component: Workflow,
+       name: 'Workflow',
        title: 'QA Reporting (TO)'
-    },
-    {
-        path:"/schedulingunit/:id/workflow/view",
-        component: QAsos,
-        name: 'QA Reporting (SOS/SDOC)',
-        title: 'QA Reporting (SOS/SDOC)'
-    },
-    {
-        path:"/schedulingunit/:id/workflow/verification",
-        component: PIverification,
-        name: 'PIVerification',
-        title: 'PIVerification'
-    },
-    {
-        path:"/schedulingunit/:id/workflow/acceptance",
-        component: DecideAcceptance,
-        name: 'DecideAcceptance',
-        title: 'DecideAcceptance'
     }
-    
 ];
 
 export const RoutedContent = () => {
