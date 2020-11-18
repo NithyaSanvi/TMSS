@@ -12,7 +12,6 @@ import moment from 'moment';
 import SchedulingConstraint from './Scheduling.Constraints';
 import { Dialog } from 'primereact/dialog';
 import TaskStatusLogs from '../Task/state_logs';
-import Stations from './Stations';
 
 class ViewSchedulingUnit extends Component{
     constructor(props){
@@ -25,7 +24,7 @@ class ViewSchedulingUnit extends Component{
             paths: [{
                 "View": "/task",
             }],
-           missingStationFieldsErrors: [],
+
             defaultcolumns: [ {
                 status_logs: "Status Logs",
                 tasktype:{
@@ -71,13 +70,11 @@ class ViewSchedulingUnit extends Component{
                 "Relative Start Time (HH:mm:ss)": "filter-input-75",
                 "Relative End Time (HH:mm:ss)": "filter-input-75",
                 "Status":"filter-input-100"
-            }],
-            stationGroup: []
+            }]
         }
         this.actions = [
             {icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', link: this.props.history.goBack} 
         ];
-        this.stations = [];
         this.constraintTemplates = [];
         if (this.props.match.params.type === 'draft') {
             this.actions.unshift({icon: 'fa-edit', title: 'Click to edit',  props : { pathname:`/schedulingunit/edit/${ this.props.match.params.id}`}
@@ -94,7 +91,7 @@ class ViewSchedulingUnit extends Component{
         }
        }
 
-    async componentDidMount(){ 
+    componentDidMount(){ 
         let schedule_id = this.state.scheduleunitId;
         let schedule_type = this.state.scheduleunitType;
         if (schedule_type && schedule_id) {
@@ -105,8 +102,6 @@ class ViewSchedulingUnit extends Component{
                     </button>
                 );
             };
-            this.stations = await ScheduleService.getStationGroup();
-            this.setState({stationOptions: this.stations});
             this.getScheduleUnit(schedule_type, schedule_id)
             .then(schedulingUnit =>{
                 if (schedulingUnit) {
@@ -120,13 +115,11 @@ class ViewSchedulingUnit extends Component{
                             task.status_logs = task.tasktype === "Blueprint"?subtaskComponent(task):"";
                             return task;
                         });
-                        const targetObservation = tasks.find(task => task.name === 'Target Observation');
                         this.setState({
                             scheduleunit : schedulingUnit,
                             schedule_unit_task : tasks,
                             isLoading: false,
-                            stationGroup: targetObservation.specifications_doc.station_groups
-                    }, this.getAllStations);
+                        });
                     });
                 }   else {
                     this.setState({
@@ -136,7 +129,7 @@ class ViewSchedulingUnit extends Component{
             });
 		}
     }
-
+    
     getScheduleUnitTasks(type, scheduleunit){
         if(type === 'draft')
             return ScheduleService.getTasksBySchedulingUnit(scheduleunit.id);
@@ -213,13 +206,6 @@ class ViewSchedulingUnit extends Component{
                     </div>
                 </>
 			    }
-               
-                 {<Stations
-                    stationGroup={this.state.stationGroup}
-                    targetObservation={this.state.targetObservation}
-                    view
-                />}
-
                 {this.state.scheduleunit && this.state.scheduleunit.scheduling_constraints_doc && <SchedulingConstraint disable constraintTemplate={this.state.constraintSchema} initValue={this.state.scheduleunit.scheduling_constraints_doc} />}
                 <div>
                     <h3>Tasks Details</h3>

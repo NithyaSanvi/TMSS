@@ -115,7 +115,7 @@ const ScheduleService = {
                 }
                 scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                 scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-                scheduletask['specifications_doc'] = task['specifications_doc'];
+                
                 scheduletask.duration = moment.utc((scheduletask.duration || 0)*1000).format('HH:mm:ss'); 
                 scheduletask.relative_start_time = moment.utc(scheduletask.relative_start_time*1000).format('HH:mm:ss'); 
                 scheduletask.relative_stop_time = moment.utc(scheduletask.relative_stop_time*1000).format('HH:mm:ss'); 
@@ -219,16 +219,7 @@ const ScheduleService = {
             return [];
         };
     },
-    getSchedulingConstraintTemplate: async function(id){
-        try {
-            const response = await axios.get(`/api/scheduling_constraints_template/${id}`);
-            return response.data;
-        }   catch(error) {
-            console.error(error);
-            return null;
-        };
-    },
-    saveSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit, constraint,station_groups) {
+    saveSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit, constraint) {
         try {
             // Create the scheduling unit draft with observation strategy and scheduling set
             const url = `/api/scheduling_unit_observing_strategy_template/${observStrategy.id}/create_scheduling_unit/?scheduling_set_id=${schedulingUnit.scheduling_set_id}&name=${schedulingUnit.name}&description=${schedulingUnit.description}`
@@ -237,7 +228,6 @@ const ScheduleService = {
             if (schedulingUnit && schedulingUnit.id) {
                 // Update the newly created SU draft requirement_doc with captured parameter values
                 schedulingUnit.requirements_doc = observStrategy.template;
-                schedulingUnit.requirements_doc.tasks['Target Observation'].specifications_doc.station_groups = station_groups;
                 schedulingUnit.scheduling_constraints_doc = constraint.scheduling_constraints_doc;
                 schedulingUnit.scheduling_constraints_template_id = constraint.id;
                 schedulingUnit.scheduling_constraints_template = constraint.constraint.url;
@@ -259,17 +249,13 @@ const ScheduleService = {
         };
     },
     
-    updateSUDraftFromObservStrategy: async function(observStrategy,schedulingUnit,tasks,tasksToUpdate,station_groups) {
+    updateSUDraftFromObservStrategy: async function(observStrategy,schedulingUnit,tasks,tasksToUpdate) {
         try {
             delete schedulingUnit['duration'];
-           
             schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
             for (const taskToUpdate in tasksToUpdate) {
                 let task = tasks.find(task => { return task.name === taskToUpdate});
                 task.specifications_doc = observStrategy.template.tasks[taskToUpdate].specifications_doc;
-                if (task.name === 'Target Observation') {
-                    task.specifications_doc.station_groups = station_groups;
-                }
                 delete task['duration'];
                 delete task['relative_start_time'];
                 delete task['relative_stop_time'];
@@ -346,36 +332,6 @@ const ScheduleService = {
           console.error('[project.services.getSchedulingUnitBySet]',error);
         }
       },
-      getStationGroup: async function() {
-        try {
-          //  const response = await axios.get('/api/station_type/');
-          //  return response.data.results;
-          return [{
-            value: 'Dutch'
-        },{
-            value: 'International'
-        },{
-            value: 'Core'
-        },{
-            value: 'Remote'
-        },{
-            value: 'Superterp'
-        }]
-        }   catch(error) {
-            console.error(error);
-            return [];
-        };
-    },
-    getStations: async function(e) {
-        try {
-           // const response = await axios.get('/api/station_groups/stations/1/dutch');
-           const response = await axios.get(`/api/station_groups/stations/1/${e}`);
-            return response.data;
-        }   catch(error) {
-            console.error(error);
-            return [];
-        }
-    },
       getProjectList: async function() {
         try {
           const response = await axios.get('/api/project/');
@@ -385,5 +341,6 @@ const ScheduleService = {
         }
       }
 }
+
 
 export default ScheduleService;

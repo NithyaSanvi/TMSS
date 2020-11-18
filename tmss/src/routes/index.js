@@ -18,6 +18,9 @@ import {TimelineView, WeekTimelineView} from './Timeline';
 import SchedulingSetCreate from './Scheduling/create.scheduleset';
 import QAreporting from './Workflow/QAreporting';
 import QAsos from './Workflow/QAsos';
+import PIverification from './Workflow/PIverification';
+import DecideAcceptance from './Workflow/DecideAcceptance';
+
 
 export const routes = [
     {
@@ -164,7 +167,20 @@ export const routes = [
         component: QAsos,
         name: 'QA Reporting (SOS/SDOC)',
         title: 'QA Reporting (SOS/SDOC)'
+    },
+    {
+        path:"/schedulingunit/:id/workflow/verification",
+        component: PIverification,
+        name: 'PIVerification',
+        title: 'PIVerification'
+    },
+    {
+        path:"/schedulingunit/:id/workflow/acceptance",
+        component: DecideAcceptance,
+        name: 'DecideAcceptance',
+        title: 'DecideAcceptance'
     }
+    
 ];
 
 export const RoutedContent = () => {

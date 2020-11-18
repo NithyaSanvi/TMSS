@@ -5,8 +5,7 @@ import Timeline, {
     SidebarHeader,
     DateHeader,
     CustomMarker,
-    CursorMarker,
-    CustomHeader
+    CursorMarker
   } from 'react-calendar-timeline';
 import containerResizeDetector from 'react-calendar-timeline/lib/resize-detector/container';
 import moment from 'moment';
@@ -74,7 +73,7 @@ export class CalendarTimeline extends Component {
         group: group,
         items: props.items || [],
         //>>>>>> Properties to pass to react-calendar-timeline component
-        stackItems: props.stackItems || false,
+        stackItems: props.stackItems || true,
         zoomAllowed: props.zoomAllowed || true,
         minZoom: props.minZoom || (1 * 60 * 1000),                  // One Minute
         maxZoom: props.maxZoom || (32 * 24 * 60 * 60 * 1000),       // 32 hours
@@ -84,7 +83,7 @@ export class CalendarTimeline extends Component {
         prevZoomRange: null,
         lineHeight: props.rowHeight || 50,                          // Row line height
         sidebarWidth: props.sidebarWidth || 200,
-        timeSteps: props.timeSteps || {minute: 1},
+        timeSteps: props.timeSteps || {minute: 60},
         canMove: props.itemsMovable || false,
         canResize: props.itemsResizable || false,
         canchangeGroup: props.itemGroupChangeable || true,
@@ -127,7 +126,6 @@ export class CalendarTimeline extends Component {
       this.renderLSTDateHeader = this.renderLSTDateHeader.bind(this);
       this.renderCursor = this.renderCursor.bind(this);
       this.renderItem = this.renderItem.bind(this);
-      this.renderNormalSuntimeHeader = this.renderNormalSuntimeHeader.bind(this);
       //<<<<<<< Custom Renderer Functions
 
       //>>>>>> Functions of this component
@@ -185,7 +183,7 @@ export class CalendarTimeline extends Component {
                             currentLST: this.state.currentLST?this.state.currentLST.add(1, 'second'):null});
         }
         if (this.state.isLive) {
-            this.changeDateRange(this.state.defaultStartTime.add(1, 'second'), this.state.defaultEndTime.add(1, 'second'));
+            this.props.dateRangeCallback(this.state.defaultStartTime.add(1, 'second'), this.state.defaultEndTime.add(1, 'second'));
             // const result = this.props.dateRangeCallback(this.state.defaultStartTime.add(1, 'second'), this.state.defaultEndTime.add(1, 'second'));
             // let group = DEFAULT_GROUP.concat(result.group);
         }
@@ -259,14 +257,6 @@ export class CalendarTimeline extends Component {
                                     :`Week (${this.state.timelineStartDate.week()}) / Day`}</div> 
                     <div style={{height:'30px'}}>{this.state.dayHeaderVisible?`UTC(Hr)`:`UTC(Day)`}</div>
                     <div style={{height:'30px'}}>{this.state.dayHeaderVisible?`LST(Hr)`:`LST(Day)`}</div>
-                    {this.state.viewType === UIConstants.timeline.types.NORMAL && 
-                        <div className="p-grid" 
-                            style={{height:this.props.showSunTimings?'30px':'0px', paddingTop:'10px', paddingLeft:'10px'}}>
-                            <div className="col-4" style={{marginTop:'2px', paddingLeft:'5px', backgroundColor:'yellow', color: '#212529'}}>Sunrise</div>
-                            <div className="col-4" style={{marginTop:'2px', paddingLeft:'5px', backgroundColor:'orange', color: '#212529'}}>Sunset</div>
-                            <div className="col-4" style={{marginTop:'2px', paddingLeft:'5px', backgroundColor:'blue'}}>Night</div>
-                        </div>
-                    }
                 </div>
         );
     }
@@ -355,7 +345,7 @@ export class CalendarTimeline extends Component {
             return <div {...getIntervalProps()} className="rct-dateHeader" style={divStyle}>
                 { (this.state.timeHeaderLabelVisibile)?
                     (showBorder)?
-                        <span key={`utchead-${displayValue}`}>
+                        <span>
                             {displayValue}
                         </span>:
                         <>
@@ -430,121 +420,6 @@ export class CalendarTimeline extends Component {
         }
     }
 
-    /** Custom renderer to show sunrise, sunset and night times */
-    renderNormalSuntimeHeader({
-        headerContext: { intervals },
-        getRootProps,
-        getIntervalProps,
-        showPeriod,
-        data,
-    }) {
-        const sunTimeMap = this.state.sunTimeMap;
-        return (
-        <div {...getRootProps()}>
-            {intervals.map(interval => {
-            const dayStyle = {
-                lineHeight: '30px',
-                backgroundColor: 'white',
-                color: 'white'
-            }
-            const nightStyle = {
-                lineHeight: '30px',
-                backgroundColor: 'blue',
-                color: 'blue'
-            }
-            const sunriseStyle = {
-                lineHeight: '30px',
-                backgroundColor: 'yellow',
-                color: 'yellow'
-            }
-            const sunsetStyle = {
-                lineHeight: '30px',
-                backgroundColor: 'orange',
-                color: 'orange'
-            }
-            // Get the intervals UTC date format and time
-            const intervalDate = interval.startTime.clone().utc().format("YYYYMMDDT12:00:00");
-            const intervalTime = interval.startTime.clone().utc();
-            // Get the suntime for the UTC date
-            const intervalDateSunTime = sunTimeMap[intervalDate];
-            let intervalStyle = dayStyle;
-            // If suntime is available display suntime blocks
-            if (intervalDateSunTime) {
-                // Set 15 minutes duration for sunrise and sunset and create blocks accordingly
-                if (intervalTime.isBefore(intervalDateSunTime.sunrise) || 
-                    intervalTime.isAfter(intervalDateSunTime.sunset.clone().add(14, 'minutes'))) {
-                        intervalStyle = nightStyle;
-                }   else if (intervalTime.isSame(intervalDateSunTime.sunrise) ||
-                                intervalTime.isBefore(intervalDateSunTime.sunrise.clone().add(15, 'minutes'))) {
-                    intervalStyle = sunriseStyle;
-                }   else if (intervalTime.isSame(intervalDateSunTime.sunset) || 
-                                (intervalTime.isAfter(intervalDateSunTime.sunset) &&
-                                intervalTime.isBefore(intervalDateSunTime.sunset.clone().add(15, 'minutes')))) {
-                    intervalStyle = sunsetStyle;
-                }
-                return (
-                    <div
-                    {...getIntervalProps({
-                        interval,
-                        style: intervalStyle
-                    })}
-                    >&nbsp;
-                    </div>
-                )
-            }   else {
-                return ("");
-            }
-            })}
-        </div>
-        )
-    }
-
-    /**
-     * Function to render sunrise timings on the timeline view in normal view.
-     * @param {Array} sunRiseTimings 
-     */
-    renderSunriseMarkers(sunRiseTimings) {
-        return (
-            <>
-            {sunRiseTimings && sunRiseTimings.length>0 && sunRiseTimings.map((item, index) => (
-            <CustomMarker key={"sunrise-"+index} date={item}>
-                {({ styles, date }) => {
-                    const customStyles = {
-                    ...styles,
-                    backgroundColor: 'yellow',
-                    width: '3px'
-                    }
-                    return <div style={customStyles} />
-                }}
-            </CustomMarker>
-            ))}
-            </>
-        );
-    }
-
-    /**
-     * Function to render sunrise timings on the timeline view in normal view.
-     * @param {Array} sunSetTimings 
-     */
-    renderSunsetMarkers(sunSetTimings) {
-        return (
-            <>
-            {sunSetTimings && sunSetTimings.length>0 && sunSetTimings.map((item, index) => (
-            <CustomMarker key={"sunset-"+index} date={item}>
-                {({ styles, date }) => {
-                    const customStyles = {
-                    ...styles,
-                    backgroundColor: 'orange',
-                    width: '3px'
-                    }
-                    return <div style={customStyles} />
-                }}
-            </CustomMarker>
-            ))}
-            </>
-        );
-    }
-
     /** Custom Render function to pass to the CursorMarker component to display cursor labels on cursor movement */
     renderCursor({ styles, date }) {
         const utc = moment(date).utc();
@@ -599,16 +474,13 @@ export class CalendarTimeline extends Component {
                 color: item.color,
                 // borderColor,
                 borderStyle: "solid",
-                borderWidth: item.type==="SUNTIME"?0:0,
+                borderWidth: 1,
                 borderRadius: 3,
                 borderLeftWidth: itemContext.selected ? 3 : 1,
-                borderRightWidth: itemContext.selected ? 3 : 1,
-                opacity: item.type==="SUNTIME"?0.6:1
+                borderRightWidth: itemContext.selected ? 3 : 1
               },
               onMouseDown: () => {
-                  if (item.type !== "SUNTIME") {
-                    this.onItemClick(item);
-                  }
+                this.onItemClick(item);
               }
             })}
           >
@@ -678,7 +550,7 @@ export class CalendarTimeline extends Component {
         }
         this.loadLSTDateHeaderMap(newVisibleTimeStart, newVisibleTimeEnd, this.state.lstDateHeaderUnit);
         updateScrollCanvas(newVisibleTimeStart.valueOf(), newVisibleTimeEnd.valueOf());
-        this.changeDateRange(newVisibleTimeStart, newVisibleTimeEnd);
+        this.props.dateRangeCallback(newVisibleTimeStart, newVisibleTimeEnd);
         // this.setState({defaultStartTime: moment(visibleTimeStart), defaultEndTime: moment(visibleTimeEnd)})
         this.setState({defaultStartTime: newVisibleTimeStart, defaultEndTime: newVisibleTimeEnd});
     }
@@ -694,90 +566,13 @@ export class CalendarTimeline extends Component {
     }
 
     /**
-     * Function to call the parent function callback and fetch new data. It also retrieves sunrise and sunset time.
-     * @param {moment} startTime 
-     * @param {moment} endTime 
-     */
-    async changeDateRange(startTime, endTime, refreshData) {
-        if (this.props.showSunTimings && this.state.viewType===UIConstants.timeline.types.NORMAL) {
-            this.setNormalSuntimings(startTime, endTime);
-        }
-        const result = await this.props.dateRangeCallback(startTime, endTime, refreshData);
-        if (!this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL) {
-            result.items = await this.addStationSunTimes(startTime, endTime, result.group, result.items);
-        }
-        return result;
-    }
-
-    /**
-     * Function to set sunrise and sunset timings in Normal view.
-     * @param {moment} startTime 
-     * @param {moment} endTime 
-     */
-    setNormalSuntimings(startTime, endTime) {
-        let sunRiseTimings = [], sunSetTimings = [], sunTimeMap={};
-        const noOfDays = endTime.diff(startTime, 'days');
-        for (const number of _.range(noOfDays+1)) {
-            const date = startTime.clone().add(number, 'days').hours(12).minutes(0).seconds(0);
-            const formattedDate = date.format("YYYYMMDDTHH:mm:ss");
-            UtilService.getSunTimings(formattedDate+"Z").then(timings => {
-                const sunriseTime = moment.utc(timings.sun_rise.split('.')[0]);
-                const sunsetTime = moment.utc(timings.sun_set.split('.')[0]);
-                if (moment.utc(timings.sun_rise).isAfter(startTime)) {
-                    sunRiseTimings.push(sunriseTime);
-                }
-                if (moment.utc(timings.sun_set).isBefore(endTime)) {
-                    sunSetTimings.push(sunsetTime);
-                }
-                sunTimeMap[formattedDate] = {sunrise: sunriseTime, sunset: sunsetTime};
-                this.setState({sunRiseTimings: sunRiseTimings, sunSetTimings: sunSetTimings, sunTimeMap: sunTimeMap});
-            });
-        }
-    }
-
-    async addStationSunTimes(startTime, endTime, stationGroup, items) {
-        const noOfDays = endTime.diff(startTime, 'days');
-        let sunItems = _.cloneDeep(items);
-        for (const number of _.range(noOfDays+1)) {
-            for (const station of stationGroup) {
-                const date = startTime.clone().add(number, 'days').hours(12).minutes(0).seconds(0);
-                const timings = await UtilService.getSunTimings(date.format("YYYYMMDDTHH:mm:ss")+"Z", station.id);
-                let sunriseItem = { id: `sunrise-${number}-${station.id}`, 
-                                    group: station.id,
-                                    title: timings.sun_rise,
-                                    project: "",
-                                    name: "",
-                                    duration: "",
-                                    start_time: moment.utc(timings.sun_rise),
-                                    end_time: moment.utc(timings.sun_rise).add(5, 'minutes'),
-                                    bgColor: "yellow",
-                                    selectedBgColor: "yellow",
-                                    type: "SUNTIME"};
-                sunItems.push(sunriseItem);
-                let sunsetItem = _.cloneDeep(sunriseItem);
-                sunsetItem.id = `sunset-${number}-${station.id}`;
-                sunsetItem.start_time = moment.utc(timings.sun_set);
-                sunsetItem.end_time = moment.utc(timings.sun_set).add(5, 'minutes');
-                sunsetItem.bgColor = "orange";
-                sunsetItem.selectedBgColor = "0range";
-                sunItems.push(sunsetItem);
-                
-            }
-        }
-        if (!this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL) {
-            items = sunItems;
-        }
-        return items;
-    }
-
-    /**
      * Resets the timeline view to default zoom and move to the current timeline
      */
     async resetToCurrentTime(){
         if (this.state.viewType===UIConstants.timeline.types.NORMAL) {
             const startTime = moment().utc().add(-24, 'hours');
             const endTime = moment().utc().add(24, 'hours');
-            let result = await this.changeDateRange(startTime, endTime);
+            let result = await this.props.dateRangeCallback(startTime, endTime);
             let group = DEFAULT_GROUP.concat(result.group);
             this.setState({defaultStartTime: startTime, defaultEndTime: endTime, 
                             zoomLevel: DEFAULT_ZOOM_LEVEL, dayHeaderVisible: true, 
@@ -801,7 +596,6 @@ export class CalendarTimeline extends Component {
     async changeZoomLevel(zoomLevel, isTimelineZoom) {
         zoomLevel = zoomLevel?zoomLevel: DEFAULT_ZOOM_LEVEL;
         const newZoomLevel = _.find(ZOOM_LEVELS, {'name': zoomLevel});
-        this.setState({isTimelineZoom: isTimelineZoom});
         let startTime = this.state.defaultStartTime;
         let endTime = this.state.defaultEndTime;
         if (zoomLevel === 'Custom') {
@@ -832,10 +626,10 @@ export class CalendarTimeline extends Component {
                 }
             }
             this.loadLSTDateHeaderMap(startTime, endTime, 'hour');
-            let result = await this.changeDateRange(startTime, endTime);
+            let result = await this.props.dateRangeCallback(startTime, endTime);
             let group = DEFAULT_GROUP.concat(result.group);
             this.setState({zoomLevel: zoomLevel, defaultStartTime: startTime, defaultEndTime: endTime, 
-                            isTimelineZoom: true, zoomRange: null, 
+                            isTimelineZoom: isTimelineZoom, zoomRange: null, 
                             dayHeaderVisible: true, weekHeaderVisible: false, lstDateHeaderUnit: 'hour',
                             group: group, items: result.items});
         }
@@ -856,7 +650,7 @@ export class CalendarTimeline extends Component {
             newVisibleTimeStart = this.state.timelineStartDate.clone().hours(0).minutes(0).seconds(0);
             newVisibleTimeEnd = newVisibleTimeStart.clone().add(visibleTimeDiff/1000, 'seconds');
         }
-        let result = await this.changeDateRange(newVisibleTimeStart, newVisibleTimeEnd);
+        let result = await this.props.dateRangeCallback(newVisibleTimeStart, newVisibleTimeEnd);
         this.loadLSTDateHeaderMap(newVisibleTimeStart, newVisibleTimeEnd, 'hour');
         let group = DEFAULT_GROUP.concat(result.group);
         this.setState({defaultStartTime: newVisibleTimeStart,
@@ -879,7 +673,7 @@ export class CalendarTimeline extends Component {
             newVisibleTimeEnd = this.state.timelineEndDate.clone().hours(23).minutes(59).minutes(59);
             newVisibleTimeStart = newVisibleTimeEnd.clone().add((-1 * visibleTimeDiff/1000), 'seconds');
         }
-        let result = await this.changeDateRange(visibleTimeStart, visibleTimeEnd);
+        let result = await this.props.dateRangeCallback(visibleTimeStart, visibleTimeEnd);
         this.loadLSTDateHeaderMap(newVisibleTimeStart, newVisibleTimeEnd, 'hour');
         let group = DEFAULT_GROUP.concat(result.group);
         this.setState({defaultStartTime: newVisibleTimeStart,
@@ -937,7 +731,7 @@ export class CalendarTimeline extends Component {
                                 dayHeaderVisible: dayHeaderVisible, weekHeaderVisible: weekHeaderVisible, 
                                 lstDateHeaderUnit: lstDateHeaderUnit
                                 });
-                const result = await this.changeDateRange(startDate, endDate);
+                const result = await this.props.dateRangeCallback(startDate, endDate);
                 let group = DEFAULT_GROUP.concat(result.group);
                 this.setState({group: group, items: result.items});
                 this.loadLSTDateHeaderMap(startDate, endDate, lstDateHeaderUnit);
@@ -955,7 +749,7 @@ export class CalendarTimeline extends Component {
         let endDate = this.state.group[this.state.group.length-1].value.clone().add(direction * 7, 'days').hours(23).minutes(59).seconds(59);
         let timelineStart = this.state.timelineStartDate.clone().add(direction * 7, 'days');
         let timelineEnd = this.state.timelineEndDate.clone().add(direction * 7, 'days');
-        const result = await this.changeDateRange(startDate, endDate, true);
+        const result = await this.props.dateRangeCallback(startDate, endDate, true);
         let group = DEFAULT_GROUP.concat(result.group);
         let dayHeaderVisible = this.state.dayHeaderVisible;
         let weekHeaderVisible = this.state.weekHeaderVisible;
@@ -978,12 +772,7 @@ export class CalendarTimeline extends Component {
      * as objects
      * @param {Object} props 
      */
-    async updateTimeline(props) {
-        if (!this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL) {
-            props.items = await this.addStationSunTimes(this.state.defaultStartTime, this.state.defaultEndTime, props.group, props.items);
-        }   else if(this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL) {
-            this.setNormalSuntimings(this.state.defaultStartTime, this.state.defaultEndTime);
-        }
+    updateTimeline(props) {
         this.setState({group: DEFAULT_GROUP.concat(props.group), items: props.items});
     }
 
@@ -1095,13 +884,6 @@ export class CalendarTimeline extends Component {
                             // This method will render once but will not update the values after fetching from server
                             // <DateHeader unit={this.state.lstDateHeaderUnit} intervalRenderer={this.renderLSTDateHeader}></DateHeader>
                         }
-                        {/* Suntime Header in normal view with sunrise, sunset and night time  */}
-                        {this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL && this.state.sunTimeMap && 
-                        <CustomHeader height={30} unit="minute" 
-                            children={({ headerContext: { intervals }, getRootProps, getIntervalProps, showPeriod, data})=> {
-                                return this.renderNormalSuntimeHeader({ headerContext: { intervals }, getRootProps, getIntervalProps, showPeriod, data})}}>
-                        </CustomHeader>
-                        }
                     </TimelineHeaders>
 
                     <TimelineMarkers>
@@ -1116,15 +898,6 @@ export class CalendarTimeline extends Component {
                                 return <div style={customStyles} />
                             }}
                         </CustomMarker>
-                        {/* Show sunrise and sunset markers for normal timeline view (Not station view and week view */}
-                        {this.props.showSunTimings && this.state.viewType===UIConstants.timeline.types.NORMAL &&
-                            <>
-                            {/* Sunrise time line markers */}
-                            { this.renderSunriseMarkers(this.state.sunRiseTimings)}
-                            {/* Sunset time line markers */}
-                            { this.renderSunsetMarkers(this.state.sunSetTimings)}
-                            </>
-                        }
                         {this.state.showCursor?
                             <CursorMarker>
                                 {this.renderCursor}

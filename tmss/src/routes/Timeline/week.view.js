@@ -139,8 +139,8 @@ export class WeekTimelineView extends Component {
         let item = { id: `${suBlueprint.id}-${suBlueprint.start_time}`, 
             // group: suBlueprint.suDraft.id,
             group: moment.utc(suBlueprint.start_time).format("MMM DD ddd"),
-            title: `${suBlueprint.project} - ${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs - ${antennaSet}`,
-            project: suBlueprint.project,
+            title: `${suBlueprint.project.name} - ${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs - ${antennaSet}`,
+            project: suBlueprint.project.name,
             name: suBlueprint.suDraft.name,
             band: antennaSet,
             duration: suBlueprint.durationInSec?`${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs`:"",
@@ -175,11 +175,6 @@ export class WeekTimelineView extends Component {
                             }
                         }
                         this.setState({suTaskList: _.sortBy(taskList, "id"), isSummaryLoading: false})
-                    });
-                // Get the scheduling constraint template of the selected SU block
-                ScheduleService.getSchedulingConstraintTemplate(suBlueprint.suDraft.scheduling_constraints_template_id)
-                    .then(suConstraintTemplate => {
-                        this.setState({suConstraintTemplate: suConstraintTemplate});
                     });
             }
         }
@@ -364,7 +359,6 @@ export class WeekTimelineView extends Component {
                                      style={{borderLeft: "1px solid #efefef", marginTop: "0px", backgroundColor: "#f2f2f2"}}>
                                     {this.state.isSummaryLoading?<AppLoader /> :
                                         <SchedulingUnitSummary schedulingUnit={suBlueprint} suTaskList={this.state.suTaskList}
-                                                constraintsTemplate={this.state.suConstraintTemplate}
                                                 closeCallback={this.closeSUDets}
                                                 location={this.props.location}></SchedulingUnitSummary>
                                     }

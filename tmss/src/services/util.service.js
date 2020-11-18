@@ -1,4 +1,3 @@
-import moment from 'moment';
 const axios = require('axios');
 
 axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
@@ -35,33 +34,6 @@ const UtilService = {
         localUtcLstMap[timestamp] = utcToLST;
         localStorage.setItem('UTC_LST_MAP', JSON.stringify(localUtcLstMap));
         return utcToLST;
-      } catch(error) {
-        console.error(error);
-      }
-    },
-    getSunTimings: async(timestamp, station) => {
-      try {
-        let stationTimestamp = (station?`${station}-`:"") + timestamp;
-        let localSunTimeMap = localStorage.getItem('SUN_TIME_MAP');
-        if (localSunTimeMap) {
-          localSunTimeMap = JSON.parse(localSunTimeMap);
-          if (localSunTimeMap[stationTimestamp]) {
-            return Promise.resolve(localSunTimeMap[stationTimestamp]);
-          }
-        } else {
-          localSunTimeMap = {};
-        }
-        // const url = `/api/sun_rise_and_set/${timestamp}`;
-        // const sunTimings = (await axios.get(url)).data;
-        let sunTimings = {sun_rise: moment.utc(moment(timestamp, "YYYYMMDDTHH:mm:ss")).format('YYYY-MM-DDT06:30:00.sssss')+"Z", 
-                            sun_set: moment.utc(moment(timestamp, "YYYYMMDDTHH:mm:ss")).format('YYYY-MM-DDT17:00:00.sssss')+"Z"};
-        if (station==="CS001") {
-          sunTimings = {sun_rise: moment.utc(moment(timestamp, "YYYYMMDDTHH:mm:ss")).format('YYYY-MM-DDT05:30:00.sssss')+"Z", 
-                            sun_set: moment.utc(moment(timestamp, "YYYYMMDDTHH:mm:ss")).format('YYYY-MM-DDT16:00:00.sssss')+"Z"};
-        }
-        localSunTimeMap[stationTimestamp] = sunTimings;
-        localStorage.setItem('SUN_TIME_MAP', JSON.stringify(localSunTimeMap));
-        return sunTimings;
       } catch(error) {
         console.error(error);
       }

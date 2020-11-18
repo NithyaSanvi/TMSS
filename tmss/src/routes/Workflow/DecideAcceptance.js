@@ -9,21 +9,19 @@ import 'suneditor/dist/css/suneditor.min.css'; // Import Sun Editor's CSS File
 import {Checkbox} from 'primereact/checkbox';
 // import {InputText} from 'primereact/inputtext';
 import ScheduleService from '../../services/schedule.service';
+import {InputTextarea} from 'primereact/inputtextarea';
 
 
-class QAreportingView extends Component{
+class Dacceptance extends Component{
     constructor(props) {
         super(props);
         this.state={
-           
             content: localStorage.getItem('report_qa'),
             showEditor: false,
             checked: false,
-            pchecked:false
-            
-            
+           
         };
-        this.onSave = this.onSave.bind(this);
+       // this.onSave = this.onSave(this);
         this.handleChange = this.handleChange.bind(this);
     }
 
@@ -37,22 +35,16 @@ class QAreportingView extends Component{
     handleChange(e) {
         this.setState({
             content: e
+            
         });
         localStorage.setItem('report_qa', e);
     }
-
-    onSave() {
-        this.props.history.push({
-            pathname: `/schedulingunit/1/workflow/verification`,
-        });
-     }
-
 
     render() {
         return (
             <React.Fragment>
                 <Growl ref={(el) => this.growl = el} />
-                <PageHeader location={this.props.location} title={'QA Reporting (SOS/SDOC)'} actions={[{icon:'fa-window-close',link:this.props.history.goBack, title:'Click to Close Workflow', props:{ pathname:'/schedulingunit/1/workflow/verification'}}]}/>
+                <PageHeader location={this.props.location} title={'Decide Acceptance'} actions={[{icon:'fa-window-close',link:this.props.history.goBack, title:'Click to Close Workflow', props:{ pathname: '/schedulingunit/view'}}]}/>
                 {this.state.schedulingUnit &&
                 <>
                     <div>
@@ -71,18 +63,12 @@ class QAreportingView extends Component{
                                 </div>
                             </div>
                             <div className="p-field p-grid">
-                                <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Quality Policy</label>
-                                <div className="col-lg-3 col-md-3 col-sm-12">
-                                <div className="p-field-checkbox">
-                                    <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })}  />
-                                </div>
-                                </div>
-                                <div className="col-lg-1 col-md-1 col-sm-12"></div>
-                                <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Show PI</label>
-                                <div className="col-lg-3 col-md-3 col-sm-12">
-                                <div className="p-field-checkbox">
-                                    <Checkbox inputId= "secondary" pchecked={this.state.pchecked} onChange={e => this.setState({ pchecked: e.checked })} />
-                                </div>
+                                <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">PI Report</label>
+                                <div className="col-lg-12 col-md-12 col-sm-12">
+                                <InputTextarea rows={3} cols={40} 
+                                            tooltip="PIReport" tooltipOptions={this.tooltipOptions} maxLength="128"
+                                            data-testid="PIReport" 
+                                />
                                 </div>
                             </div>
                             <div className="p-grid" style={{padding: '10px'}}>
@@ -98,12 +84,20 @@ class QAreportingView extends Component{
                                             ]
                                         }}
                                     />}
-                            {!this.state.showEditor && <div onClick={() => this.setState({showEditor: !this.state.showEditor})} dangerouslySetInnerHTML={{__html: this.state.content}}></div>}
+                            <div dangerouslySetInnerHTML={{__html: this.state.content}}></div>
+                            </div>
+                            <div className="p-field p-grid">
+                                <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">SDOC After PI</label>
+                                <div className="col-lg-3 col-md-3 col-sm-12">
+                                <div className="p-field-checkbox">
+                                    <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })}  />
+                                </div>
+                                </div>
                             </div>
                             </div>
                              <div className="p-grid" style={{marginTop: '20px'}}>
                                 <div className="p-col-1">
-                                    <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick = {this.onSave} />
+                                    <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={() => this.setState({ showEditor: false })}/>
                                 </div>
                                 <div className="p-col-1">
                                     <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={() => this.setState({ showEditor: false })} />
@@ -116,4 +110,4 @@ class QAreportingView extends Component{
                 </React.Fragment>  
         )};  
 }
-export default QAreportingView; 
+export default Dacceptance;
