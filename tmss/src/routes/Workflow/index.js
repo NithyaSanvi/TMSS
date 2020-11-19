@@ -53,13 +53,25 @@ export default (props) => {
                             <div className="col-lg-3 col-md-3 col-sm-12">
                                 <span>{schedulingUnit.status}</span>
                             </div>
+                            <label htmlFor="viewPlots" className="col-lg-2 col-md-2 col-sm-12">View Plots</label>
+                            <div className="col-lg-3 col-md-3 col-sm-12" style={{ paddingLeft: '2px' }}>
+                                <label className="col-sm-10 " >
+                                    <a href="https://proxy.lofar.eu/inspect/HTML/" target="_blank">Inspection plots</a>
+                                </label>
+                                <label className="col-sm-10 ">
+                                    <a href="https://proxy.lofar.eu/qa" target="_blank">Adder plots</a>
+                                </label>
+                                <label className="col-sm-10 ">
+                                    <a href=" https://proxy.lofar.eu/lofmonitor/" target="_blank">Station Monitor</a>
+                                </label>
+                            </div>
                         </div>
                         {currentStep === 1 && <QAreporting onNext={onNext}/>}
                         {currentStep === 2 && <QAsos onNext={onNext} {...state} />}
                         {currentStep === 3 && <PIverification onNext={onNext} {...state} />}
                         {currentStep === 4 && <DecideAcceptance onNext={onNext} {...state} />}
-                        {currentStep === 5 && <Scheduled onNext={onNext}{...state} />}
-                        {currentStep === 6 && <ProcessingDone onNext={onNext}{...state} />}
+                        {currentStep === 5 && <Scheduled onNext={onNext}{...state} schedulingUnit={schedulingUnit} />}
+                        {currentStep === 6 && <ProcessingDone onNext={onNext} {...state} />}
                     </div>
                 </>
             }

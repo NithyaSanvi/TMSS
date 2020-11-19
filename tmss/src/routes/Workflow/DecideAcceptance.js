@@ -28,8 +28,8 @@ class DecideAcceptance extends Component {
 
     onSave(){
         this.props.onNext({
-            report: this.state.content
-           
+            report: this.state.content,
+            picomment: this.state.picomment
         });
     }
      

@@ -39,19 +39,6 @@ class QAreporting extends Component{
                             options={[{ value: 'User 1' }, { value: 'User 2' }, { value: 'User 3' }]}
                             placeholder="Assign To" />
                     </div>
-                    <div className="col-lg-1 col-md-1 col-sm-12"></div>
-                    <label htmlFor="viewPlots" className="col-lg-2 col-md-2 col-sm-12">View Plots</label>
-                    <div className="col-lg-3 col-md-3 col-sm-12" style={{ paddingLeft: '2px' }}>
-                        <label className="col-sm-10 " >
-                            <a href="https://proxy.lofar.eu/inspect/HTML/" target="_blank">Inspection plots</a>
-                        </label>
-                        <label className="col-sm-10 ">
-                            <a href="https://proxy.lofar.eu/qa" target="_blank">Adder plots</a>
-                        </label>
-                        <label className="col-sm-10 ">
-                            <a href=" https://proxy.lofar.eu/lofmonitor/" target="_blank">Station Monitor</a>
-                        </label>
-                    </div>
                 </div>
                 <div className="p-grid" style={{ padding: '10px' }}>
                     <label htmlFor="comments" >Comments</label>

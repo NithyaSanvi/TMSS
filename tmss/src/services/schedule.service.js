@@ -35,6 +35,7 @@ const ScheduleService = {
                 schedulingUnit.scheduling_set_id = schedulingUnitDraft.scheduling_set_id;
                 schedulingUnit.scheduling_set = schedulingUnitDraft.scheduling_set;
                 schedulingUnit.scheduling_set_object = schedulingUnitDraft.scheduling_set_object;
+                schedulingUnit.scheduling_constraints_doc = schedulingUnitDraft.scheduling_constraints_doc;
             }
             return schedulingUnit;
         }   catch(error) {

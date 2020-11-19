@@ -137,7 +137,11 @@
 .plots{
     padding-left: 2px;
 }
-
+.block-list {
+    > a {
+        display: block;
+    }
+}
 
 
 
