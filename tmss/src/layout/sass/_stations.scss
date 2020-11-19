@@ -1,0 +1,84 @@
+.grouping {
+    padding: 0 15px;
+}
+.grouping fieldset {
+    border-width: 1px;
+    border-style: double;
+    border-color: #ccc;
+    border-image: initial;
+    padding: 10px;
+    width: 100%;
+}
+.grouping legend {
+    width: auto;
+}
+.grouping .selected_stations {
+    margin-top: 10px;
+}
+.selected_stations .info {
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0;
+    width: auto !important;
+    top: 2px;
+    span {
+        font-size: 14px !important;
+        padding: 0 !important;
+    }
+}
+.text-caps {
+    text-transform: capitalize;
+}
+.station-container {
+    padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    label {
+        display: block;
+    }
+}
+.custom-label {
+    padding-left: 8px !important; 
+}
+.custom-value {
+    padding-right: 8px !important;
+}
+.custom-field {
+    padding-left: 30px !important; 
+}
+.error-message {
+    font-size: 12px;
+    color: red;
+}
+.custom-missingstation-label{
+    padding-left: 4px !important; 
+}
+
+.customMissingStationLabel{
+    padding-left: 22px !important; 
+}
+#missingStation{
+    width: 110%;
+}
+.station_header {
+    // padding-left: 22px !important; 
+}
+#stationgroup-label{
+    padding-left: 5px;
+}
+.custom-station-wrapper {
+    position: relative;
+}
+.custom-remove {
+    position: absolute;
+    left: -12px;
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0;
+    width: auto !important;
+    top: 2px;
+    span {
+        font-size: 14px !important;
+        padding: 0 !important;
+    }
+}

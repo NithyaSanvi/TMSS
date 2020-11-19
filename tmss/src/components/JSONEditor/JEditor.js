@@ -195,7 +195,9 @@ function Jeditor(props) {
      */
     function setEditorOutput(){
         const editorOutput = editorRef.current.getValue();
-        const formattedOutput = updateOutput(_.cloneDeep(editorOutput));
+        /* Sends editor output without formatting if requested */
+        const formatOutput = props.formatOutput===undefined?true:props.formatOutput;
+        const formattedOutput = formatOutput?updateOutput(_.cloneDeep(editorOutput)):_.cloneDeep(editorOutput);
         const editorValidationErrors = editorRef.current.validate();
         if (props.callback) {
             // editorRef.current for accessing fields in parent to add classname for enabling and disabling

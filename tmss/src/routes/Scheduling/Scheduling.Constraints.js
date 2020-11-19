@@ -187,6 +187,7 @@ export default (props) => {
                 callback: onEditForm,
                 initValue: initialValue,
                 disabled: props.disable,
+                formatOutput: props.formatOutput,
                 parentFunction: parentFunction
             })}
         </>

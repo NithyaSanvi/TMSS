@@ -14,6 +14,7 @@ import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
 import Jeditor from '../../components/JSONEditor/JEditor';
 import UnitConversion from '../../utils/unit.converter';
+import Stations from './Stations';
 
 import ProjectService from '../../services/project.service';
 import ScheduleService from '../../services/schedule.service';
@@ -40,7 +41,10 @@ export class EditSchedulingUnit extends Component {
             constraintSchema:null,                     
             validEditor: false,                     // For JSON editor validation
             validFields: {},                        // For Form Validation 
-            observStrategyVisible: false                     
+            observStrategyVisible: false,
+            missingStationFieldsErrors: [],                // Validation for max no.of missing station
+            stationGroup: [],
+            customSelectedStations: []              // Custom Stations    
         }
         this.projects = [];                         // All projects to load project dropdown
         this.schedulingSets = [];                   // All scheduling sets to be filtered for project
@@ -126,6 +130,9 @@ export class EditSchedulingUnit extends Component {
                 }
                 index++;
             }
+            if (taskTemplate.type_value==='observation' && task.specifications_doc.station_groups) {
+                tasksToUpdate[taskName] = taskName;
+            }
         }
         this.setState({observStrategy: observStrategy, paramsSchema: schema, paramsOutput: paramsOutput, tasksToUpdate: tasksToUpdate});
 
@@ -142,7 +149,8 @@ export class EditSchedulingUnit extends Component {
                             TaskService.getTaskTemplates(),
                             ScheduleService.getSchedulingUnitDraftById(this.props.match.params.id),
                             ScheduleService.getTasksDraftBySchedulingUnitId(this.props.match.params.id),
-                            ScheduleService.getSchedulingConstraintTemplates()
+                            ScheduleService.getSchedulingConstraintTemplates(),
+                            ScheduleService.getStationGroup()
                         ];
         Promise.all(promises).then(responses => {
             this.projects = responses[0];
@@ -150,11 +158,16 @@ export class EditSchedulingUnit extends Component {
             this.observStrategies = responses[2];
             this.taskTemplates = responses[3];
             this.constraintTemplates = responses[6];
+            this.stations = responses[7];
             responses[4].project = this.schedulingSets.find(i => i.id === responses[4].scheduling_set_id).project_id;
             this.setState({ schedulingUnit: responses[4], taskDrafts: responses[5].data.results,
                             observStrategyVisible: responses[4].observation_strategy_template_id?true:false });
             if (responses[4].observation_strategy_template_id) {
                 this.changeStrategy(responses[4].observation_strategy_template_id);
+                const targetObservation = responses[5].data.results.find(task => {return task.specifications_doc.station_groups?true:false});
+                this.setState({
+                    stationGroup: targetObservation?targetObservation.specifications_doc.station_groups:[]
+                });
             }
             if (this.state.schedulingUnit.project) {
                 const projectSchedSets = _.filter(this.schedulingSets, {'project_id': this.state.schedulingUnit.project});
@@ -261,7 +274,7 @@ export class EditSchedulingUnit extends Component {
         if (Object.keys(validFields).length === Object.keys(this.formRules).length) {
             validForm = true;
         }
-        return validForm;
+        return validForm && !this.state.missingStationFieldsErrors;
     }
 
     /**
@@ -305,7 +318,26 @@ export class EditSchedulingUnit extends Component {
             });
             const schUnit = { ...this.state.schedulingUnit };
             schUnit.scheduling_constraints_doc = constStrategy;
-            const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy,schUnit,this.state.taskDrafts, this.state.tasksToUpdate);
+            //station 
+            const station_groups = [];
+            (this.state.selectedStations || []).forEach(key => {
+                let station_group = {};
+                const stations = this.state[key] ? this.state[key].stations : [];
+                const max_nr_missing = parseInt(this.state[key] ? this.state[key].missing_StationFields : 0);
+                station_group = {
+                    stations,
+                    max_nr_missing
+                };  
+               station_groups.push(station_group);                 
+            });
+            this.state.customSelectedStations.forEach(station => {
+                station_groups.push({
+                    stations: station.stations,
+                    max_nr_missing: parseInt(station.max_nr_missing)
+                });
+            });
+            
+            const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy,schUnit,this.state.taskDrafts, this.state.tasksToUpdate, station_groups);
             if (schedulingUnit) {
                 // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks edited successfully!'});
                 this.props.history.push({
@@ -318,7 +350,8 @@ export class EditSchedulingUnit extends Component {
             this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Template Missing.'});
         }
     }
-
+    
+    
     /**
      * Cancel SU creation and redirect
      */
@@ -330,6 +363,19 @@ export class EditSchedulingUnit extends Component {
        this.setState({ constraintSchema: schema, initValue: initValue});
     }
   
+    onUpdateStations = (state, selectedStations, missingStationFieldsErrors, customSelectedStations) => {
+        this.setState({
+            ...state,
+            selectedStations,
+            missingStationFieldsErrors,
+            customSelectedStations
+        }, () => {
+            this.setState({
+                validForm: this.validateForm()
+            });
+        });
+    };
+
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -430,6 +476,14 @@ export class EditSchedulingUnit extends Component {
                             </div> 
                         </div>
                     </div>
+
+                    
+                    <Stations
+                        stationGroup={this.state.stationGroup}
+                        onUpdateStations={this.onUpdateStations.bind(this)}
+                    />
+
+
                     {this.state.constraintSchema && <div className="p-fluid">
                         <div className="p-grid">
                             <div className="p-col-12">

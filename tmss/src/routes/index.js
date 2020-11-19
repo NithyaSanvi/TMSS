@@ -16,10 +16,8 @@ import EditSchedulingUnit from './Scheduling/edit';
 import { CycleList, CycleCreate, CycleView, CycleEdit } from './Cycle';
 import {TimelineView, WeekTimelineView} from './Timeline';
 import SchedulingSetCreate from './Scheduling/create.scheduleset';
-import QAreporting from './Workflow/QAreporting';
 import Workflow from './Workflow';
-import PIverification from './Workflow/PIverification';
-import DecideAcceptance from './Workflow/DecideAcceptance';
+
 
 
 export const routes = [
@@ -161,7 +159,8 @@ export const routes = [
        component: Workflow,
        name: 'Workflow',
        title: 'QA Reporting (TO)'
-    }
+    },
+    
 ];
 
 export const RoutedContent = () => {

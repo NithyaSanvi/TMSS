@@ -91,7 +91,7 @@ const ScheduleService = {
         }
         return taskblueprintsList;
     },
-    getTasksBySchedulingUnit: async function(id){
+    getTasksBySchedulingUnit: async function(id, loadTemplate){
         let scheduletasklist=[];
         // let taskblueprints = [];
         // Common keys for Task and Blueprint
@@ -115,10 +115,13 @@ const ScheduleService = {
                 }
                 scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                 scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-                
+                scheduletask['specifications_doc'] = task['specifications_doc'];
                 scheduletask.duration = moment.utc((scheduletask.duration || 0)*1000).format('HH:mm:ss'); 
                 scheduletask.relative_start_time = moment.utc(scheduletask.relative_start_time*1000).format('HH:mm:ss'); 
                 scheduletask.relative_stop_time = moment.utc(scheduletask.relative_stop_time*1000).format('HH:mm:ss'); 
+                if (loadTemplate) {
+                    scheduletask.template = await TaskService.getTaskTemplate(task.specifications_template_id);
+                }
                //Fetch blueprint details for Task Draft
 	            const draftBlueprints = await TaskService.getDraftsTaskBlueprints(task.id);
                 // let filteredblueprints =  _.filter(taskblueprints, function(o) {
@@ -140,7 +143,9 @@ const ScheduleService = {
                     taskblueprint.duration = moment.utc((taskblueprint.duration || 0)*1000).format('HH:mm:ss'); 
                     taskblueprint.relative_start_time = moment.utc(taskblueprint.relative_start_time*1000).format('HH:mm:ss'); 
                     taskblueprint.relative_stop_time = moment.utc(taskblueprint.relative_stop_time*1000).format('HH:mm:ss'); 
-
+                    if (loadTemplate) {
+                        taskblueprint.template = scheduletask.template;
+                    }
                     //Add Blue print details to array
                     scheduletasklist.push(taskblueprint);
                 }
@@ -219,7 +224,16 @@ const ScheduleService = {
             return [];
         };
     },
-    saveSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit, constraint) {
+    getSchedulingConstraintTemplate: async function(id){
+        try {
+            const response = await axios.get(`/api/scheduling_constraints_template/${id}`);
+            return response.data;
+        }   catch(error) {
+            console.error(error);
+            return null;
+        };
+    },
+    saveSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit, constraint,station_groups) {
         try {
             // Create the scheduling unit draft with observation strategy and scheduling set
             const url = `/api/scheduling_unit_observing_strategy_template/${observStrategy.id}/create_scheduling_unit/?scheduling_set_id=${schedulingUnit.scheduling_set_id}&name=${schedulingUnit.name}&description=${schedulingUnit.description}`
@@ -249,13 +263,17 @@ const ScheduleService = {
         };
     },
     
-    updateSUDraftFromObservStrategy: async function(observStrategy,schedulingUnit,tasks,tasksToUpdate) {
+    updateSUDraftFromObservStrategy: async function(observStrategy,schedulingUnit,tasks,tasksToUpdate,station_groups) {
         try {
             delete schedulingUnit['duration'];
+           
             schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
             for (const taskToUpdate in tasksToUpdate) {
                 let task = tasks.find(task => { return task.name === taskToUpdate});
                 task.specifications_doc = observStrategy.template.tasks[taskToUpdate].specifications_doc;
+                if (task.specifications_doc.station_groups) {
+                    task.specifications_doc.station_groups = station_groups;
+                }
                 delete task['duration'];
                 delete task['relative_start_time'];
                 delete task['relative_stop_time'];
@@ -332,6 +350,36 @@ const ScheduleService = {
           console.error('[project.services.getSchedulingUnitBySet]',error);
         }
       },
+      getStationGroup: async function() {
+        try {
+          //  const response = await axios.get('/api/station_type/');
+          //  return response.data.results;
+          return [{
+            value: 'Dutch'
+        },{
+            value: 'International'
+        },{
+            value: 'Core'
+        },{
+            value: 'Remote'
+        },{
+            value: 'Superterp'
+        }]
+        }   catch(error) {
+            console.error(error);
+            return [];
+        };
+    },
+    getStations: async function(e) {
+        try {
+           // const response = await axios.get('/api/station_groups/stations/1/dutch');
+           const response = await axios.get(`/api/station_groups/stations/1/${e}`);
+            return response.data;
+        }   catch(error) {
+            console.error(error);
+            return [];
+        }
+    },
       getProjectList: async function() {
         try {
           const response = await axios.get('/api/project/');
@@ -341,6 +389,5 @@ const ScheduleService = {
         }
       }
 }
-
 
 export default ScheduleService;

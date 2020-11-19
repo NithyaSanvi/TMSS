@@ -7,8 +7,10 @@ import QAreporting from './QAreporting';
 import QAsos from './QAsos';
 import PIverification from './PIverification';
 import DecideAcceptance from './DecideAcceptance';
+import Scheduled from './Scheduled';
+import ProcessingDone from './Processing';
 
-const heading = ['QA Reporting', 'QAsos', 'PI Verification', 'Decide Acceptance'];
+const heading = ['QA Reporting (TO)', 'QA Reporting (SOS/SDCO)', 'PI Verification', 'Decide Acceptance','Scheduled','ProcessingDone'];
 
 export default (props) => {
     let growl;
@@ -56,6 +58,8 @@ export default (props) => {
                         {currentStep === 2 && <QAsos onNext={onNext} {...state} />}
                         {currentStep === 3 && <PIverification onNext={onNext} {...state} />}
                         {currentStep === 4 && <DecideAcceptance onNext={onNext} {...state} />}
+                        {currentStep === 5 && <Scheduled onNext={onNext}{...state} />}
+                        {currentStep === 6 && <ProcessingDone onNext={onNext}{...state} />}
                     </div>
                 </>
             }

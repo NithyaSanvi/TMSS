@@ -2,16 +2,17 @@ import React, { Component } from 'react';
 import { Button } from 'primereact/button';
 import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css'; // Import Sun Editor's CSS File
-import { Checkbox } from 'primereact/checkbox';
+import {Checkbox} from 'primereact/checkbox';
 
-class QAreportingView extends Component {
+class QAreportingSDCO extends Component{
     constructor(props) {
         super(props);
-        this.state = {
+        this.state={
             content: props.report,
             showEditor: false,
             checked: false,
-            pchecked: false
+            pichecked:false
+                        
         };
         this.onSave = this.onSave.bind(this);
         this.handleChange = this.handleChange.bind(this);
@@ -27,8 +28,8 @@ class QAreportingView extends Component {
     onSave() {
         this.props.onNext({
             report: this.state.content,
-            piChecked: this.state.pchecked
-        });
+            piChecked: this.state.pichecked
+     })
     }
 
     render() {
@@ -39,15 +40,15 @@ class QAreportingView extends Component {
                         <div className="p-field p-grid">
                             <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Quality Policy</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
-                                <div className="p-field-checkbox">
-                                    <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
+                            <div className="p-field-checkbox">
+                            <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
                                 </div>
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
-                            <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Show PI</label>
+                            <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">SOS Accept</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
                                 <div className="p-field-checkbox">
-                                    <Checkbox inputId="secondary" pchecked={this.state.pchecked} onChange={e => this.setState({ pchecked: e.checked })} />
+                                    <Checkbox inputId="secondary" pichecked={this.state.pichecked} onChange={e => this.setState({ pichecked: e.pichecked })} />
                                 </div>
                             </div>
                         </div>
@@ -69,16 +70,16 @@ class QAreportingView extends Component {
                     </div>
                     <div className="p-grid" style={{ marginTop: '20px' }}>
                         <div className="p-col-1">
-                            <Button label="Next" className="p-button-primary" icon="pi pi-check" onClick={this.onSave} />
+                            <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.onSave} />
                         </div>
                         <div className="p-col-1">
-                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={() => this.setState({ showEditor: false })} />
-                        </div>
-                    </div>
-
-                </div>
+                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} onClick={() => this.setState({ showEditor: false })} />
+                                </div>
+                            </div>
+                            </div>
             </>
         )
     };
+
 }
-export default QAreportingView; 
+export default QAreportingSDCO;

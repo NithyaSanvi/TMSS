@@ -1,9 +1,19 @@
+.sticky {
+    position: sticky;
+    top:49px;
+    z-index:1000;
+}
+
 .rct-sidebar-row {
     font-size: 14px;
 }
 
 .react-calendar-timeline .rct-header-root {
     background-color: #f0f0f0;
+}
+
+.rct-item {
+    border: none !important;
 }
 
 .timeline-view-toolbar {

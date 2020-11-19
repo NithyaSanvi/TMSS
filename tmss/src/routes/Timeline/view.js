@@ -79,7 +79,7 @@ export class TimelineView extends Component {
                         const suBlueprint = _.find(suBlueprints, {'id': suBlueprintId});
                         suBlueprint['actionpath'] = `/schedulingunit/view/blueprint/${suBlueprintId}`;
                         suBlueprint.suDraft = suDraft;
-                        suBlueprint.project = project;
+                        suBlueprint.project = project.name;
                         suBlueprint.suSet = suSet;
                         suBlueprint.durationInSec = suBlueprint.duration;
                         suBlueprint.duration = UnitConverter.getSecsToHHmmss(suBlueprint.duration);
@@ -122,8 +122,8 @@ export class TimelineView extends Component {
         // suBlueprint.status = diffOfCurrAndStart>=0?"FINISHED":"DEFINED";
         let item = { id: suBlueprint.id, 
             group: suBlueprint.suDraft.id,
-            title: `${suBlueprint.project.name} - ${suBlueprint.suDraft.name} - ${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs`,
-            project: suBlueprint.project.name,
+            title: `${suBlueprint.project} - ${suBlueprint.suDraft.name} - ${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs`,
+            project: suBlueprint.project,
             name: suBlueprint.suDraft.name,
             duration: suBlueprint.durationInSec?`${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs`:"",
             start_time: moment.utc(suBlueprint.start_time),
@@ -157,6 +157,11 @@ export class TimelineView extends Component {
                             }
                         }
                         this.setState({suTaskList: _.sortBy(taskList, "id"), isSummaryLoading: false})
+                    });
+                // Get the scheduling constraint template of the selected SU block
+                ScheduleService.getSchedulingConstraintTemplate(suBlueprint.suDraft.scheduling_constraints_template_id)
+                    .then(suConstraintTemplate => {
+                        this.setState({suConstraintTemplate: suConstraintTemplate});
                     });
             }
         }
@@ -289,6 +294,11 @@ export class TimelineView extends Component {
         }
     }
 
+    setStationView(e) {
+        this.closeSUDets();
+        this.setState({stationView: e.value});
+    }
+
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -313,7 +323,7 @@ export class TimelineView extends Component {
                                     data={this.state.suBlueprintList} 
                                     defaultcolumns={[{name: "Name",
                                                         start_time:"Start Time", stop_time:"End Time"}]}
-                                    optionalcolumns={[{description: "Description", duration:"Duration (HH:mm:ss)", actionpath: "actionpath"}]}
+                                    optionalcolumns={[{project:"Project",description: "Description", duration:"Duration (HH:mm:ss)", actionpath: "actionpath"}]}
                                     columnclassname={[{"Start Time":"filter-input-50", "End Time":"filter-input-50",
                                                         "Duration (HH:mm:ss)" : "filter-input-50",}]}
                                     defaultSortColumn= {[{id: "Start Time", desc: false}]}
@@ -340,7 +350,7 @@ export class TimelineView extends Component {
                                 </div> 
                                 <div className="timeline-view-toolbar">
                                     <label>Station View</label>
-                                    <InputSwitch checked={this.state.stationView} onChange={(e) => {this.closeSUDets();this.setState({stationView: e.value})}} />
+                                    <InputSwitch checked={this.state.stationView} onChange={(e) => {this.setStationView(e)}} />
                                 </div>
                                 <Timeline ref={(tl)=>{this.timeline=tl}} 
                                         group={this.state.group} 
@@ -348,6 +358,7 @@ export class TimelineView extends Component {
                                         currentUTC={this.state.currentUTC}
                                         rowHeight={30} itemClickCallback={this.onItemClick}
                                         dateRangeCallback={this.dateRangeCallback}
+                                        showSunTimings={!this.state.stationView}
                                         className="timeline-toolbar-margin-top-0"></Timeline>
                             </div>
                             {/* Details Panel */}
@@ -356,6 +367,7 @@ export class TimelineView extends Component {
                                      style={{borderLeft: "1px solid #efefef", marginTop: "0px", backgroundColor: "#f2f2f2"}}>
                                     {this.state.isSummaryLoading?<AppLoader /> :
                                         <SchedulingUnitSummary schedulingUnit={suBlueprint} suTaskList={this.state.suTaskList}
+                                                constraintsTemplate={this.state.suConstraintTemplate}
                                                 closeCallback={this.closeSUDets}></SchedulingUnitSummary>
                                     }
                                 </div>
