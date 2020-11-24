@@ -30,6 +30,7 @@ class DecideAcceptance extends Component {
         this.props.onNext({
             report: this.state.content,
             picomment: this.state.picomment
+           
         });
     }
      
@@ -41,6 +42,10 @@ class DecideAcceptance extends Component {
         localStorage.setItem('pi_comment', e.target.value);
     }
 
+    cancelCreate() {
+        this.props.history.goBack();
+    }
+
 
     render() {
         return (
@@ -48,7 +53,7 @@ class DecideAcceptance extends Component {
                 <div>
                     <div className="p-fluid">
                         <div className="p-field p-grid">
-                            <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">PI Report</label>
+                            <label htmlFor="piReport" className="col-lg-2 col-md-2 col-sm-12">PI Report</label>
                             <div className="col-lg-12 col-md-12 col-sm-12">
                             {this.state.showEditor && <SunEditor height="250" enableToolbar={true}
                                 onChange={this.onChangePIComment}
@@ -63,8 +68,8 @@ class DecideAcceptance extends Component {
                             <div dangerouslySetInnerHTML={{ __html: this.state.picomment }}></div>
                         </div>
                          </div>
-                        <div className="p-grid" style={{ padding: '10px' }}>
-                            <label htmlFor="comments" >Operator Report</label>
+                        <div className="p-grid" style={{ padding: '15px' }}>
+                            <label htmlFor="operatorReport" >Operator Report</label>
                             <div className="col-lg-12 col-md-12 col-sm-12"></div>
                             {this.state.showEditor && <SunEditor height="250" enableToolbar={true}
                                 onChange={this.handleChange}
@@ -79,8 +84,19 @@ class DecideAcceptance extends Component {
                             <div dangerouslySetInnerHTML={{ __html: this.state.content }}></div>
                         </div>
                         <div className="p-field p-grid">
-                            <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">SDCO Accept</label>
+                            <label htmlFor="operatorAccept" className="col-lg-2 col-md-2 col-sm-12">Operator Accept</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
+                             <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
+                            </div>
+                            <div className="col-lg-1 col-md-1 col-sm-12"></div>
+                            <label htmlFor="sdcoAccept" className="col-lg-2 col-md-2 col-sm-12">SDCO Accept</label>
+                            <div className="col-lg-3 col-md-3 col-sm-12">
+                            <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
+                           </div>
+                        </div>
+                        <div className="p-field p-grid">
+                            <label htmlFor="piAccept" className="col-lg-2 col-md-2 col-sm-12">PI Accept</label>
+                            <div className="col-lg-3 col-md-3 col-sm-6">
                                 <div className="p-field-checkbox">
                                     <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
                                 </div>
@@ -89,10 +105,10 @@ class DecideAcceptance extends Component {
                     </div>
                     <div className="p-grid" style={{ marginTop: '20px' }}>
                         <div className="p-col-1">
-                            <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.onSave}  />
+                            <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.onSave} />
                         </div>
                         <div className="p-col-1">
-                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} onClick={() => this.setState({ showEditor: false })} />
+                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} onClick={this.cancelCreate} />
                         </div>
                     </div>
 

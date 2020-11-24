@@ -32,20 +32,24 @@ class QAreportingSDCO extends Component{
      })
     }
 
+    cancelCreate() {
+        this.props.history.goBack();
+    }
+
     render() {
         return (
             <>
                 <div>
                     <div className="p-fluid">
                         <div className="p-field p-grid">
-                            <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Quality Policy</label>
+                            <label htmlFor="qualityPolicy" className="col-lg-2 col-md-2 col-sm-12">Quality Policy</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
                             <div className="p-field-checkbox">
                             <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
                                 </div>
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
-                            <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">SOS Accept</label>
+                            <label htmlFor="sdcoAccept" className="col-lg-2 col-md-2 col-sm-12">SDCO Accept</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
                                 <div className="p-field-checkbox">
                                     <Checkbox inputId="secondary" pichecked={this.state.pichecked} onChange={e => this.setState({ pichecked: e.pichecked })} />
@@ -53,7 +57,7 @@ class QAreportingSDCO extends Component{
                             </div>
                         </div>
                         <div className="p-grid" style={{ padding: '10px' }}>
-                            <label htmlFor="comments" >Operator Report</label>
+                            <label htmlFor="operatorReport" >Operator Report</label>
                             <div className="col-lg-12 col-md-12 col-sm-12"></div>
                             {this.state.showEditor && <SunEditor height="250" enableToolbar={true}
                                 onChange={this.handleChange}
@@ -73,7 +77,7 @@ class QAreportingSDCO extends Component{
                             <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.onSave} />
                         </div>
                         <div className="p-col-1">
-                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} onClick={() => this.setState({ showEditor: false })} />
+                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} onClick={this.cancelCreate} />
                                 </div>
                             </div>
                             </div>

@@ -3,7 +3,7 @@ import { Button } from 'primereact/button';
 import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css'; // Import Sun Editor's CSS File
 import {Dropdown} from 'primereact/dropdown';
-import katex from 'katex'
+import katex from 'katex' // for mathematical operations on sun editor this component should be added
 import 'katex/dist/katex.min.css'
 
 class QAreporting extends Component{
@@ -22,7 +22,7 @@ class QAreporting extends Component{
      }
 
     handleChange(e) {
-        localStorage.setItem('report_qa', e);
+        localStorage.setItem('report_qa', e); //QA report on editor
         this.setState({ content: e });
     }
     cancelCreate() {
@@ -35,7 +35,7 @@ class QAreporting extends Component{
                 <div className="p-field p-grid">
                     <label htmlFor="assignTo" className="col-lg-2 col-md-2 col-sm-12">Assign To </label>
                     <div className="col-lg-3 col-md-3 col-sm-12" data-testid="assignTo" >
-                        <Dropdown inputId="projCat" optionLabel="value" optionValue="value"
+                        <Dropdown inputId="assignToValue" optionLabel="value" optionValue="value"
                             options={[{ value: 'User 1' }, { value: 'User 2' }, { value: 'User 3' }]}
                             placeholder="Assign To" />
                     </div>
@@ -58,7 +58,7 @@ class QAreporting extends Component{
                     <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.onSave} />
                 </div>
                 <div className="p-col-1">
-                    <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} onClick={this.cancelCreate} />
+                    <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '88px' }} onClick={this.cancelCreate} />
                 </div>
             </div>
         </>

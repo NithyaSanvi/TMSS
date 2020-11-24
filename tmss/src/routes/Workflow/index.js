@@ -9,8 +9,10 @@ import PIverification from './PIverification';
 import DecideAcceptance from './DecideAcceptance';
 import Scheduled from './Scheduled';
 import ProcessingDone from './Processing';
+import IngestDone from './IngestDone';
 
-const heading = ['QA Reporting (TO)', 'QA Reporting (SOS/SDCO)', 'PI Verification', 'Decide Acceptance','Scheduled','ProcessingDone'];
+//Workflow Page Title 
+const pageTitle = ['QA Reporting (TO)', 'QA Reporting (SOS/SDCO)', 'PI Verification', 'Decide Acceptance','Scheduled','Processing Done','IngestDone'];
 
 export default (props) => {
     let growl;
@@ -18,7 +20,7 @@ export default (props) => {
     const [currentStep, setCurrentStep] = useState(1);
     const [schedulingUnit, setSchedulingUnit] = useState();
     useEffect(() => {
-        // Clearing Localstorgae on start of the page to load fresh
+        // Clearing Localstorage on start of the page to load fresh
         clearLocalStorage();
         ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id)
             .then(schedulingUnit => {
@@ -30,21 +32,22 @@ export default (props) => {
         localStorage.removeItem('pi_comment');
         localStorage.removeItem('report_qa');
     }
-
+    
+    //Pages changes step by step
     const onNext = (content) => {
         setState({...state, ...content});
-        setCurrentStep(currentStep + 1);
+        setCurrentStep(currentStep + 1);  
     };
 
     return (
         <>
             <Growl ref={(el) => growl = el} />
-            <PageHeader location={props.location} title={`${heading[currentStep - 1]}`} actions={[{ icon: 'fa-window-close', link: props.history.goBack, title: 'Click to Close Workflow', props: { pathname: '/schedulingunit/1/workflow/verification' } }]} />
+            <PageHeader location={props.location} title={`${pageTitle[currentStep - 1]}`} actions={[{ icon: 'fa-window-close', link: props.history.goBack, title: 'Click to Close Workflow', props: { pathname: '/schedulingunit/1/workflow' } }]} />
             {schedulingUnit &&
                 <>
                     <div className="p-fluid">
                         <div className="p-field p-grid">
-                            <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Scheduling Unit</label>
+                        <label htmlFor="suName" className="col-lg-2 col-md-2 col-sm-12">Scheduling Unit</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
                                 <Link to={{ pathname: `/schedulingunit/view/blueprint/${schedulingUnit.id}` }}>{schedulingUnit.name}</Link>
                             </div>
@@ -71,7 +74,8 @@ export default (props) => {
                         {currentStep === 3 && <PIverification onNext={onNext} {...state} />}
                         {currentStep === 4 && <DecideAcceptance onNext={onNext} {...state} />}
                         {currentStep === 5 && <Scheduled onNext={onNext}{...state} schedulingUnit={schedulingUnit} />}
-                        {currentStep === 6 && <ProcessingDone onNext={onNext} {...state} />}
+                        {currentStep === 6 && <ProcessingDone onNext={onNext}{...state} />}
+                        {currentStep === 7 && <IngestDone onNext={onNext}{...state} />}
                     </div>
                 </>
             }

@@ -3,7 +3,7 @@ import { Button } from 'primereact/button';
 import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css'; // Import Sun Editor's CSS File
 import {Checkbox} from 'primereact/checkbox';
-import {InputTextarea} from 'primereact/inputtextarea';
+//import {InputTextarea} from 'primereact/inputtextarea';
 
 
 class PIverification extends Component{
@@ -39,6 +39,9 @@ class PIverification extends Component{
         });
         localStorage.setItem('comment_pi', a);
     }
+    cancelCreate() {
+        this.props.history.goBack();
+    }
 
     render() {
         return (
@@ -46,7 +49,7 @@ class PIverification extends Component{
              <div>
                 <div className="p-fluid">
                     <div className="p-grid" style={{ padding: '10px' }}>
-                                <label htmlFor="comments" >Operator Report</label>
+                                <label htmlFor="operatorReport" >Operator Report</label>
                                 <div className="col-lg-12 col-md-12 col-sm-12"></div>
                                 {this.state.showEditor && <SunEditor height="250" enableToolbar={true}
                                     onChange={this.handleChange}
@@ -61,7 +64,7 @@ class PIverification extends Component{
                                 <div dangerouslySetInnerHTML={{ __html: this.state.content }}></div>
                     </div>
                     <div className="p-grid" style={{ padding: '10px' }}>
-                    <label htmlFor="comments" >PI Report</label>
+                    <label htmlFor="piReport" >PI Report</label>
                         <div className="col-lg-12 col-md-12 col-sm-12"></div>
                         <SunEditor  height="150" enableToolbar={true}
                                     setContents={this.state.comment}
@@ -79,7 +82,7 @@ class PIverification extends Component{
                             /> */}
                     </div>      
                     <div className="p-field p-grid">
-                    <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">PI Accept</label>
+                    <label htmlFor="piAccept" className="col-lg-2 col-md-2 col-sm-12">PI Accept</label>
                     <div className="p-field-checkbox">
                             <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
                     </div>
@@ -89,7 +92,7 @@ class PIverification extends Component{
                             <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.onSave} />
                         </div>
                         <div className="p-col-1">
-                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} onClick={() => this.setState({ showEditor: false })} />
+                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} onClick={this.cancelCreate} />
                         </div>
                     </div>
                  </div>  

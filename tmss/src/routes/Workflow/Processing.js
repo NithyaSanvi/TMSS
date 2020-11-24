@@ -2,6 +2,20 @@ import React, { Component } from 'react';
 import { Button } from 'primereact/button';
 
 class ProcessingDone extends Component{
+    
+    constructor(props) {
+        super(props);
+        this.state = { };
+        this.onSave = this.onSave.bind(this);
+    }
+
+
+    onSave(){
+        this.props.onNext({
+            report: this.props.report,
+            picomment: this.props.picomment
+        });
+    }
 
     render(){
         return(

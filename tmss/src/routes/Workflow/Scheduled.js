@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Button } from 'primereact/button';
 import { Link } from 'react-router-dom';
+import moment from 'moment';
 
 class Scheduled extends Component {
     constructor(props) {
@@ -24,18 +25,18 @@ class Scheduled extends Component {
                         <div className="p-field p-grid">
                             <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Start Time</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
-                                <span>{this.props.schedulingUnit.start_time}</span>
+                                <span>{this.props.schedulingUnit.start_time  && moment(this.props.schedulingUnit.start_time).format("YYYY-MMM-DD HH:mm:SS")}</span>
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">End Time</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
-                                <span>{this.props.schedulingUnit.stop_time}</span>
+                                <span>{this.props.schedulingUnit.stop_time && moment(this.props.schedulingUnit.stop_time).format("YYYY-MMM-DD HH:mm:SS")}</span>
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Timeline</label>
                             <div className="col-lg-3 col-md-3 col-sm-12 block-list">
-                                <Link to={{ pathname: '/su/timelineview'}}>SU TimeLine View</Link>
-                                <Link to={{ pathname: '/su/timelineview/week'}}>SU Weekly Timeline View</Link>
+                                <Link to={{ pathname: '/su/timelineview'}}>TimeLine View &nbsp; <span class="fas fa-clock"></span></Link>
+                                <Link to={{ pathname: '/su/timelineview/week'}}>Week Overview &nbsp; <span class="fas fa-calendar-alt"></span></Link>
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Scheduling Method</label>
