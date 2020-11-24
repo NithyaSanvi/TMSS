@@ -19,13 +19,17 @@ export default (props) => {
     const [state, setState] = useState({});
     const [currentStep, setCurrentStep] = useState(1);
     const [schedulingUnit, setSchedulingUnit] = useState();
-    useEffect(() => {
+    const [ingestTask, setInjestTask] = useState({});
+;    useEffect(() => {
         // Clearing Localstorage on start of the page to load fresh
         clearLocalStorage();
-        ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id)
-            .then(schedulingUnit => {
-                setSchedulingUnit(schedulingUnit);
-            })
+        const promises = [ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id), ScheduleService.getTaskType()]
+        Promise.all(promises).then(responses => {
+            setSchedulingUnit(responses[0]);
+            ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false).then(response => {
+                setInjestTask(response.find(task => task.template.type_value==='observation'));
+            });
+        });
     }, []);
 
     const clearLocalStorage = () => {
@@ -74,8 +78,8 @@ export default (props) => {
                         {currentStep === 3 && <PIverification onNext={onNext} {...state} />}
                         {currentStep === 4 && <DecideAcceptance onNext={onNext} {...state} />}
                         {currentStep === 5 && <Scheduled onNext={onNext}{...state} schedulingUnit={schedulingUnit} />}
-                        {currentStep === 6 && <ProcessingDone onNext={onNext}{...state} />}
-                        {currentStep === 7 && <IngestDone onNext={onNext}{...state} />}
+                        {currentStep === 6 && <ProcessingDone onNext={onNext} {...state} />}
+                        {currentStep === 7 && <IngestDone onNext={onNext}{...state} task={ingestTask} />}
                     </div>
                 </>
             }

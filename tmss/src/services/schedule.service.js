@@ -234,6 +234,15 @@ const ScheduleService = {
             return null;
         };
     },
+    getTaskType: async function(){
+        try {
+            const response = await axios.get('/api/task_type');
+            return response.data.results;
+        }   catch(error) {
+            console.error(error);
+            return null;
+        };
+    },
     saveSUDraftFromObservStrategy: async function(observStrategy, schedulingUnit, constraint,station_groups) {
         try {
             // Create the scheduling unit draft with observation strategy and scheduling set
