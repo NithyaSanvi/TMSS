@@ -33,6 +33,7 @@ class ViewSchedulingUnit extends Component{
                     name:"Type",
                     filter:"select"
                 },
+                subTakskID: 'Sub Taksk ID',
                 id: "ID",
                 name:"Name",
                 description:"Description",
@@ -119,6 +120,8 @@ class ViewSchedulingUnit extends Component{
                         .then(tasks =>{
                         tasks.map(task => {
                             task.status_logs = task.tasktype === "Blueprint"?subtaskComponent(task):"";
+                            const subTaskIds = task.subTasks.filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1);
+                            task.subTakskID = subTaskIds.length ? subTaskIds[0].id : ''; 
                             return task;
                         });
                         const targetObservation = _.find(tasks, (task)=> {return task.template.type_value==='observation' && task.tasktype.toLowerCase()===schedule_type && task.specifications_doc.station_groups});
@@ -142,7 +145,7 @@ class ViewSchedulingUnit extends Component{
         if(type === 'draft')
             return ScheduleService.getTasksBySchedulingUnit(scheduleunit.id, true);
         else
-            return ScheduleService.getTaskBlueprintsBySchedulingUnit(scheduleunit, true);
+            return ScheduleService.getTaskSubTaskBlueprintsBySchedulingUnit(scheduleunit);
     }
     getScheduleUnit(type, id){
         if(type === 'draft')

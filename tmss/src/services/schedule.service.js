@@ -73,12 +73,59 @@ const ScheduleService = {
         }
         return result;
     },
+    getTaskSubTaskTemplateBlueprintById: async function(id) {
+        let result;
+        try {
+            result = await axios.get('/api/task_blueprint/'+id);
+            if (result.data) {
+                result.data.template = await TaskService.getTaskTemplate(result.data.specifications_template_id);
+            }
+            if (result.data) {
+                let subTasks = [];
+                let subTasktemplate = {}
+                for (const subtaskId of result.data.subtasks_ids) {
+                    const subTask = await TaskService.getSubtaskDetails(subtaskId);
+                    if (subTasktemplate[subTask.specifications_template_id]) {
+                        subTask.subTaskTemplate = subTasktemplate[subTask.specifications_template_id];
+                    } else {
+                        const subTaskTemplate = await TaskService.getSubtaskTemplate(subTask.specifications_template_id);
+                        subTask.subTaskTemplate = subTaskTemplate;
+                        subTasktemplate[subTask.specifications_template_id] = subTaskTemplate;
+                    }
+                    subTasks.push((subTask));
+                }
+                result.data.subTasks = subTasks;
+            }
+        }   catch(error) {
+            console.error('[schedule.services.getTaskBlueprintById]',error);
+        }
+        return result;
+    },
     getTaskBlueprintsBySchedulingUnit: async function(scheduleunit, loadTemplate, loadSubtasks){
         // there no single api to fetch associated task_blueprint, so iteare the task_blueprint id to fetch associated task_blueprint
         let taskblueprintsList = [];
         if(scheduleunit.task_blueprints_ids){
-            for(const id of scheduleunit.task_blueprints_ids){
+            for(const id of scheduleunit.task_blueprints_ids) {
                await this.getTaskBlueprintById(id, loadTemplate, loadSubtasks).then(response =>{
+                    let taskblueprint = response.data;
+                    taskblueprint['tasktype'] = 'Blueprint';
+                    taskblueprint['actionpath'] = '/task/view/blueprint/'+taskblueprint['id'];
+                    taskblueprint['blueprint_draft'] = taskblueprint['draft'];
+                    taskblueprint['relative_start_time'] = 0;
+                    taskblueprint['relative_stop_time'] = 0;
+                    taskblueprint.duration = moment.utc((taskblueprint.duration || 0)*1000).format('HH:mm:ss');
+                    taskblueprintsList.push(taskblueprint);
+                })
+            }
+        }
+        return taskblueprintsList;
+    },
+    getTaskSubTaskBlueprintsBySchedulingUnit: async function(scheduleunit){
+        // there no single api to fetch associated task_blueprint, so iteare the task_blueprint id to fetch associated task_blueprint
+        let taskblueprintsList = [];
+        if (scheduleunit.task_blueprints_ids){
+            for(const id of scheduleunit.task_blueprints_ids) {
+               await this.getTaskSubTaskTemplateBlueprintById(id).then(response =>{
                     let taskblueprint = response.data;
                     taskblueprint['tasktype'] = 'Blueprint';
                     taskblueprint['actionpath'] = '/task/view/blueprint/'+taskblueprint['id'];
