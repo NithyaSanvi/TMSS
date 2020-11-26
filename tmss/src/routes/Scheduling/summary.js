@@ -154,7 +154,7 @@ export class SchedulingUnitSummary extends Component {
                         <label>Tasks:</label>
                         <ViewTable 
                             data={suTaskList} 
-                            defaultcolumns={[{id: "ID", start_time:"Start Time", stop_time:"End Time", status: "Status", 
+                            defaultcolumns={[{id: "ID", subTakskID: 'Sub Taksk ID', start_time:"Start Time", stop_time:"End Time", status: "Status", 
                                                 antenna_set: "Antenna Set", band: 'Band'}]}
                             optionalcolumns={[{actionpath: "actionpath"}]}
                             columnclassname={[{"ID": "filter-input-50", "Start Time": "filter-input-75", "End Time": "filter-input-75",

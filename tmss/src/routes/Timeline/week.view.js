@@ -166,9 +166,11 @@ export class WeekTimelineView extends Component {
                 canExtendSUList: false, canShrinkSUList:false});
             if (fetchDetails) {
                 const suBlueprint = _.find(this.state.suBlueprints, {id: parseInt(item.id.split('-')[0])});
-                ScheduleService.getTaskBlueprintsBySchedulingUnit(suBlueprint, true)
+                ScheduleService.getTaskSubTaskBlueprintsBySchedulingUnit(suBlueprint)
                     .then(taskList => {
                         for (let task of taskList) {
+                            const subTaskIds = (task.subTasks || []).filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1);
+                            task.subTakskID = subTaskIds.length ? subTaskIds[0].id : ''; 
                             if (task.template.type_value.toLowerCase() === "observation") {
                                 task.antenna_set = task.specifications_doc.antenna_set;
                                 task.band = task.specifications_doc.filter;
