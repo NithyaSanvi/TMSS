@@ -10,7 +10,11 @@ class Scheduled extends Component {
         this.onSave = this.onSave.bind(this);
     }
 
-    onSave(){
+    /**
+     * Method will trigger on click save buton
+     * here onNext props coming from parent, where will handle redirection to other page
+     */
+    onSave() {
         this.props.onNext({
             report: this.props.report,
             picomment: this.props.picomment
@@ -25,7 +29,7 @@ class Scheduled extends Component {
                         <div className="p-field p-grid">
                             <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Start Time</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
-                                <span>{this.props.schedulingUnit.start_time  && moment(this.props.schedulingUnit.start_time).format("YYYY-MMM-DD HH:mm:SS")}</span>
+                                <span>{this.props.schedulingUnit.start_time && moment(this.props.schedulingUnit.start_time).format("YYYY-MMM-DD HH:mm:SS")}</span>
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">End Time</label>
@@ -35,8 +39,8 @@ class Scheduled extends Component {
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Timeline</label>
                             <div className="col-lg-3 col-md-3 col-sm-12 block-list">
-                                <Link to={{ pathname: '/su/timelineview'}}>TimeLine View &nbsp; <span class="fas fa-clock"></span></Link>
-                                <Link to={{ pathname: '/su/timelineview/week'}}>Week Overview &nbsp; <span class="fas fa-calendar-alt"></span></Link>
+                                <Link to={{ pathname: '/su/timelineview' }}>TimeLine View &nbsp; <span class="fas fa-clock"></span></Link>
+                                <Link to={{ pathname: '/su/timelineview/week' }}>Week Overview &nbsp; <span class="fas fa-calendar-alt"></span></Link>
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Scheduling Method</label>
@@ -51,7 +55,7 @@ class Scheduled extends Component {
                             <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.onSave} />
                         </div>
                         <div className="p-col-1">
-                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times" style={{ width: '90px' }} onClick={this.cancelCreate} />
+                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times" style={{ width: '90px' }} />
                         </div>
                     </div>
                 </div>

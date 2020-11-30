@@ -19,6 +19,9 @@ class DecideAcceptance extends Component {
         this.onChangePIComment = this.onChangePIComment.bind(this);
     }
 
+     /**
+     * Method wiill triigger on change of operator report sun-editor
+     */
     handleChange(e) {
         this.setState({
             content: e
@@ -26,15 +29,21 @@ class DecideAcceptance extends Component {
         localStorage.setItem('report_qa', e);
     }
 
-    onSave(){
+    /**
+     * Method will trigger on click save buton
+     * here onNext props coming from parent, where will handle redirection to other page
+     */
+    onSave() {
         this.props.onNext({
             report: this.state.content,
             picomment: this.state.picomment
-           
+
         });
     }
-     
-    //PI Comment Editor
+
+    /**
+     * Method wiill triigger on change of pi report sun-editor
+     */
     onChangePIComment(e) {
         this.setState({
             picomment: e.target.value
@@ -42,32 +51,16 @@ class DecideAcceptance extends Component {
         localStorage.setItem('pi_comment', e.target.value);
     }
 
+    // Not usiing at present
     cancelCreate() {
         this.props.history.goBack();
     }
-
 
     render() {
         return (
             <>
                 <div>
                     <div className="p-fluid">
-                        <div className="p-field p-grid">
-                            <label htmlFor="piReport" className="col-lg-2 col-md-2 col-sm-12">PI Report</label>
-                            <div className="col-lg-12 col-md-12 col-sm-12">
-                            {this.state.showEditor && <SunEditor height="250" enableToolbar={true}
-                                onChange={this.onChangePIComment}
-                                setContents={this.state.picomment}
-                                setOptions={{
-                                    buttonList: [
-                                        ['undo', 'redo', 'bold', 'underline', 'fontColor', 'table', 'link', 'image', 'video', 'italic', 'strike', 'subscript',
-                                            'superscript', 'outdent', 'indent', 'fullScreen', 'showBlocks', 'codeView', 'preview', 'print', 'removeFormat']
-                                    ]
-                                }}
-                            />}
-                            <div dangerouslySetInnerHTML={{ __html: this.state.picomment }}></div>
-                        </div>
-                         </div>
                         <div className="p-grid" style={{ padding: '15px' }}>
                             <label htmlFor="operatorReport" >Operator Report</label>
                             <div className="col-lg-12 col-md-12 col-sm-12"></div>
@@ -84,15 +77,31 @@ class DecideAcceptance extends Component {
                             <div dangerouslySetInnerHTML={{ __html: this.state.content }}></div>
                         </div>
                         <div className="p-field p-grid">
+                            <label htmlFor="piReport" className="col-lg-2 col-md-2 col-sm-12">PI Report</label>
+                            <div className="col-lg-12 col-md-12 col-sm-12">
+                                {this.state.showEditor && <SunEditor setDefaultStyle="min-height: 250px; height: auto;" enableToolbar={true}
+                                    onChange={this.onChangePIComment}
+                                    setContents={this.state.picomment}
+                                    setOptions={{
+                                        buttonList: [
+                                            ['undo', 'redo', 'bold', 'underline', 'fontColor', 'table', 'link', 'image', 'video', 'italic', 'strike', 'subscript',
+                                                'superscript', 'outdent', 'indent', 'fullScreen', 'showBlocks', 'codeView', 'preview', 'print', 'removeFormat']
+                                        ]
+                                    }}
+                                />}
+                                <div dangerouslySetInnerHTML={{ __html: this.state.picomment }}></div>
+                            </div>
+                        </div>
+                        <div className="p-field p-grid">
                             <label htmlFor="operatorAccept" className="col-lg-2 col-md-2 col-sm-12">Operator Accept</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
-                             <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
+                                <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="sdcoAccept" className="col-lg-2 col-md-2 col-sm-12">SDCO Accept</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
-                            <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
-                           </div>
+                                <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
+                            </div>
                         </div>
                         <div className="p-field p-grid">
                             <label htmlFor="piAccept" className="col-lg-2 col-md-2 col-sm-12">PI Accept</label>
@@ -108,7 +117,7 @@ class DecideAcceptance extends Component {
                             <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.onSave} />
                         </div>
                         <div className="p-col-1">
-                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} onClick={this.cancelCreate} />
+                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times" style={{ width: '90px' }} />
                         </div>
                     </div>
 

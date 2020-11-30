@@ -2,29 +2,38 @@ import React, { Component } from 'react';
 import { Button } from 'primereact/button';
 import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css'; // Import Sun Editor's CSS File
-import {Dropdown} from 'primereact/dropdown';
+import { Dropdown } from 'primereact/dropdown';
 import katex from 'katex' // for mathematical operations on sun editor this component should be added
 import 'katex/dist/katex.min.css'
 
-class QAreporting extends Component{
-   
+class QAreporting extends Component {
+
     constructor(props) {
         super(props);
-        this.state={
+        this.state = {
             content: props.report
         };
         this.onSave = this.onSave.bind(this);
         this.handleChange = this.handleChange.bind(this);
     }
 
+    /**
+     * Method will trigger on click save buton
+     * here onNext props coming from parent, where will handle redirection to other page
+     */
     onSave() {
-        this.props.onNext({report: this.state.content});
-     }
+        this.props.onNext({ report: this.state.content });
+    }
 
+    /**
+     * Method wiill triigger on change of operator report sun-editor
+     */
     handleChange(e) {
         localStorage.setItem('report_qa', e); //QA report on editor
         this.setState({ content: e });
     }
+
+    // Not usiing at present
     cancelCreate() {
         this.props.history.goBack();
     }
@@ -43,7 +52,8 @@ class QAreporting extends Component{
                 <div className="p-grid" style={{ padding: '10px' }}>
                     <label htmlFor="comments" >Comments</label>
                     <div className="col-lg-12 col-md-12 col-sm-12"></div>
-                    <SunEditor height="250" enableToolbar={true}
+                    <SunEditor enableToolbar={true}
+                        setDefaultStyle="min-height: 250px; height: auto;"
                         onChange={this.handleChange}
                         setOptions={{
                             buttonList: [
@@ -58,12 +68,12 @@ class QAreporting extends Component{
                     <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.onSave} />
                 </div>
                 <div className="p-col-1">
-                    <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '88px' }} onClick={this.cancelCreate} />
+                    <Button label="Cancel" className="p-button-danger" icon="pi pi-times" style={{ width: '88px' }} />
                 </div>
             </div>
         </>
-    )
-};
-                   
+        )
+    };
+
 }
 export default QAreporting;

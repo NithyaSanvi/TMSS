@@ -41,7 +41,7 @@ class IngestDone extends Component {
                         <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.onSave} />
                     </div>
                     <div className="p-col-1">
-                        <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} onClick={this.cancelCreate} />
+                        <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} />
                     </div>
                     </div>
                 </div>

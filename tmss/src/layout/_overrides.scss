@@ -142,6 +142,33 @@
         display: block;
     }
 }
+.se-resizing-bar .se-navigation.sun-editor-common {
+    display: none;
+}
+.se-component.se-image-container {
+    img {
+        width: 100%;
+    }
+}
+.p-button.tooltip-wrapper {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    background-color: transparent;
+    box-shadow: none;
+    font-size: 1rem;
+    text-align: left;
+    color: #000;
+    .p-button-text.p-c{
+        display: none;
+    }
+}
+.p-button.tooltip-wrapper:enabled:hover {
+    background-color: transparent;
+    color: #000;
+    border: none;
+}
 
 
 
