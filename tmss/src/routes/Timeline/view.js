@@ -43,7 +43,8 @@ export class TimelineView extends Component {
             canShrinkSUList: false,
             selectedItem: null,
             suTaskList:[],
-            isSummaryLoading: false
+            isSummaryLoading: false,
+            stationGroup: []
         }
         this.STATUS_BEFORE_SCHEDULED = ['defining', 'defined', 'schedulable'];  // Statuses before scheduled to get station_group
 
@@ -150,6 +151,7 @@ export class TimelineView extends Component {
                 const suBlueprint = _.find(this.state.suBlueprints, {id: (this.state.stationView?parseInt(item.id.split('-')[0]):item.id)});
                 ScheduleService.getTaskSubTaskBlueprintsBySchedulingUnit(suBlueprint, true)
                     .then(taskList => {
+                        const targetObservation = _.find(taskList, (task)=> {return task.template.type_value==='observation' && task.tasktype.toLowerCase()==="blueprint" && task.specifications_doc.station_groups});
                         for (let task of taskList) {
                             const subTaskIds = (task.subTasks || []).filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1);
                             task.subTakskID = subTaskIds.length ? subTaskIds[0].id : ''; 
@@ -158,7 +160,7 @@ export class TimelineView extends Component {
                                 task.band = task.specifications_doc.filter;
                             }
                         }
-                        this.setState({suTaskList: _.sortBy(taskList, "id"), isSummaryLoading: false})
+                        this.setState({suTaskList: _.sortBy(taskList, "id"), isSummaryLoading: false, stationGroup: targetObservation?targetObservation.specifications_doc.station_groups:[]})
                     });
                 // Get the scheduling constraint template of the selected SU block
                 ScheduleService.getSchedulingConstraintTemplate(suBlueprint.suDraft.scheduling_constraints_template_id)
@@ -370,6 +372,7 @@ export class TimelineView extends Component {
                                     {this.state.isSummaryLoading?<AppLoader /> :
                                         <SchedulingUnitSummary schedulingUnit={suBlueprint} suTaskList={this.state.suTaskList}
                                                 constraintsTemplate={this.state.suConstraintTemplate}
+                                                stationGroup={this.state.stationGroup}
                                                 closeCallback={this.closeSUDets}></SchedulingUnitSummary>
                                     }
                                 </div>

@@ -44,7 +44,8 @@ export class WeekTimelineView extends Component {
             canShrinkSUList: false,
             selectedItem: null,
             suTaskList:[],
-            isSummaryLoading: false
+            isSummaryLoading: false,
+            stationGroup: []
         }
 
         this.onItemClick = this.onItemClick.bind(this);
@@ -168,6 +169,7 @@ export class WeekTimelineView extends Component {
                 const suBlueprint = _.find(this.state.suBlueprints, {id: parseInt(item.id.split('-')[0])});
                 ScheduleService.getTaskSubTaskBlueprintsBySchedulingUnit(suBlueprint)
                     .then(taskList => {
+                        const targetObservation = _.find(taskList, (task)=> {return task.template.type_value==='observation' && task.tasktype.toLowerCase()==="blueprint" && task.specifications_doc.station_groups});
                         for (let task of taskList) {
                             const subTaskIds = (task.subTasks || []).filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1);
                             task.subTakskID = subTaskIds.length ? subTaskIds[0].id : ''; 
@@ -176,7 +178,7 @@ export class WeekTimelineView extends Component {
                                 task.band = task.specifications_doc.filter;
                             }
                         }
-                        this.setState({suTaskList: _.sortBy(taskList, "id"), isSummaryLoading: false})
+                        this.setState({suTaskList: _.sortBy(taskList, "id"), isSummaryLoading: false, stationGroup: targetObservation?targetObservation.specifications_doc.station_groups:[]})
                     });
                 // Get the scheduling constraint template of the selected SU block
                 ScheduleService.getSchedulingConstraintTemplate(suBlueprint.suDraft.scheduling_constraints_template_id)
@@ -366,6 +368,7 @@ export class WeekTimelineView extends Component {
                                      style={{borderLeft: "1px solid #efefef", marginTop: "0px", backgroundColor: "#f2f2f2"}}>
                                     {this.state.isSummaryLoading?<AppLoader /> :
                                         <SchedulingUnitSummary schedulingUnit={suBlueprint} suTaskList={this.state.suTaskList}
+                                                stationGroup={this.state.stationGroup}
                                                 constraintsTemplate={this.state.suConstraintTemplate}
                                                 closeCallback={this.closeSUDets}
                                                 location={this.props.location}></SchedulingUnitSummary>

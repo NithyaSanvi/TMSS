@@ -5,6 +5,7 @@ import _ from 'lodash';
 import ViewTable from '../../components/ViewTable';
 import { JSONToHTMLTable } from '@kevincobain2000/json-to-html-table'
 import SchedulingConstraints from './Scheduling.Constraints';
+import Stations from './Stations';
 
 /**
  * Component to view summary of the scheduling unit with limited task details
@@ -15,13 +16,11 @@ export class SchedulingUnitSummary extends Component {
         super(props);
         this.state = {
             schedulingUnit: props.schedulingUnit || null
-        }
+        };
         this.constraintsOrder = ['scheduler','time','daily','sky'];
         this.closeSUDets = this.closeSUDets.bind(this);
         this.setConstraintsEditorOutput = this.setConstraintsEditorOutput.bind(this);
     }
-
-    componentDidMount() {}
 
     /**
      * Function to close the summary panel and call parent callback function to close.
@@ -150,6 +149,11 @@ export class SchedulingUnitSummary extends Component {
                             }
                         </>
                     }
+                    {<Stations
+                        stationGroup={this.props.stationGroup}
+                        view
+                        isSummary
+                    />}
                     <div className="col-12 task-summary">
                         <label>Tasks:</label>
                         <ViewTable 

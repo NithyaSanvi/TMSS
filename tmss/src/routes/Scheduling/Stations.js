@@ -266,7 +266,7 @@ export default (props) => {
                     {<div className="col-sm-12"><label style={{paddingLeft: '8px'}}>Maximum number of stations that can be missed in the selected groups</label></div>}
                     <div className="col-sm-12 p-0 d-flex flex-wrap">
                         {selectedStations.map(i => ( 
-                                <div className="p-field p-grid col-md-6" key={i}>
+                                <div className={`p-field p-grid col-md-${props.isSummary ? 12 : 6}`} key={i}>
                                     <label className="col-sm-6 text-caps">
                                         {i}
                                         <Button icon="pi pi-info-circle" className="p-button-rounded p-button-secondary p-button-text info" onClick={(e) => showStations(e, i)} />
@@ -287,7 +287,7 @@ export default (props) => {
                                 <div className="p-field p-grid col-md-12 custom-station-wrapper" key={index}>
                                     {!props.view && <Button icon="pi pi-trash" className="p-button-secondary p-button-text custom-remove" onClick={() => removeCustomStations(index)} />}
 
-                                    <div className="col-md-6 p-field p-grid">
+                                    <div className={`p-field p-grid col-md-${props.isSummary ? 12 : 6}`}>
                                         <label className="col-sm-6 text-caps custom-label">
                                             Custom {index + 1}
                                         </label>
@@ -304,23 +304,23 @@ export default (props) => {
                                             />
                                         </div>
                                     </div>
-                                    <div className="col-md-6 p-field p-grid">
+                                    <div className={`p-field p-grid col-md-${props.isSummary ? 12 : 6}`}>
                                         <label className="col-sm-6 customMissingStationLabel">
                                             Maximum No. Of Missing Stations
                                         </label>
-                                    <div className="col-sm-6 pr-8 custom-field">
-                                        <InputText id="missingStation" data-testid="name" 
-                                           className={(stat.error && stat.touched) ?'input-error':''}
-                                            tooltip="Max Number of Missing Stations" tooltipOptions={tooltipOptions} 
-                                            placeholder="Max Number of Missing Stations"
-                                            value={stat.max_nr_missing}
-                                            disabled={props.view}
-                                            onChange={(e) => setMissingFieldsForCustom(e.target.value, index)}/>
-                                            {(stat.error && stat.touched) && <span className="error-message">{stat.max_nr_missing ? `Max. no of missing stations is ${stat.stations.length}` : 'Max. no of missing stations required'}</span>}
-                                             {/* {props.view &&
-                                            <span className="info">Max No. of Missing Stations</span>} */}
-                                    
-                                    </div>
+                                        <div className="col-sm-6 pr-8 custom-field">
+                                            <InputText id="missingStation" data-testid="name" 
+                                            className={(stat.error && stat.touched) ?'input-error':''}
+                                                tooltip="Max Number of Missing Stations" tooltipOptions={tooltipOptions} 
+                                                placeholder="Max Number of Missing Stations"
+                                                value={stat.max_nr_missing}
+                                                disabled={props.view}
+                                                onChange={(e) => setMissingFieldsForCustom(e.target.value, index)}/>
+                                                {(stat.error && stat.touched) && <span className="error-message">{stat.max_nr_missing ? `Max. no of missing stations is ${stat.stations.length}` : 'Max. no of missing stations required'}</span>}
+                                                {/* {props.view &&
+                                                <span className="info">Max No. of Missing Stations</span>} */}
+                                        
+                                        </div>
                                     </div>
                                 </div>
                             ))}
