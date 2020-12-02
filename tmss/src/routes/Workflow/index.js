@@ -12,7 +12,7 @@ import ProcessingDone from './Processing';
 import IngestDone from './IngestDone';
 
 //Workflow Page Title 
-const pageTitle = ['QA Reporting (TO)', 'QA Reporting (SOS/SDCO)', 'PI Verification', 'Decide Acceptance','Scheduled','Processing Done','IngestDone'];
+const pageTitle = ['Scheduled','Processing Done','QA Reporting (TO)', 'QA Reporting (SOS/SDCO)', 'PI Verification', 'Decide Acceptance','IngestDone'];
 
 export default (props) => {
     let growl;
@@ -73,12 +73,12 @@ export default (props) => {
                                 </label>
                             </div>
                         </div>
-                        {currentStep === 1 && <QAreporting onNext={onNext}/>}
-                        {currentStep === 2 && <QAsos onNext={onNext} {...state} />}
-                        {currentStep === 3 && <PIverification onNext={onNext} {...state} />}
-                        {currentStep === 4 && <DecideAcceptance onNext={onNext} {...state} />}
-                        {currentStep === 5 && <Scheduled onNext={onNext}{...state} schedulingUnit={schedulingUnit} />}
-                        {currentStep === 6 && <ProcessingDone onNext={onNext} {...state} />}
+                        {currentStep === 1 && <Scheduled onNext={onNext}{...state} schedulingUnit={schedulingUnit} />}
+                        {currentStep === 2 && <ProcessingDone onNext={onNext} {...state} />}
+                        {currentStep === 3 && <QAreporting onNext={onNext}/>}
+                        {currentStep === 4 && <QAsos onNext={onNext} {...state} />}
+                        {currentStep === 5 && <PIverification onNext={onNext} {...state} />}
+                        {currentStep === 6 && <DecideAcceptance onNext={onNext} {...state} />}
                         {currentStep === 7 && <IngestDone onNext={onNext}{...state} task={ingestTask} />}
                     </div>
                 </>

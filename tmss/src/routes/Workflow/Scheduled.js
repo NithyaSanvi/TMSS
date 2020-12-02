@@ -15,10 +15,7 @@ class Scheduled extends Component {
      * here onNext props coming from parent, where will handle redirection to other page
      */
     onSave() {
-        this.props.onNext({
-            report: this.props.report,
-            picomment: this.props.picomment
-        });
+        this.props.onNext({});
     }
 
     render() {
