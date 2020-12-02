@@ -240,74 +240,75 @@ export default (props) => {
     };
 
     return (
-        <div className="p-field p-grid grouping p-fluid">
+        <div className={`p-field p-grid grouping p-fluid ${props.isSummary && 'p-col-12'}`}>
             <fieldset>
                 <legend>
                     <label>Stations<span style={{color:'red'}}>*</span></label>
                 </legend>
-                {!props.view && <div className="col-sm-12 p-field p-grid" data-testid="stations">
-                    <div className="col-md-6 d-flex">
-                        <label htmlFor="stationgroup" className="col-sm-6 station_header">Station Groups</label>
-                        <div className="col-sm-6">
-                            <MultiSelect data-testid="stations" id="stations" optionLabel="value" optionValue="value" filter={true}
-                                tooltip="Select Stations" tooltipOptions={tooltipOptions}
-                                value={selectedStations} 
-                                options={stationOptions} 
-                                placeholder="Select Stations"
-                                onChange={(e) => setSelectedStationGroup(e.value)}
-                            />
+                {!props.isSummary && <>
+                    {!props.view && <div className="col-sm-12 p-field p-grid" data-testid="stations">
+                        <div className="col-md-6 d-flex">
+                            <label htmlFor="stationgroup" className="col-sm-6 station_header">Station Groups</label>
+                            <div className="col-sm-6">
+                                <MultiSelect data-testid="stations" id="stations" optionLabel="value" optionValue="value" filter={true}
+                                    tooltip="Select Stations" tooltipOptions={tooltipOptions}
+                                    value={selectedStations} 
+                                    options={stationOptions} 
+                                    placeholder="Select Stations"
+                                    onChange={(e) => setSelectedStationGroup(e.value)}
+                                />
+                            </div>
                         </div>
-                    </div>
-                    <div className="add-custom">
-                        <Button onClick={addCustom} label="Add Custom" icon="pi pi-plus" disabled={!stationOptions.length}/>
-                    </div>
-                </div>}
-                {selectedStations.length ? <div className="col-sm-12 selected_stations" data-testid="selected_stations">
-                    {<div className="col-sm-12"><label style={{paddingLeft: '8px'}}>Maximum number of stations that can be missed in the selected groups</label></div>}
-                    <div className="col-sm-12 p-0 d-flex flex-wrap">
-                        {selectedStations.map(i => ( 
-                                <div className={`p-field p-grid col-md-${props.isSummary ? 12 : 6}`} key={i}>
-                                    <label className="col-sm-6 text-caps">
-                                        {i}
-                                        <Button icon="pi pi-info-circle" className="p-button-rounded p-button-secondary p-button-text info" onClick={(e) => showStations(e, i)} />
-                                    </label>
-                                    <div className="col-sm-6">
-                                        <InputText id="missingstation" data-testid="name" 
-                                            className={(state[i] && state[i].error) ?'input-error':''}
-                                            tooltip="Max No. of Missing Stations" tooltipOptions={tooltipOptions} maxLength="128"
-                                            placeholder="Max No. of Missing Stations"
-                                            value={state[i] ? state[i].missing_StationFields : ''}
-                                            disabled={props.view}
-                                            onChange={(e) => setNoOfmissing_StationFields(i, e.target.value)}/>
-                                        {(state[i] && state[i].error) && <span className="error-message">{state[i].missing_StationFields ? `Max. no of missing stations is ${state[i] ? state[i].stations.length : 0}` : 'Max. no of missing stations required'}</span>}
-                                    </div>
-                                </div>
-                            ))}
-                            {customStations.map((stat, index) => (
-                                <div className="p-field p-grid col-md-12 custom-station-wrapper" key={index}>
-                                    {!props.view && <Button icon="pi pi-trash" className="p-button-secondary p-button-text custom-remove" onClick={() => removeCustomStations(index)} />}
-
-                                    <div className={`p-field p-grid col-md-${props.isSummary ? 12 : 6}`}>
-                                        <label className="col-sm-6 text-caps custom-label">
-                                            Custom {index + 1}
+                        <div className="add-custom">
+                            <Button onClick={addCustom} label="Add Custom" icon="pi pi-plus" disabled={!stationOptions.length}/>
+                        </div>
+                    </div>}
+                    {selectedStations.length ? <div className="col-sm-12 selected_stations" data-testid="selected_stations">
+                        {<div className="col-sm-12"><label style={{paddingLeft: '8px'}}>Maximum number of stations that can be missed in the selected groups</label></div>}
+                        <div className="col-sm-12 p-0 d-flex flex-wrap">
+                            {selectedStations.map(i => ( 
+                                    <div className="p-field p-grid col-md-6" key={i}>
+                                        <label className="col-sm-6 text-caps">
+                                            {i}
+                                            <Button icon="pi pi-info-circle" className="p-button-rounded p-button-secondary p-button-text info" onClick={(e) => showStations(e, i)} />
                                         </label>
-                                        <div className="col-sm-6 pr-8 custom-value">
-                                            <MultiSelect data-testid="custom_stations" id="custom_stations" filter
-                                                tooltip="Select Stations" tooltipOptions={tooltipOptions}
-                                                value={stat.stations} 
-                                                options={customStationsOptions} 
-                                                placeholder="Select Stations"
+                                        <div className="col-sm-6">
+                                            <InputText id="missingstation" data-testid="name" 
+                                                className={(state[i] && state[i].error) ?'input-error':''}
+                                                tooltip="Max No. of Missing Stations" tooltipOptions={tooltipOptions} maxLength="128"
+                                                placeholder="Max No. of Missing Stations"
+                                                value={state[i] ? state[i].missing_StationFields : ''}
                                                 disabled={props.view}
-                                                optionLabel="value"
-                                                optionValue="value" 
-                                                onChange={(e) => onChangeCustomSelectedStations(e.value, index)}
-                                            />
+                                                onChange={(e) => setNoOfmissing_StationFields(i, e.target.value)}/>
+                                            {(state[i] && state[i].error) && <span className="error-message">{state[i].missing_StationFields ? `Max. no of missing stations is ${state[i] ? state[i].stations.length : 0}` : 'Max. no of missing stations required'}</span>}
                                         </div>
                                     </div>
-                                    <div className={`p-field p-grid col-md-${props.isSummary ? 12 : 6}`}>
-                                        <label className="col-sm-6 customMissingStationLabel">
-                                            Maximum No. Of Missing Stations
-                                        </label>
+                                ))}
+                                {customStations.map((stat, index) => (
+                                    <div className="p-field p-grid col-md-12 custom-station-wrapper" key={index}>
+                                        {!props.view && <Button icon="pi pi-trash" className="p-button-secondary p-button-text custom-remove" onClick={() => removeCustomStations(index)} />}
+
+                                        <div className="col-md-6 p-field p-grid">
+                                            <label className="col-sm-6 text-caps custom-label">
+                                                Custom {index + 1}
+                                            </label>
+                                            <div className="col-sm-6 pr-8 custom-value">
+                                                <MultiSelect data-testid="custom_stations" id="custom_stations" filter
+                                                    tooltip="Select Stations" tooltipOptions={tooltipOptions}
+                                                    value={stat.stations} 
+                                                    options={customStationsOptions} 
+                                                    placeholder="Select Stations"
+                                                    disabled={props.view}
+                                                    optionLabel="value"
+                                                    optionValue="value" 
+                                                    onChange={(e) => onChangeCustomSelectedStations(e.value, index)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="col-md-6 p-field p-grid">
+                                            <label className="col-sm-6 customMissingStationLabel">
+                                                Maximum No. Of Missing Stations
+                                            </label>
                                         <div className="col-sm-6 pr-8 custom-field">
                                             <InputText id="missingStation" data-testid="name" 
                                             className={(stat.error && stat.touched) ?'input-error':''}
@@ -321,12 +322,32 @@ export default (props) => {
                                                 <span className="info">Max No. of Missing Stations</span>} */}
                                         
                                         </div>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                        </div>
+                        
+                    </div> : null}
+                </>}
+                {/* For timeline view, displaying all stations in list */}
+                {props.isSummary && (
+                    <div className="list-stations-summary">
+                        {state && Object.keys(state).map(key => {
+                            if (key !== 'Custom') {
+                                return (
+                                    <>
+                                        {state[key].stations.map((station, index) => <div key={index}>{station}</div>)}
+                                    </>
+                                )
+                            }
+                        })}
+                         {customStations.map((stat, index) => (
+                             <>
+                                {stat.stations.map(station => <div key={index}>{station}</div>)}
+                             </>
+                         ))}
                     </div>
-                    
-                </div> : null}
+                )}
                 <OverlayPanel ref={(el) => op = el} dismissable  style={{width: '450px'}}>
                     <div className="station-container">
                         {(stations || []).map(i => (
