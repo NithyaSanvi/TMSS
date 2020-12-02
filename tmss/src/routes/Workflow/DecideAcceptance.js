@@ -74,7 +74,7 @@ class DecideAcceptance extends Component {
                                     ]
                                 }}
                             />}
-                            <div dangerouslySetInnerHTML={{ __html: this.state.content }}></div>
+                            <div className="operator-report" dangerouslySetInnerHTML={{ __html: this.state.content }}></div>
                         </div>
                         <div className="p-field p-grid">
                             <label htmlFor="piReport" className="col-lg-2 col-md-2 col-sm-12">PI Report</label>

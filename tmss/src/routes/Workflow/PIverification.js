@@ -73,7 +73,7 @@ class PIverification extends Component {
                                     ]
                                 }}
                             />}
-                            <div dangerouslySetInnerHTML={{ __html: this.state.content }}></div>
+                            <div className="operator-report" dangerouslySetInnerHTML={{ __html: this.state.content }}></div>
                         </div>
                         <div className="p-grid" style={{ padding: '10px' }}>
                             <label htmlFor="piReport" >PI Report</label>

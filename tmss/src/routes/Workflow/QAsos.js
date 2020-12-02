@@ -67,7 +67,7 @@ class QAreportingSDCO extends Component {
                             </div>
                         </div>
                         <div className="p-grid" style={{ padding: '10px' }}>
-                            <label htmlFor="operatorReport" >Operator Report</label>
+                            <label htmlFor="operatorReport" >Operator Report {!this.state.showEditor && <span className="con-edit">(Click to content to edit)</span>}</label>
                             <div className="col-lg-12 col-md-12 col-sm-12"></div>
                             {this.state.showEditor && <SunEditor setDefaultStyle="min-height: 250px; height: auto" enableToolbar={true}
                                 onChange={this.handleChange}
@@ -79,7 +79,7 @@ class QAreportingSDCO extends Component {
                                     ]
                                 }}
                             />}
-                            {!this.state.showEditor && <Button onClick={() => this.setState({ showEditor: !this.state.showEditor })} className="tooltip-wrapper" tooltip="Click to Edit" tooltipOptions={{ position: 'top' }}><div dangerouslySetInnerHTML={{ __html: this.state.content }}></div></Button>}
+                            {!this.state.showEditor && <div onClick={() => this.setState({ showEditor: !this.state.showEditor })} className="operator-report" dangerouslySetInnerHTML={{ __html: this.state.content }}></div>}
                         </div>
                     </div>
                     <div className="p-grid" style={{ marginTop: '20px' }}>
