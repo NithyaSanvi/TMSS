@@ -29,7 +29,7 @@ class IngestDone extends Component {
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="ingestTask" className="col-lg-2 col-md-2 col-sm-12">Ingest Task</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
-                                <a href={this.props.task.url}>{this.props.task.url}</a>
+                                <a href={`${window.location.origin}/task/view/blueprint/${this.props.task.id}`}>{this.props.task.name}</a>
                             </div>
                             <label htmlFor="ingestMonitoring" className="col-lg-2 col-md-2 col-sm-12">Ingest Monitoring</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
