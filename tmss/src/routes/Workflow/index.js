@@ -11,20 +11,37 @@ import Scheduled from './Scheduled';
 import ProcessingDone from './Processing';
 import IngestDone from './IngestDone';
 
+const RedirectionMap = {
+    'Wait Scheduled': 1,
+    'Processing Done': 2
+};
+
 //Workflow Page Title 
 const pageTitle = ['Scheduled','Processing Done','QA Reporting (TO)', 'QA Reporting (SOS/SDCO)', 'PI Verification', 'Decide Acceptance','IngestDone'];
 
 export default (props) => {
     let growl;
     const [state, setState] = useState({});
-    const [currentStep, setCurrentStep] = useState(1);
+    const [currentStep, setCurrentStep] = useState();
     const [schedulingUnit, setSchedulingUnit] = useState();
     const [ingestTask, setInjestTask] = useState({});
 ;    useEffect(() => {
         // Clearing Localstorage on start of the page to load fresh
         clearLocalStorage();
-        const promises = [ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id), ScheduleService.getTaskType()]
+        const promises = [
+            ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id),
+            ScheduleService.getTaskType(),
+            ScheduleService.getQASchedulingUnitProcess(),
+            ScheduleService.getQASchedulingUnitTask()
+        ]
         Promise.all(promises).then(responses => {
+            const suQAProcess = responses[2].find(process => process.su === parseInt(props.match.params.id));
+            const suQATask = responses[3].find(task => task.process === suQAProcess.id);
+            if (suQATask.status === 'NEW') {
+                setCurrentStep(RedirectionMap[suQATask.flow_task]);
+            } else {
+                setCurrentStep(3);
+            }
             setSchedulingUnit(responses[0]);
             ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false).then(response => {
                 setInjestTask(response.find(task => task.template.type_value==='observation'));
@@ -46,7 +63,7 @@ export default (props) => {
     return (
         <>
             <Growl ref={(el) => growl = el} />
-            <PageHeader location={props.location} title={`${pageTitle[currentStep - 1]}`} actions={[{ icon: 'fa-window-close', link: props.history.goBack, title: 'Click to Close Workflow', props: { pathname: '/schedulingunit/1/workflow' } }]} />
+            {currentStep && <PageHeader location={props.location} title={`${pageTitle[currentStep - 1]}`} actions={[{ icon: 'fa-window-close', link: props.history.goBack, title: 'Click to Close Workflow', props: { pathname: '/schedulingunit/1/workflow' } }]} />}
             {schedulingUnit &&
                 <>
                     <div className="p-fluid">

@@ -6,6 +6,26 @@ import moment from 'moment';
 axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
 
 const ScheduleService = { 
+    getQASchedulingUnitProcess: async function (){
+        let res = [];
+        await axios.get('/workflow_api/scheduling_unit_flow/qa_scheduling_unit_process/')
+        .then(response => {
+            res= response.data.results; 
+        }).catch(function(error) {
+            console.error('[schedule.services.getQASchedulingUnitProcess]',error);
+        });
+        return res;
+    },
+    getQASchedulingUnitTask: async function (){
+        let res = [];
+        await axios.get('/workflow_api/scheduling_unit_flow/qa_scheduling_unit_task/')
+        .then(response => {
+            res= response.data.results; 
+        }).catch(function(error) {
+            console.error('[schedule.services.getQASchedulingUnitTask]',error);
+        });
+        return res;
+    },
     getSchedulingUnitDraft: async function (){
         let res = [];
         await axios.get('/api/scheduling_unit_draft/?ordering=id')
