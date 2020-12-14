@@ -5,6 +5,7 @@ import 'suneditor/dist/css/suneditor.min.css'; // Import Sun Editor's CSS File
 import { Dropdown } from 'primereact/dropdown';
 import katex from 'katex' // for mathematical operations on sun editor this component should be added
 import 'katex/dist/katex.min.css'
+import WorkFlowService from '../../services/workflow.service';
 
 class QAreporting extends Component {
 
@@ -17,11 +18,20 @@ class QAreporting extends Component {
         this.handleChange = this.handleChange.bind(this);
     }
 
+    async componentDidMount() {
+        const response = await WorkFlowService.getReportingTo(this.props.id);
+        console.log('response>>>>>>>>', response);
+        // this.setState({
+        //     content: response.operator_report
+        // });
+    }
+
     /**
      * Method will trigger on click save buton
      * here onNext props coming from parent, where will handle redirection to other page
      */
-    onSave() {
+    async onSave() {
+        await WorkFlowService.saveReportingTo(this.props.id, { operator_report: this.state.content });
         this.props.onNext({ report: this.state.content });
     }
 

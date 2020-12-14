@@ -92,7 +92,7 @@ export default (props) => {
                         </div>
                         {currentStep === 1 && <Scheduled onNext={onNext}{...state} schedulingUnit={schedulingUnit} />}
                         {currentStep === 2 && <ProcessingDone onNext={onNext} {...state} />}
-                        {currentStep === 3 && <QAreporting onNext={onNext}/>}
+                        {currentStep === 3 && <QAreporting onNext={onNext} id={props.match.params.id} />}
                         {currentStep === 4 && <QAsos onNext={onNext} {...state} />}
                         {currentStep === 5 && <PIverification onNext={onNext} {...state} />}
                         {currentStep === 6 && <DecideAcceptance onNext={onNext} {...state} />}
