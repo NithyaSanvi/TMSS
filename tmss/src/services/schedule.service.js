@@ -181,6 +181,8 @@ const ScheduleService = {
                 scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                 scheduletask['specifications_doc'] = task['specifications_doc'];
                 scheduletask.duration = moment.utc((scheduletask.duration || 0)*1000).format('HH:mm:ss'); 
+                scheduletask.produced_by = task.produced_by;
+                scheduletask.produced_by_ids = task.produced_by_ids;
                 scheduletask.relative_start_time = moment.utc(scheduletask.relative_start_time*1000).format('HH:mm:ss'); 
                 scheduletask.relative_stop_time = moment.utc(scheduletask.relative_stop_time*1000).format('HH:mm:ss'); 
                 if (loadTemplate) {
@@ -207,7 +209,8 @@ const ScheduleService = {
                     taskblueprint['updated_at'] = moment(blueprint['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                     taskblueprint.duration = moment.utc((taskblueprint.duration || 0)*1000).format('HH:mm:ss'); 
                     taskblueprint.relative_start_time = moment.utc(taskblueprint.relative_start_time*1000).format('HH:mm:ss'); 
-                    taskblueprint.relative_stop_time = moment.utc(taskblueprint.relative_stop_time*1000).format('HH:mm:ss'); 
+                    taskblueprint.relative_stop_time = moment.utc(taskblueprint.relative_stop_time*1000).format('HH:mm:ss');
+                    
                     if (loadTemplate) {
                         taskblueprint.template = scheduletask.template;
                     }
@@ -235,10 +238,47 @@ const ScheduleService = {
                 //Add Task Draft details to array
                 scheduletasklist.push(scheduletask);
             }
+            if (loadTemplate) {
+                const ingest = scheduletasklist.find(task => task.template.type_value === 'ingest');
+                let promises = [];
+                // Get Task Relation for all producer
+                ingest.produced_by_ids.map(id => promises.push(this.getTaskRelation(id)));
+                const res = await Promise.all(promises);
+                promises = [];
+                // Getting producer name for all producers
+                res.map(prodcuer => promises.push(this.getTaskDraft(prodcuer.producer_id)));
+                const producers = await Promise.all(promises);
+                producers.map(producer => {
+                    const tasks = scheduletasklist.filter(task => producer.consumed_by_ids.includes(task.id));
+                    tasks.map(task => {
+                        task.producerDetails = producer;
+                    });
+                });
+            }   
         }).catch(function(error) {
             console.error('[schedule.services.getScheduleTasksBySchedulingUnitId]',error);
         });
         return scheduletasklist;
+    },
+    getTaskRelation: async function(id) {
+        let res;
+        await axios.get(`/api/task_relation_draft/${id}`)
+        .then(response => {
+            res= response;
+        }).catch(function(error) {
+            console.error('[schedule.services.getTaskBlueprints]',error);
+        });
+        return res.data;
+    },
+    getTaskDraft: async function(id) {
+        let res;
+        await axios.get(`/api/task_draft/${id}`)
+        .then(response => {
+            res= response;
+        }).catch(function(error) {
+            console.error('[schedule.services.getTaskBlueprints]',error);
+        });
+        return res.data;
     },
     getTaskBlueprints: async function (){
         let res=[];

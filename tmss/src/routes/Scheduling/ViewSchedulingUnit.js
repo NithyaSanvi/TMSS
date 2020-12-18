@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 // import {Link} from 'react-router-dom'
 import 'primeflex/primeflex.css';
 import { Chips } from 'primereact/chips';
-
+import {Checkbox} from 'primereact/checkbox';
 import AppLoader from "./../../layout/components/AppLoader";
 import PageHeader from '../../layout/components/PageHeader';
 
@@ -27,6 +27,7 @@ class ViewSchedulingUnit extends Component{
             schedule_unit_task: [],
             isLoading: true,
             showStatusLogs: false,
+            showProducerDialog: false,
             paths: [{
                 "View": "/task",
             }],
@@ -89,6 +90,7 @@ class ViewSchedulingUnit extends Component{
         this.checkAndCreateBlueprint = this.checkAndCreateBlueprint.bind(this);
         this.createBlueprintTree = this.createBlueprintTree.bind(this);
         this.closeDialog = this.closeDialog.bind(this);
+        this.showProducerDialog = this.showProducerDialog.bind(this);
         
     }
 
@@ -98,6 +100,10 @@ class ViewSchedulingUnit extends Component{
             this.state.scheduleunitType !== this.props.match.params.type)) {
             this.getSchedulingUnitDetails(this.props.match.params.type, this.props.match.params.id);
        }
+    }
+
+    showProducerDialog() {
+        this.setState({ showProducerDialog: !this.state.showProducerDialog});
     }
 
     async componentDidMount(){ 
@@ -128,6 +134,7 @@ class ViewSchedulingUnit extends Component{
                     });
                     this.getScheduleUnitTasks(schedule_type, schedulingUnit)
                         .then(tasks =>{
+                        const producers = tasks.filter(task => task.producerDetails).map(producer => producer.name);
                         tasks.map(task => {
                             task.status_logs = task.tasktype === "Blueprint"?this.subtaskComponent(task):"";
                             //Displaying SubTask ID of the 'control' Task
@@ -144,7 +151,10 @@ class ViewSchedulingUnit extends Component{
                             isLoading: false,
                             stationGroup: targetObservation?targetObservation.specifications_doc.station_groups:[],
                             redirect: null,
-                            dialogVisible: false
+                            dialogVisible: false,
+                            producers,
+                            isContainsAllPipeLine: producers.includes('Pipeline 1') && producers.includes('Pipeline 1') && producers.includes('Pipeline target1') && producers.includes('Pipeline target2'),
+                            isContainsAllObservation: producers.includes('Calibrator Observation 1') && producers.includes('Calibrator Observation 2') && producers.includes('Target Observation')
                     }, this.getAllStations);
                     });
                 }   else {
@@ -166,6 +176,8 @@ class ViewSchedulingUnit extends Component{
                 this.actions.unshift({icon: 'fa-sitemap',title :'View Workflow',props :{pathname:`/schedulingunit/${this.props.match.params.id}/workflow`}});
                 this.actions.unshift({icon: 'fa-lock', title: 'Cannot edit blueprint'});
             }
+            this.actions.push({icon:'fa-stamp', title: 'Producer Details', type:'button',
+                actOn:'click', props : { callback: this.showProducerDialog}});
     }
 
     getScheduleUnitTasks(type, scheduleunit){
@@ -215,7 +227,7 @@ class ViewSchedulingUnit extends Component{
     closeDialog() {
         this.setState({dialogVisible: false});
     }
-   
+
     render(){
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -315,6 +327,55 @@ class ViewSchedulingUnit extends Component{
                         onClose={this.closeDialog} onCancel={this.closeDialog} onSubmit={this.createBlueprintTree}></CustomDialog>
                 {/* Show spinner during backend API call */}
                 <CustomPageSpinner visible={this.state.showSpinner} />
+
+                {this.state.showProducerDialog && (
+                    <Dialog header="Producer Details"
+                        visible={this.state.showProducerDialog} maximizable maximized={false} position="center" style={{ width: '50vw' }}
+                        onHide={this.showProducerDialog} >
+                        <div>
+                            <div className="p-col-12">
+                                <Checkbox inputId="Observations" value="Observation" disabled checked={this.state.isContainsAllObservation}></Checkbox>
+                                <label htmlFor="Observations" className="p-checkbox-label">Observations</label>
+                            </div>
+                            <div className="pl-2">
+                                <div className="p-col-12">
+                                    <Checkbox inputId="cb1" value="Calibrator Observation 1" disabled checked={this.state.producers.includes('Calibrator Observation 1')}></Checkbox>
+                                    <label htmlFor="cb1" className="p-checkbox-label">Calibrator Observation 1</label>
+                                </div>
+                                <div className="p-col-12">
+                                    <Checkbox inputId="cb2" value="Target Observation" disabled checked={this.state.producers.includes('Target Observation')}></Checkbox>
+                                    <label htmlFor="cb2" className="p-checkbox-label">Target Observation</label>
+                                </div>
+                                <div className="p-col-12">
+                                    <Checkbox inputId="cb3" value="Calibrator Observation 2" disabled checked={this.state.producers.includes('Calibrator Observation 2')}></Checkbox>
+                                    <label htmlFor="cb3" className="p-checkbox-label">Calibrator Observation 2</label>
+                                </div>
+                            </div>
+                            <div className="p-col-12">
+                                <Checkbox inputId="Pipelines" value="Pipelines" disabled checked={this.state.isContainsAllPipeLine}></Checkbox>
+                                <label htmlFor="Pipelines" className="p-checkbox-label">Pipelines</label>
+                            </div>
+                            <div className="pl-2">
+                                <div className="p-col-12">
+                                    <Checkbox inputId="cb4" value="Calibrator Pipeline 1" disabled checked={this.state.producers.includes('Pipeline 1')}></Checkbox>
+                                    <label htmlFor="cb4" className="p-checkbox-label">Calibrator Pipeline 1</label>
+                                </div>
+                                <div className="p-col-12">
+                                    <Checkbox inputId="cb5" value="San Francisco" disabled checked={this.state.producers.includes('Pipeline target1')}></Checkbox>
+                                    <label htmlFor="cb5" className="p-checkbox-label">Target Pipeline 1</label>
+                                </div>
+                                <div className="p-col-12">
+                                    <Checkbox inputId="cb6" value="Los Angeles" disabled checked={this.state.producers.includes('Pipeline target2')}></Checkbox>
+                                    <label htmlFor="cb6" className="p-checkbox-label">Target Pipeline 2</label>
+                                </div>
+                                <div className="p-col-12">
+                                    <Checkbox inputId="cb7" value="Calibrator Pipeline 2" disabled checked={this.state.producers.includes('Pipeline 2')}></Checkbox>
+                                    <label htmlFor="cb7" className="p-checkbox-label">Calibrator Pipeline 2</label>
+                                </div>
+                            </div>
+                        </div>
+                    </Dialog>
+                )}
             </>
         )
     }
