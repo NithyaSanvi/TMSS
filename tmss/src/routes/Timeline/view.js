@@ -47,6 +47,7 @@ export class TimelineView extends Component {
             stationGroup: []
         }
         this.STATUS_BEFORE_SCHEDULED = ['defining', 'defined', 'schedulable'];  // Statuses before scheduled to get station_group
+        this.allStationsGroup = [];
 
         this.onItemClick = this.onItemClick.bind(this);
         this.closeSUDets = this.closeSUDets.bind(this);
@@ -61,7 +62,8 @@ export class TimelineView extends Component {
                             ScheduleService.getSchedulingUnitBlueprint(),
                             ScheduleService.getSchedulingUnitDraft(),
                             ScheduleService.getSchedulingSets(),
-                            UtilService.getUTC()] ;
+                            UtilService.getUTC(),
+                            ScheduleService.getStations('All')] ;
         Promise.all(promises).then(async(responses) => {
             const projects = responses[0];
             const suBlueprints = _.sortBy(responses[1].data.results, 'name');
@@ -106,7 +108,9 @@ export class TimelineView extends Component {
                     }
                 }
             }
-
+            for (const station of responses[5]['stations']) {
+                this.allStationsGroup.push({id: station, title: station});
+            }
             this.setState({suBlueprints: suBlueprints, suDrafts: suDrafts, group: group, suSets: suSets,
                             projects: projects, suBlueprintList: suList, 
                             items: items, currentUTC: currentUTC, isLoading: false});
@@ -118,9 +122,6 @@ export class TimelineView extends Component {
      * @param {Object} suBlueprint 
      */
     getTimelineItem(suBlueprint) {
-        // Temporary for testing
-        const diffOfCurrAndStart = moment().diff(moment(suBlueprint.stop_time), 'seconds');
-        // suBlueprint.status = diffOfCurrAndStart>=0?"FINISHED":"DEFINED";
         let item = { id: suBlueprint.id, 
             group: suBlueprint.suDraft.id,
             title: `${suBlueprint.project} - ${suBlueprint.suDraft.name} - ${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs`,
@@ -149,18 +150,19 @@ export class TimelineView extends Component {
                 canExtendSUList: false, canShrinkSUList:false});
             if (fetchDetails) {
                 const suBlueprint = _.find(this.state.suBlueprints, {id: (this.state.stationView?parseInt(item.id.split('-')[0]):item.id)});
-                ScheduleService.getTaskSubTaskBlueprintsBySchedulingUnit(suBlueprint, true)
+                ScheduleService.getTaskBPWithSubtaskTemplateOfSU(suBlueprint)
                     .then(taskList => {
-                        const targetObservation = _.find(taskList, (task)=> {return task.template.type_value==='observation' && task.tasktype.toLowerCase()==="blueprint" && task.specifications_doc.station_groups});
                         for (let task of taskList) {
+                            //Control Task Id
                             const subTaskIds = (task.subTasks || []).filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1);
-                            task.subTakskID = subTaskIds.length ? subTaskIds[0].id : ''; 
+                            task. subTaskID = subTaskIds.length ? subTaskIds[0].id : ''; 
                             if (task.template.type_value.toLowerCase() === "observation") {
                                 task.antenna_set = task.specifications_doc.antenna_set;
                                 task.band = task.specifications_doc.filter;
                             }
                         }
-                        this.setState({suTaskList: _.sortBy(taskList, "id"), isSummaryLoading: false, stationGroup: targetObservation?targetObservation.specifications_doc.station_groups:[]})
+                        this.setState({suTaskList: _.sortBy(taskList, "id"), isSummaryLoading: false,
+                                        stationGroup: this.getSUStations(suBlueprint)});
                     });
                 // Get the scheduling constraint template of the selected SU block
                 ScheduleService.getSchedulingConstraintTemplate(suBlueprint.suDraft.scheduling_constraints_template_id)
@@ -193,7 +195,7 @@ export class TimelineView extends Component {
                     if (this.state.stationView) {
                         const loadSubtasks = this.STATUS_BEFORE_SCHEDULED.indexOf(suBlueprint.status.toLowerCase()) < 0 ;
                         suBlueprint.tasks = await ScheduleService.getTaskBlueprintsBySchedulingUnit(suBlueprint, true, loadSubtasks);
-                        this.getStationItemGroups(suBlueprint, timelineItem, group, items);
+                        this.getStationItemGroups(suBlueprint, timelineItem, this.allStationsGroup, items);
                     }   else {
                         items.push(timelineItem);
                         if (!_.find(group, {'id': suBlueprint.suDraft.id})) {
@@ -211,7 +213,7 @@ export class TimelineView extends Component {
         this.setState({suBlueprintList: _.filter(suBlueprintList, (suBlueprint) => {return suBlueprint.start_time!=null})});
         // On range change close the Details pane
         // this.closeSUDets();
-        return {group: _.sortBy(group,'id'), items: items};
+        return {group: this.stationView?this.allStationsGroup:_.sortBy(group,'id'), items: items};
     }
 
     /**
@@ -222,37 +224,44 @@ export class TimelineView extends Component {
      * @param {Array} items 
      */
     getStationItemGroups(suBlueprint, timelineItem, group, items) {
-        /** Get all observation tasks */
-        const observtionTasks = _.filter(suBlueprint.tasks, (task) => { return task.template.type_value.toLowerCase() === "observation"});
+        /* Get stations based on SU status */
+        let stations = this.getSUStations(suBlueprint);
+        
+        /* Group the items by station */
+        for (const station of stations) {
+            let stationItem = _.cloneDeep(timelineItem);
+            stationItem.id = `${stationItem.id}-${station}`;
+            stationItem.group = station;
+            items.push(stationItem);
+        }
+    }
+
+    /**
+     * Get all stations of the SU bleprint from the observation task or subtask bases on the SU status.
+     * @param {Object} suBlueprint
+     */
+    getSUStations(suBlueprint) {
         let stations = [];
-        for (const observtionTask of observtionTasks) {
+        /* Get all observation tasks */
+        const observationTasks = _.filter(suBlueprint.tasks, (task) => { return task.template.type_value.toLowerCase() === "observation"});
+        for (const observationTask of observationTasks) {
             /** If the status of SU is before scheduled, get all stations from the station_groups from the task specification_docs */
             if (this.STATUS_BEFORE_SCHEDULED.indexOf(suBlueprint.status.toLowerCase()) >= 0
-                && observtionTask.specifications_doc.station_groups) {
-                for (const grpStations of _.map(observtionTask.specifications_doc.station_groups, "stations")) {
+                && observationTask.specifications_doc.station_groups) {
+                for (const grpStations of _.map(observationTask.specifications_doc.station_groups, "stations")) {
                     stations = _.concat(stations, grpStations);
                 }
             }   else if (this.STATUS_BEFORE_SCHEDULED.indexOf(suBlueprint.status.toLowerCase()) < 0 
-                            && observtionTask.subTasks) {
+                            && observationTask.subTasks) {
                 /** If the status of SU is scheduled or after get the stations from the subtask specification tasks */
-                for (const subtask of observtionTask.subTasks) {
+                for (const subtask of observationTask.subTasks) {
                     if (subtask.specifications_doc.stations) {
                         stations = _.concat(stations, subtask.specifications_doc.stations.station_list);
                     }
                 }
             }
         }
-        stations = _.uniq(stations);
-        /** Group the items by station */
-        for (const station of stations) {
-            let stationItem = _.cloneDeep(timelineItem);
-            stationItem.id = `${stationItem.id}-${station}`;
-            stationItem.group = station;
-            items.push(stationItem);
-            if (!_.find(group, {'id': station})) {
-                group.push({'id': station, title: station});
-            }
-        }
+        return _.uniq(stations);
     }
 
     /**
@@ -285,7 +294,7 @@ export class TimelineView extends Component {
             const suBlueprint = _.find(suBlueprints, {actionpath: data.actionpath});
             let timelineItem = this.getTimelineItem(suBlueprint);
             if (this.state.stationView) {
-                this.getStationItemGroups(suBlueprint, timelineItem, group, items);
+                this.getStationItemGroups(suBlueprint, timelineItem, this.allStationsGroup, items);
             }   else {
                 items.push(timelineItem);
                 if (!_.find(group, {'id': suBlueprint.suDraft.id})) {
@@ -294,7 +303,7 @@ export class TimelineView extends Component {
             }
         }
         if (this.timeline) {
-            this.timeline.updateTimeline({group: _.sortBy(group,"id"), items: items});
+            this.timeline.updateTimeline({group: this.state.stationView?this.allStationsGroup:_.sortBy(group,"id"), items: items});
         }
     }
 

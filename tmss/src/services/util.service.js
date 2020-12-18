@@ -39,8 +39,10 @@ const UtilService = {
         console.error(error);
       }
     },
+    /** Function to fetch sun timings from the backend for single station. */
     getSunTimings: async(timestamp, station) => {
       try {
+        station = station?station:"CS001";
         let stationTimestamp = (station?`${station}-`:"") + timestamp;
         let localSunTimeMap = localStorage.getItem('SUN_TIME_MAP');
         if (localSunTimeMap) {
@@ -51,14 +53,9 @@ const UtilService = {
         } else {
           localSunTimeMap = {};
         }
-        // const url = `/api/sun_rise_and_set/${timestamp}`;
-        // const sunTimings = (await axios.get(url)).data;
-        let sunTimings = {sun_rise: moment.utc(moment(timestamp, "YYYYMMDDTHH:mm:ss")).format('YYYY-MM-DDT06:30:00.sssss')+"Z", 
-                            sun_set: moment.utc(moment(timestamp, "YYYYMMDDTHH:mm:ss")).format('YYYY-MM-DDT17:00:00.sssss')+"Z"};
-        if (station==="CS001") {
-          sunTimings = {sun_rise: moment.utc(moment(timestamp, "YYYYMMDDTHH:mm:ss")).format('YYYY-MM-DDT05:30:00.sssss')+"Z", 
-                            sun_set: moment.utc(moment(timestamp, "YYYYMMDDTHH:mm:ss")).format('YYYY-MM-DDT16:00:00.sssss')+"Z"};
-        }
+        const url = `/api/util/sun_rise_and_set?stations=${station?station:'CS001'}&timestamps=${timestamp}`;
+        const stationSunTimings = (await axios.get(url)).data;
+        let sunTimings = {sun_rise: stationSunTimings[station]['sunrise'][0], sun_set: stationSunTimings[station]['sunset'][0]};
         localSunTimeMap[stationTimestamp] = sunTimings;
         localStorage.setItem('SUN_TIME_MAP', JSON.stringify(localSunTimeMap));
         return sunTimings;

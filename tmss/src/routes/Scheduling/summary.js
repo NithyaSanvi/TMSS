@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom/cjs/react-router-dom.min';
 import moment from 'moment';
 import _ from 'lodash';
 import ViewTable from '../../components/ViewTable';
-import { JSONToHTMLTable } from '@kevincobain2000/json-to-html-table'
+import { JsonToTable } from "react-json-to-table";
 import SchedulingConstraints from './Scheduling.Constraints';
 import Stations from './Stations';
 
@@ -21,6 +21,8 @@ export class SchedulingUnitSummary extends Component {
         this.closeSUDets = this.closeSUDets.bind(this);
         this.setConstraintsEditorOutput = this.setConstraintsEditorOutput.bind(this);
     }
+
+    componentDidMount() {}
 
     /**
      * Function to close the summary panel and call parent callback function to close.
@@ -41,7 +43,7 @@ export class SchedulingUnitSummary extends Component {
             /* Format the object to remove empty values*/
             const constraint = this.getFormattedConstraint(constraintsDoc[constraintKey]);
             if (constraint) {
-                orderedConstraints[constraintKey] = constraint;
+                orderedConstraints[constraintKey.replace('_',' ')] = constraint;
             }
         }
         return orderedConstraints;
@@ -65,7 +67,7 @@ export class SchedulingUnitSummary extends Component {
                     break;
                 }
                 case "boolean": {
-                    constraint = constraint?constraint:null;
+                    constraint = constraint?'Yes':null;
                     break;
                 }
                 case "object": {
@@ -87,7 +89,7 @@ export class SchedulingUnitSummary extends Component {
                         for (const objectKey of _.keys(constraint)) {
                             let object = this.getFormattedConstraint(constraint[objectKey]);
                             if (object) {
-                                newObject[objectKey] = object;
+                                newObject[objectKey.replace(/_/g, ' ')] = object;
                             }
                         }
                         constraint = (!_.isEmpty(newObject))? newObject:null;
@@ -142,26 +144,37 @@ export class SchedulingUnitSummary extends Component {
                             </div>
                             {/* Scheduling Constraint Display in table format */}
                             {constraintsDoc &&
+                                <>
                                 <div className="col-12 constraints-summary">
                                     <label>Constraints:</label>
-                                    <JSONToHTMLTable data={constraintsDoc} tableClassName="table table-sm"/>
+                                    <JsonToTable json={constraintsDoc} />
                                 </div>
+                                </>
                             }
                         </>
                     }
-                    {<Stations
+
+                    {/* {<Stations
                         stationGroup={this.props.stationGroup}
                         view
                         isSummary
-                    />}
+                    />} */}
+                    <div className="col-12"><label>Stations:</label></div>
+                    <div className="col-12 station-list">
+                        {this.props.stationGroup && this.props.stationGroup.map((station, index) => (
+                            <div key={`stn-${index}`}>{station}</div>
+                        ))}
+
+                    </div>
+
                     <div className="col-12 task-summary">
                         <label>Tasks:</label>
                         <ViewTable 
                             data={suTaskList} 
-                            defaultcolumns={[{id: "ID", subTakskID: 'Sub Taksk ID', start_time:"Start Time", stop_time:"End Time", status: "Status", 
+                            defaultcolumns={[{id: "ID", subTaskID: 'Control ID', start_time:"Start Time", stop_time:"End Time", status: "Status", 
                                                 antenna_set: "Antenna Set", band: 'Band'}]}
                             optionalcolumns={[{actionpath: "actionpath"}]}
-                            columnclassname={[{"ID": "filter-input-50", "Start Time": "filter-input-75", "End Time": "filter-input-75",
+                            columnclassname={[{"ID": "filter-input-50","Control ID":"filter-input-75", "Start Time": "filter-input-75", "End Time": "filter-input-75",
                                                 "Status": "filter-input-75", "Antenna Set": "filter-input-75", "Band": "filter-input-75"}]}
                             defaultSortColumn= {[{id: "ID", desc: false}]}
                             showaction="false"

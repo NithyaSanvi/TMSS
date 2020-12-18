@@ -56,6 +56,8 @@ class SchedulingUnitList extends Component{
             }],
             defaultSortColumn: [{id: "Name", desc: false}],
         }
+        this.onRowSelection = this.onRowSelection.bind(this);
+        this.reloadData = this.reloadData.bind(this);
     }
 
     async getSchedulingUnitList () {
@@ -86,6 +88,7 @@ class SchedulingUnitList extends Component{
                         blueP['created_at'] = moment(blueP['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                         blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                         blueP.project = project.name;
+                        blueP.canSelect = false;
                         return blueP; 
                     });
                     output.push(...blueprintdata);
@@ -95,11 +98,13 @@ class SchedulingUnitList extends Component{
                     scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                     scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                     scheduleunit.project = project.name;
+                    scheduleunit.canSelect = true;
                     output.push(scheduleunit);
                 }
                 this.setState({
                     scheduleunit: output, isLoading: false
                 });
+                this.selectedRows = [];
             })
         }
     }
@@ -107,6 +112,22 @@ class SchedulingUnitList extends Component{
     componentDidMount(){ 
        this.getSchedulingUnitList();
         
+    }
+
+    /**
+     * Callback function passed to ViewTable component to pass back the selected rows.
+     * @param {Array} selectedRows - Subset of data passed to the ViewTable component based on selection.
+     */
+    onRowSelection(selectedRows) {
+        this.selectedRows = selectedRows;
+    }
+
+    /**
+     * Funtion to reload data. This function can be called from the implementing component.
+     */
+    reloadData() {
+        this.setState({isLoading: true});
+        this.getSchedulingUnitList();
     }
 
     render(){
@@ -139,6 +160,8 @@ class SchedulingUnitList extends Component{
                         paths={this.state.paths}
                         unittest={this.state.unittest}
                         tablename="scheduleunit_list"
+                        allowRowSelection={this.props.allowRowSelection}
+                        onRowSelection = {this.onRowSelection}
                     />
                     :<div>No scheduling unit found </div>
                  }  

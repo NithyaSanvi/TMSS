@@ -200,7 +200,7 @@ export class SchedulingUnitCreate extends Component {
 
     setConstraintsEditorOutput(jsonOutput, errors) {
         let err = [ ...errors ];
-        if (jsonOutput.scheduler === 'online') {
+        if (jsonOutput.scheduler === 'online' || jsonOutput.scheduler === 'dynamic') {
             err = err.filter(e => e.path !== 'root.time.at');
         }
         this.constraintParamsOutput = jsonOutput;
@@ -299,7 +299,7 @@ export class SchedulingUnitCreate extends Component {
     async saveSchedulingUnit() {
         const constStrategy = _.cloneDeep(this.state.constraintParamsOutput);
         for (let type in constStrategy.time) {
-            if (constStrategy.scheduler === 'online') {
+            if (constStrategy.scheduler === 'online' || constStrategy.scheduler === 'dynamic') {
                 delete constStrategy.time.at;
             }
             if (!constStrategy.time.after) {
@@ -396,7 +396,6 @@ export class SchedulingUnitCreate extends Component {
              },
             projectDisabled: (this.props.match.params.project? true:false),
             observStrategy: {},
-            selectedStations:{},
             paramsOutput: null,
             validEditor: false,
             validFields: {},

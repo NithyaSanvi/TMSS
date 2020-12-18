@@ -7,14 +7,14 @@ class Scheduled extends Component {
     constructor(props) {
         super(props);
         this.state = {};
-        this.onSave = this.onSave.bind(this);
+        this.Next = this.Next.bind(this);
     }
 
     /**
      * Method will trigger on click save buton
      * here onNext props coming from parent, where will handle redirection to other page
      */
-    onSave() {
+    Next() {
         this.props.onNext({});
     }
 
@@ -49,7 +49,7 @@ class Scheduled extends Component {
 
                     <div className="p-grid p-justify-start">
                         <div className="p-col-1">
-                            <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.onSave} />
+                            <Button label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
                         </div>
                         <div className="p-col-1">
                             <Button label="Cancel" className="p-button-danger" icon="pi pi-times" style={{ width: '90px' }} />

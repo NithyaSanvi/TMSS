@@ -42,7 +42,7 @@ export default ({ title, subTitle, actions, ...props}) => {
                 {(actions || []).map((action, index) =>{
                     if (action.type === 'button') {
                         return (
-                            <button className="p-link" key={index}>
+                            <button className="p-link" key={index} title={action.title || ''}>
                                 <i className={`fa ${action.icon}`}  
                                     onMouseOver={(e) => onButtonMouseOver(e, action)}
                                     onClick={(e) => onButtonClick(e, action)} />

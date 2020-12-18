@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import { Redirect} from 'react-router-dom';
 import { BrowserRouter as Router } from 'react-router-dom';
 import classNames from 'classnames';
 import {AppTopbar} from './layout/components/AppTopbar';
@@ -15,40 +16,41 @@ import './layout/layout.scss';
 import 'primeflex/primeflex.css';
 import './App.scss';
 import './App.css';
+import Auth from'./authenticate/auth';
+import { Login } from './authenticate/login';
 
 class App extends Component {
     constructor() {
-    super();
-    this.state = {
-	  layoutMode: 'static',
-      currentMenu: '',
-      currentPath: '/',
-      PageTitle:'',
-      staticMenuInactive: localStorage.getItem('staticMenuInactive') === 'true' ? true : false,
-      overlayMenuActive: localStorage.getItem('overlayMenuActive') === 'true' ? true : false,
-      mobileMenuActive: localStorage.getItem('mobileMenuActive') === 'true' ? true : false,
-    };
-	    this.onWrapperClick = this.onWrapperClick.bind(this);
+        super();
+        this.state = {
+        layoutMode: 'static',
+        currentMenu: '',
+        currentPath: '/',
+        PageTitle:'',
+        staticMenuInactive: localStorage.getItem('staticMenuInactive') === 'true' ? true : false,
+        overlayMenuActive: localStorage.getItem('overlayMenuActive') === 'true' ? true : false,
+        mobileMenuActive: localStorage.getItem('mobileMenuActive') === 'true' ? true : false,
+        authenticated: Auth.isAuthenticated(),
+        redirect: (Auth.isAuthenticated() && window.location.pathname === "/login")?"/":window.location.pathname
+        };
+        this.onWrapperClick = this.onWrapperClick.bind(this);
         this.onToggleMenu = this.onToggleMenu.bind(this);
         this.onSidebarClick = this.onSidebarClick.bind(this);
         this.onMenuItemClick = this.onMenuItemClick.bind(this);
         this.setPageTitle = this.setPageTitle.bind(this);
-  
-      this.menu = [
-      {label: 'Dashboard', icon: 'pi pi-fw pi-home', to:'/dashboard',section: 'dashboard'},
-      {label: 'Cycle', icon:'pi pi-fw pi-spinner', to:'/cycle',section: 'cycle'},
-      {label: 'Project', icon: 'fab fa-fw fa-wpexplorer', to:'/project',section: 'project'},
-      {label: 'Scheduling Units', icon: 'pi pi-fw pi-calendar', to:'/schedulingunit',section: 'schedulingunit'},
-      {label: 'Timeline', icon: 'pi pi-fw pi-clock', to:'/su/timelineview',section: 'su/timelineview'},
-    //   {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task'},
-      
-      
-    ];
+        this.loggedIn = this.loggedIn.bind(this);
+        this.logout = this.logout.bind(this);
 
-    // this.menuComponent = {'Dashboard': Dashboard}
-  }
-    
-	onWrapperClick(event) {
+        this.menu = [ {label: 'Dashboard', icon: 'pi pi-fw pi-home', to:'/dashboard',section: 'dashboard'},
+                        {label: 'Cycle', icon:'pi pi-fw pi-spinner', to:'/cycle',section: 'cycle'},
+                        {label: 'Project', icon: 'fab fa-fw fa-wpexplorer', to:'/project',section: 'project'},
+                        {label: 'Scheduling Units', icon: 'pi pi-fw pi-calendar', to:'/schedulingunit',section: 'schedulingunit'},
+                        {label: 'Timeline', icon: 'pi pi-fw pi-clock', to:'/su/timelineview',section: 'su/timelineview'},
+                        //   {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task'},
+                    ];
+    }
+
+    onWrapperClick(event) {
         if (!this.menuClick) {
             this.setState({
                 overlayMenuActive: false,
@@ -94,9 +96,9 @@ class App extends Component {
         this.menuClick = true;
     }
 
-   onMenuItemClick(event) {
-	this.setState({currentMenu:event.item.label, currentPath: event.item.path});
-   }
+    onMenuItemClick(event) {
+        this.setState({currentMenu:event.item.label, currentPath: event.item.path});
+    }
 		
 	isDesktop() {
         return window.innerWidth > 1024;
@@ -107,36 +109,72 @@ class App extends Component {
             this.setState({ PageTitle })
         }
     } 
-	
-  render() {
-    const wrapperClass = classNames('layout-wrapper', {
-        'layout-overlay': this.state.layoutMode === 'overlay',
-        'layout-static': this.state.layoutMode === 'static',
-        'layout-static-sidebar-inactive': this.state.staticMenuInactive && this.state.layoutMode === 'static',
-        'layout-overlay-sidebar-active': this.state.overlayMenuActive && this.state.layoutMode === 'overlay',
-        'layout-mobile-sidebar-active': this.state.mobileMenuActive			
-    });
-    const AppBreadCrumbWithRouter = withRouter(AppBreadcrumb);
-       
-    return (
-      <React.Fragment>
-           <div className="App">
-           {/* <div className={wrapperClass} onClick={this.onWrapperClick}> */}
-           <div className={wrapperClass}>
-            <AppTopbar onToggleMenu={this.onToggleMenu}></AppTopbar>
-            <Router basename={ this.state.currentPath }>
-              <AppMenu model={this.menu} onMenuItemClick={this.onMenuItemClick} layoutMode={this.state.la} active={this.state.menuActive}/>
-              <div className="layout-main">
-			  <AppBreadCrumbWithRouter setPageTitle={this.setPageTitle} />
-              <RoutedContent />
-              </div>
-            </Router>
-            <AppFooter></AppFooter>
+
+    /**
+     * Callback function from login page to set the authentication state to true amd redirect to the 
+     * original requested URL.
+     */
+    loggedIn() {
+        const redirect = this.state.redirect;
+        this.setState({authenticated: true, redirect: redirect==="/login"?"/":redirect});
+    }
+
+    /**
+     * Logout and redirect to login page.
+     */
+    logout() {
+        Auth.logout();
+        this.setState({authenticated: false, redirect:"/"});
+    }
+
+    render() {
+        const wrapperClass = classNames('layout-wrapper', {
+            'layout-overlay': this.state.layoutMode === 'overlay',
+            'layout-static': this.state.layoutMode === 'static',
+            'layout-static-sidebar-inactive': this.state.staticMenuInactive && this.state.layoutMode === 'static',
+            'layout-overlay-sidebar-active': this.state.overlayMenuActive && this.state.layoutMode === 'overlay',
+            'layout-mobile-sidebar-active': this.state.mobileMenuActive			
+        });
+        const AppBreadCrumbWithRouter = withRouter(AppBreadcrumb);
+        console.log(this.props);
+        return (
+        <React.Fragment>
+            <div className="App">
+                {/* <div className={wrapperClass} onClick={this.onWrapperClick}> */}
+                <div className={wrapperClass}>
+                    
+                    {/* Load main routes and application only if the application is authenticated */}
+                    {this.state.authenticated &&
+                    <>
+                        <AppTopbar onToggleMenu={this.onToggleMenu} isLoggedIn={this.state.authenticated} onLogout={this.logout}></AppTopbar>
+                        <Router basename={ this.state.currentPath }>
+                            <AppMenu model={this.menu} onMenuItemClick={this.onMenuItemClick} layoutMode={this.state.la} active={this.state.menuActive}/>
+                            <div className="layout-main">
+                                {this.state.redirect &&
+                                    <Redirect to={{pathname: this.state.redirect}} />}
+                                <AppBreadCrumbWithRouter setPageTitle={this.setPageTitle} />
+                                <RoutedContent />
+                            </div>
+                        </Router>
+                        <AppFooter></AppFooter>
+                    </>
+                    }
+
+                    {/* If not authenticated, show only login page */}
+                    {!this.state.authenticated &&
+                    <>
+                        <Router basename={ this.state.currentPath }>
+                            <Redirect to={{pathname: "/login"}} />
+                            <Login onLogin={this.loggedIn} />
+                        </Router>
+                    </>
+                    }
+                    
+                </div>
             </div>
-            </div>
-	   </React.Fragment>
-    );
-  }
+        </React.Fragment>
+        );
+    }
 }
 
 export default App;

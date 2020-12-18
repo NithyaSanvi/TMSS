@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import { InputMask } from 'primereact/inputmask';
 import Validator from  '../../utils/validator';
 
+const BG_COLOR= '#f878788f';
+
 export default class TimeInputMask extends Component {
   constructor(props) {
     super(props);
@@ -14,7 +16,7 @@ export default class TimeInputMask extends Component {
       e.originalEvent.target.style.backgroundColor = '';
       isValid = true;
     }else{
-      e.originalEvent.target.style.backgroundColor = 'orange';
+      e.originalEvent.target.style.backgroundColor = BG_COLOR;
     }
     
     this.props.context.componentParent.updateAngle(

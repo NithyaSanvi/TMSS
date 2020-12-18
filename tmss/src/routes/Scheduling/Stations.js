@@ -1,5 +1,3 @@
-
-  
 import React, { useState, useEffect } from 'react';
 import _ from 'lodash';
 import {MultiSelect} from 'primereact/multiselect';
@@ -225,9 +223,10 @@ export default (props) => {
 
     const updateSchedulingComp = (param_State, param_SelectedStations, param_missing_StationFieldsErrors, param_Custom_selected_options) => {
         const isError = param_missing_StationFieldsErrors.length || param_Custom_selected_options.filter(i => i.error).length;
-        debugger
+       // debugger
         props.onUpdateStations(param_State, param_SelectedStations, isError, param_Custom_selected_options);
     };
+    
     /**
      * Method to remove the custom stations
      * @param {*} index number
@@ -239,6 +238,9 @@ export default (props) => {
         updateSchedulingComp(state, selectedStations, missing_StationFieldsErrors, custom_selected_options);
     };
 
+    const isPopup =() =>{
+        return true;
+      }
     return (
         <div className={`p-field p-grid grouping p-fluid ${props.isSummary && 'p-col-12'}`}>
             <fieldset>
@@ -270,7 +272,7 @@ export default (props) => {
                                     <div className="p-field p-grid col-md-6" key={i}>
                                         <label className="col-sm-6 text-caps">
                                             {i}
-                                            <Button icon="pi pi-info-circle" className="p-button-rounded p-button-secondary p-button-text info" onClick={(e) => showStations(e, i)} />
+                                            <i className="pi pi-info-circle info label-icon" onClick={(e) => showStations(e, i)} />
                                         </label>
                                         <div className="col-sm-6">
                                             <InputText id="missingstation" data-testid="name" 
@@ -348,10 +350,11 @@ export default (props) => {
                          ))}
                     </div>
                 )}
-                <OverlayPanel ref={(el) => op = el} dismissable  style={{width: '450px'}}>
+                <OverlayPanel ref={(el) => op = el} dismissable  style={{width: '200px'}}>
+                    <h6 className="overlay-panel-header">Stations in group</h6>
                     <div className="station-container">
                         {(stations || []).map(i => (
-                            <label>{i}</label>
+                            <span>{i}</span>
                         ))}
                     </div>
                 </OverlayPanel>

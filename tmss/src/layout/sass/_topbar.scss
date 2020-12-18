@@ -131,3 +131,16 @@
         cursor: pointer;
     }
 }
+
+.top-right-bar {
+    float: right;
+    padding-top: 5px
+}
+
+.top-right-bar span>i {
+    padding-right: 5px;
+}
+
+.top-right-bar button {
+    padding-left: 5px;
+}

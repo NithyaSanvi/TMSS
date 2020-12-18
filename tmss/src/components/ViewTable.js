@@ -1,5 +1,5 @@
 import React, {useRef, useState } from "react";
-import { useSortBy, useTable, useFilters, useGlobalFilter, useAsyncDebounce, usePagination } from 'react-table'
+import { useSortBy, useTable, useFilters, useGlobalFilter, useAsyncDebounce, usePagination, useRowSelect } from 'react-table'
 import matchSorter from 'match-sorter'
 import _ from 'lodash';
 import moment from 'moment';
@@ -15,13 +15,15 @@ import { Button } from "react-bootstrap";
 import { InputNumber } from "primereact/inputnumber";
 
 let tbldata =[], filteredData = [] ;
+let selectedRows = [];
 let isunittest = false;
 let showTopTotal = true;
 let showGlobalFilter = true;
 let showColumnFilter = true;
 let allowColumnSelection = true;
+let allowRowSelection = false;
 let columnclassname =[];
-let parentCallbackFunction;
+let parentCallbackFunction, parentCBonSelection;
 
 // Define a default UI for filtering
 function GlobalFilter({
@@ -406,6 +408,7 @@ const defaultColumn = React.useMemo(
     setHiddenColumns,
     gotoPage,
     setPageSize,
+    selectedFlatRows,
     } = useTable(
       {
         columns,
@@ -419,7 +422,8 @@ const defaultColumn = React.useMemo(
       useFilters,
       useGlobalFilter,
       useSortBy,   
-      usePagination
+      usePagination,
+      useRowSelect
     );
   React.useEffect(() => {
     setHiddenColumns(
@@ -478,6 +482,15 @@ const defaultColumn = React.useMemo(
   if (parentCallbackFunction) {
     parentCallbackFunction(filteredData);
   }
+
+  /* Select only rows than can be selected. This is required when ALL is selected */
+  selectedRows = _.filter(selectedFlatRows, selectedRow => { return (selectedRow.original.canSelect===undefined || selectedRow.original.canSelect)});
+  /* Take only the original values passed to the component */
+  selectedRows = _.map(selectedRows, 'original');
+  /* Callback the parent function if available to pass the selected records on selection */
+  if (parentCBonSelection) {
+    parentCBonSelection(selectedRows)
+  }
   
   return (
     <>
@@ -524,10 +537,12 @@ const defaultColumn = React.useMemo(
                 setGlobalFilter={setGlobalFilter}
               />
             }
-         </div>
-         { showTopTotal &&
+        </div>
+        { showTopTotal && filteredData.length === data.length &&
           <div className="total_records_top_label"> <label >Total records ({data.length})</label></div>
         }
+        { showTopTotal && filteredData.length < data.length &&
+            <div className="total_records_top_label" ><label >Filtered {filteredData.length} from {data.length}</label></div>}
   </div>
 
       <div className="tmss-table table_container">
@@ -575,7 +590,10 @@ const defaultColumn = React.useMemo(
                </table>
                </div>
                <div className="pagination p-grid" >
-               <div className="total_records_bottom_label" ><label >Total records ({data.length})</label></div>
+               {filteredData.length === data.length &&
+               <div className="total_records_bottom_label" ><label >Total records ({data.length})</label></div>}
+               {filteredData.length < data.length &&
+               <div className="total_records_bottom_label" ><label >Filtered {filteredData.length} from {data.length}</label></div>}
                <div>
         <Paginator rowsPerPageOptions={[10,25,50,100]} first={currentpage} rows={currentrows} totalRecords={rows.length} onPageChange={onPagination}></Paginator>
         </div>
@@ -612,12 +630,14 @@ function ViewTable(props) {
     // Data to show in table
     tbldata = props.data;
     parentCallbackFunction = props.filterCallback; 
+    parentCBonSelection = props.onRowSelection;
     isunittest = props.unittest;
     columnclassname = props.columnclassname;
     showTopTotal = props.showTopTotal===undefined?true:props.showTopTotal;
     showGlobalFilter = props.showGlobalFilter===undefined?true:props.showGlobalFilter;
     showColumnFilter = props.showColumnFilter===undefined?true:props.showColumnFilter;
     allowColumnSelection = props.allowColumnSelection===undefined?true:props.allowColumnSelection;
+    allowRowSelection = props.allowRowSelection===undefined?false:props.allowRowSelection;
     // Default Header to show in table and other columns header will not show until user action on UI
     let defaultheader = props.defaultcolumns;
     let optionalheader = props.optionalcolumns;
@@ -631,6 +651,33 @@ function ViewTable(props) {
     let columns = [];   
     let defaultdataheader =  Object.keys(defaultheader[0]);
     let optionaldataheader =  Object.keys(optionalheader[0]);
+
+    /* If allowRowSelection property is true for the component, add checkbox column as 1st column.
+       If the record has property to select, enable the checkbox */
+    if (allowRowSelection) {
+      columns.push({
+        Header: ({ getToggleAllRowsSelectedProps }) => { return (
+          <div>
+            <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} style={{width:'15px', height:'15px'}}/>
+          </div>
+        )},
+        id:'Select',
+        accessor: props.keyaccessor,
+        Cell: ({ row }) => { return (
+          <div>
+            {(row.original.canSelect===undefined || row.original.canSelect) &&
+              <IndeterminateCheckbox {...row.getToggleRowSelectedProps()}  style={{width:'15px', height:'15px'}}/>
+            }
+            {row.original.canSelect===false &&
+              <input type="checkbox" checked={false} disabled style={{width:'15px', height:'15px'}}></input>
+            }
+          </div>
+        )},
+        disableFilters: true,
+        disableSortBy: true,
+        isVisible: defaultdataheader.includes(props.keyaccessor),
+      });
+    }
     
     if(props.showaction === 'true') {
       columns.push({

@@ -22,6 +22,12 @@
     border-top: none;
    }
 }
+.ag-root-wrapper{
+    /*
+        calendar is overlaped by AG-grid table, so table props update to show calendar
+    */
+    overflow: inherit;
+}
 .tmss-table {
  overflow:auto;
   // since calendar getting inserted to table, because of above overflow, not getting visible
@@ -137,6 +143,10 @@
 .plots{
     padding-left: 2px;
 }
+.list-stations-summary {
+    max-height: 200px;
+    overflow: auto;
+}
 .block-list {
     > a {
         display: block;
@@ -169,25 +179,10 @@
     color: #000;
     border: none;
 }
-.list-stations-summary {
-    max-height: 200px;
-    overflow: auto;
+
+.overlay-panel-header {
+    font-size: 14px;
+    font-weight: 600;
+    color: #004B93;
+    text-align: center;
 }
-.operator-report {
-    img {
-        border: 1px solid #9a9797;
-    }
-}
-.con-edit {
-    font-size: 12px;
-    color: #9c9c9c;
-}
-
-
-
-
-
-
-
-
-

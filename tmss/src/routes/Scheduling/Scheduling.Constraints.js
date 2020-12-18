@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
+import _ from 'lodash';
 import Jeditor from '../../components/JSONEditor/JEditor'; 
 import UnitConversion from '../../utils/unit.converter';
 /* eslint-disable react-hooks/exhaustive-deps */
@@ -116,20 +117,31 @@ export default (props) => {
                 list.push('disable-field');
             }
             ref.editors['root.time.at'].container.className = list.join(' ');
-            Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = true);
-            Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = true);
+            if (ref.editors['root.time.at'].control) {
+                Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = true);
+                Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = true);
+            }
         } else {
             ref.editors['root.time.at'].container.className = ref.editors['root.time.at'].container.className.replace('disable-field', '');
-            Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = false);
-            Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = false);
+            if (ref.editors['root.time.at'].control) {
+                Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = false);
+                Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = false);
+            }
         }
         if (props.callback) {
+            // Remove 'time' fields if it is empty
+            for (const key of _.keys(jsonOutput.time)) {
+                if (!jsonOutput.time[key]) {
+                    delete jsonOutput.time[key];
+                }
+            }
             props.callback(jsonOutput, errors);
         }
     }
 
     const constraintStrategy = () => {
-        const constraintTemplate = { ...props.constraintTemplate }
+        // const constraintTemplate = { ...props.constraintTemplate }
+        const constraintTemplate = _.cloneDeep(props.constraintTemplate);
         if (constraintTemplate.schema) {
             configureProperties(constraintTemplate.schema.properties);
             configureDefinitions(constraintTemplate.schema);
@@ -138,7 +150,7 @@ export default (props) => {
     };
   
     const modifyInitiValue = () => {
-        const initValue = { ...props.initValue }
+        const initValue = _.cloneDeep(props.initValue);
         // For DateTime
         for (let key in initValue.time) {
             if (typeof initValue.time[key] === 'string') {
@@ -182,13 +194,15 @@ export default (props) => {
     return (
         <>
             {constraintSchema && React.createElement(Jeditor, {
+                id: "constraint_editor",
                 title: "Scheduling Constraints specification",
                 schema: constraintSchema.schema,
                 callback: onEditForm,
                 initValue: initialValue,
                 disabled: props.disable,
                 formatOutput: props.formatOutput,
-                parentFunction: parentFunction
+                parentFunction: parentFunction,
+                defintionFormatter: configureDefinitions
             })}
         </>
     );

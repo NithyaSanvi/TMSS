@@ -2,7 +2,7 @@ import React from 'react';
 import {
     Route,
     Switch,
-    Redirect,
+    // Redirect,
 } from 'react-router-dom';
 
 import {NotFound} from '../layout/components/NotFound';
@@ -24,7 +24,6 @@ export const routes = [
     {
         path: "/not-found",
         component: NotFound,
-        
     },{
         path: "/dashboard",
         component: Dashboard,
@@ -166,8 +165,8 @@ export const routes = [
 export const RoutedContent = () => {
     return (
 	    <Switch>
-            <Redirect from="/" to="/" exact />
-			{routes.map(routeProps => <Route {...routeProps} exact key={routeProps.path} />)}
+            {/* <Redirect from="/" to="/" exact /> */}
+            {routes.map(routeProps => <Route {...routeProps} exact key={routeProps.path} />)}
         </Switch>
     );
 }

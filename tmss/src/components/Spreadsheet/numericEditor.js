@@ -12,9 +12,7 @@ export default class NumericEditor extends Component {
 
     this.cancelBeforeStart =
       this.props.charPress && '1234567890'.indexOf(this.props.charPress) < 0;
-
     this.state = this.createInitialState(props);
-
     this.onKeyDown = this.onKeyDown.bind(this);
     this.handleChange = this.handleChange.bind(this);
   }

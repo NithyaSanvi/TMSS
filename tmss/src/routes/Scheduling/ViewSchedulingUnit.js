@@ -14,6 +14,10 @@ import SchedulingConstraint from './Scheduling.Constraints';
 import { Dialog } from 'primereact/dialog';
 import TaskStatusLogs from '../Task/state_logs';
 import Stations from './Stations';
+import { Redirect } from 'react-router-dom';
+import { CustomDialog } from '../../layout/components/CustomDialog';
+import { CustomPageSpinner } from '../../components/CustomPageSpinner';
+import { Growl } from 'primereact/components/growl/Growl';
 
 class ViewSchedulingUnit extends Component{
     constructor(props){
@@ -33,8 +37,8 @@ class ViewSchedulingUnit extends Component{
                     name:"Type",
                     filter:"select"
                 },
-                subTakskID: 'Sub Taksk ID',
                 id: "ID",
+                subTaskID: 'Control ID',
                 name:"Name",
                 description:"Description",
                 created_at:{
@@ -66,6 +70,7 @@ class ViewSchedulingUnit extends Component{
                 "Status Logs": "filter-input-0",
                 "Type":"filter-input-75",
                 "ID":"filter-input-50",
+                "Control ID":"filter-input-75",
                 "Cancelled":"filter-input-50",
                 "Duration (HH:mm:ss)":"filter-input-75",
                 "Template ID":"filter-input-50",
@@ -74,42 +79,47 @@ class ViewSchedulingUnit extends Component{
                 "Relative End Time (HH:mm:ss)": "filter-input-75",
                 "Status":"filter-input-100"
             }],
-            stationGroup: []
+            stationGroup: [],
+            dialog: {header: 'Confirm', detail: 'Do you want to create a Scheduling Unit Blueprint?'},
+            dialogVisible: false
         }
-        this.actions = [
-            {icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', link: this.props.history.goBack} 
-        ];
+        this.actions = [];
         this.stations = [];
         this.constraintTemplates = [];
-        if (this.props.match.params.type === 'draft') {
-            this.actions.unshift({icon: 'fa-edit', title: 'Click to edit',  props : { pathname:`/schedulingunit/edit/${ this.props.match.params.id}`}
-            });
-        } else {
-            this.actions.unshift({icon: 'fa-sitemap',title :'View Workflow',props :{pathname:`/schedulingunit/${this.props.match.params.id}/workflow`}});
-            this.actions.unshift({icon: 'fa-lock', title: 'Cannot edit blueprint'});
-        }
-        if (this.props.match.params.id) {
-            this.state.scheduleunitId  = this.props.match.params.id;
-        }
-        if (this.props.match.params.type) {
-            this.state.scheduleunitType = this.props.match.params.type;
-        }
+        this.checkAndCreateBlueprint = this.checkAndCreateBlueprint.bind(this);
+        this.createBlueprintTree = this.createBlueprintTree.bind(this);
+        this.closeDialog = this.closeDialog.bind(this);
+        
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+        if (this.state.scheduleunit && this.props.match.params &&
+            (this.state.scheduleunitId !== this.props.match.params.id ||
+            this.state.scheduleunitType !== this.props.match.params.type)) {
+            this.getSchedulingUnitDetails(this.props.match.params.type, this.props.match.params.id);
        }
+    }
 
     async componentDidMount(){ 
-        let schedule_id = this.state.scheduleunitId;
-        let schedule_type = this.state.scheduleunitType;
+        let schedule_id = this.props.match.params.id;
+        let schedule_type = this.props.match.params.type;
         if (schedule_type && schedule_id) {
-            const subtaskComponent = (task)=> {
-                return (
-                    <button className="p-link" onClick={(e) => {this.setState({showStatusLogs: true, task: task})}}>
-                        <i className="fa fa-history"></i>
-                    </button>
-                );
-            };
             this.stations = await ScheduleService.getStationGroup();
             this.setState({stationOptions: this.stations});
-            this.getScheduleUnit(schedule_type, schedule_id)
+            this.getSchedulingUnitDetails(schedule_type, schedule_id);
+		}
+    }
+
+    subtaskComponent = (task)=> {
+        return (
+            <button className="p-link" onClick={(e) => {this.setState({showStatusLogs: true, task: task})}}>
+                <i className="fa fa-history"></i>
+            </button>
+        );
+    };
+    
+    getSchedulingUnitDetails(schedule_type, schedule_id) {
+        this.getScheduleUnit(schedule_type, schedule_id)
             .then(schedulingUnit =>{
                 if (schedulingUnit) {
                     ScheduleService.getSchedulingConstraintTemplates().then((response) => {
@@ -119,17 +129,22 @@ class ViewSchedulingUnit extends Component{
                     this.getScheduleUnitTasks(schedule_type, schedulingUnit)
                         .then(tasks =>{
                         tasks.map(task => {
-                            task.status_logs = task.tasktype === "Blueprint"?subtaskComponent(task):"";
-                            const subTaskIds = task.subTasks.filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1);
-                            task.subTakskID = subTaskIds.length ? subTaskIds[0].id : ''; 
+                            task.status_logs = task.tasktype === "Blueprint"?this.subtaskComponent(task):"";
+                            //Displaying SubTask ID of the 'control' Task
+                            const subTaskIds = task.subTasks?task.subTasks.filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1):[];
+                            task.subTaskID = subTaskIds.length ? subTaskIds[0].id : ''; 
                             return task;
                         });
                         const targetObservation = _.find(tasks, (task)=> {return task.template.type_value==='observation' && task.tasktype.toLowerCase()===schedule_type && task.specifications_doc.station_groups});
                         this.setState({
+                            scheduleunitId: schedule_id,
                             scheduleunit : schedulingUnit,
+                            scheduleunitType: schedule_type,
                             schedule_unit_task : tasks,
                             isLoading: false,
-                            stationGroup: targetObservation?targetObservation.specifications_doc.station_groups:[]
+                            stationGroup: targetObservation?targetObservation.specifications_doc.station_groups:[],
+                            redirect: null,
+                            dialogVisible: false
                     }, this.getAllStations);
                     });
                 }   else {
@@ -138,41 +153,76 @@ class ViewSchedulingUnit extends Component{
                     });
                 }
             });
-		}
+            this.actions = [
+                {icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', link: this.props.history.goBack} 
+            ];
+            if (this.props.match.params.type === 'draft') {
+                this.actions.unshift({icon: 'fa-edit', title: 'Click to edit',  props : { pathname:`/schedulingunit/edit/${ this.props.match.params.id}`}
+                });
+                this.actions.unshift({icon:'fa-stamp', title: 'Create Blueprint', type:'button',
+                    actOn:'click', props : { callback: this.checkAndCreateBlueprint},
+               });
+            } else {
+                this.actions.unshift({icon: 'fa-sitemap',title :'View Workflow',props :{pathname:`/schedulingunit/${this.props.match.params.id}/workflow`}});
+                this.actions.unshift({icon: 'fa-lock', title: 'Cannot edit blueprint'});
+            }
     }
 
     getScheduleUnitTasks(type, scheduleunit){
         if(type === 'draft')
-            return ScheduleService.getTasksBySchedulingUnit(scheduleunit.id, true);
+            return ScheduleService.getTasksBySchedulingUnit(scheduleunit.id, true, true, true);
         else
-            return ScheduleService.getTaskSubTaskBlueprintsBySchedulingUnit(scheduleunit);
+        return ScheduleService.getTaskBPWithSubtaskTemplateOfSU(scheduleunit);
     }
+    
     getScheduleUnit(type, id){
         if(type === 'draft')
             return ScheduleService.getSchedulingUnitDraftById(id)
         else
             return ScheduleService.getSchedulingUnitBlueprintById(id)
     }
+
+    /**
+     * Checks if the draft scheduling unit has existing blueprints and alerts. If confirms to create, creates blueprint.
+     */
+    checkAndCreateBlueprint() {
+        if (this.state.scheduleunit) {
+            let dialog = this.state.dialog;
+            if (this.state.scheduleunit.scheduling_unit_blueprints.length>0) {
+                dialog.detail = "Blueprint(s) already exist for this Scheduling Unit. Do you want to create another one?";
+            }
+            dialog.actions = [{id: 'yes', title: 'Yes', callback: this.createBlueprintTree},
+                                {id: 'no', title: 'No', callback: this.closeDialog}];
+            this.setState({dialogVisible: true, dialog: dialog});
+        }
+    }
+
+    /**
+     * Funtion called to create blueprint on confirmation.
+     */
+    createBlueprintTree() {
+        this.setState({dialogVisible: false, showSpinner: true});
+        ScheduleService.createSchedulingUnitBlueprintTree(this.state.scheduleunit.id)
+            .then(blueprint => {
+                this.growl.show({severity: 'success', summary: 'Success', detail: 'Blueprint created successfully!'});
+                this.setState({showSpinner: false, redirect: `/schedulingunit/view/blueprint/${blueprint.id}`, isLoading: true});
+            });
+    }
+
+    /**
+     * Callback function to close the dialog prompted.
+     */
+    closeDialog() {
+        this.setState({dialogVisible: false});
+    }
    
- render(){
+    render(){
+        if (this.state.redirect) {
+            return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
+        }
         return(
 		   <>   
-                {/*}  <div className="p-grid">
-                <div className="p-col-10">
-                  <h2>Scheduling Unit - Details </h2>
-			    </div>
-				<div className="p-col-2">
-                    <Link to={{ pathname: '/schedulingunit'}} title="Close" 
-                                style={{float:'right'}}>
-                        <i className="fa fa-times" style={{marginTop: "10px", marginLeft: '5px'}}></i>
-                    </Link>
-                     <Link to={{ pathname: '/schedulingunit/edit', state: {id: this.state.scheduleunit?this.state.scheduleunit.id:''}}} title="Edit" 
-                            style={{float:'right'}}>
-                    <i className="fa fa-edit" style={{marginTop: "10px"}}></i>
-                    </Link> 
-                </div>
-                </div> */
-                /*TMSS-363 Blueprint icon changes */}
+                <Growl ref={(el) => this.growl = el} />
                 <PageHeader location={this.props.location} title={'Scheduling Unit - Details'} 
                             actions={this.actions}/>
 				{ this.state.isLoading ? <AppLoader/> :this.state.scheduleunit &&
@@ -259,6 +309,12 @@ class ViewSchedulingUnit extends Component{
                             <TaskStatusLogs taskId={this.state.task.id}></TaskStatusLogs>
                     </Dialog>
                  }
+                {/* Dialog component to show messages and get confirmation */}
+                <CustomDialog type="confirmation" visible={this.state.dialogVisible}
+                        header={this.state.dialog.header} message={this.state.dialog.detail} actions={this.state.dialog.actions}
+                        onClose={this.closeDialog} onCancel={this.closeDialog} onSubmit={this.createBlueprintTree}></CustomDialog>
+                {/* Show spinner during backend API call */}
+                <CustomPageSpinner visible={this.state.showSpinner} />
             </>
         )
     }

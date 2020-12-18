@@ -40,17 +40,25 @@ function Jeditor(props) {
                 if (property["$ref"] && !property["$ref"].startsWith("#")) {    // 1st level reference of the object
                     const refUrl = property["$ref"];
                     let newRef = refUrl.substring(refUrl.indexOf("#"));
-                    if (refUrl.endsWith("/pointing")) {                         // For type pointing
-                        schema.definitions["pointing"] = (await $RefParser.resolve(refUrl)).get(newRef);
-                        property["$ref"] = newRef;
-                    }   else {                   // General object to resolve if any reference in child level
-                        property = await resolveSchema((await $RefParser.resolve(refUrl)).get(newRef));
-                    }
+                    //>>>>>> TODO if pointin works fine, remove these commented lines
+                    // if (refUrl.endsWith("/pointing")) {                         // For type pointing
+                    //     schema.definitions["pointing"] = (await $RefParser.resolve(refUrl)).get(newRef);
+                    //     property["$ref"] = newRef;
+                    // }   else {                   // General object to resolve if any reference in child level
+                    //     property = await resolveSchema((await $RefParser.resolve(refUrl)).get(newRef));
+                    // }
+                    let defKey = refUrl.substring(refUrl.lastIndexOf("/")+1);
+                    schema.definitions[defKey] = (await $RefParser.resolve(refUrl)).get(newRef);
+                    property["$ref"] = newRef;
                 }   else if(property["type"] === "array") {             // reference in array items definition
                     let resolvedItems = await resolveSchema(property["items"]);
                     schema.definitions = {...schema.definitions, ...resolvedItems.definitions};
                     delete resolvedItems['definitions'];
                     property["items"] = resolvedItems;
+                }   else if(property["type"] === "object" && property.properties) {
+                    property = await resolveSchema(property);
+                    schema.definitions = {...schema.definitions, ...property.definitions};
+                    delete property['definitions'];
                 }
                 properties[propertyKey] = property;
             }
@@ -64,19 +72,34 @@ function Jeditor(props) {
         }   else if (schema["$ref"] && !schema["$ref"].startsWith("#")) {   //reference in oneOf list item
             const refUrl = schema["$ref"];
             let newRef = refUrl.substring(refUrl.indexOf("#"));
-            if (refUrl.endsWith("/pointing")) {
-                schema.definitions["pointing"] = (await $RefParser.resolve(refUrl)).get(newRef);
-                schema["$ref"] = newRef;
-            }   else {
-                schema = await resolveSchema((await $RefParser.resolve(refUrl)).get(newRef));
+            //>>>>>> TODO: If pointing works fine, remove these commented lines
+            // if (refUrl.endsWith("/pointing")) {
+            //     schema.definitions["pointing"] = (await $RefParser.resolve(refUrl)).get(newRef);
+            //     schema["$ref"] = newRef;
+            // }   else {
+            //     schema = await resolveSchema((await $RefParser.resolve(refUrl)).get(newRef));
+            // }
+            let defKey = refUrl.substring(refUrl.lastIndexOf("/")+1);
+            schema.definitions[defKey] = (await $RefParser.resolve(refUrl)).get(newRef);
+            if (schema.definitions[defKey].properties) {
+                let property = await resolveSchema(schema.definitions[defKey]);
+                schema.definitions = {...schema.definitions, ...property.definitions};
+                delete property['definitions'];
+                schema.definitions[defKey] = property;
             }
+            schema["$ref"] = newRef;
         }
         return schema;
     }
 
     const init = async () => {
-        const element = document.getElementById('editor_holder');
+        const element = document.getElementById(props.id?props.id:'editor_holder');
         let schema = await resolveExternalRef();
+        /** If any formatting is done at the parent/implementation component pass the resolved schema 
+            and get the formatted schema like adding validation type, field ordering, etc.,*/
+        if (props.defintionFormatter) {
+            props.defintionFormatter(schema);
+        }
         pointingProps = [];
         // Customize the pointing property to capture angle1 and angle2 to specified format
         for (const definitionKey in schema.definitions) {
@@ -173,15 +196,15 @@ function Jeditor(props) {
         }
         editor = new JSONEditor(element, editorOptions);
         // editor.getEditor('root').disable();
-        if (props.disabled) {
-            editor.on('ready',() => {
-                editor.disable();
-            });
-        }
-        if (props.parentFunction) {
-            props.parentFunction(editorFunction);
-        }
         editorRef.current = editor;
+        editor.on('ready',() => {
+            if (props.disabled) {
+                editor.disable();
+            }
+            if (props.parentFunction) {
+                props.parentFunction(editorFunction);
+            }
+        });
         editor.on('change', () => {setEditorOutput()});
     };
 
@@ -208,8 +231,13 @@ function Jeditor(props) {
     /**
      * Function called by the parent component to perform certain action ib JEditor
      */
-    function editorFunction() {
-        editorRef.current.destroy();
+    function editorFunction(name, params) {
+        if (name === "setValue") {
+            const newValue = updateInput(_.cloneDeep(params[0]));
+            editorRef.current.setValue(newValue);
+        }   else {
+            editorRef.current.destroy();
+        }
     }
 
     /**
@@ -536,7 +564,7 @@ function Jeditor(props) {
 
     return (
         <React.Fragment>
-            <div id='editor_holder'></div>
+            <div id={props.id?props.id:'editor_holder'}></div>
         </React.Fragment>
     );
 };

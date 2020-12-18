@@ -167,18 +167,27 @@ export class WeekTimelineView extends Component {
                 canExtendSUList: false, canShrinkSUList:false});
             if (fetchDetails) {
                 const suBlueprint = _.find(this.state.suBlueprints, {id: parseInt(item.id.split('-')[0])});
-                ScheduleService.getTaskSubTaskBlueprintsBySchedulingUnit(suBlueprint)
+                ScheduleService.getTaskBPWithSubtaskTemplateOfSU(suBlueprint)
                     .then(taskList => {
-                        const targetObservation = _.find(taskList, (task)=> {return task.template.type_value==='observation' && task.tasktype.toLowerCase()==="blueprint" && task.specifications_doc.station_groups});
+                        const observationTask = _.find(taskList, (task)=> {return task.template.type_value==='observation' && task.specifications_doc.station_groups});
                         for (let task of taskList) {
+                            //Control Task ID
                             const subTaskIds = (task.subTasks || []).filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1);
-                            task.subTakskID = subTaskIds.length ? subTaskIds[0].id : ''; 
+                            task. subTaskID = subTaskIds.length ? subTaskIds[0].id : ''; 
                             if (task.template.type_value.toLowerCase() === "observation") {
                                 task.antenna_set = task.specifications_doc.antenna_set;
                                 task.band = task.specifications_doc.filter;
                             }
                         }
-                        this.setState({suTaskList: _.sortBy(taskList, "id"), isSummaryLoading: false, stationGroup: targetObservation?targetObservation.specifications_doc.station_groups:[]})
+                        let stations = [];
+                        //>>>>>> TODO: Station groups from subtasks based on the status of SU
+                        if (observationTask) {
+                            for (const grpStations of _.map(observationTask.specifications_doc.station_groups, "stations")) {
+                                stations = _.concat(stations, grpStations);
+                            }
+                        }
+                        this.setState({suTaskList: _.sortBy(taskList, "id"), isSummaryLoading: false, 
+                                        stationGroup: _.uniq(stations)})
                     });
                 // Get the scheduling constraint template of the selected SU block
                 ScheduleService.getSchedulingConstraintTemplate(suBlueprint.suDraft.scheduling_constraints_template_id)
@@ -368,9 +377,9 @@ export class WeekTimelineView extends Component {
                                      style={{borderLeft: "1px solid #efefef", marginTop: "0px", backgroundColor: "#f2f2f2"}}>
                                     {this.state.isSummaryLoading?<AppLoader /> :
                                         <SchedulingUnitSummary schedulingUnit={suBlueprint} suTaskList={this.state.suTaskList}
-                                                stationGroup={this.state.stationGroup}
                                                 constraintsTemplate={this.state.suConstraintTemplate}
                                                 closeCallback={this.closeSUDets}
+                                                stationGroup={this.state.stationGroup}
                                                 location={this.props.location}></SchedulingUnitSummary>
                                     }
                                 </div>

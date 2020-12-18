@@ -1,7 +1,7 @@
 .sticky {
     position: sticky;
     top:49px;
-    z-index:1000;
+    z-index:999;
 }
 
 .rct-sidebar-row {
@@ -82,6 +82,66 @@
 
 #now-btn {
     margin-left: 10px;
+}
+
+.sidebar-header {
+    color: #ffffff;
+    text-align: right;
+    padding-right: 10px;
+    background-color: #8ba7d9;
+}
+
+.sidebar-header-row {
+    height: 30px;
+}
+
+.legend-row {
+    padding-top: 10px;
+    padding-left: 10px;
+    font-size: 14px;
+}
+
+.legend-suntime {
+    margin-top: 2px;
+    padding-left: 3px !important;
+}
+
+.legend-sunrise {
+    background-color: yellow;
+    color: #212529;
+}
+
+.legend-sunset {
+    background-color: orange;
+    color: #212529;
+}
+
+.legend-night {
+    background-color: grey;
+}
+
+.suntime-header {
+    line-height: 30px;
+}
+
+.suntime-header-day {
+    background-color: white;
+    color: white;
+}
+
+.suntime-header-night {
+    background-color: grey;
+    color: grey;
+}
+
+.suntime-header-sunrise {
+    background-color: yellow;
+    color: yellow;
+}
+
+.suntime-header-sunset {
+    background-color: orange;
+    color: orange;
 }
 
 .resize-div,
