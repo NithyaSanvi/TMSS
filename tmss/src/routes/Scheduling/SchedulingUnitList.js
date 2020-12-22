@@ -18,6 +18,8 @@ class SchedulingUnitList extends Component{
         name:"Name",
         description:"Description",
         project:"Project",
+        targetDetails0: "Target 1",
+        targetDetails1: "Target 2",
         created_at:{
             name:"Created At",
             filter: "date"
@@ -74,7 +76,7 @@ class SchedulingUnitList extends Component{
             const schedulingSet = await ScheduleService.getSchedulingSets();
             const projects = await ScheduleService.getProjectList();
             const bluePrint = await ScheduleService.getSchedulingUnitBlueprint();
-            ScheduleService.getSchedulingUnitDraft().then(scheduleunit =>{
+            ScheduleService.getSchedulingUnitDraft().then(async (scheduleunit) =>{
                 const output = [];
                 var scheduleunits = scheduleunit.data.results;
                 for( const scheduleunit  of scheduleunits){
@@ -101,6 +103,17 @@ class SchedulingUnitList extends Component{
                     scheduleunit.canSelect = true;
                     output.push(scheduleunit);
                 }
+                const promises = [];
+                output.map(su => promises.push(this.getScheduleUnitTasks(su.type, su)));
+                const tasksResponses = await Promise.all(promises);
+                output.map(su => {
+                    su.taskDetails = tasksResponses.find(task => task.id === su.id && task.type === su.type).tasks;
+                    const targetObserv = su.taskDetails.find(task => task.template.type_value==='observation' && task.tasktype.toLowerCase()===su.type.toLowerCase() && task.specifications_doc.station_groups);
+                    // Constructing targets in single string to make it clear display 
+                    targetObserv.specifications_doc.SAPs.map((target, index) => {
+                        su[`targetDetails${index}`] = `Name: ${target.name}, \n Angle1: ${target.digital_pointing.angle1}, \n Angle2: ${target.digital_pointing.angle2}, \n Reference Frame: ${target.digital_pointing.direction_type}`;
+                    });
+                });
                 this.setState({
                     scheduleunit: output, isLoading: false
                 });
@@ -112,6 +125,13 @@ class SchedulingUnitList extends Component{
     componentDidMount(){ 
        this.getSchedulingUnitList();
         
+    }
+
+    getScheduleUnitTasks(type, scheduleunit){
+        if(type === 'Draft')
+            return ScheduleService.getTaskDetailsByDraftSchUnitById(scheduleunit.id, true, true, true);
+        else
+            return ScheduleService.getTaskDetailsByBluePrintSchUnitById(scheduleunit);
     }
 
     /**

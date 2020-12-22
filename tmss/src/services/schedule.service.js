@@ -155,6 +155,22 @@ const ScheduleService = {
         }
         return taskblueprintsList;
     },
+    getTaskDetailsByBluePrintSchUnitById: async function(scheduleunit) {
+        const response = await this.getTaskBPWithSubtaskTemplateOfSU(scheduleunit);
+        return {
+            id: scheduleunit.id,
+            tasks: response,
+            type: 'Blueprint'
+        }
+    },
+    getTaskDetailsByDraftSchUnitById: async function(id, loadTemplate, loadSubtasks, loadSubtaskTemplate) {
+        const response = await this.getTasksBySchedulingUnit(id, loadTemplate, loadSubtasks, loadSubtaskTemplate);
+        return {
+            id,
+            type: 'Draft',
+            tasks: response
+        }
+    },
     getTasksBySchedulingUnit: async function(id, loadTemplate, loadSubtasks, loadSubtaskTemplate){
         let scheduletasklist=[];
         // let taskblueprints = [];
