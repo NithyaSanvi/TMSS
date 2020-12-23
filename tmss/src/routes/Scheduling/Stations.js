@@ -34,11 +34,11 @@ export default (props) => {
     });
     
     useEffect(() => {
-        if (props.stationGroup && props.stationGroup.length) {
-            getAllStations();
-         } else {
+        // if (props.stationGroup && props.stationGroup.length) {
             reset();
-        }
+            getAllStations();
+        //  } else {
+        // }
     }, [props.stationGroup]);
 
     // Restting the stations

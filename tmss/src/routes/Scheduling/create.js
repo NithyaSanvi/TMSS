@@ -349,9 +349,9 @@ export class SchedulingUnitCreate extends Component {
         });
         for (const taskName in observStrategy.template.tasks) {
             let task = observStrategy.template.tasks[taskName];
-            if (task.specifications_doc.station_groups) {
+            // if (task.specifications_doc.station_groups) {
                 task.specifications_doc.station_groups = station_groups;
-            }
+            // }
         }
         const const_strategy = {scheduling_constraints_doc: constStrategy, id: this.constraintTemplates[0].id, constraint: this.constraintTemplates[0]};
         const schedulingUnit = await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, const_strategy, station_groups);
