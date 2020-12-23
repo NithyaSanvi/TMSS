@@ -265,7 +265,7 @@ export default (props) => {
                             <Button onClick={addCustom} label="Add Custom" icon="pi pi-plus" disabled={!stationOptions.length}/>
                         </div>
                     </div>}
-                    {selectedStations.length ? <div className="col-sm-12 selected_stations" data-testid="selected_stations">
+                    {selectedStations.length || customStations.length ? <div className="col-sm-12 selected_stations" data-testid="selected_stations">
                         {<div className="col-sm-12"><label style={{paddingLeft: '8px'}}>Maximum number of stations that can be missed in the selected groups</label></div>}
                         <div className="col-sm-12 p-0 d-flex flex-wrap">
                             {selectedStations.map(i => ( 
