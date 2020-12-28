@@ -339,6 +339,11 @@ export class SchedulingUnitCreate extends Component {
                 max_nr_missing:parseInt(station.max_nr_missing)
             });
         });
+
+        if (!station_groups.length) {
+            this.growl.show({severity: 'error', summary: 'Error Occured', detail: schedulingUnit.message || 'Unable to save Scheduling Unit/Tasks'});
+            return;
+        }
         
         UnitConversion.degreeToRadians(constStrategy.sky);
             

@@ -441,7 +441,10 @@ const ScheduleService = {
             return suUpdateResponse.data;
         }   catch(error) {
             console.error("Mistake",error);
-            return null
+            return {
+                error: true,
+                message: 'Unable to update the scheduling unit'
+            }
         }
     },
     createSUTaskDrafts: async (schedulingUnit) => {
