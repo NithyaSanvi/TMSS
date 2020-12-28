@@ -355,12 +355,12 @@ export class SchedulingUnitCreate extends Component {
         }
         const const_strategy = {scheduling_constraints_doc: constStrategy, id: this.constraintTemplates[0].id, constraint: this.constraintTemplates[0]};
         const schedulingUnit = await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, const_strategy, station_groups);
-        if (schedulingUnit) {
+        if (!schedulingUnit.error) {
             // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks created successfully!'});
             const dialog = {header: 'Success', detail: 'Scheduling Unit and Tasks are created successfully. Do you want to create another Scheduling Unit?'};
             this.setState({schedulingUnit: schedulingUnit, dialogVisible: true, dialog: dialog})
         }   else {
-            this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to save Scheduling Unit/Tasks'});
+            this.growl.show({severity: 'error', summary: 'Error Occured', detail: schedulingUnit.message || 'Unable to save Scheduling Unit/Tasks'});
         }
     }
 

@@ -338,13 +338,13 @@ export class EditSchedulingUnit extends Component {
             });
             
             const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy,schUnit,this.state.taskDrafts, this.state.tasksToUpdate, station_groups);
-            if (schedulingUnit) {
+            if (!schedulingUnit.error) {
                 // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks edited successfully!'});
                 this.props.history.push({
                     pathname: `/schedulingunit/view/draft/${this.props.match.params.id}`,
                 }); 
             } else {
-                this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to update Scheduling Unit/Tasks'});
+                this.growl.show({severity: 'error', summary: 'Error Occured', detail: schedulingUnit.message || 'Unable to update Scheduling Unit/Tasks'});
             } 
         }   else {
             this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Template Missing.'});

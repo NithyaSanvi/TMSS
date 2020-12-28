@@ -387,7 +387,10 @@ const ScheduleService = {
                 delete schedulingUnit['duration'];
                 schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
                 if (!schedulingUnit || !schedulingUnit.id) {
-                    return null;
+                    return {
+                        error: true,
+                        messsage: 'Unable to create scheduling unit'
+                    };
                 }
                 // Create task drafts with updated requirement_doc
                 schedulingUnit = await this.createSUTaskDrafts(schedulingUnit);
@@ -395,10 +398,15 @@ const ScheduleService = {
                     return schedulingUnit;
                 }
             }
-            return null;
+            return {
+                error: true,
+                messsage: 'Unable to create task drafts'
+            };
         }   catch(error) {
             console.error(error);
-            return null;
+            return {
+                error: true
+            };
         };
     },
     
@@ -421,7 +429,9 @@ const ScheduleService = {
             return schedulingUnit;
         }   catch(error) {
             console.error(error);
-            return null;
+            return {
+                error: true
+            };
         };
     },
     updateSchedulingUnitDraft: async function(schedulingUnit) {
