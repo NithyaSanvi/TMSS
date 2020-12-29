@@ -341,7 +341,7 @@ export class SchedulingUnitCreate extends Component {
         });
 
         if (!station_groups.length) {
-            this.growl.show({severity: 'error', summary: 'Error Occured', detail: schedulingUnit.message || 'Unable to save Scheduling Unit/Tasks'});
+            this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Stations are mandatory to select'});
             return;
         }
         
