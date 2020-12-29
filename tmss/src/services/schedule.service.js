@@ -316,11 +316,16 @@ const ScheduleService = {
         });
         return res;
     },
-    getTasksDraftBySchedulingUnitId: async function (id){
+    getTasksDraftBySchedulingUnitId: async function (id, loadTemplate){
         let res=[];
         await axios.get('/api/scheduling_unit_draft/'+id+'/task_draft/?ordering=id')
-        .then(response => {
+        .then(async response => {
             res= response;
+            if (response && response.data.results && loadTemplate) {
+                for(const task of response.data.results){
+                    task.template = await TaskService.getTaskTemplate(task.specifications_template_id);
+                }
+            }
         }).catch(function(error) {
             console.error('[schedule.services.getTasksDraftBySchedulingUnitId]',error);
         });

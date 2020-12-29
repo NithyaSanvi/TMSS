@@ -325,7 +325,7 @@ export class SchedulingUnitCreate extends Component {
         (this.state.selectedStations || []).forEach(key => {
             let station_group = {};
             const stations = this.state[key] ? this.state[key].stations : [];
-            const max_nr_missing = parseInt(this.state[key] ? this.state[key].missing_StationFields : 0);
+            const max_nr_missing = parseInt(this.state[key] ? (this.state[key].missing_StationFields || 0) : 0);
             station_group = {
                 stations,
                 max_nr_missing
