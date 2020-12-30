@@ -177,7 +177,7 @@ class ViewSchedulingUnit extends Component{
                 this.actions.unshift({icon: 'fa-sitemap',title :'View Workflow',props :{pathname:`/schedulingunit/${this.props.match.params.id}/workflow`}});
                 this.actions.unshift({icon: 'fa-lock', title: 'Cannot edit blueprint'});
             }
-            this.actions.push({icon:'fa-stamp', title: 'Producer Details', type:'button',
+            this.actions.unshift({icon:'fa-stamp', title: 'Producer Details', type:'button',
                 actOn:'click', props : { callback: this.showProducerDialog}});
     }
 
