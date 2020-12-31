@@ -62,7 +62,10 @@ const TaskService = {
         return response.data;
       } catch (error) {
         console.error(error);
-        return null;
+        return {
+          error: true,
+          message: 'Unable to update task'
+        };
       }
     },
     getTaskRelation: async function(type, id) {

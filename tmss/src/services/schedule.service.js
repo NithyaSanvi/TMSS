@@ -422,16 +422,21 @@ const ScheduleService = {
             delete schedulingUnit['duration'];
            
             schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
-            for (const taskToUpdate in tasksToUpdate) {
-                let task = tasks.find(task => { return task.name === taskToUpdate});
-                task.specifications_doc = observStrategy.template.tasks[taskToUpdate].specifications_doc;
-                if (task.specifications_doc.station_groups) {
-                    task.specifications_doc.station_groups = station_groups;
+            if (!schedulingUnit.error) {
+                for (const taskToUpdate in tasksToUpdate) {
+                    let task = tasks.find(task => { return task.name === taskToUpdate});
+                    task.specifications_doc = observStrategy.template.tasks[taskToUpdate].specifications_doc;
+                    if (task.specifications_doc.station_groups) {
+                        task.specifications_doc.station_groups = station_groups;
+                    }
+                    delete task['duration'];
+                    delete task['relative_start_time'];
+                    delete task['relative_stop_time'];
+                    task = await TaskService.updateTask('draft', task);
+                    if (task.error) {
+                        schedulingUnit = task;
+                    }
                 }
-                delete task['duration'];
-                delete task['relative_start_time'];
-                delete task['relative_stop_time'];
-                task = await TaskService.updateTask('draft', task);
             }
             return schedulingUnit;
         }   catch(error) {
