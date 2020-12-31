@@ -203,6 +203,7 @@ const ScheduleService = {
                 scheduletask.relative_stop_time = moment.utc(scheduletask.relative_stop_time*1000).format('HH:mm:ss'); 
                 if (loadTemplate) {
                     scheduletask.template = await TaskService.getTaskTemplate(task.specifications_template_id);
+                    scheduletask.type_value = scheduletask.template.type_value;
                 }
                //Fetch blueprint details for Task Draft
 	            const draftBlueprints = await TaskService.getDraftsTaskBlueprints(task.id);
@@ -262,12 +263,13 @@ const ScheduleService = {
                 const res = await Promise.all(promises);
                 promises = [];
                 // Getting producer name for all producers
-                res.map(prodcuer => promises.push(this.getTaskDraft(prodcuer.producer_id)));
+                res.map(producer => promises.push(this.getTaskDraft(producer.producer_id)));
                 const producers = await Promise.all(promises);
                 producers.map(producer => {
                     const tasks = scheduletasklist.filter(task => producer.consumed_by_ids.includes(task.id));
                     tasks.map(task => {
                         task.producerDetails = producer;
+                        task.isProducer = true;
                     });
                 });
             }   

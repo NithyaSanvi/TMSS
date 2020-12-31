@@ -32,6 +32,7 @@ class ViewSchedulingUnit extends Component{
             paths: [{
                 "View": "/task",
             }],
+            ingestGroup: {},
            missingStationFieldsErrors: [],
             defaultcolumns: [ {
                 status_logs: "Status Logs",
@@ -135,7 +136,7 @@ class ViewSchedulingUnit extends Component{
                     });
                     this.getScheduleUnitTasks(schedule_type, schedulingUnit)
                         .then(tasks =>{
-                        const producers = tasks.filter(task => task.producerDetails).map(producer => producer.producerDetails.name);
+                        const ingestGroup = _.groupBy(tasks, 'type_value');
                         tasks.map(task => {
                             task.status_logs = task.tasktype === "Blueprint"?this.subtaskComponent(task):"";
                             //Displaying SubTask ID of the 'control' Task
@@ -153,10 +154,8 @@ class ViewSchedulingUnit extends Component{
                             stationGroup: targetObservation?targetObservation.specifications_doc.station_groups:[],
                             redirect: null,
                             dialogVisible: false,
-                            producers,
-                            isContainsAllPipeLine: producers.includes('Pipeline 1') && producers.includes('Pipeline 1') && producers.includes('Pipeline target1') && producers.includes('Pipeline target2'),
-                            isContainsAllObservation: producers.includes('Calibrator Observation 1') && producers.includes('Calibrator Observation 2') && producers.includes('Target Observation')
-                    }, this.getAllStations);
+                            ingestGroup
+                        }, this.getAllStations);
                     });
                 }   else {
                     this.setState({
@@ -331,11 +330,9 @@ class ViewSchedulingUnit extends Component{
 
                 {this.state.showProducerDialog && (
                     <InjestRelationModal
-                        isContainsAllObservation={this.stateisContainsAllObservation}
                         showProducerDialog={this.state.showProducerDialog}
+                        ingestGroup={this.state.ingestGroup}
                         toggle={this.showProducerDialog}
-                        producers={this.state.producers}
-                        isContainsAllPipeLine={this.state.isContainsAllPipeLine}
                     />
                 )}
             </>
