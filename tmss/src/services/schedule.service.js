@@ -266,7 +266,8 @@ const ScheduleService = {
                 res.map(producer => promises.push(this.getTaskDraft(producer.producer_id)));
                 const producers = await Promise.all(promises);
                 producers.map(producer => {
-                    const tasks = scheduletasklist.filter(task => producer.consumed_by_ids.includes(task.id));
+                    // const tasks = scheduletasklist.filter(task => producer.consumed_by_ids.includes(task.id));
+                    const tasks = scheduletasklist.filter(task => producer.id  === task.id);
                     tasks.map(task => {
                         task.producerDetails = producer;
                         task.isProducer = true;
