@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog } from 'primereact/dialog';
 import {Checkbox} from 'primereact/checkbox';
-import { useState } from 'react';
 
 export default (props) => {
     const [ingestRelation, setInjestRelation] = useState(props.ingestGroup);
@@ -26,6 +25,10 @@ export default (props) => {
         }
     };
 
+    useEffect(() => {
+        setInjestRelation(props.ingestGroup); 
+    }, [props.ingestGroup]);
+
     return (
         <Dialog header="Producer Details"
             visible={props.showProducerDialog} maximizable maximized={false} position="center" style={{ width: '50vw' }}
@@ -36,8 +39,8 @@ export default (props) => {
                         {group !== 'ingest' && (
                             <>
                                 <div className="p-col-12">
-                                    <Checkbox inputId="Observations" value="Observation" onChange={() => toggleGroup(group)} checked={isAllTaskChecked(group)}></Checkbox>
-                                    <label htmlFor="Observations" className="p-checkbox-label capitalize">{group}</label>
+                                    <Checkbox inputId={group} value={group} onChange={() => toggleGroup(group)} checked={isAllTaskChecked(group)}></Checkbox>
+                                    <label htmlFor={group} className="p-checkbox-label capitalize">{group}</label>
                                 </div>
                                 <div className="pl-2">
                                     {props.ingestGroup[group].map((task, index) => (
