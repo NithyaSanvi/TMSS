@@ -686,7 +686,7 @@ function ViewTable(props) {
           Header: 'Action',
           id:'Action',
           accessor: props.keyaccessor,
-          Cell: props => <button className='p-link'  onClick={navigateTo(props)} ><i className="fa fa-edit" style={{cursor: 'pointer'}}></i></button>,
+          Cell: props => <button className='p-link'  onClick={navigateTo(props)} ><i className={`fa fa-${(props.cell.row.values['Type'] || '').toLowerCase() === 'blueprint' ? 'eye' : 'edit'}`} style={{cursor: 'pointer'}}></i></button>,
           disableFilters: true,
           disableSortBy: true,
           isVisible: defaultdataheader.includes(props.keyaccessor),
