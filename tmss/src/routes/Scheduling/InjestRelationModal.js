@@ -5,22 +5,22 @@ import {Checkbox} from 'primereact/checkbox';
 export default (props) => {
     const [ingestRelation, setInjestRelation] = useState(props.ingestGroup);
 
-    const isAllTaskChecked = (groupName) => !ingestRelation[groupName].filter(task => !task.isProducer).length;
+    const isAllTaskChecked = (groupName) => !ingestRelation[groupName].filter(task => !task.canIngest).length;
 
     const toggleCheckItem = (group, index) => {
         const relationGroup = { ...ingestRelation };
-        relationGroup[group][index].isProducer = ! relationGroup[group][index].isProducer;
+        relationGroup[group][index].canIngest = ! relationGroup[group][index].canIngest;
         setInjestRelation(relationGroup);
     };
 
     const toggleGroup = (group) => {
         if (isAllTaskChecked(group)) {
             const relationGroup = { ...ingestRelation };
-            relationGroup[group].map(task => task.isProducer = false);
+            relationGroup[group].map(task => task.canIngest = false);
             setInjestRelation(relationGroup);
         } else {
             const relationGroup = { ...ingestRelation };
-            relationGroup[group].map(task => task.isProducer = true);
+            relationGroup[group].map(task => task.canIngest = true);
             setInjestRelation(relationGroup);
         }
     };
@@ -45,7 +45,7 @@ export default (props) => {
                                 <div className="pl-2">
                                     {props.ingestGroup[group].map((task, index) => (
                                         <div className="p-col-12">
-                                            <Checkbox inputId={task.name} onChange={() => toggleCheckItem(group, index)} checked={task.isProducer}></Checkbox>
+                                            <Checkbox inputId={task.name} onChange={() => toggleCheckItem(group, index)} checked={task.canIngest}></Checkbox>
                                             <label htmlFor={task.name} className="p-checkbox-label">{task.name}</label>
                                         </div>
                                     ))}

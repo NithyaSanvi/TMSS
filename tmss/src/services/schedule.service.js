@@ -256,21 +256,15 @@ const ScheduleService = {
                 scheduletasklist.push(scheduletask);
             }
             if (loadTemplate) {
-                const ingest = scheduletasklist.find(task => task.template.type_value === 'ingest');
-                let promises = [];
+                const ingest = scheduletasklist.find(task => task.template.type_value === 'ingest' && task.tasktype.toLowerCase() === 'draft');
+                const promises = [];
                 // Get Task Relation for all producer
                 ingest.produced_by_ids.map(id => promises.push(this.getTaskRelation(id)));
-                const res = await Promise.all(promises);
-                promises = [];
-                // Getting producer name for all producers
-                res.map(producer => promises.push(this.getTaskDraft(producer.producer_id)));
-                const producers = await Promise.all(promises);
-                producers.map(producer => {
-                    // const tasks = scheduletasklist.filter(task => producer.consumed_by_ids.includes(task.id));
-                    const tasks = scheduletasklist.filter(task => producer.id  === task.id);
+                const response = await Promise.all(promises);
+                response.map(producer => {
+                    const tasks = scheduletasklist.filter(task => producer.producer_id  === task.id);
                     tasks.map(task => {
-                        task.producerDetails = producer;
-                        task.isProducer = true;
+                        task.canIngest = true;
                     });
                 });
             }   

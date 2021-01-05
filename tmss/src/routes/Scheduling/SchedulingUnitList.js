@@ -110,7 +110,7 @@ class SchedulingUnitList extends Component{
                     su.taskDetails = tasksResponses.find(task => task.id === su.id && task.type === su.type).tasks;
                     const targetObserv = su.taskDetails.find(task => task.template.type_value==='observation' && task.tasktype.toLowerCase()===su.type.toLowerCase() && task.specifications_doc.station_groups);
                     // Constructing targets in single string to make it clear display 
-                    targetObserv.specifications_doc.SAPs.map((target, index) => {
+                    (targetObserv.specifications_doc.SAPs || []).map((target, index) => {
                         su[`targetDetails${index}`] = `Name: ${target.name}, \n Angle1: ${target.digital_pointing.angle1}, \n Angle2: ${target.digital_pointing.angle2}, \n Reference Frame: ${target.digital_pointing.direction_type}`;
                     });
                 });
