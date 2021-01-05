@@ -136,7 +136,7 @@ class ViewSchedulingUnit extends Component{
                     });
                     this.getScheduleUnitTasks(schedule_type, schedulingUnit)
                         .then(tasks =>{
-                        const ingestGroup = _.groupBy(tasks, 'type_value');
+                        const ingestGroup = _.groupBy(_.filter(tasks, 'type_value'), 'type_value');
                         tasks.map(task => {
                             task.status_logs = task.tasktype === "Blueprint"?this.subtaskComponent(task):"";
                             //Displaying SubTask ID of the 'control' Task
