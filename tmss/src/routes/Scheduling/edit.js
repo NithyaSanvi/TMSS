@@ -148,7 +148,7 @@ export class EditSchedulingUnit extends Component {
                             ScheduleService.getObservationStrategies(),
                             TaskService.getTaskTemplates(),
                             ScheduleService.getSchedulingUnitDraftById(this.props.match.params.id),
-                            ScheduleService.getTasksDraftBySchedulingUnitId(this.props.match.params.id, true),
+                            ScheduleService.getTasksDraftBySchedulingUnitId(this.props.match.params.id),
                             ScheduleService.getSchedulingConstraintTemplates(),
                             ScheduleService.getStationGroup()
                         ];
@@ -164,7 +164,7 @@ export class EditSchedulingUnit extends Component {
                             observStrategyVisible: responses[4].observation_strategy_template_id?true:false });
             if (responses[4].observation_strategy_template_id) {
                 this.changeStrategy(responses[4].observation_strategy_template_id);
-                const targetObservation = responses[5].data.results.find(task => {return task.template.type_value === 'observation' && task.specifications_doc.station_groups?true:false});
+                const targetObservation = responses[5].data.results.find(task => {return task.specifications_doc.station_groups?true:false});
                 this.setState({
                     stationGroup: targetObservation?targetObservation.specifications_doc.station_groups:[]
                 });
@@ -323,7 +323,7 @@ export class EditSchedulingUnit extends Component {
             (this.state.selectedStations || []).forEach(key => {
                 let station_group = {};
                 const stations = this.state[key] ? this.state[key].stations : [];
-                const max_nr_missing = parseInt(this.state[key] ? (this.state[key].missing_StationFields || 0) : 0);
+                const max_nr_missing = parseInt(this.state[key] ? this.state[key].missing_StationFields : 0);
                 station_group = {
                     stations,
                     max_nr_missing
@@ -338,13 +338,13 @@ export class EditSchedulingUnit extends Component {
             });
             
             const schedulingUnit = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy,schUnit,this.state.taskDrafts, this.state.tasksToUpdate, station_groups);
-            if (!schedulingUnit.error) {
+            if (schedulingUnit) {
                 // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks edited successfully!'});
                 this.props.history.push({
                     pathname: `/schedulingunit/view/draft/${this.props.match.params.id}`,
                 }); 
             } else {
-                this.growl.show({severity: 'error', summary: 'Error Occured', detail: schedulingUnit.message || 'Unable to update Scheduling Unit/Tasks'});
+                this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to update Scheduling Unit/Tasks'});
             } 
         }   else {
             this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Template Missing.'});

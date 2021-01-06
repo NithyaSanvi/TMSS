@@ -18,6 +18,8 @@ import UtilService from '../../services/util.service';
 import UnitConverter from '../../utils/unit.converter';
 import SchedulingUnitSummary from '../Scheduling/summary';
 import UIConstants from '../../utils/ui.constants';
+import { OverlayPanel } from 'primereact/overlaypanel';
+import { TieredMenu } from 'primereact/tieredmenu';
 
 // Color constant for status
 const STATUS_COLORS = { "ERROR": "FF0000", "CANCELLED": "#00FF00", "DEFINED": "#00BCD4", 
@@ -47,9 +49,18 @@ export class WeekTimelineView extends Component {
             isSummaryLoading: false,
             stationGroup: []
         }
-
+        this.STATUS_BEFORE_SCHEDULED = ['defining', 'defined', 'schedulable'];  // Statuses before scheduled to get station_group
+        this.mainStationGroups = {};
+        this.optionsMenu = React.createRef();
+        this.menuOptions = [ {label:'Add Reservation', icon: "fa fa-", command: () => {this.selectOptionMenu('Add Reservation')}},
+                              ];
+        
+        this.showOptionMenu = this.showOptionMenu.bind(this);
+        this.selectOptionMenu = this.selectOptionMenu.bind(this);
         this.onItemClick = this.onItemClick.bind(this);
         this.closeSUDets = this.closeSUDets.bind(this);
+        this.onItemMouseOver = this.onItemMouseOver.bind(this);
+        this.onItemMouseOut = this.onItemMouseOut.bind(this);
         this.dateRangeCallback = this.dateRangeCallback.bind(this);
         this.resizeSUList = this.resizeSUList.bind(this);
         this.suListFilterCallback = this.suListFilterCallback.bind(this);
@@ -119,7 +130,37 @@ export class WeekTimelineView extends Component {
                             items: items, currentUTC: currentUTC, isLoading: false,
                             startTime: defaultStartTime, endTime: defaultEndTime
                         });
+            // Load SU tasks asynchronously for SUs
+            this.loadSUTasks();
         });
+        // Get maingroup and its stations
+        ScheduleService.getMainGroupStations()
+            .then(stationGroups => {this.mainStationGroups = stationGroups});
+    }
+
+    /**
+     * Loads tasks, subtasks, templates and stations of the Scheduling Units
+     */
+    loadSUTasks() {
+        let suBlueprints = this.state.suBlueprints;
+        for (let suBlueprint of suBlueprints) {
+            ScheduleService.getTaskBPWithSubtaskTemplateOfSU(suBlueprint)
+                .then(taskList => {
+                    for (let task of taskList) {
+                        //Control Task ID
+                        const subTaskIds = (task.subTasks || []).filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1);
+                        task.subTaskID = subTaskIds.length ? subTaskIds[0].id : ''; 
+                        if (task.template.type_value.toLowerCase() === "observation") {
+                            task.antenna_set = task.specifications_doc.antenna_set;
+                            task.band = task.specifications_doc.filter;
+                        }
+                    }
+                    suBlueprint.tasks = taskList;
+                    let stations = this.getSUStations(suBlueprint);
+                    suBlueprint.stations = _.uniq(stations);
+                });
+        }
+        this.setState({suBlueprints: suBlueprints});
     }
 
     /**
@@ -127,9 +168,6 @@ export class WeekTimelineView extends Component {
      * @param {Object} suBlueprint 
      */
     async getTimelineItem(suBlueprint, displayDate) {
-        // Temporary for testing
-        const diffOfCurrAndStart = moment().diff(moment(suBlueprint.stop_time), 'seconds');
-        suBlueprint.status = diffOfCurrAndStart>=0?"FINISHED":"DEFINED";
         let antennaSet = "";
         const taskList = await ScheduleService.getTaskBlueprintsBySchedulingUnit(suBlueprint, true);
         for (let task of taskList) {
@@ -138,17 +176,23 @@ export class WeekTimelineView extends Component {
             }
         }
         let item = { id: `${suBlueprint.id}-${suBlueprint.start_time}`, 
+            suId: suBlueprint.id,
             // group: suBlueprint.suDraft.id,
             group: moment.utc(suBlueprint.start_time).format("MMM DD ddd"),
-            title: `${suBlueprint.project} - ${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs - ${antennaSet}`,
+            // title: `${suBlueprint.project} - ${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs - ${antennaSet}`,
+            title: "",
             project: suBlueprint.project,
             name: suBlueprint.suDraft.name,
-            band: antennaSet,
+            band: antennaSet.split("_")[0],
+            antennaSet: antennaSet,
             duration: suBlueprint.durationInSec?`${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs`:"",
             start_time: moment.utc(`${displayDate.format('YYYY-MM-DD')} ${suBlueprint.start_time.split('T')[1]}`),
             end_time: moment.utc(`${displayDate.format('YYYY-MM-DD')} ${suBlueprint.stop_time.split('T')[1]}`),
             bgColor: suBlueprint.status? STATUS_COLORS[suBlueprint.status.toUpperCase()]:"#2196f3",
-            selectedBgColor: suBlueprint.status? STATUS_COLORS[suBlueprint.status.toUpperCase()]:"#2196f3"}; 
+            // selectedBgColor: suBlueprint.status? STATUS_COLORS[suBlueprint.status.toUpperCase()]:"#2196f3"}
+            selectedBgColor: 'none',
+            type: 'SCHEDULE',
+            status: suBlueprint.status.toLowerCase()};
         return item;
     }
 
@@ -167,32 +211,31 @@ export class WeekTimelineView extends Component {
                 canExtendSUList: false, canShrinkSUList:false});
             if (fetchDetails) {
                 const suBlueprint = _.find(this.state.suBlueprints, {id: parseInt(item.id.split('-')[0])});
-                ScheduleService.getTaskBPWithSubtaskTemplateOfSU(suBlueprint)
-                    .then(taskList => {
-                        const observationTask = _.find(taskList, (task)=> {return task.template.type_value==='observation' && task.specifications_doc.station_groups});
-                        for (let task of taskList) {
-                            //Control Task ID
-                            const subTaskIds = (task.subTasks || []).filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1);
-                            task. subTaskID = subTaskIds.length ? subTaskIds[0].id : ''; 
-                            if (task.template.type_value.toLowerCase() === "observation") {
-                                task.antenna_set = task.specifications_doc.antenna_set;
-                                task.band = task.specifications_doc.filter;
+                /* If tasks are not loaded on component mounting fetch from API */
+                if (suBlueprint.tasks) {
+                    this.setState({suTaskList: _.sortBy(suBlueprint.tasks, "id"), 
+                                            stationGroup: suBlueprint.stations})
+                }   else {
+                    ScheduleService.getTaskBPWithSubtaskTemplateOfSU(suBlueprint)
+                        .then(taskList => {
+                            const observationTask = _.find(taskList, (task)=> {return task.template.type_value==='observation' && task.specifications_doc.station_groups});
+                            for (let task of taskList) {
+                                //Control Task ID
+                                const subTaskIds = (task.subTasks || []).filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1);
+                                task.subTaskID = subTaskIds.length ? subTaskIds[0].id : ''; 
+                                if (task.template.type_value.toLowerCase() === "observation") {
+                                    task.antenna_set = task.specifications_doc.antenna_set;
+                                    task.band = task.specifications_doc.filter;
+                                }
                             }
-                        }
-                        let stations = [];
-                        //>>>>>> TODO: Station groups from subtasks based on the status of SU
-                        if (observationTask) {
-                            for (const grpStations of _.map(observationTask.specifications_doc.station_groups, "stations")) {
-                                stations = _.concat(stations, grpStations);
-                            }
-                        }
-                        this.setState({suTaskList: _.sortBy(taskList, "id"), isSummaryLoading: false, 
-                                        stationGroup: _.uniq(stations)})
-                    });
+                            this.setState({suTaskList: _.sortBy(taskList, "id"), isSummaryLoading: false, 
+                                            stationGroup: this.getSUStations(suBlueprint)})
+                        });
+                }
                 // Get the scheduling constraint template of the selected SU block
                 ScheduleService.getSchedulingConstraintTemplate(suBlueprint.suDraft.scheduling_constraints_template_id)
                     .then(suConstraintTemplate => {
-                        this.setState({suConstraintTemplate: suConstraintTemplate});
+                        this.setState({suConstraintTemplate: suConstraintTemplate, isSummaryLoading: false});
                     });
             }
         }
@@ -203,6 +246,80 @@ export class WeekTimelineView extends Component {
      */
     closeSUDets() {
         this.setState({isSUDetsVisible: false, canExtendSUList: true, canShrinkSUList: false});
+    }
+
+    /**
+     * Hide Tooltip popover on item mouseout event.
+     * @param {Event} evt 
+     */
+    onItemMouseOut(evt) {
+        this.popOver.toggle(evt);
+    }
+
+    /**
+     * Show Tooltip popover on item mouseover event. Item & SU content formatted to show in Popover.
+     * @param {Event} evt 
+     * @param {Object} item
+     */
+    onItemMouseOver(evt, item) {
+        const itemSU = _.find(this.state.suBlueprints, {id: parseInt(item.id.split("-")[0])});
+        const itemStations = itemSU.stations;
+        const itemStationGroups = this.groupSUStations(itemStations);
+        item.stations = {groups: "", counts: ""};
+        for (const stationgroup of _.keys(itemStationGroups)) {
+            let groups = item.stations.groups;
+            let counts = item.stations.counts;
+            if (groups) {
+                groups = groups.concat("/");
+                counts = counts.concat("/");
+            }
+            groups = groups.concat(stationgroup.substring(0,1).concat('S'));
+            counts = counts.concat(itemStationGroups[stationgroup].length);
+            item.stations.groups = groups;
+            item.stations.counts = counts;
+        }
+        this.popOver.toggle(evt);
+        this.setState({mouseOverItem: item});
+    }
+
+    /**
+     * Group the SU stations to main groups Core, Remote, International
+     * @param {Object} stationList 
+     */
+    groupSUStations(stationList) {
+        let suStationGroups = {};
+        for (const group in this.mainStationGroups) {
+            suStationGroups[group] = _.intersection(this.mainStationGroups[group], stationList);
+        }
+        return suStationGroups;
+    }
+
+    /**
+     * Get all stations of the SU bleprint from the observation task or subtask based on the SU status.
+     * @param {Object} suBlueprint
+     */
+    getSUStations(suBlueprint) {
+        let stations = [];
+        /* Get all observation tasks */
+        const observationTasks = _.filter(suBlueprint.tasks, (task) => { return task.template.type_value.toLowerCase() === "observation"});
+        for (const observationTask of observationTasks) {
+            /** If the status of SU is before scheduled, get all stations from the station_groups from the task specification_docs */
+            if (this.STATUS_BEFORE_SCHEDULED.indexOf(suBlueprint.status.toLowerCase()) >= 0
+                && observationTask.specifications_doc.station_groups) {
+                for (const grpStations of _.map(observationTask.specifications_doc.station_groups, "stations")) {
+                    stations = _.concat(stations, grpStations);
+                }
+            }   else if (this.STATUS_BEFORE_SCHEDULED.indexOf(suBlueprint.status.toLowerCase()) < 0 
+                            && observationTask.subTasks) {
+                /** If the status of SU is scheduled or after get the stations from the subtask specification tasks */
+                for (const subtask of observationTask.subTasks) {
+                    if (subtask.specifications_doc.stations) {
+                        stations = _.concat(stations, subtask.specifications_doc.stations.station_list);
+                    }
+                }
+            }
+        }
+        return _.uniq(stations);
     }
 
     /**
@@ -298,6 +415,21 @@ export class WeekTimelineView extends Component {
         this.setState({selectedProject: project});
     }
 
+    showOptionMenu(event) {
+        this.optionsMenu.toggle(event);
+    }
+
+    selectOptionMenu(menuName) {
+        switch(menuName) {
+            case 'Add Reservation': {
+                this.setState({redirect: `/su/timelineview/reservation/create`});
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+    }
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -309,10 +441,16 @@ export class WeekTimelineView extends Component {
         if (isSUDetsVisible) {
             suBlueprint = _.find(this.state.suBlueprints, {id: parseInt(this.state.selectedItem.id.split('-')[0])});
         }
+        const mouseOverItem = this.state.mouseOverItem;
         return (
             <React.Fragment>
+                 <TieredMenu className="app-header-menu" model={this.menuOptions} popup ref={el => this.optionsMenu = el} />
                 <PageHeader location={this.props.location} title={'Scheduling Units - Week View'} 
-                    actions={[{icon: 'fa-clock',title:'View Timeline', props : { pathname: `/su/timelineview`}}]}/>
+                    actions={[
+                        {icon:'fa-bars',title: '', type:'button',
+                        actOn:'mouseOver', props : { callback: this.showOptionMenu},
+                       },
+                        {icon: 'fa-clock',title:'View Timeline', props : { pathname: `/su/timelineview`}}]}/>
                 { this.state.isLoading ? <AppLoader /> :
                     <>
                         {/* <div className="p-field p-grid">
@@ -362,8 +500,12 @@ export class WeekTimelineView extends Component {
                                         group={this.state.group} 
                                         items={this.state.items}
                                         currentUTC={this.state.currentUTC}
-                                        rowHeight={50} itemClickCallback={this.onItemClick}
+                                        rowHeight={50} 
+                                        itemClickCallback={this.onItemClick}
+                                        itemMouseOverCallback={this.onItemMouseOver}
+                                        itemMouseOutCallback={this.onItemMouseOut}
                                         sidebarWidth={150}
+                                        stackItems={true}
                                         startTime={moment.utc(this.state.currentUTC).hour(0).minutes(0).seconds(0)}
                                         endTime={moment.utc(this.state.currentUTC).hour(23).minutes(59).seconds(59)}
                                         zoomLevel="1 Day"
@@ -388,6 +530,31 @@ export class WeekTimelineView extends Component {
                         </div>
                     </>
                 }
+                {/* SU Item Tooltip popover with SU status color */}
+                <OverlayPanel className="timeline-popover" ref={(el) => this.popOver = el} dismissable>
+                {mouseOverItem &&
+                    <div className={`p-grid su-${mouseOverItem.status}`} style={{width: '350px'}}>
+                        <label className={`col-5 su-${mouseOverItem.status}-icon`}>Project:</label>
+                        <div className="col-7">{mouseOverItem.project}</div>
+                        <label className={`col-5 su-${mouseOverItem.status}-icon`}>Scheduling Unit:</label>
+                        <div className="col-7">{mouseOverItem.name}</div>
+                        <label className={`col-5 su-${mouseOverItem.status}-icon`}>Friends:</label>
+                        <div className="col-7">{mouseOverItem.friends?mouseOverItem.friends:"-"}</div>
+                        <label className={`col-5 su-${mouseOverItem.status}-icon`}>Start Time:</label>
+                        <div className="col-7">{mouseOverItem.start_time.format("YYYY-MM-DD HH:mm:ss")}</div>
+                        <label className={`col-5 su-${mouseOverItem.status}-icon`}>End Time:</label>
+                        <div className="col-7">{mouseOverItem.end_time.format("YYYY-MM-DD HH:mm:ss")}</div>
+                        <label className={`col-5 su-${mouseOverItem.status}-icon`}>Antenna Set:</label>
+                        <div className="col-7">{mouseOverItem.antennaSet}</div>
+                        <label className={`col-5 su-${mouseOverItem.status}-icon`}>Stations:</label>
+                        <div className="col-7">{mouseOverItem.stations.groups}:{mouseOverItem.stations.counts}</div>
+                        <label className={`col-5 su-${mouseOverItem.status}-icon`}>Status:</label>
+                        <div className="col-7">{mouseOverItem.status}</div>
+                        <label className={`col-5 su-${mouseOverItem.status}-icon`}>Duration:</label>
+                        <div className="col-7">{mouseOverItem.duration}</div>
+                    </div>
+                }
+                </OverlayPanel>
             </React.Fragment>
         );
     }

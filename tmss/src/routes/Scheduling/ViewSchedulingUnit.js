@@ -18,7 +18,6 @@ import { Redirect } from 'react-router-dom';
 import { CustomDialog } from '../../layout/components/CustomDialog';
 import { CustomPageSpinner } from '../../components/CustomPageSpinner';
 import { Growl } from 'primereact/components/growl/Growl';
-import InjestRelationModal from './InjestRelationModal';
 
 class ViewSchedulingUnit extends Component{
     constructor(props){
@@ -28,11 +27,9 @@ class ViewSchedulingUnit extends Component{
             schedule_unit_task: [],
             isLoading: true,
             showStatusLogs: false,
-            showProducerDialog: false,
             paths: [{
                 "View": "/task",
             }],
-            ingestGroup: {},
            missingStationFieldsErrors: [],
             defaultcolumns: [ {
                 status_logs: "Status Logs",
@@ -92,7 +89,6 @@ class ViewSchedulingUnit extends Component{
         this.checkAndCreateBlueprint = this.checkAndCreateBlueprint.bind(this);
         this.createBlueprintTree = this.createBlueprintTree.bind(this);
         this.closeDialog = this.closeDialog.bind(this);
-        this.showProducerDialog = this.showProducerDialog.bind(this);
         
     }
 
@@ -102,10 +98,6 @@ class ViewSchedulingUnit extends Component{
             this.state.scheduleunitType !== this.props.match.params.type)) {
             this.getSchedulingUnitDetails(this.props.match.params.type, this.props.match.params.id);
        }
-    }
-
-    showProducerDialog() {
-        this.setState({ showProducerDialog: !this.state.showProducerDialog});
     }
 
     async componentDidMount(){ 
@@ -136,7 +128,6 @@ class ViewSchedulingUnit extends Component{
                     });
                     this.getScheduleUnitTasks(schedule_type, schedulingUnit)
                         .then(tasks =>{
-                        const ingestGroup = _.groupBy(_.filter(tasks, 'type_value'), 'type_value');
                         tasks.map(task => {
                             task.status_logs = task.tasktype === "Blueprint"?this.subtaskComponent(task):"";
                             //Displaying SubTask ID of the 'control' Task
@@ -153,9 +144,8 @@ class ViewSchedulingUnit extends Component{
                             isLoading: false,
                             stationGroup: targetObservation?targetObservation.specifications_doc.station_groups:[],
                             redirect: null,
-                            dialogVisible: false,
-                            ingestGroup
-                        }, this.getAllStations);
+                            dialogVisible: false
+                    }, this.getAllStations);
                     });
                 }   else {
                     this.setState({
@@ -176,8 +166,6 @@ class ViewSchedulingUnit extends Component{
                 this.actions.unshift({icon: 'fa-sitemap',title :'View Workflow',props :{pathname:`/schedulingunit/${this.props.match.params.id}/workflow`}});
                 this.actions.unshift({icon: 'fa-lock', title: 'Cannot edit blueprint'});
             }
-            this.actions.unshift({icon:'fa-stamp', title: 'Producer Details', type:'button',
-                actOn:'click', props : { callback: this.showProducerDialog}});
     }
 
     getScheduleUnitTasks(type, scheduleunit){
@@ -227,7 +215,7 @@ class ViewSchedulingUnit extends Component{
     closeDialog() {
         this.setState({dialogVisible: false});
     }
-
+   
     render(){
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -327,14 +315,6 @@ class ViewSchedulingUnit extends Component{
                         onClose={this.closeDialog} onCancel={this.closeDialog} onSubmit={this.createBlueprintTree}></CustomDialog>
                 {/* Show spinner during backend API call */}
                 <CustomPageSpinner visible={this.state.showSpinner} />
-
-                {this.state.showProducerDialog && (
-                    <InjestRelationModal
-                        showProducerDialog={this.state.showProducerDialog}
-                        ingestGroup={this.state.ingestGroup}
-                        toggle={this.showProducerDialog}
-                    />
-                )}
             </>
         )
     }

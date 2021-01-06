@@ -486,7 +486,7 @@ export class CalendarTimeline extends Component {
                     intervalStyle = sunsetStyle;
                 }
                 return (
-                    <div clasName={`suntime-header, ${intervalStyle}`}
+                    <div className={`suntime-header, ${intervalStyle}`}
                     {...getIntervalProps({
                         interval,
                         style: intervalStyle
@@ -513,14 +513,14 @@ export class CalendarTimeline extends Component {
             {sunRiseTimings && sunRiseTimings.length>0 && sunRiseTimings.map((item, index) => (
             <>
                 {/* Marker to get the position of the sunrise end time */}
-                <CustomMarker key={"sunrise-"+index} date={item.end}>
+                <CustomMarker key={"sunrise-pos-"+index} date={item.end}>
                     {({ styles, date }) => {
                         endPoint = styles.left;
                         return ""
                     }}
                 </CustomMarker>
                 {/* Marker to represent dark light before sunrise on the day */}
-                <CustomMarker key={"sunrise-"+index} date={item.start.clone().hours(0).minutes(0).seconds(0)}>
+                <CustomMarker key={"bef-sunrise-"+index} date={item.start.clone().hours(0).minutes(0).seconds(0)}>
                     {({ styles, date }) => {
                         const customStyles = {
                             ...styles,
@@ -564,14 +564,14 @@ export class CalendarTimeline extends Component {
             {sunSetTimings && sunSetTimings.length>0 && sunSetTimings.map((item, index) => (
             <>
                 {/* Marker to get the position of the sunset end time */}
-                <CustomMarker key={"sunset-"+index} date={item.end}>
+                <CustomMarker key={"sunset-pos-"+index} date={item.end}>
                         {({ styles, date }) => {
                             endPoint = styles.left;
                             return ""
                         }}
                 </CustomMarker>
                 {/* Marker to represent the dark light after sunset */}
-                <CustomMarker key={"sunset-"+index} date={item.start.clone().hours(23).minutes(59).seconds(59)}>
+                <CustomMarker key={"after-sunset-"+index} date={item.start.clone().hours(23).minutes(59).seconds(59)}>
                     {({ styles, date }) => {
                         const customStyles = {
                         ...styles,
@@ -644,7 +644,7 @@ export class CalendarTimeline extends Component {
         cursorTextStyles.backgroundColor = '#c40719'
         cursorTextStyles.width = `${this.state.lineHeight*4}px`;
         cursorTextStyles.color = '#ffffff';
-        cursorTextStyles.zIndex = '9999';
+        cursorTextStyles.zIndex = '999';
         cursorTextStyles.fontSize = `${this.state.lineHeight/30*8}px`;
         cursorTextStyles.height = `${this.state.lineHeight - 2}px`;
         cursorTextStyles.position = styles.position;
@@ -673,23 +673,42 @@ export class CalendarTimeline extends Component {
             itemContext.dimensions.height = 3;
         }   else {
             itemContext.dimensions.height -= 3;
-            itemContext.dimensions.top += 3;
+            if (!this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL) {
+                if (item.type === "RESERVATION") {
+                    itemContext.dimensions.top -= 20;
+                    itemContext.dimensions.height += 20;
+                }   else {
+                    itemContext.dimensions.top -= 20;
+                }
+            }   else if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW) {
+                itemContext.dimensions.top -= (this.props.rowHeight-5);
+            }   else {
+                if (item.type === "TASK") {
+                    itemContext.dimensions.top += 6;
+                    itemContext.dimensions.height -= 10;
+                }   else {
+                    itemContext.dimensions.top += 3;
+                }
+            }
+            
         }
         const { left: leftResizeProps, right: rightResizeProps } = getResizeProps();
         const backgroundColor = itemContext.selected?item.bgColor:item.bgColor;
-        let itemContentStyle = {lineHeight: `${Math.floor(itemContext.dimensions.height)}px`, 
+        let itemContentStyle = {lineHeight: `${Math.floor(item.type==="RESERVATION"?itemContext.dimensions.height/2:itemContext.dimensions.height)}px`, 
                                   fontSize: "14px",
                                   overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                                   textAlign: "center"};
-        if (this.state.viewType===UIConstants.timeline.types.WEEKVIEW) {
+        if (item.type === "SCHEDULE" || item.type === "TASK") {
             itemContentStyle = {lineHeight: `${Math.floor(itemContext.dimensions.height/3)}px`, 
+                                maxHeight: itemContext.dimensions.height,
                                   fontSize: "12px", fontWeight: "600",
-                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "inherit",
                                   textAlign: "center"};
         }
         return (
-          <div
+          <div 
             {...getItemProps({
+              className: `rct-item su-${item.status}`,
               style: {
                 background: backgroundColor,
                 color: item.color,
@@ -703,30 +722,33 @@ export class CalendarTimeline extends Component {
                 zIndex: item.type==="SUNTIME"?79:80
               },
               onMouseDown: () => {
-                  if (item.type !== "SUNTIME") {
+                  if (item.type !== "SUNTIME" && item.type !== "RESERVATION") {
                     this.onItemClick(item);
+                  } else {
+
                   }
               }
-            })}
+            })} onMouseOver={(evt) => { this.onItemMouseOver(evt, item)}}
+            onMouseOut={(evt) => { this.onItemMouseOut(evt, item)}}
           >
             {itemContext.useResizeHandle ? <div {...leftResizeProps} /> : null}
     
-            <div
-              style={{
-                height: itemContext.dimensions.height,
-                //overflow: "hidden",
-                paddingLeft: 3,
-                //textOverflow: "ellipsis",
-                //whiteSpace: "nowrap"
-              }}
-            >
-              { this.state.viewType===UIConstants.timeline.types.WEEKVIEW && item.type !== "SUNTIME" &&
-                <><div style={itemContentStyle}><i style={{fontSize:"12px"}} className="fa fa-user" title="Friend"></i><span>{item.project}</span></div>
-                    <div style={itemContentStyle}><span>{item.duration}</span></div>
-                    <div style={itemContentStyle}><span>{item.band}</span></div> </>}
-              {this.state.viewType===UIConstants.timeline.types.NORMAL &&
-                <div style={itemContentStyle}><span>{item.title}</span></div> }
-            </div>
+                { item.type === "SCHEDULE" &&
+                    <div style={itemContentStyle}>
+                    <i style={{fontSize:"12px"}} className={`fa fa-user su-${item.status}-icon`} ></i>
+                    <span>{`${item.project} - ${item.suId?item.suId:item.id} - ${item.name} - ${item.band} - ${item.duration}`}</span></div>
+                }
+                { item.type === "TASK" &&
+                    <div style={itemContentStyle}>
+                    <span>{`${item.project} - ${item.suId} - ${item.taskId} - ${item.name} - ${item.controlId} - ${item.typeValue} ${item.band?'- '+ item.band:''} - ${item.duration}`}</span></div>
+                }
+
+              { (item.type === "SUNTIME" || item.type === "RESERVATION") &&
+                <div style={itemContentStyle}><span>{item.title}</span>
+                    {item.type === "RESERVATION" &&
+                        <div style={itemContentStyle}><span>{item.desc}</span></div> }
+                </div> }
+              
             {itemContext.useResizeHandle ? <div {...rightResizeProps} /> : null}
           </div>
         );
@@ -791,6 +813,26 @@ export class CalendarTimeline extends Component {
     }
 
     /**
+     * Mouse Over event passed back to the parent.
+     * @param {Object} item 
+     */
+    onItemMouseOver(evt, item) {
+        if ((item.type==="SCHEDULE" || item.type==="TASK") && this.props.itemMouseOverCallback) {
+            this.props.itemMouseOverCallback(evt, item);
+        }
+    }
+
+    /**
+     * Mouse out event passed back to the parent.
+     * @param {Object} item 
+     */
+    onItemMouseOut(evt, item) {
+        if ((item.type==="SCHEDULE" || item.type==="TASK") && this.props.itemMouseOutCallback) {
+            this.props.itemMouseOutCallback(evt);
+        }
+    }
+
+    /**
      * Function to call the parent function callback and fetch new data. It also retrieves sunrise and sunset time.
      * @param {moment} startTime 
      * @param {moment} endTime 
@@ -821,20 +863,22 @@ export class CalendarTimeline extends Component {
             const date = startTime.clone().add(number, 'days').hours(12).minutes(0).seconds(0);
             const formattedDate = date.format("YYYY-MM-DD");
             UtilService.getSunTimings(formattedDate).then(timings => {
-                const sunriseStartTime = moment.utc(timings.sun_rise.start.split('.')[0]);
-                const sunriseEndTime = moment.utc(timings.sun_rise.end.split('.')[0]);
-                const sunsetStartTime = moment.utc(timings.sun_set.start.split('.')[0]);
-                const sunsetEndTime = moment.utc(timings.sun_set.end.split('.')[0]);
-                const sunriseTime = {start: sunriseStartTime, end: sunriseEndTime};
-                const sunsetTime = {start: sunsetStartTime, end: sunsetEndTime};
-                if (moment.utc(timings.sunriseEndTime).isAfter(startTime)) {
-                    sunRiseTimings.push(sunriseTime);
+                if (timings) {
+                    const sunriseStartTime = moment.utc(timings.sun_rise.start.split('.')[0]);
+                    const sunriseEndTime = moment.utc(timings.sun_rise.end.split('.')[0]);
+                    const sunsetStartTime = moment.utc(timings.sun_set.start.split('.')[0]);
+                    const sunsetEndTime = moment.utc(timings.sun_set.end.split('.')[0]);
+                    const sunriseTime = {start: sunriseStartTime, end: sunriseEndTime};
+                    const sunsetTime = {start: sunsetStartTime, end: sunsetEndTime};
+                    if (moment.utc(timings.sunriseEndTime).isAfter(startTime)) {
+                        sunRiseTimings.push(sunriseTime);
+                    }
+                    if (moment.utc(timings.sunsetStartTime).isBefore(endTime)) {
+                        sunSetTimings.push(sunsetTime);
+                    }
+                    sunTimeMap[formattedDate] = {sunrise: sunriseTime, sunset: sunsetTime};
+                    this.setState({sunRiseTimings: sunRiseTimings, sunSetTimings: sunSetTimings, sunTimeMap: sunTimeMap});
                 }
-                if (moment.utc(timings.sunsetStartTime).isBefore(endTime)) {
-                    sunSetTimings.push(sunsetTime);
-                }
-                sunTimeMap[formattedDate] = {sunrise: sunriseTime, sunset: sunsetTime};
-                this.setState({sunRiseTimings: sunRiseTimings, sunSetTimings: sunSetTimings, sunTimeMap: sunTimeMap});
             });
         }
     }
@@ -894,6 +938,30 @@ export class CalendarTimeline extends Component {
                     afterSunsetItem.bgColor = "grey";
                     afterSunsetItem.selectedBgColor = "grey";
                     sunItems.push(afterSunsetItem);
+                    let dayItem = _.cloneDeep(sunriseItem);
+                    dayItem.id = `day-${number}-${station.id}`;
+                    // sunsetItem.title = `${timings.sun_set.start} to ${timings.sun_set.end}`;
+                    dayItem.title = "";
+                    dayItem.start_time = moment.utc(timings.sun_rise.end);
+                    dayItem.end_time = moment.utc(timings.sun_set.start);
+                    dayItem.bgColor = "white";
+                    dayItem.selectedBgColor = "white";
+                    sunItems.push(dayItem);
+                }   else {
+                    /* If no sunrise and sunset, show it as night time. Later it should be done as either day or night. */
+                    let befSunriseItem = { id: `bef-sunrise-${number}-${station.id}`, 
+                                        group: station.id,
+                                        // title: `${timings.sun_rise.start} to ${timings.sun_rise.end}`,
+                                        title: "",
+                                        project: "",
+                                        name: "",
+                                        duration: "",
+                                        start_time: moment.utc(date.format("YYYY-MM-DD 00:00:00")),
+                                        end_time: moment.utc(date.format("YYYY-MM-DD 23:59:59")),
+                                        bgColor: "grey",
+                                        selectedBgColor: "grey",
+                                        type: "SUNTIME"};
+                    sunItems.push(befSunriseItem);
                 }
             }
         }
@@ -911,7 +979,6 @@ export class CalendarTimeline extends Component {
      * @param {Array} items 
      */
     async addWeekSunTimes(startTime, endTime, weekGroup, items) {
-        const noOfDays = endTime.diff(startTime, 'days');
         let sunItems = _.cloneDeep(items);
         for (const weekDay of weekGroup) {
             if (weekDay.value) {
@@ -965,7 +1032,7 @@ export class CalendarTimeline extends Component {
             }
         }
         if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW) {
-            items = sunItems;
+            items = _.orderBy(sunItems, ['type'], ['desc']);
         }
         return items;
     }
@@ -1079,7 +1146,7 @@ export class CalendarTimeline extends Component {
             newVisibleTimeEnd = this.state.timelineEndDate.clone().hours(23).minutes(59).minutes(59);
             newVisibleTimeStart = newVisibleTimeEnd.clone().add((-1 * visibleTimeDiff/1000), 'seconds');
         }
-        let result = await this.changeDateRange(visibleTimeStart, visibleTimeEnd);
+        let result = await this.changeDateRange(newVisibleTimeStart, newVisibleTimeEnd);
         this.loadLSTDateHeaderMap(newVisibleTimeStart, newVisibleTimeEnd, 'hour');
         let group = DEFAULT_GROUP.concat(result.group);
         this.setState({defaultStartTime: newVisibleTimeStart,
@@ -1165,7 +1232,6 @@ export class CalendarTimeline extends Component {
         weekHeaderVisible = rangeDays > 35?true: false; 
         lstDateHeaderUnit = rangeDays > 35?"day":"hour";
         const items = await this.addWeekSunTimes(timelineStart, timelineEnd, group, result.items);
-        console.log(items);
         this.setState({defaultStartTime: timelineStart, defaultEndTime: timelineEnd,
                         timelineStartDate: timelineStart, timelineEndDate: timelineEnd,
                         zoomLevel: this.ZOOM_LEVELS[this.ZOOM_LEVELS.length-1].name, isTimelineZoom: false,
@@ -1186,7 +1252,7 @@ export class CalendarTimeline extends Component {
         }   else if(this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL) {
             this.setNormalSuntimings(this.state.defaultStartTime, this.state.defaultEndTime);
         }
-        this.setState({group: DEFAULT_GROUP.concat(props.group), items: props.items});
+        this.setState({group: DEFAULT_GROUP.concat(props.group), items: _.orderBy(props.items, ['type'], ['desc'])});
     }
 
     render() {
@@ -1258,6 +1324,36 @@ export class CalendarTimeline extends Component {
                         <button className="p-link" title="Move Right" onClick={e=> { this.moveRight() }}><i className="pi pi-angle-right"></i></button>
                     </div>
                 </div>
+                <div className="p-grid legendbar">
+                    <div className="col-9">
+                        <div style={{fontWeight:'500', height: '25px'}}>Scheduling Unit / Task Status</div>
+                        <div className="p-grid">
+                            <div className="col-1 su-legend su-error" title="Error">Error</div>
+                            <div className='col-1 su-legend su-cancelled' title="Cancelled">Cancelled</div>
+                            <div className='col-1 su-legend su-defined' title="Defined">Defined</div>
+                            <div className='col-1 su-legend su-schedulable' title="Schedulable">Schedulable</div>
+                            <div className='col-1 su-legend su-scheduled' title="Scheduled">Scheduled</div>
+                            <div className='col-1 su-legend su-started' title="Started">Started</div>
+                            <div className='col-1 su-legend su-observing' title="Observing">Observing</div>
+                            <div className='col-1 su-legend su-observed' title="Observed">Observed</div>
+                            <div className='col-1 su-legend su-processing' title="Processing">Processing</div>
+                            <div className='col-1 su-legend su-processed' title="Processed">Processed</div>
+                            <div className='col-1 su-legend su-ingesting' title="Ingesting">Ingesting</div>
+                            <div className='col-1 su-legend su-finished' title="Finished">Finished</div>
+                        </div>
+                    </div>
+                    {!this.props.showSunTimings && this.state.viewType===UIConstants.timeline.types.NORMAL &&
+                    <div className="col-3">
+                        <div style={{fontWeight:'500', height: '25px'}}>Station Reservation</div>
+                        <div className="p-grid">
+                            <div className="col-3 su-legend reserve-not-available" title="Not Available">NA</div>
+                            <div className="col-3 su-legend reserve-available" title="Available">Available</div>
+                            <div className="col-3 su-legend reserve-manual" title="Manual">Manual</div>
+                            <div className="col-3 su-legend reserve-dynamic" title="Dynamic">Dynamic</div>
+                        </div>
+                    </div>
+                    }
+                </div>
                 <Timeline
                     groups={this.state.group}
                     items={this.state.items}
@@ -1268,11 +1364,11 @@ export class CalendarTimeline extends Component {
                     visibleTimeStart={this.state.defaultStartTime.valueOf()}
                     visibleTimeEnd={this.state.defaultEndTime.valueOf()}
                     resizeDetector={containerResizeDetector}
-                    stackItems={this.state.stackItems}
+                    stackItems={this.props.stackItems || false}
                     traditionalZoom={this.state.zoomAllowed}
                     minZoom={this.state.minZoom}
                     maxZoom={this.state.maxZoom}
-                    lineHeight={this.state.lineHeight} itemHeightRatio={0.95}
+                    lineHeight={this.props.rowHeight || 50} itemHeightRatio={0.95}
                     sidebarWidth={this.state.sidebarWidth}
                     timeSteps={this.state.timeSteps}
                     onZoom={this.onZoom}

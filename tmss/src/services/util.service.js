@@ -1,4 +1,3 @@
-import moment from 'moment';
 const axios = require('axios');
 
 axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
@@ -59,6 +58,25 @@ const UtilService = {
         localSunTimeMap[stationTimestamp] = sunTimings;
         localStorage.setItem('SUN_TIME_MAP', JSON.stringify(localSunTimeMap));
         return sunTimings;
+      } catch(error) {
+        console.error(error);
+        return  null;
+      }
+    },
+    /** Gets all reservations in the system */
+    getReservations: async() => {
+      try {
+        const reservations = (await axios.get("/api/reservation")).data.results;
+        return reservations;
+      } catch(error) {
+        console.error(error);
+      }
+    },
+    /** Gets reservation templates in the system */
+    getReservationTemplates: async() => {
+      try {
+        const templates = (await axios.get("/api/reservation_template")).data.results;
+        return templates;
       } catch(error) {
         console.error(error);
       }

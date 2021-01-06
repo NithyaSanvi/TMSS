@@ -77,8 +77,10 @@ export default (props) => {
                 "inlineHideInput": true,
                 "wrap": true,
                 "enableSeconds": true,
-                
-            }          
+                "time_24hr": true,
+                "allowInput": true,
+           
+             }          
         };
     };
     //Configuring Schema Definitions
