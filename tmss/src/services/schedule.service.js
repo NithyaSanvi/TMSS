@@ -97,7 +97,7 @@ const ScheduleService = {
             return null;
         }
     },
-    getTaskBlueprintById: async function(id, loadTemplate, loadSubtasks, loadSubtaskTemplate){
+    getTaskBlueprintById: async function(id, loadTemplate, loadSubtasks){
         let result;
         try {
             result = await axios.get('/api/task_blueprint/'+id);
@@ -105,21 +105,9 @@ const ScheduleService = {
                 result.data.template = await TaskService.getTaskTemplate(result.data.specifications_template_id);
             }
             if (result.data && loadSubtasks) {
-                let subTasks = [], subtaskemplates = {};
+                let subTasks = [];
                 for (const subtaskId of result.data.subtasks_ids) {
-                    let subtask = await TaskService.getSubtaskDetails(subtaskId);
-                    if (loadSubtaskTemplate) {
-                        //To avoid repeated api call for template if it has already loaded
-                        if (subtaskemplates[subtask.specifications_template_id]) {
-                            subtask.template = subtaskemplates[subtask.specifications_template_id];
-                        } else {
-                            const subtaskTemplate = await TaskService.getSubtaskTemplate(subtask.specifications_template_id);
-                            subtask.template = subtaskTemplate;
-                            subtaskemplates[subtask.specifications_template_id] = subtaskTemplate;
-                        }
-                    }
-                    subTasks.push((subtask));
-                    // subTasks.push((await TaskService.getSubtaskDetails(subtaskId)));
+                    subTasks.push((await TaskService.getSubtaskDetails(subtaskId)));
                 }
                 result.data.subTasks = subTasks;
             }
@@ -128,12 +116,12 @@ const ScheduleService = {
         }
         return result;
     },
-    getTaskBlueprintsBySchedulingUnit: async function(scheduleunit, loadTemplate, loadSubtasks, loadSubtaskTemplate){
+    getTaskBlueprintsBySchedulingUnit: async function(scheduleunit, loadTemplate, loadSubtasks){
         // there no single api to fetch associated task_blueprint, so iteare the task_blueprint id to fetch associated task_blueprint
         let taskblueprintsList = [];
         if(scheduleunit.task_blueprints_ids){
             for(const id of scheduleunit.task_blueprints_ids){
-               await this.getTaskBlueprintById(id, loadTemplate, loadSubtasks, loadSubtaskTemplate).then(response =>{
+               await this.getTaskBlueprintById(id, loadTemplate, loadSubtasks).then(response =>{
                     let taskblueprint = response.data;
                     taskblueprint['tasktype'] = 'Blueprint';
                     taskblueprint['actionpath'] = '/task/view/blueprint/'+taskblueprint['id'];
@@ -193,10 +181,13 @@ const ScheduleService = {
                 scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                 scheduletask['specifications_doc'] = task['specifications_doc'];
                 scheduletask.duration = moment.utc((scheduletask.duration || 0)*1000).format('HH:mm:ss'); 
+                scheduletask.produced_by = task.produced_by;
+                scheduletask.produced_by_ids = task.produced_by_ids;
                 scheduletask.relative_start_time = moment.utc(scheduletask.relative_start_time*1000).format('HH:mm:ss'); 
                 scheduletask.relative_stop_time = moment.utc(scheduletask.relative_stop_time*1000).format('HH:mm:ss'); 
                 if (loadTemplate) {
                     scheduletask.template = await TaskService.getTaskTemplate(task.specifications_template_id);
+                    scheduletask.type_value = scheduletask.template.type_value;
                 }
                //Fetch blueprint details for Task Draft
 	            const draftBlueprints = await TaskService.getDraftsTaskBlueprints(task.id);
@@ -247,10 +238,43 @@ const ScheduleService = {
                 //Add Task Draft details to array
                 scheduletasklist.push(scheduletask);
             }
+            //Ingest Task Relation 
+            if (loadTemplate) {
+                const ingest = scheduletasklist.find(task => task.template.type_value === 'ingest' && task.tasktype.toLowerCase() === 'draft');
+                const promises = [];
+                ingest.produced_by_ids.map(id => promises.push(this.getTaskRelation(id)));
+                const response = await Promise.all(promises);
+                response.map(producer => {
+                    const tasks = scheduletasklist.filter(task => producer.producer_id  === task.id);
+                    tasks.map(task => {
+                       task.canIngest = true;
+                    });
+                });
+            }   
         }).catch(function(error) {
             console.error('[schedule.services.getScheduleTasksBySchedulingUnitId]',error);
         });
         return scheduletasklist;
+    },
+    getTaskRelation: async function(id) {
+        let res;
+        await axios.get(`/api/task_relation_draft/${id}`)
+        .then(response => {
+            res= response;
+        }).catch(function(error) {
+            console.error('[schedule.services.getTaskBlueprints]',error);
+        });
+        return res.data;
+    },
+    getTaskDraft: async function(id) {
+        let res;
+        await axios.get(`/api/task_draft/${id}`)
+        .then(response => {
+            res= response;
+        }).catch(function(error) {
+            console.error('[schedule.services.getTaskBlueprints]',error);
+        });
+        return res.data;
     },
     getTaskBlueprints: async function (){
         let res=[];
@@ -472,32 +496,15 @@ const ScheduleService = {
             return [];
         };
     },
-    getStations: async function(group) {
+    getStations: async function(e) {
         try {
            // const response = await axios.get('/api/station_groups/stations/1/dutch');
-           const response = await axios.get(`/api/station_groups/stations/1/${group}`);
+           const response = await axios.get(`/api/station_groups/stations/1/${e}`);
             return response.data;
         }   catch(error) {
             console.error(error);
             return [];
         }
-    },
-    // To get stations of main groups
-    getMainGroupStations: async function() {
-        let stationGroups = {};
-        try {
-            const stationPromises = [this.getStations('Core'), 
-                                        this.getStations('Remote'), 
-                                        this.getStations('International')]
-            await Promise.all(stationPromises).then(async(results) => {
-                for (const result of results) {
-                    stationGroups[result.group] = result.stations;
-                }
-            });
-        }   catch(error) {
-            console.error(error);
-        }
-        return stationGroups;
     },
       getProjectList: async function() {
         try {

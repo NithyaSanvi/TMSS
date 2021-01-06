@@ -1,11 +1,8 @@
 import React, { Component } from 'react'
-// import {Link} from 'react-router-dom'
 import 'primeflex/primeflex.css';
 import { Chips } from 'primereact/chips';
-
 import AppLoader from "./../../layout/components/AppLoader";
 import PageHeader from '../../layout/components/PageHeader';
-
 import ViewTable from './../../components/ViewTable';
 import ScheduleService from '../../services/schedule.service';
 import moment from 'moment';
@@ -18,6 +15,7 @@ import { Redirect } from 'react-router-dom';
 import { CustomDialog } from '../../layout/components/CustomDialog';
 import { CustomPageSpinner } from '../../components/CustomPageSpinner';
 import { Growl } from 'primereact/components/growl/Growl';
+import Schedulingtaskrelation from './Scheduling.task.relation';
 
 class ViewSchedulingUnit extends Component{
     constructor(props){
@@ -27,10 +25,12 @@ class ViewSchedulingUnit extends Component{
             schedule_unit_task: [],
             isLoading: true,
             showStatusLogs: false,
+            showTaskRelationDialog: false,
             paths: [{
                 "View": "/task",
             }],
-           missingStationFieldsErrors: [],
+            ingestGroup: {},
+            missingStationFieldsErrors: [],
             defaultcolumns: [ {
                 status_logs: "Status Logs",
                 tasktype:{
@@ -89,6 +89,7 @@ class ViewSchedulingUnit extends Component{
         this.checkAndCreateBlueprint = this.checkAndCreateBlueprint.bind(this);
         this.createBlueprintTree = this.createBlueprintTree.bind(this);
         this.closeDialog = this.closeDialog.bind(this);
+        this.showTaskRelationDialog = this.showTaskRelationDialog.bind(this);
         
     }
 
@@ -98,6 +99,11 @@ class ViewSchedulingUnit extends Component{
             this.state.scheduleunitType !== this.props.match.params.type)) {
             this.getSchedulingUnitDetails(this.props.match.params.type, this.props.match.params.id);
        }
+    }
+    
+    
+    showTaskRelationDialog() {
+        this.setState({ showTaskRelationDialog: !this.state.showTaskRelationDialog});
     }
 
     async componentDidMount(){ 
@@ -128,7 +134,8 @@ class ViewSchedulingUnit extends Component{
                     });
                     this.getScheduleUnitTasks(schedule_type, schedulingUnit)
                         .then(tasks =>{
-                        tasks.map(task => {
+                            const ingestGroup = _.groupBy(_.filter(tasks, 'type_value'), 'type_value');
+                            tasks.map(task => {
                             task.status_logs = task.tasktype === "Blueprint"?this.subtaskComponent(task):"";
                             //Displaying SubTask ID of the 'control' Task
                             const subTaskIds = task.subTasks?task.subTasks.filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1):[];
@@ -144,7 +151,8 @@ class ViewSchedulingUnit extends Component{
                             isLoading: false,
                             stationGroup: targetObservation?targetObservation.specifications_doc.station_groups:[],
                             redirect: null,
-                            dialogVisible: false
+                            dialogVisible: false,
+                            ingestGroup
                     }, this.getAllStations);
                     });
                 }   else {
@@ -157,16 +165,22 @@ class ViewSchedulingUnit extends Component{
                 {icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', link: this.props.history.goBack} 
             ];
             if (this.props.match.params.type === 'draft') {
+                this.actions.unshift({icon:'fa-file-import', title: 'Data Products To Ingest', type:'button',
+                actOn:'click', props : { callback: this.showTaskRelationDialog}
+                });
                 this.actions.unshift({icon: 'fa-edit', title: 'Click to edit',  props : { pathname:`/schedulingunit/edit/${ this.props.match.params.id}`}
                 });
                 this.actions.unshift({icon:'fa-stamp', title: 'Create Blueprint', type:'button',
-                    actOn:'click', props : { callback: this.checkAndCreateBlueprint},
-               });
+                actOn:'click', props : { callback: this.checkAndCreateBlueprint},
+                });
+               
             } else {
                 this.actions.unshift({icon: 'fa-sitemap',title :'View Workflow',props :{pathname:`/schedulingunit/${this.props.match.params.id}/workflow`}});
                 this.actions.unshift({icon: 'fa-lock', title: 'Cannot edit blueprint'});
             }
-    }
+           
+           
+        }
 
     getScheduleUnitTasks(type, scheduleunit){
         if(type === 'draft')
@@ -313,9 +327,20 @@ class ViewSchedulingUnit extends Component{
                 <CustomDialog type="confirmation" visible={this.state.dialogVisible}
                         header={this.state.dialog.header} message={this.state.dialog.detail} actions={this.state.dialog.actions}
                         onClose={this.closeDialog} onCancel={this.closeDialog} onSubmit={this.createBlueprintTree}></CustomDialog>
+                        
                 {/* Show spinner during backend API call */}
                 <CustomPageSpinner visible={this.state.showSpinner} />
-            </>
+
+                {/* To show Data Products To Ingest */}
+                {this.state.showTaskRelationDialog && (
+                      <Schedulingtaskrelation
+                      showTaskRelationDialog={this.state.showTaskRelationDialog}
+                      ingestGroup={this.state.ingestGroup}
+                      toggle={this.showTaskRelationDialog}
+                     
+                      />
+                )}
+              </>
         )
     }
 }
