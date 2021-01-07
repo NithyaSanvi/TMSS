@@ -1,34 +1,35 @@
 import React, { useState, useEffect } from 'react';
+import _ from 'lodash';
 import { Dialog } from 'primereact/dialog';
 import {Checkbox} from 'primereact/checkbox';
 import { Button } from 'primereact/button';
 
 export default (props) => {
-    const [ingestRelation, setInjestRelation] = useState(props.ingestGroup);
+    const [ingestRelation, setInjestRelation] = useState(_.cloneDeep(props.ingestGroup));
 
     const isAllTaskChecked = (groupName) => !ingestRelation[groupName].filter(task => !task.canIngest).length;
 
     const toggleCheckItem = (group, index) => {
         const relationGroup = { ...ingestRelation };
         relationGroup[group][index].canIngest = ! relationGroup[group][index].canIngest;
-        setInjestRelation(relationGroup);
+        setInjestRelation({...relationGroup});
     };
 
     const toggleGroup = (group) => {
         if (isAllTaskChecked(group)) {
             const relationGroup = { ...ingestRelation };
             relationGroup[group].map(task => task.canIngest = false);
-            setInjestRelation(relationGroup);
+            setInjestRelation({...relationGroup});
         } else {
             const relationGroup = { ...ingestRelation };
             relationGroup[group].map(task => task.canIngest = true);
-            setInjestRelation(relationGroup);
+            setInjestRelation({...relationGroup});
         }
     };
 
    
     useEffect(() => {
-        setInjestRelation(props.ingestGroup); 
+        setInjestRelation(_.cloneDeep(props.ingestGroup)); 
     }, [props.ingestGroup]);
 
     return (
@@ -37,7 +38,7 @@ export default (props) => {
             onHide={props.toggle} >
             <label><h3>From Task</h3></label>
             <div>
-                {Object.keys(ingestRelation).map(group => (
+                {Object.keys(ingestRelation).sort().map(group => (
                     <>
                         {group !== 'ingest' && (
                             <>
@@ -46,26 +47,21 @@ export default (props) => {
                                     <label htmlFor={group} className="p-checkbox-label capitalize">{group}</label>
                                 </div>
                                <div className="pl-4">
-                                    {props.ingestGroup[group].map((task, index) => (
-                                        <div className="p-col-12">
+                                    {ingestRelation[group].map((task, index) => (
+                                        <div className="p-col-12 pl-3">
                                             <Checkbox inputId={task.name} onChange={() => toggleCheckItem(group, index)} checked={task.canIngest}></Checkbox>
                                             <label htmlFor={task.name} className="p-checkbox-label">{task.name}</label>
                                         </div>
                                     ))}
                                 </div>
                             </>
-                            
                         )}
                     </>
                     ))}
-                     <div className="p-grid p-justify-start">
-                        <div className="p-col-1">
-                            <Button label="Save" className="p-button-primary" icon="pi pi-check" 
+                     <div className="p-grid p-justify-end">
+                            <Button label="Save" className="p-button-primary p-mr-2" icon="pi pi-check" 
                                     disabled data-testid="save-btn" />
-                        </div>
-                        <div className="p-col-1">
-                            <Button label="Cancel" className="p-button-cancel" icon="pi pi-times"   />
-                        </div>
+                            <Button label="Cancel" className="p-button-cancel" icon="pi pi-times" onClick={props.toggle} />
                     </div>
             </div>
 </Dialog>
