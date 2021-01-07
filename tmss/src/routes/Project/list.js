@@ -118,6 +118,10 @@ export class ProjectList extends Component{
             projects = await ProjectService.getUpdatedProjectQuota(projects);
             let list = projects.map(project => {
                 project.archive_location_label = (options[project.archive_location] || {}).label;
+                project.links = ['Name / Project Code'];
+                project.linksURL = {
+                    'Name / Project Code': `/project/view/${project.name}`
+                }
                 return project;
             });
             this.setState({
