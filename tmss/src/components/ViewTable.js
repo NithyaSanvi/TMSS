@@ -578,7 +578,6 @@ function Table({ columns, data, defaultheader, optionalheader, tablename, defaul
           <tbody {...getTableBodyProps()}>
             {page.map((row, i) => {
               prepareRow(row)
-              debugger
               return (
                 <tr {...row.getRowProps()}>
                   {row.cells.map(cell => {
