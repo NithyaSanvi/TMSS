@@ -1,6 +1,6 @@
 .sticky {
     position: sticky;
-    top:49px;
+    top:67px;
     z-index:999;
 }
 
@@ -221,6 +221,118 @@
     cursor: not-allowed;
     color: #928f8f !important;
 }
-// .float-button:hover {
-//     right: -7px;//hide it by pushing it off the screen
-// }
+
+.reserve-not-available {
+    background-color: black;
+    color: white;
+}
+
+.reserve-available {
+    background-color: lightgrey;
+    color: #585859;
+}
+
+.reserve-manual {
+    background-color: #585859;
+    color: white;
+}
+
+.reserve.dynamic {
+    background-color: #9b9999;
+    color: white;
+}
+
+.su-error {
+    background-color: red !important;
+    color: white !important;
+}
+
+.su-cancelled {
+    background-color: orange !important;
+    color: black !important;
+}
+
+.su-defined {
+    background-color: white !important;
+    color: black !important;
+}
+
+.su-schedulable {
+    background-color: lightblue !important;
+    color: black !important;
+}
+
+.su-scheduled {
+    background-color: blue !important;
+    color: white !important;
+}
+
+.su-observing {
+    background-color: yellow !important;
+    color: black !important;
+}
+
+.su-observed {
+    background-color: green !important;
+    color: white !important;
+}
+
+.su-processing {
+    background: repeating-linear-gradient(
+                -45deg,
+                #f3f708,
+                #f3f708 5px,
+                #dcdf26 5px,
+                #dcdf26 10px
+                ) !important;
+}
+
+.su-processed {
+    background: repeating-linear-gradient(
+                -45deg,
+                #38f708,
+                #38f708 5px,
+                #2ad32a 5px,
+                #2ad32a 10px
+                ) !important;
+}
+
+.su-ingesting {
+    background-color: #c8a2c8 !important;
+    color: black !important;
+}
+
+.su-finished {
+    background-color: #1ff811 !important;
+    color: black !important;
+}
+
+.su-error-icon,.su-scheduled-icon,.su-observed-icon {
+    color: white !important;
+}
+
+.su-cancelled-icon,.su-defined-icon,.su-schedulable-icon,
+.su-observing-icon,.su-processing-icon,
+.su-processed-icon,.su-ingesting-icon,.su-finished-icon {
+    color: black !important;
+}
+
+.su-legend {
+    padding-left:6px !important;
+    border: 1px solid grey;
+    cursor: default;
+    overflow: hidden;
+    // text-overflow: ellipsis;
+    // white-space: nowrap;
+    text-align: center;
+}
+
+.legendbar {
+    // height: 20px;
+    font-size: 10px !important;
+    position: sticky;
+    top: 33px;
+    z-index: 999;
+    margin-top: 5px;
+    // margin-left: 8px;
+}
