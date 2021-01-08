@@ -198,7 +198,7 @@ const ProjectService = {
               }
               projects.map((pro,index) => {
                 if(pro.name === project.name){
-                  project['actionpath']= '/project/view';
+                  project['actionpath']= `/project/view/${project.name}`;
                   projects[index] = project;
                 }
                 return pro;
