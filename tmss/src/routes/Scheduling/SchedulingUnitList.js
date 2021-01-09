@@ -18,8 +18,12 @@ class SchedulingUnitList extends Component{
         name:"Name",
         description:"Description",
         project:"Project",
-        targetDetails0: "Target 1",
-        targetDetails1: "Target 2",
+        target0angle1: "Target 1 Angle 1",
+        target0angle2: "Target 1 Angle 2",
+        target0referenceframe: "Target 1 Reference Frame",
+        target1angle1: "Target 2 Angle 1",
+        target1angle2: "Target 2 Angle 2",
+        target1referenceframe: "Target 2 Reference Frame",
         created_at:{
             name:"Created At",
             filter: "date"
@@ -111,7 +115,9 @@ class SchedulingUnitList extends Component{
                     const targetObserv = su.taskDetails.find(task => task.template.type_value==='observation' && task.tasktype.toLowerCase()===su.type.toLowerCase() && task.specifications_doc.station_groups);
                     // Constructing targets in single string to make it clear display 
                     targetObserv.specifications_doc.SAPs.map((target, index) => {
-                        su[`targetDetails${index}`] = `Name: ${target.name}, \n Angle1: ${target.digital_pointing.angle1}, \n Angle2: ${target.digital_pointing.angle2}, \n Reference Frame: ${target.digital_pointing.direction_type}`;
+                        su[`target${index}angle1`] = target.digital_pointing.angle1;
+                        su[`target${index}angle2`] = target.digital_pointing.angle2;
+                        su[`target${index}referenceframe`] = target.digital_pointing.direction_type;
                     });
                 });
                 this.setState({
