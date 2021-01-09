@@ -5,6 +5,7 @@ import AppLoader from "./../../layout/components/AppLoader";
 import ViewTable from './../../components/ViewTable';
 
 import ScheduleService from '../../services/schedule.service';
+import UtilService from '../../services/util.service';
 
 class SchedulingUnitList extends Component{
      
@@ -115,8 +116,8 @@ class SchedulingUnitList extends Component{
                     const targetObserv = su.taskDetails.find(task => task.template.type_value==='observation' && task.tasktype.toLowerCase()===su.type.toLowerCase() && task.specifications_doc.station_groups);
                     // Constructing targets in single string to make it clear display 
                     targetObserv.specifications_doc.SAPs.map((target, index) => {
-                        su[`target${index}angle1`] = target.digital_pointing.angle1;
-                        su[`target${index}angle2`] = target.digital_pointing.angle2;
+                        su[`target${index}angle1`] = UtilService.deg_to_dms(target.digital_pointing.angle1);
+                        su[`target${index}angle2`] = UtilService.deg_to_dms(target.digital_pointing.angle2);
                         su[`target${index}referenceframe`] = target.digital_pointing.direction_type;
                     });
                 });
