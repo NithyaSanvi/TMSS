@@ -5,13 +5,12 @@ import AppLoader from "./../../layout/components/AppLoader";
 import ViewTable from './../../components/ViewTable';
 
 import ScheduleService from '../../services/schedule.service';
-import UtilService from '../../services/util.service';
 
 class SchedulingUnitList extends Component{
      
     constructor(props){
-       super(props);
-       this.defaultcolumns = {
+       super(props)
+       const defaultcolumns = {
         type:{
             name:"Type",
             filter:"select"
@@ -37,7 +36,7 @@ class SchedulingUnitList extends Component{
         status:"Status"
         };
         if (props.hideProjectColumn) {
-            delete this.defaultcolumns['project'];
+            delete defaultcolumns['project'];
         }
         this.state = {
             scheduleunit: [],
@@ -45,7 +44,7 @@ class SchedulingUnitList extends Component{
                 "View": "/schedulingunit/view",
             }],
             isLoading: true,
-            defaultcolumns: [this.defaultcolumns],
+            defaultcolumns: [defaultcolumns],
             optionalcolumns:  [{
                 actionpath:"actionpath",
             }],
@@ -75,7 +74,7 @@ class SchedulingUnitList extends Component{
             const schedulingSet = await ScheduleService.getSchedulingSets();
             const projects = await ScheduleService.getProjectList();
             const bluePrint = await ScheduleService.getSchedulingUnitBlueprint();
-            ScheduleService.getSchedulingUnitDraft().then(async (scheduleunit) =>{
+            ScheduleService.getSchedulingUnitDraft().then(scheduleunit =>{
                 const output = [];
                 var scheduleunits = scheduleunit.data.results;
                 for( const scheduleunit  of scheduleunits){
@@ -102,27 +101,8 @@ class SchedulingUnitList extends Component{
                     scheduleunit.canSelect = true;
                     output.push(scheduleunit);
                 }
-                const promises = [];
-                output.map(su => promises.push(this.getScheduleUnitTasks(su.type, su)));
-                const tasksResponses = await Promise.all(promises);
-                const defaultColumns = this.defaultcolumns;
-                output.map(su => {
-                    su.taskDetails = tasksResponses.find(task => task.id === su.id && task.type === su.type).tasks;
-                    const targetObserv = su.taskDetails.find(task => task.template.type_value==='observation' && task.tasktype.toLowerCase()===su.type.toLowerCase() && task.specifications_doc.station_groups);
-                    // Constructing targets in single string to make it clear display 
-                    targetObserv.specifications_doc.SAPs.map((target, index) => {
-                        su[`target${index}angle1`] = UtilService.deg_to_dms(target.digital_pointing.angle1);
-                        su[`target${index}angle2`] = UtilService.deg_to_dms(target.digital_pointing.angle2);
-                        su[`target${index}referenceframe`] = target.digital_pointing.direction_type;
-
-                        defaultColumns[`target${index}angle1`] = `Target ${index + 1} - Angle 1`;
-                        defaultColumns[`target${index}angle2`] = `Target ${index + 1} - Angle 2`;
-                        defaultColumns[`target${index}referenceframe`] = `Target ${index + 1} - Reference Frame`;
-                    });
-                });
                 this.setState({
-                    scheduleunit: output, isLoading: false,
-                    defaultColumns: [defaultColumns]
+                    scheduleunit: output, isLoading: false
                 });
                 this.selectedRows = [];
             })
@@ -132,13 +112,6 @@ class SchedulingUnitList extends Component{
     componentDidMount(){ 
        this.getSchedulingUnitList();
         
-    }
-
-    getScheduleUnitTasks(type, scheduleunit){
-        if(type === 'Draft')
-            return ScheduleService.getTaskDetailsByDraftSchUnitById(scheduleunit.id, true, true, true);
-        else
-            return ScheduleService.getTaskDetailsByBluePrintSchUnitById(scheduleunit);
     }
 
     /**

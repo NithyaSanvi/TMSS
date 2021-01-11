@@ -579,9 +579,7 @@ const defaultColumn = React.useMemo(
                        <tr {...row.getRowProps()}>
                          {row.cells.map(cell => {
                           if(cell.column.id !== 'actionpath')
-                          return <td className="td_pre" {...cell.getCellProps()}>
-                          {cell.render('Cell')}
-                        </td>
+                          return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
                         else 
                           return "";
                          })}

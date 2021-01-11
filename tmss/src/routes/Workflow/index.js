@@ -11,6 +11,13 @@ import PIverification from './pi.verification';
 import DecideAcceptance from './decide.acceptance';
 import IngestDone from './ingest.done';
 
+//
+const RedirectionMap = {
+    'Wait Scheduled': 1,
+    'Wait Processed': 2,
+    'Qa Reporting To': 3
+};
+
 //Workflow Page Title 
 const pageTitle = ['Scheduled','Processing Done','QA Reporting (TO)', 'QA Reporting (SDCO)', 'PI Verification', 'Decide Acceptance','Ingest Done'];
 
@@ -27,8 +34,20 @@ export default (props) => {
             .then(schedulingUnit => {
                 setSchedulingUnit(schedulingUnit);
             })
-            const promises = [ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id), ScheduleService.getTaskType()]
+            const promises = [
+                ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id),
+                ScheduleService.getTaskType(),
+                ScheduleService.getQASchedulingUnitProcess(),
+                ScheduleService.getQASchedulingUnitTask()
+            ]
             Promise.all(promises).then(responses => {
+                const suQAProcess = responses[2].find(process => process.su === parseInt(props.match.params.id));
+                const suQATask = responses[3].find(task => task.process === suQAProcess.id);
+                if (suQATask.status === 'NEW') {
+                    setCurrentStep(RedirectionMap[suQATask.flow_task]);
+                } else {
+                    setCurrentStep(3);
+                }
                 setSchedulingUnit(responses[0]);
                 ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false).then(response => {
                     setInjestTask(response.find(task => task.template.type_value==='observation'));
@@ -50,7 +69,7 @@ export default (props) => {
     return (
         <>
             <Growl ref={(el) => growl = el} />
-            <PageHeader location={props.location} title={`${pageTitle[currentStep - 1]}`} actions={[{ icon: 'fa-window-close', link: props.history.goBack, title: 'Click to Close Workflow', props: { pathname: '/schedulingunit/1/workflow' } }]} />
+            {currentStep && <PageHeader location={props.location} title={`${pageTitle[currentStep - 1]}`} actions={[{ icon: 'fa-window-close', link: props.history.goBack, title: 'Click to Close Workflow', props: { pathname: '/schedulingunit/1/workflow' } }]} />}
             {schedulingUnit &&
                 <>
                     <div className="p-fluid">
@@ -79,7 +98,7 @@ export default (props) => {
                         </div>
                         {currentStep === 1 && <Scheduled onNext={onNext} {...state} schedulingUnit={schedulingUnit} />}
                         {currentStep === 2 && <ProcessingDone onNext={onNext} {...state}/>}
-                        {currentStep === 3 && <QAreporting onNext={onNext}/>}
+                        {currentStep === 3 && <QAreporting onNext={onNext} id={props.match.params.id} />}
                         {currentStep === 4 && <QAsos onNext={onNext} {...state} />}
                         {currentStep === 5 && <PIverification onNext={onNext} {...state} />}
                         {currentStep === 6 && <DecideAcceptance onNext={onNext} {...state} />}

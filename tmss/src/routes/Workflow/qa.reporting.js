@@ -3,6 +3,8 @@ import { Button } from 'primereact/button';
 import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css'; // Import Sun Editor's CSS File
 import { Dropdown } from 'primereact/dropdown';
+import WorkFlowService from '../../services/workflow.service';
+import { Checkbox } from 'primereact/checkbox';
 //import katex from 'katex' // for mathematical operations on sun editor this component should be added
 //import 'katex/dist/katex.min.css'
 
@@ -11,19 +13,29 @@ class QAreporting extends Component{
     constructor(props) {
         super(props);
         this.state={
+            checked: false,
             content: props.report
         };
         this.Next = this.Next.bind(this);
         this.handleChange = this.handleChange.bind(this);
     }
 
+    async componentDidMount() {
+        const response = await WorkFlowService.getReportingTo(this.props.id);
+        console.log('response>>>>>>>>', response);
+        // this.setState({
+        //     content: response.operator_report
+        // });
+    }
+
     /**
      * Method will trigger on click save buton
      * here onNext props coming from parent, where will handle redirection to other page
      */
-     Next() {
+     async Next() {
+        await WorkFlowService.saveReportingTo(this.props.id, { operator_report: this.state.content },{operator_accept: this.state.checked});
         this.props.onNext({ report: this.state.content });
-     }
+    }
 
     /**
      * Method will trigger on change of operator report sun-editor
@@ -63,6 +75,14 @@ class QAreporting extends Component{
                             ]
                         }} />
                 </div>
+            </div>
+            <div className="p-field p-grid">
+                <label htmlFor="operatorAccept" className="col-lg-2 col-md-2 col-sm-12">Operator Accept</label>
+               <div className="col-lg-3 col-md-3 col-sm-12">
+                    <div className="p-field-checkbox">
+                        <Checkbox inputId="secondary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
+                    </div>
+              </div>
             </div>
             <div className="p-grid p-justify-start">
                 <div className="p-col-1">

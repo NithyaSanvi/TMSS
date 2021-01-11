@@ -6,6 +6,26 @@ import moment from 'moment';
 axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
 
 const ScheduleService = { 
+    getQASchedulingUnitProcess: async function (){
+        let res = [];
+        await axios.get('/workflow_api/scheduling_unit_flow/qa_scheduling_unit_process/')
+        .then(response => {
+            res= response.data.results; 
+        }).catch(function(error) {
+            console.error('[schedule.services.getQASchedulingUnitProcess]',error);
+        });
+        return res;
+    },
+    getQASchedulingUnitTask: async function (){
+        let res = [];
+        await axios.get('/workflow_api/scheduling_unit_flow/qa_scheduling_unit_task/')
+        .then(response => {
+            res= response.data.results; 
+        }).catch(function(error) {
+            console.error('[schedule.services.getQASchedulingUnitTask]',error);
+        });
+        return res;
+    },
     getSchedulingUnitDraft: async function (){
         let res = [];
         try {
@@ -239,22 +259,6 @@ const ScheduleService = {
             console.error('[schedule.services.getScheduleTasksBySchedulingUnitId]',error);
         });
         return scheduletasklist;
-    },
-    getTaskDetailsByBluePrintSchUnitById: async function(scheduleunit) {
-        const response = await this.getTaskBPWithSubtaskTemplateOfSU(scheduleunit);
-        return {
-            id: scheduleunit.id,
-            tasks: response,
-            type: 'Blueprint'
-        }
-    },
-    getTaskDetailsByDraftSchUnitById: async function(id, loadTemplate, loadSubtasks, loadSubtaskTemplate) {
-        const response = await this.getTasksBySchedulingUnit(id, loadTemplate, loadSubtasks, loadSubtaskTemplate);
-        return {
-            id,
-            type: 'Draft',
-            tasks: response
-        }
     },
     getTaskBlueprints: async function (){
         let res=[];

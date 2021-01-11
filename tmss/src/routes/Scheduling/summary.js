@@ -5,7 +5,7 @@ import _ from 'lodash';
 import ViewTable from '../../components/ViewTable';
 import { JsonToTable } from "react-json-to-table";
 import SchedulingConstraints from './Scheduling.Constraints';
-// import Stations from './Stations';
+import Stations from './Stations';
 
 /**
  * Component to view summary of the scheduling unit with limited task details

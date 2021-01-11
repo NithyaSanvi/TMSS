@@ -127,6 +127,9 @@ export class WeekTimelineView extends Component {
      * @param {Object} suBlueprint 
      */
     async getTimelineItem(suBlueprint, displayDate) {
+        // Temporary for testing
+        const diffOfCurrAndStart = moment().diff(moment(suBlueprint.stop_time), 'seconds');
+        suBlueprint.status = diffOfCurrAndStart>=0?"FINISHED":"DEFINED";
         let antennaSet = "";
         const taskList = await ScheduleService.getTaskBlueprintsBySchedulingUnit(suBlueprint, true);
         for (let task of taskList) {
@@ -145,10 +148,7 @@ export class WeekTimelineView extends Component {
             start_time: moment.utc(`${displayDate.format('YYYY-MM-DD')} ${suBlueprint.start_time.split('T')[1]}`),
             end_time: moment.utc(`${displayDate.format('YYYY-MM-DD')} ${suBlueprint.stop_time.split('T')[1]}`),
             bgColor: suBlueprint.status? STATUS_COLORS[suBlueprint.status.toUpperCase()]:"#2196f3",
-            // selectedBgColor: suBlueprint.status? STATUS_COLORS[suBlueprint.status.toUpperCase()]:"#2196f3"}
-            selectedBgColor: 'none',
-            type: 'SCHEDULE',
-            status: suBlueprint.status.toLowerCase()};
+            selectedBgColor: suBlueprint.status? STATUS_COLORS[suBlueprint.status.toUpperCase()]:"#2196f3"}; 
         return item;
     }
 
@@ -364,7 +364,6 @@ export class WeekTimelineView extends Component {
                                         currentUTC={this.state.currentUTC}
                                         rowHeight={50} itemClickCallback={this.onItemClick}
                                         sidebarWidth={150}
-                                        stackItems={true}
                                         startTime={moment.utc(this.state.currentUTC).hour(0).minutes(0).seconds(0)}
                                         endTime={moment.utc(this.state.currentUTC).hour(23).minutes(59).seconds(59)}
                                         zoomLevel="1 Day"

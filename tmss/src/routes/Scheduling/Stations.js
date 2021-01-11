@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import _ from 'lodash';
 import {MultiSelect} from 'primereact/multiselect';
 import { OverlayPanel } from 'primereact/overlaypanel';
 import {InputText} from 'primereact/inputtext';
@@ -271,7 +272,7 @@ export default (props) => {
                                     <div className="p-field p-grid col-md-6" key={i}>
                                         <label className="col-sm-6 text-caps">
                                             {i}
-                                            <i className="pi pi-info-circle info label-icon" onClick={(e) => showStations(e, i)} />
+                                            <Button icon="pi pi-info-circle" className="p-button-rounded p-button-secondary p-button-text info" onClick={(e) => showStations(e, i)} />
                                         </label>
                                         <div className="col-sm-6">
                                             <InputText id="missingstation" data-testid="name" 
@@ -349,11 +350,10 @@ export default (props) => {
                          ))}
                     </div>
                 )}
-                <OverlayPanel ref={(el) => op = el} dismissable  style={{width: '200px'}}>
-                    <h6 className="overlay-panel-header">Stations in group</h6>
+                <OverlayPanel ref={(el) => op = el} dismissable  style={{width: '450px'}}>
                     <div className="station-container">
                         {(stations || []).map(i => (
-                            <span>{i}</span>
+                            <label>{i}</label>
                         ))}
                     </div>
                 </OverlayPanel>

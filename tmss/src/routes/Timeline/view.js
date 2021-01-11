@@ -17,16 +17,12 @@ import UtilService from '../../services/util.service';
 
 import UnitConverter from '../../utils/unit.converter';
 import SchedulingUnitSummary from '../Scheduling/summary';
-import { Dropdown } from 'primereact/dropdown';
 
 // Color constant for status
 const STATUS_COLORS = { "ERROR": "FF0000", "CANCELLED": "#00FF00", "DEFINED": "#00BCD4", 
                         "SCHEDULABLE":"#0000FF", "SCHEDULED": "#abc", "OBSERVING": "#bcd",
                         "OBSERVED": "#cde", "PROCESSING": "#cddc39", "PROCESSED": "#fed",
                         "INGESTING": "#edc", "FINISHED": "#47d53d"};
-
-const RESERVATION_COLORS = {"true-true":{bgColor:"lightgrey", color:"#585859"}, "true-false":{bgColor:'#585859', color:"white"},
-                            "false-true":{bgColor:"#9b9999", color:"white"}, "false-false":{bgColor:"black", color:"white"}};
 
 /**
  * Scheduling Unit timeline view component to view SU List and timeline
@@ -48,20 +44,16 @@ export class TimelineView extends Component {
             selectedItem: null,
             suTaskList:[],
             isSummaryLoading: false,
-            stationGroup: [],
-            reservationFilter: null,
+            stationGroup: []
         }
         this.STATUS_BEFORE_SCHEDULED = ['defining', 'defined', 'schedulable'];  // Statuses before scheduled to get station_group
         this.allStationsGroup = [];
-        this.reservations = [];
-        this.reservationReasons = [];
 
         this.onItemClick = this.onItemClick.bind(this);
         this.closeSUDets = this.closeSUDets.bind(this);
         this.dateRangeCallback = this.dateRangeCallback.bind(this);
         this.resizeSUList = this.resizeSUList.bind(this);
         this.suListFilterCallback = this.suListFilterCallback.bind(this);
-        this.addStationReservations = this.addStationReservations.bind(this);
     }
 
     async componentDidMount() {
@@ -119,23 +111,9 @@ export class TimelineView extends Component {
             for (const station of responses[5]['stations']) {
                 this.allStationsGroup.push({id: station, title: station});
             }
-            // Fetch Reservations and keep ready to use in station view
-            UtilService.getReservations().then(reservations => {
-                this.reservations = reservations;
-            });
-            UtilService.getReservationTemplates().then(templates => {
-                this.reservationTemplate = templates.length>0?templates[0]:null;
-                if (this.reservationTemplate) {
-                    let reasons = this.reservationTemplate.schema.properties.activity.properties.type.enum;
-                    for (const reason of reasons) {
-                        this.reservationReasons.push({name: reason});
-                    }
-                }
-            });
             this.setState({suBlueprints: suBlueprints, suDrafts: suDrafts, group: group, suSets: suSets,
-                            projects: projects, suBlueprintList: suList,
-                            items: items, currentUTC: currentUTC, isLoading: false,
-                            currentStartTime: defaultStartTime, currentEndTime: defaultEndTime});
+                            projects: projects, suBlueprintList: suList, 
+                            items: items, currentUTC: currentUTC, isLoading: false});
         });
     }
 
@@ -147,15 +125,13 @@ export class TimelineView extends Component {
         let item = { id: suBlueprint.id, 
             group: suBlueprint.suDraft.id,
             title: `${suBlueprint.project} - ${suBlueprint.suDraft.name} - ${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs`,
-            project: suBlueprint.project, type: 'SCHEDULE',
+            project: suBlueprint.project,
             name: suBlueprint.suDraft.name,
             duration: suBlueprint.durationInSec?`${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs`:"",
             start_time: moment.utc(suBlueprint.start_time),
             end_time: moment.utc(suBlueprint.stop_time),
             bgColor: suBlueprint.status? STATUS_COLORS[suBlueprint.status.toUpperCase()]:"#2196f3",
-            // selectedBgColor: suBlueprint.status? STATUS_COLORS[suBlueprint.status.toUpperCase()]:"#2196f3"}; 
-            selectedBgColor: "none",
-            status: suBlueprint.status.toLowerCase()};
+            selectedBgColor: suBlueprint.status? STATUS_COLORS[suBlueprint.status.toUpperCase()]:"#2196f3"}; 
         return item;
     }
 
@@ -229,17 +205,12 @@ export class TimelineView extends Component {
                     suBlueprintList.push(suBlueprint);
                 } 
             }
-            if (this.state.stationView) {
-                items = this.addStationReservations(items, startTime, endTime);
-            }
         }   else {
             suBlueprintList = _.clone(this.state.suBlueprints);
             group = this.state.group;
             items = this.state.items;
         }
-        
-        this.setState({suBlueprintList: _.filter(suBlueprintList, (suBlueprint) => {return suBlueprint.start_time!=null}),
-                        currentStartTime: startTime, currentEndTime: endTime});
+        this.setState({suBlueprintList: _.filter(suBlueprintList, (suBlueprint) => {return suBlueprint.start_time!=null})});
         // On range change close the Details pane
         // this.closeSUDets();
         return {group: this.stationView?this.allStationsGroup:_.sortBy(group,'id'), items: items};
@@ -294,80 +265,6 @@ export class TimelineView extends Component {
     }
 
     /**
-     * Add Station Reservations during the visible timeline period
-     * @param {Array} items 
-     * @param {moment} startTime
-     * @param {moment} endTime
-     */
-    addStationReservations(items, startTime, endTime) {
-        let reservations = this.reservations;
-        for (const reservation of reservations) {
-            const reservationStartTime = moment.utc(reservation.start_time);
-            const reservationSpec = reservation.specifications_doc;
-            if ( (reservationStartTime.isSameOrAfter(startTime)                                
-                    || reservationStartTime.isSameOrBefore(endTime))
-                    && (!this.state.reservationFilter ||                                        // No reservation filter added
-                        reservationSpec.activity.type === this.state.reservationFilter) ) {     // Reservation reason == Filtered reaseon
-                if (reservationSpec.resources.stations) {
-                    items = items.concat(this.getReservationItems(reservation, endTime));
-                }
-            }
-        }
-        return items;
-    }
-
-    /**
-     * Get reservation timeline items. If the reservation doesn't have duration, item endtime should be timeline endtime.
-     * @param {Object} reservation 
-     * @param {moment} endTime 
-     */
-    getReservationItems(reservation, endTime) {
-        const reservationSpec = reservation.specifications_doc;
-        let items = [];
-        const start_time = moment.utc(reservation.start_time);
-        const end_time = reservation.duration?start_time.clone().add(reservation.duration, 'seconds'):endTime;
-        for (const station of reservationSpec.resources.stations) {
-            const blockColor = RESERVATION_COLORS[this.getReservationType(reservationSpec.schedulability)];
-            let item = { id: `Res-${reservation.id}-${station}`,
-                            start_time: start_time, end_time: end_time,
-                            name: reservationSpec.activity.type, project: reservation.project_id,
-                            group: station, type: 'RESERVATION',
-                            title: `${reservationSpec.activity.type}${reservation.project_id?("-"+ reservation.project_id):""}`,
-                            desc: reservation.description,
-                            duration: reservation.duration?UnitConverter.getSecsToHHmmss(reservation.duration):"Unknown",
-                            bgColor: blockColor.bgColor, selectedBgColor: blockColor.bgColor, color: blockColor.color
-                        };
-            items.push(item);
-        }
-        return items;
-    }
-
-    /**
-     * Get the schedule type from the schedulability object. It helps to get colors of the reservation blocks
-     * according to the type.
-     * @param {Object} schedulability 
-     */
-    getReservationType(schedulability) {
-        if (schedulability.manual && schedulability.dynamic) {
-            return 'true-true';
-        }   else if (!schedulability.manual && !schedulability.dynamic) {
-            return 'false-false';
-        }   else if (schedulability.manual && !schedulability.dynamic) {
-            return 'true-false';
-        }   else {
-            return 'false-true';
-        }
-    }
-
-    /**
-     * Set reservation filter
-     * @param {String} filter 
-     */
-    setReservationFilter(filter) {
-        this.setState({reservationFilter: filter});
-    }
-
-    /**
      * Function called to shrink or expand the SU list section width
      * @param {number} step - (-1) to shrink and (+1) to expand
      */
@@ -404,9 +301,6 @@ export class TimelineView extends Component {
                     group.push({'id': suBlueprint.suDraft.id, title: suBlueprint.suDraft.name});
                 }
             }
-        }
-        if (this.state.stationView) {
-            items = this.addStationReservations(items, this.state.currentStartTime, this.state.currentEndTime);
         }
         if (this.timeline) {
             this.timeline.updateTimeline({group: this.state.stationView?this.allStationsGroup:_.sortBy(group,"id"), items: items});
@@ -470,27 +364,14 @@ export class TimelineView extends Component {
                                 <div className="timeline-view-toolbar">
                                     <label>Station View</label>
                                     <InputSwitch checked={this.state.stationView} onChange={(e) => {this.setStationView(e)}} />
-                                    {this.state.stationView &&
-                                    <>
-                                        <label style={{marginLeft: '10px'}}>Reservation</label>
-                                        <Dropdown optionLabel="name" optionValue="name" 
-                                                    style={{fontSize: '10px', top: '-5px'}}
-                                                    value={this.state.reservationFilter} 
-                                                    options={this.reservationReasons} 
-                                                    filter showClear={true} filterBy="name"
-                                                    onChange={(e) => {this.setReservationFilter(e.value)}} 
-                                                    placeholder="Reason"/>
-                                    </>
-                                    }
                                 </div>
                                 <Timeline ref={(tl)=>{this.timeline=tl}} 
                                         group={this.state.group} 
                                         items={this.state.items}
                                         currentUTC={this.state.currentUTC}
-                                        rowHeight={this.state.stationView?30:30} itemClickCallback={this.onItemClick}
+                                        rowHeight={30} itemClickCallback={this.onItemClick}
                                         dateRangeCallback={this.dateRangeCallback}
                                         showSunTimings={!this.state.stationView}
-                                        stackItems ={this.state.stationView}
                                         className="timeline-toolbar-margin-top-0"></Timeline>
                             </div>
                             {/* Details Panel */}
