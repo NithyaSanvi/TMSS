@@ -22,7 +22,11 @@ class QAreporting extends Component{
 
     async componentDidMount() {
         const response = await WorkFlowService.getReportingTo(this.props.id);
-        console.log('response>>>>>>>>', response);
+        const workFlowProcess = await WorkFlowService.getWorkFlowProcess();
+        this.setState({
+            workFlowProcess: workFlowProcess.find(process => process.su.toString() === this.props.id.toString())
+        });
+        console.log(workFlowProcess.find(process => process.su.toString() === this.props.id.toString()), 'process');
         // this.setState({
         //     content: response.operator_report
         // });
@@ -33,7 +37,8 @@ class QAreporting extends Component{
      * here onNext props coming from parent, where will handle redirection to other page
      */
      async Next() {
-        await WorkFlowService.saveReportingTo(this.props.id, { operator_report: this.state.content },{operator_accept: this.state.checked});
+        const response = await WorkFlowService.saveReportingTo({id: this.props.id, operator_report: this.state.content, operator_accept: this.state.checked});
+        await WorkFlowService.updateWorkFlowProcess({...this.state.workFlowProcess, qa_reporting_to: response.id});
         this.props.onNext({ report: this.state.content });
     }
 
@@ -86,7 +91,7 @@ class QAreporting extends Component{
             </div>
             <div className="p-grid p-justify-start">
                 <div className="p-col-1">
-                    <Button label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
+                    <Button disabled={!this.state.content} label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
                 </div>
                 <div className="p-col-1">
                     <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '88px' }}/>
