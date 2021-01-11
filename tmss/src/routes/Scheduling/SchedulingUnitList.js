@@ -10,8 +10,8 @@ import UtilService from '../../services/util.service';
 class SchedulingUnitList extends Component{
      
     constructor(props){
-       super(props)
-       const defaultcolumns = {
+       super(props);
+       this.defaultcolumns = {
         type:{
             name:"Type",
             filter:"select"
@@ -19,12 +19,6 @@ class SchedulingUnitList extends Component{
         name:"Name",
         description:"Description",
         project:"Project",
-        target0angle1: "Target 1 Angle 1",
-        target0angle2: "Target 1 Angle 2",
-        target0referenceframe: "Target 1 Reference Frame",
-        target1angle1: "Target 2 Angle 1",
-        target1angle2: "Target 2 Angle 2",
-        target1referenceframe: "Target 2 Reference Frame",
         created_at:{
             name:"Created At",
             filter: "date"
@@ -43,7 +37,7 @@ class SchedulingUnitList extends Component{
         status:"Status"
         };
         if (props.hideProjectColumn) {
-            delete defaultcolumns['project'];
+            delete this.defaultcolumns['project'];
         }
         this.state = {
             scheduleunit: [],
@@ -51,7 +45,7 @@ class SchedulingUnitList extends Component{
                 "View": "/schedulingunit/view",
             }],
             isLoading: true,
-            defaultcolumns: [defaultcolumns],
+            defaultcolumns: [this.defaultcolumns],
             optionalcolumns:  [{
                 actionpath:"actionpath",
             }],
@@ -111,6 +105,7 @@ class SchedulingUnitList extends Component{
                 const promises = [];
                 output.map(su => promises.push(this.getScheduleUnitTasks(su.type, su)));
                 const tasksResponses = await Promise.all(promises);
+                const defaultColumns = this.defaultcolumns;
                 output.map(su => {
                     su.taskDetails = tasksResponses.find(task => task.id === su.id && task.type === su.type).tasks;
                     const targetObserv = su.taskDetails.find(task => task.template.type_value==='observation' && task.tasktype.toLowerCase()===su.type.toLowerCase() && task.specifications_doc.station_groups);
@@ -119,10 +114,15 @@ class SchedulingUnitList extends Component{
                         su[`target${index}angle1`] = UtilService.deg_to_dms(target.digital_pointing.angle1);
                         su[`target${index}angle2`] = UtilService.deg_to_dms(target.digital_pointing.angle2);
                         su[`target${index}referenceframe`] = target.digital_pointing.direction_type;
+
+                        defaultColumns[`target${index}angle1`] = `Target ${index + 1} - Angle 1`;
+                        defaultColumns[`target${index}angle2`] = `Target ${index + 1} - Angle 2`;
+                        defaultColumns[`target${index}referenceframe`] = `Target ${index + 1} - Reference Frame`;
                     });
                 });
                 this.setState({
-                    scheduleunit: output, isLoading: false
+                    scheduleunit: output, isLoading: false,
+                    defaultColumns: [defaultColumns]
                 });
                 this.selectedRows = [];
             })
