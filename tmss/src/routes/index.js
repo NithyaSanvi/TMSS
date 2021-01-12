@@ -55,7 +55,7 @@ export const routes = [
         name: 'Task Details',
         title: 'Task Details'
     },{
-        path: "/task/edit/draft/:id",
+        path: "/task/edit",
         component: TaskEdit,
         name: 'Task Edit',
         title: 'Task-Edit'
@@ -84,10 +84,15 @@ export const routes = [
         name: 'Project Add',
         title: 'Project - Add'
     },{
-        path: "/project/view/:id",
+        path: "/project/view",
         component: ProjectView,
         name: 'Project View',
         title: 'Project - Details '
+    },{
+        path: "/project/view/:id",
+        component: ProjectView,
+        name: 'Project View',
+        title: 'Project - View'
     },
     {
         path: "/project/edit/:id",
@@ -104,6 +109,11 @@ export const routes = [
         component: CycleEdit,
         name: 'Cycle Edit',
         title:'Cycle-Edit'
+    },{
+        path: "/cycle/view",
+        component: CycleView,
+        name: 'Cycle View',
+        title:'Cycle-View'
     },{
         path: "/cycle/view/:id",
         component: CycleView,

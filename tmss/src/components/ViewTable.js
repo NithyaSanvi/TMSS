@@ -12,7 +12,6 @@ import {Paginator} from 'primereact/paginator';
 import {TriStateCheckbox} from 'primereact/tristatecheckbox';
 import { Slider } from 'primereact/slider';
 import { Button } from "react-bootstrap";
-import { Link } from "react-router-dom";
 import { InputNumber } from "primereact/inputnumber";
 
 let tbldata =[], filteredData = [] ;
@@ -580,9 +579,9 @@ const defaultColumn = React.useMemo(
                        <tr {...row.getRowProps()}>
                          {row.cells.map(cell => {
                           if(cell.column.id !== 'actionpath')
-                          return <td {...cell.getCellProps()}>
-                          {(cell.row.original.links || []).includes(cell.column.id) ? <Link to={cell.row.original.linksURL[cell.column.id]}>{cell.render('Cell')}</Link> : cell.render('Cell')}
-                          </td>
+                          return <td className="td_pre" {...cell.getCellProps()}>
+                          {cell.render('Cell')}
+                        </td>
                         else 
                           return "";
                          })}
@@ -687,7 +686,7 @@ function ViewTable(props) {
           Header: 'Action',
           id:'Action',
           accessor: props.keyaccessor,
-          Cell: props => <button className='p-link' onClick={navigateTo(props)} ><i className="fa fa-edit" style={{cursor: 'pointer'}}></i></button>,
+          Cell: props => <button className='p-link'  onClick={navigateTo(props)} ><i className="fa fa-edit" style={{cursor: 'pointer'}}></i></button>,
           disableFilters: true,
           disableSortBy: true,
           isVisible: defaultdataheader.includes(props.keyaccessor),

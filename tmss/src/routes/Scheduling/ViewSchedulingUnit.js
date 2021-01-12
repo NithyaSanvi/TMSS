@@ -2,7 +2,6 @@ import React, { Component } from 'react'
 // import {Link} from 'react-router-dom'
 import 'primeflex/primeflex.css';
 import { Chips } from 'primereact/chips';
-import { Link } from 'react-router-dom';
 
 import AppLoader from "./../../layout/components/AppLoader";
 import PageHeader from '../../layout/components/PageHeader';
@@ -343,15 +342,7 @@ class ViewSchedulingUnit extends Component{
                      <div className="p-grid">
                         <label  className="col-lg-2 col-md-2 col-sm-12">Tags</label>
                         <Chips className="p-col-4 chips-readonly" disabled value={this.state.scheduleunit.tags}></Chips>
-                        {this.state.scheduleunit.scheduling_set_object.project_id && 
-                                    <>
-                                        <label className="col-lg-2 col-md-2 col-sm-12">Project</label>
-                                        <span className="col-lg-4 col-md-4 col-sm-12">
-                                            <Link to={`/project/view/${this.state.scheduleunit.scheduling_set_object.project_id}`}>{this.state.scheduleunit.scheduling_set_object.project_id}</Link>
-                                        </span>
-                                    </>
-                                }
-                    </div>
+                        </div>
                     </div>
                 </>
 			    }
