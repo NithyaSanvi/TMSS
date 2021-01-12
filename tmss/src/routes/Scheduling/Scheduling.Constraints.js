@@ -77,7 +77,7 @@ export default (props) => {
                 "inlineHideInput": true,
                 "wrap": true,
                 "enableSeconds": true,
-                
+                "time_24hr": true,
             }          
         };
     };
@@ -154,11 +154,11 @@ export default (props) => {
         // For DateTime
         for (let key in initValue.time) {
             if (typeof initValue.time[key] === 'string') {
-                initValue.time[key] = moment(new Date((initValue.time[key] || '').replace('Z', ''))).format("YYYY-MM-DD hh:mm:ss");
+                initValue.time[key] = moment(new Date((initValue.time[key] || '').replace('Z', ''))).format("YYYY-MM-DD HH:mm:ss");
             } else {
                 initValue.time[key].forEach(time => {
                     for (let subKey in time) {
-                        time[subKey] = moment(new Date((time[subKey] || '').replace('Z', ''))).format("YYYY-MM-DD hh:mm:ss");
+                        time[subKey] = moment(new Date((time[subKey] || '').replace('Z', ''))).format("YYYY-MM-DD HH:mm:ss");
                     }
                     return true;
                 })

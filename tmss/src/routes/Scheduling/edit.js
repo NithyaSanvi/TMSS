@@ -296,11 +296,11 @@ export class EditSchedulingUnit extends Component {
             for (let type in constStrategy.time) {
                 if (constStrategy.time[type] && constStrategy.time[type].length) {
                     if (typeof constStrategy.time[type] === 'string') {
-                        constStrategy.time[type] = `${moment(constStrategy.time[type]).format("YYYY-MM-DDThh:mm:ss.SSSSS", { trim: false })}Z`;
+                        constStrategy.time[type] = `${moment(constStrategy.time[type]).format("YYYY-MM-DDTHH:mm:ss.SSSSS", { trim: false })}Z`;
                     } else {
                         constStrategy.time[type].forEach(time => {
                             for (let key in time) {
-                                time[key] = `${moment(time[key] ).format("YYYY-MM-DDThh:mm:ss.SSSSS", { trim: false })}Z`;
+                                time[key] = `${moment(time[key] ).format("YYYY-MM-DDTHH:mm:ss.SSSSS", { trim: false })}Z`;
                             }
                             
                         })
