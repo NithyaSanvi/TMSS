@@ -3,9 +3,9 @@ import 'primeflex/primeflex.css';
 import moment from 'moment';
 import AppLoader from "./../../layout/components/AppLoader";
 import ViewTable from './../../components/ViewTable';
-import UtilService from '../../services/util.service';
 
 import ScheduleService from '../../services/schedule.service';
+import UnitConverter from '../../utils/unit.converter';
 
 class SchedulingUnitList extends Component{
      
@@ -111,8 +111,8 @@ class SchedulingUnitList extends Component{
                     const targetObserv = su.taskDetails.find(task => task.template.type_value==='observation' && task.tasktype.toLowerCase()===su.type.toLowerCase() && task.specifications_doc.station_groups);
                     // Constructing targets in single string to make it clear display 
                     targetObserv.specifications_doc.SAPs.map((target, index) => {
-                        su[`target${index}angle1`] = UtilService.deg_to_dms(target.digital_pointing.angle1);
-                        su[`target${index}angle2`] = UtilService.deg_to_dms(target.digital_pointing.angle2);
+                        su[`target${index}angle1`] = UnitConverter.getAngleInput(target.digital_pointing.angle1);
+                        su[`target${index}angle2`] = UnitConverter.getAngleInput(target.digital_pointing.angle2, true);
                         su[`target${index}referenceframe`] = target.digital_pointing.direction_type;
                         defaultColumns[`target${index}angle1`] = `Target ${index + 1} - Angle 1`;
                         defaultColumns[`target${index}angle2`] = `Target ${index + 1} - Angle 2`;
