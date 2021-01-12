@@ -325,7 +325,7 @@ export class SchedulingUnitCreate extends Component {
         (this.state.selectedStations || []).forEach(key => {
             let station_group = {};
             const stations = this.state[key] ? this.state[key].stations : [];
-            const max_nr_missing = parseInt(this.state[key] ? this.state[key].missing_StationFields : 0);
+            const max_nr_missing = parseInt(this.state[key] ? (this.state[key].missing_StationFields || 0) : 0);
             station_group = {
                 stations,
                 max_nr_missing
@@ -339,6 +339,11 @@ export class SchedulingUnitCreate extends Component {
                 max_nr_missing:parseInt(station.max_nr_missing)
             });
         });
+
+        if (!station_groups.length) {
+            this.growl.show({severity: 'error', summary: 'Select Stations', detail: 'Please specify station groups.'});
+            return;
+        }
         
         UnitConversion.degreeToRadians(constStrategy.sky);
             
@@ -349,18 +354,16 @@ export class SchedulingUnitCreate extends Component {
         });
         for (const taskName in observStrategy.template.tasks) {
             let task = observStrategy.template.tasks[taskName];
-            if (task.specifications_doc.station_groups) {
-                task.specifications_doc.station_groups = station_groups;
-            }
+            task.specifications_doc.station_groups = station_groups;
         }
         const const_strategy = {scheduling_constraints_doc: constStrategy, id: this.constraintTemplates[0].id, constraint: this.constraintTemplates[0]};
         const schedulingUnit = await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, this.state.schedulingUnit, const_strategy, station_groups);
-        if (schedulingUnit) {
+        if (!schedulingUnit.error) {
             // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks created successfully!'});
             const dialog = {header: 'Success', detail: 'Scheduling Unit and Tasks are created successfully. Do you want to create another Scheduling Unit?'};
             this.setState({schedulingUnit: schedulingUnit, dialogVisible: true, dialog: dialog})
         }   else {
-            this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to save Scheduling Unit/Tasks'});
+            this.growl.show({severity: 'error', summary: 'Error Occured', detail: schedulingUnit.message || 'Unable to save Scheduling Unit/Tasks'});
         }
     }
 
@@ -531,6 +534,7 @@ export class SchedulingUnitCreate extends Component {
                         <Stations
                             stationGroup={this.state.stationGroup}
                             onUpdateStations={this.onUpdateStations.bind(this)}
+                            height={'auto'}
                         />
                        </div>
                     {this.state.constraintSchema && <div className="p-fluid">

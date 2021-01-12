@@ -27,18 +27,10 @@ export default class SkySllector extends Component {
         daily: tmpDailyValue,
       });
     }
-
-    console.log('this.props.props',this.props.data['daily'], this.state.daily)
-
-   // this.props.props.
-   /*  console.log('---',this.props.data['daily'])
-      await this.setState({
-        daily: this.props.data['daily']
-      })*/
+ 
   }
 
   async callbackUpdateDailyCell(e) {
-    let isValid = false;
     this.setState({
       daily: e.value
     })
@@ -66,8 +58,9 @@ export default class SkySllector extends Component {
     return (
       <div className="col-sm-6">
         <MultiSelect  optionLabel="name"   value={this.state.daily} options={this.dailyOptions}
-        optionLabel="value" optionValue="value" filter={true}
-        onChange={this.callbackUpdateDailyCell} />
+        optionValue="value" filter={true}
+        onChange={this.callbackUpdateDailyCell}
+        />
        </div>
     );
   }

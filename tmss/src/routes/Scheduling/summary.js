@@ -5,7 +5,7 @@ import _ from 'lodash';
 import ViewTable from '../../components/ViewTable';
 import { JsonToTable } from "react-json-to-table";
 import SchedulingConstraints from './Scheduling.Constraints';
-import Stations from './Stations';
+// import Stations from './Stations';
 
 /**
  * Component to view summary of the scheduling unit with limited task details
@@ -127,7 +127,7 @@ export class SchedulingUnitSummary extends Component {
                     <div className="col-4"><label>Name:</label></div>
                     <div className="col-8">{schedulingUnit.name}</div>
                     <div className="col-4"><label>Project:</label></div>
-                    <div className="col-8">{schedulingUnit.project.name}</div>
+                    <div className="col-8">{schedulingUnit.project}</div>
                     <div className="col-4"><label>Start Time:</label></div>
                     <div className="col-8">{moment.utc(schedulingUnit.start_time).format("DD-MMM-YYYY HH:mm:ss")}</div>
                     <div className="col-4"><label>Stop Time:</label></div>

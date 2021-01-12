@@ -6,26 +6,6 @@ import moment from 'moment';
 axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
 
 const ScheduleService = { 
-    getQASchedulingUnitProcess: async function (){
-        let res = [];
-        await axios.get('/workflow_api/scheduling_unit_flow/qa_scheduling_unit_process/')
-        .then(response => {
-            res= response.data.results; 
-        }).catch(function(error) {
-            console.error('[schedule.services.getQASchedulingUnitProcess]',error);
-        });
-        return res;
-    },
-    getQASchedulingUnitTask: async function (){
-        let res = [];
-        await axios.get('/workflow_api/scheduling_unit_flow/qa_scheduling_unit_task/')
-        .then(response => {
-            res= response.data.results; 
-        }).catch(function(error) {
-            console.error('[schedule.services.getQASchedulingUnitTask]',error);
-        });
-        return res;
-    },
     getSchedulingUnitDraft: async function (){
         let res = [];
         try {
@@ -49,6 +29,43 @@ const ScheduleService = {
             console.error('[schedule.services.getSchedulingUnitBlueprint]',error);
         }
         return res;
+    },
+    getSchedulingUnitsExtended: async function (type){
+        let blueprints = [];
+        try {
+            let initialResponse = await axios.get(`/api/scheduling_unit_${type}_extended`);
+            const totalCount = initialResponse.data.count;
+            const initialCount = initialResponse.data.results.length
+            blueprints = blueprints.concat(initialResponse.data.results);
+            if (totalCount > initialCount) {
+                let secondResponse = await axios.get(`/api/scheduling_unit_${type}_extended/?ordering=id&limit=${totalCount-initialCount}&offset=${initialCount}`);
+                blueprints = blueprints.concat(secondResponse.data.results);
+            }
+        }   catch(error) {
+            console.error('[schedule.services.getSchedulingUnitsExtended]',error);
+        }
+        return blueprints;
+    },
+    getSchedulingUnitExtended: async function (type, id){
+        let schedulingUnit = null;
+        try {
+            const response = await axios.get(`/api/scheduling_unit_${type}_extended/${id}/`);
+            schedulingUnit = response.data;
+            if (schedulingUnit) {
+                if (type === "blueprint") {
+                    const schedulingUnitDraft = (await axios.get(`/api/scheduling_unit_draft/${id}/`)).data;
+                    schedulingUnit.draft_object = schedulingUnitDraft;
+                    schedulingUnit.scheduling_set_id = schedulingUnitDraft.scheduling_set_id;
+                    schedulingUnit.scheduling_constraints_doc = schedulingUnitDraft.scheduling_constraints_doc;
+                }
+                const schedulingSet = (await axios.get(`/api/scheduling_set/${schedulingUnit.scheduling_set_id}`)).data;
+                schedulingUnit.scheduling_set_object = schedulingSet;
+                schedulingUnit.scheduling_set = schedulingSet.url;
+            }
+        }   catch(error) {
+            console.error('[schedule.services.getSchedulingUnitExtended]',error);
+        }
+        return schedulingUnit;
     },
     //>>>>>> TODO: Remove this method by using/modifying other functions with additional parameters
     getTaskBPWithSubtaskTemplate: async function(id) {
@@ -117,7 +134,7 @@ const ScheduleService = {
             return null;
         }
     },
-    getTaskBlueprintById: async function(id, loadTemplate, loadSubtasks){
+    getTaskBlueprintById: async function(id, loadTemplate, loadSubtasks, loadSubtaskTemplate){
         let result;
         try {
             result = await axios.get('/api/task_blueprint/'+id);
@@ -125,9 +142,21 @@ const ScheduleService = {
                 result.data.template = await TaskService.getTaskTemplate(result.data.specifications_template_id);
             }
             if (result.data && loadSubtasks) {
-                let subTasks = [];
+                let subTasks = [], subtaskemplates = {};
                 for (const subtaskId of result.data.subtasks_ids) {
-                    subTasks.push((await TaskService.getSubtaskDetails(subtaskId)));
+                    let subtask = await TaskService.getSubtaskDetails(subtaskId);
+                    if (loadSubtaskTemplate) {
+                        //To avoid repeated api call for template if it has already loaded
+                        if (subtaskemplates[subtask.specifications_template_id]) {
+                            subtask.template = subtaskemplates[subtask.specifications_template_id];
+                        } else {
+                            const subtaskTemplate = await TaskService.getSubtaskTemplate(subtask.specifications_template_id);
+                            subtask.template = subtaskTemplate;
+                            subtaskemplates[subtask.specifications_template_id] = subtaskTemplate;
+                        }
+                    }
+                    subTasks.push((subtask));
+                    // subTasks.push((await TaskService.getSubtaskDetails(subtaskId)));
                 }
                 result.data.subTasks = subTasks;
             }
@@ -136,12 +165,12 @@ const ScheduleService = {
         }
         return result;
     },
-    getTaskBlueprintsBySchedulingUnit: async function(scheduleunit, loadTemplate, loadSubtasks){
+    getTaskBlueprintsBySchedulingUnit: async function(scheduleunit, loadTemplate, loadSubtasks, loadSubtaskTemplate){
         // there no single api to fetch associated task_blueprint, so iteare the task_blueprint id to fetch associated task_blueprint
         let taskblueprintsList = [];
         if(scheduleunit.task_blueprints_ids){
             for(const id of scheduleunit.task_blueprints_ids){
-               await this.getTaskBlueprintById(id, loadTemplate, loadSubtasks).then(response =>{
+               await this.getTaskBlueprintById(id, loadTemplate, loadSubtasks, loadSubtaskTemplate).then(response =>{
                     let taskblueprint = response.data;
                     taskblueprint['tasktype'] = 'Blueprint';
                     taskblueprint['actionpath'] = '/task/view/blueprint/'+taskblueprint['id'];
@@ -280,11 +309,16 @@ const ScheduleService = {
         });
         return res;
     },
-    getTasksDraftBySchedulingUnitId: async function (id){
+    getTasksDraftBySchedulingUnitId: async function (id, loadTemplate){
         let res=[];
         await axios.get('/api/scheduling_unit_draft/'+id+'/task_draft/?ordering=id')
-        .then(response => {
+        .then(async response => {
             res= response;
+            if (response && response.data.results && loadTemplate) {
+                for(const task of response.data.results){
+                    task.template = await TaskService.getTaskTemplate(task.specifications_template_id);
+                }
+            }
         }).catch(function(error) {
             console.error('[schedule.services.getTasksDraftBySchedulingUnitId]',error);
         });
@@ -351,7 +385,10 @@ const ScheduleService = {
                 delete schedulingUnit['duration'];
                 schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
                 if (!schedulingUnit || !schedulingUnit.id) {
-                    return null;
+                    return {
+                        error: true,
+                        messsage: 'Unable to Create Scheduling Unit'
+                    };
                 }
                 // Create task drafts with updated requirement_doc
                 schedulingUnit = await this.createSUTaskDrafts(schedulingUnit);
@@ -359,10 +396,16 @@ const ScheduleService = {
                     return schedulingUnit;
                 }
             }
-            return null;
+            return {
+                error: true,
+                message: 'Unable to Create Task Drafts'
+            };
         }   catch(error) {
             console.error(error);
-            return null;
+            return {
+                error: true,
+                message: 'Stations Required'
+            };
         };
     },
     
@@ -371,21 +414,30 @@ const ScheduleService = {
             delete schedulingUnit['duration'];
            
             schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
-            for (const taskToUpdate in tasksToUpdate) {
-                let task = tasks.find(task => { return task.name === taskToUpdate});
-                task.specifications_doc = observStrategy.template.tasks[taskToUpdate].specifications_doc;
-                if (task.specifications_doc.station_groups) {
-                    task.specifications_doc.station_groups = station_groups;
+            if (!schedulingUnit.error) {
+                for (const taskToUpdate in tasksToUpdate) {
+                    let task = tasks.find(task => { return task.name === taskToUpdate});
+                    task.specifications_doc = observStrategy.template.tasks[taskToUpdate].specifications_doc;
+                    if (task.specifications_doc.station_groups) {
+                        task.specifications_doc.station_groups = station_groups;
+                    }
+                    delete task['duration'];
+                    delete task['relative_start_time'];
+                    delete task['relative_stop_time'];
+                    task = await TaskService.updateTask('draft', task);
+                    if (task.error) {
+                        schedulingUnit = task;
+                    }
                 }
-                delete task['duration'];
-                delete task['relative_start_time'];
-                delete task['relative_stop_time'];
-                task = await TaskService.updateTask('draft', task);
+                
             }
             return schedulingUnit;
         }   catch(error) {
             console.error(error);
-            return null;
+            return {
+                error: true,
+                message: 'Unable to Update Task Drafts'
+            }
         };
     },
     updateSchedulingUnitDraft: async function(schedulingUnit) {
@@ -480,15 +532,32 @@ const ScheduleService = {
             return [];
         };
     },
-    getStations: async function(e) {
+    getStations: async function(group) {
         try {
            // const response = await axios.get('/api/station_groups/stations/1/dutch');
-           const response = await axios.get(`/api/station_groups/stations/1/${e}`);
+           const response = await axios.get(`/api/station_groups/stations/1/${group}`);
             return response.data;
         }   catch(error) {
             console.error(error);
             return [];
         }
+    },
+    // To get stations of main groups
+    getMainGroupStations: async function() {
+        let stationGroups = {};
+        try {
+            const stationPromises = [this.getStations('Core'), 
+                                        this.getStations('Remote'), 
+                                        this.getStations('International')]
+            await Promise.all(stationPromises).then(async(results) => {
+                for (const result of results) {
+                    stationGroups[result.group] = result.stations;
+                }
+            });
+        }   catch(error) {
+            console.error(error);
+        }
+        return stationGroups;
     },
       getProjectList: async function() {
         try {

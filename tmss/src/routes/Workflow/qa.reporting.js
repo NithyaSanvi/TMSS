@@ -3,8 +3,6 @@ import { Button } from 'primereact/button';
 import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css'; // Import Sun Editor's CSS File
 import { Dropdown } from 'primereact/dropdown';
-import WorkFlowService from '../../services/workflow.service';
-import { Checkbox } from 'primereact/checkbox';
 //import katex from 'katex' // for mathematical operations on sun editor this component should be added
 //import 'katex/dist/katex.min.css'
 
@@ -13,34 +11,19 @@ class QAreporting extends Component{
     constructor(props) {
         super(props);
         this.state={
-            checked: false,
             content: props.report
         };
         this.Next = this.Next.bind(this);
         this.handleChange = this.handleChange.bind(this);
     }
 
-    async componentDidMount() {
-        const response = await WorkFlowService.getReportingTo(this.props.id);
-        const workFlowProcess = await WorkFlowService.getWorkFlowProcess();
-        this.setState({
-            workFlowProcess: workFlowProcess.find(process => process.su.toString() === this.props.id.toString())
-        });
-        console.log(workFlowProcess.find(process => process.su.toString() === this.props.id.toString()), 'process');
-        // this.setState({
-        //     content: response.operator_report
-        // });
-    }
-
     /**
      * Method will trigger on click save buton
      * here onNext props coming from parent, where will handle redirection to other page
      */
-     async Next() {
-        const response = await WorkFlowService.saveReportingTo({id: this.props.id, operator_report: this.state.content, operator_accept: this.state.checked});
-        await WorkFlowService.updateWorkFlowProcess({...this.state.workFlowProcess, qa_reporting_to: response.id});
+     Next() {
         this.props.onNext({ report: this.state.content });
-    }
+     }
 
     /**
      * Method will trigger on change of operator report sun-editor
@@ -81,17 +64,9 @@ class QAreporting extends Component{
                         }} />
                 </div>
             </div>
-            <div className="p-field p-grid">
-                <label htmlFor="operatorAccept" className="col-lg-2 col-md-2 col-sm-12">Operator Accept</label>
-               <div className="col-lg-3 col-md-3 col-sm-12">
-                    <div className="p-field-checkbox">
-                        <Checkbox inputId="secondary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
-                    </div>
-              </div>
-            </div>
             <div className="p-grid p-justify-start">
                 <div className="p-col-1">
-                    <Button disabled={!this.state.content} label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
+                    <Button label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
                 </div>
                 <div className="p-col-1">
                     <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '88px' }}/>

@@ -88,7 +88,7 @@ export class ProjectList extends Component{
                 "Trigger Priority":"filter-input-50",
                 "Category of Period":"filter-input-50",
                 "Cycles":"filter-input-100",
-               "LTA Storage Location":"filter-input-100",
+                "LTA Storage Location":"filter-input-100",
                 "LTA Storage Path":"filter-input-100"
             }],
             defaultSortColumn: [{id: "Name / Project Code", desc: false}],

@@ -14,7 +14,7 @@ import ViewSchedulingUnit from './Scheduling/ViewSchedulingUnit'
 import SchedulingUnitCreate from './Scheduling/create';
 import EditSchedulingUnit from './Scheduling/edit';
 import { CycleList, CycleCreate, CycleView, CycleEdit } from './Cycle';
-import {TimelineView, WeekTimelineView} from './Timeline';
+import {TimelineView, WeekTimelineView, ReservationCreate} from './Timeline';
 import SchedulingSetCreate from './Scheduling/create.scheduleset';
 import Workflow from './Workflow';
 
@@ -55,7 +55,7 @@ export const routes = [
         name: 'Task Details',
         title: 'Task Details'
     },{
-        path: "/task/edit",
+        path: "/task/edit/draft/:id",
         component: TaskEdit,
         name: 'Task Edit',
         title: 'Task-Edit'
@@ -84,15 +84,10 @@ export const routes = [
         name: 'Project Add',
         title: 'Project - Add'
     },{
-        path: "/project/view",
-        component: ProjectView,
-        name: 'Project View',
-        title: 'Project - Details '
-    },{
         path: "/project/view/:id",
         component: ProjectView,
         name: 'Project View',
-        title: 'Project - View'
+        title: 'Project - Details '
     },
     {
         path: "/project/edit/:id",
@@ -109,11 +104,6 @@ export const routes = [
         component: CycleEdit,
         name: 'Cycle Edit',
         title:'Cycle-Edit'
-    },{
-        path: "/cycle/view",
-        component: CycleView,
-        name: 'Cycle View',
-        title:'Cycle-View'
     },{
         path: "/cycle/view/:id",
         component: CycleView,
@@ -159,7 +149,12 @@ export const routes = [
        name: 'Workflow',
        title: 'QA Reporting (TO)'
     },
-    
+    {
+        path: "/su/timelineview/reservation/create",
+        component: ReservationCreate,
+        name: 'Reservation Add',
+        title: 'Reservation - Add'
+    }
 ];
 
 export const RoutedContent = () => {

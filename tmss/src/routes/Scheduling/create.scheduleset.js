@@ -1,10 +1,11 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import { Redirect } from 'react-router-dom';
 
-import {Dropdown} from 'primereact/dropdown';
+import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
-import {Dialog} from 'primereact/components/dialog/Dialog';
-import {Growl} from 'primereact/components/growl/Growl';
+import { Dialog } from 'primereact/components/dialog/Dialog';
+import { Growl } from 'primereact/components/growl/Growl';
+
 import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModules } from '@ag-grid-community/all-modules';
 import $RefParser from "@apidevtools/json-schema-ref-parser";
@@ -29,8 +30,7 @@ import UnitConverter from '../../utils/unit.converter'
 import UIConstants from '../../utils/ui.constants';
 import UnitConversion from '../../utils/unit.converter';
 import StationEditor from '../../components/Spreadsheet/StationEditor';
-
-
+    
 import moment from 'moment';
 import _ from 'lodash';
 
@@ -50,9 +50,7 @@ export class SchedulingSetCreate extends Component {
         this.gridColumnApi = ''
         this.rowData = [];
         this.tmpRowData = [];
-        this.defaultCellValues = [];
         this.daily = [];
-
         this.state = {
             dailyOption: [],
             projectDisabled: (props.match?(props.match.params.project? true:false):false),
@@ -103,11 +101,12 @@ export class SchedulingSetCreate extends Component {
             // ag grid to show row index
             components: {
                 rowIdRenderer: function (params) {
-                return 1 + params.rowIndex;
+                    return 1 + params.rowIndex;
                 },
                 validCount: 0,
                 inValidCount: 0,
             },
+            //ag-gird - No of rows list
             noOfSUOptions: [
                 { label: '10', value: '10' },
                 { label: '50', value: '50' },
@@ -119,6 +118,8 @@ export class SchedulingSetCreate extends Component {
             selectedStations: [],
             defaultStationGroups: [],
             saveDialogVisible: false,
+            defaultCellValues: {},
+            showDefault: false,
         }
 
         this.onGridReady = this.onGridReady.bind(this);
@@ -132,6 +133,8 @@ export class SchedulingSetCreate extends Component {
         this.saveSU = this.saveSU.bind(this);
         this.validateGridAndSave = this.validateGridAndSave.bind(this);
         this.showDialogContent = this.showDialogContent.bind(this);
+        this.isNotEmpty = this.isNotEmpty.bind(this);
+        this.setDefaultCellValue = this.setDefaultCellValue.bind(this);
 
         this.projects = [];                         // All projects to load project dropdown
         this.schedulingSets = [];                   // All scheduling sets to be filtered for project
@@ -143,6 +146,7 @@ export class SchedulingSetCreate extends Component {
             project: {required: true, message: "Select project to get Scheduling Sets"},
             scheduling_set_id: {required: true, message: "Select the Scheduling Set"},
         };
+        
     }
 
     componentDidMount() {
@@ -211,13 +215,16 @@ export class SchedulingSetCreate extends Component {
         this.setState({isAGLoading: false});
     }
 
+    /**
+     * Set default value for Station group when filter change
+     */
     async setDefaultStationGroup(observStrategy) {
         let station_group = [];
         const tasks = observStrategy.template.tasks;    
         for (const taskName of _.keys(tasks)) {
             const task = tasks[taskName];
             //Resolve task from the strategy template
-            const $taskRefs = await $RefParser.resolve(task);
+            await $RefParser.resolve(task);
             // Identify the task specification template of every task in the strategy template
             const taskTemplate = _.find(this.taskTemplates, {'name': task['specifications_template']});
             if (taskTemplate.type_value==='observation' && task.specifications_doc.station_groups) {
@@ -228,6 +235,9 @@ export class SchedulingSetCreate extends Component {
             defaultStationGroups: station_group,
         })
     }
+    
+   
+
     /**
      * Function called when observation strategy template is changed. 
      *
@@ -242,17 +252,15 @@ export class SchedulingSetCreate extends Component {
         await this.setState({
             schedulingUnitList: schedulingUnitList,
             observStrategy: observStrategy,
-        })
+        });
         
-        if  (schedulingUnitList && schedulingUnitList.length >0){
+        if (schedulingUnitList && schedulingUnitList.length >0){
             await this.prepareScheduleUnitListForGrid();
-        }  else  {
+        } else  {
             this.setState({
                 rowData: []
-            })
+            });
         }
-        // this.state.gridApi.setRowData(this.state.rowData)
-        //this.state.gridApi.redrawRows();
         this.setState({isAGLoading: false});
     }
    
@@ -302,6 +310,10 @@ export class SchedulingSetCreate extends Component {
         return schema;
     }
 
+    /**
+     * return constraint
+     * @param {*} scheduleUnit 
+     */
     async getConstraintSchema(scheduleUnit){
        let constraintSchema = await ScheduleService.getSchedulingConstraintTemplate(scheduleUnit.scheduling_constraints_template_id);
        return constraintSchema;
@@ -312,7 +324,8 @@ export class SchedulingSetCreate extends Component {
      * @param {number} strategyId 
      */
     async createGridColumns(scheduleUnit){
-        let schema = await this.getTaskSchema(scheduleUnit);
+        let defaultCellValues = {};
+        let schema = await this.getTaskSchema(scheduleUnit, false);
         schema = await this.resolveSchema(schema);
         let constraintSchema =  await this.getConstraintSchema(scheduleUnit);
         constraintSchema = await this.resolveSchema(constraintSchema);
@@ -335,24 +348,49 @@ export class SchedulingSetCreate extends Component {
         });
 
         let cellProps =[];
-        cellProps['angle1'] = {isgroup: true, type:'numberValueColumn', cellRenderer: 'timeInputMask',cellEditor: 'timeInputMask', valueSetter: 'valueSetter', };
-        cellProps['angle2'] = {isgroup: true, type:'numberValueColumn', cellRenderer: 'degreeInputMask',cellEditor: 'degreeInputMask', valueSetter: 'valueSetter' };
-        cellProps['angle3'] = {isgroup: true, cellEditor: 'numericEditor', cellStyle: function(params) { if  (params.value){
-			if (!Number(params.value)) {
+        cellProps['angle1'] = {isgroup: true, type:'numberValueColumn', cellRenderer: 'timeInputMask',cellEditor: 'timeInputMask', valueSetter: 'valueSetter', cellStyle: function(params) {
+            if (params.value && !Validator.validateTime(params.value)) {     
+                return { backgroundColor: BG_COLOR};
+            } else {
+                return { backgroundColor: ''};
+            }
+            },};
+        cellProps['angle2'] = {isgroup: true, type:'numberValueColumn', cellRenderer: 'degreeInputMask',cellEditor: 'degreeInputMask', valueSetter: 'valueSetter' , cellStyle: function(params) {
+            if (params.value && !Validator.validateAngle(params.value)) {     
+                return { backgroundColor: BG_COLOR};
+            } else {
+                return { backgroundColor: ''};
+            }
+            }, };
+        cellProps['angle3'] = {isgroup: true, cellStyle: function(params) { if (params.value){
+            if (!Number(params.value)) {
 				return { backgroundColor: BG_COLOR};
-			}
-			else if ( Number(params.value) < 0||   Number(params.value) > 90) {
-				return { backgroundColor: BG_COLOR};
-			} else{
+			} 
+            else{
 				return { backgroundColor: ''};
 			}
-		}}}; 
+		} else {
+            return { backgroundColor: BG_COLOR};
+        }}}; 
         cellProps['direction_type'] = {isgroup: true, cellEditor: 'agSelectCellEditor',default: schema.definitions.pointing.properties.direction_type.default,
             cellEditorParams: {
                 values: schema.definitions.pointing.properties.direction_type.enum,
             }, 
         };
        
+        cellProps['duration'] = { type:'numberValueColumn', cellStyle: function(params) {
+            if  (params.value){
+                if ( !Number(params.value)){
+                    return { backgroundColor: BG_COLOR};
+                }
+                else if ( Number(params.value) < 1) {
+                    return { backgroundColor: BG_COLOR};
+                } else{
+                    return { backgroundColor: ''};
+                }
+            }
+        }, };
+
         //Ag-grid Colums definition
         // Column order to use clipboard copy
         let colKeyOrder = [];
@@ -377,7 +415,7 @@ export class SchedulingSetCreate extends Component {
               children: [
                 {headerName: 'Name',field: 'suname'},
                 {headerName: 'Description',field: 'sudesc', cellStyle: function(params) {
-                        if  (params.data.suname && params.data.suname !== '' && params.value === '') {
+                        if  (params.data.suname && (params.data.suname !== '' && (!params.value || params.value === ''))) {
                             return { backgroundColor: BG_COLOR};
                         }  else  { return { backgroundColor: ''};}
                     },
@@ -398,71 +436,78 @@ export class SchedulingSetCreate extends Component {
                     ],
                 },
                
-            {headerName: 'Between',field: 'between',cellRenderer: 'betweenRenderer',cellEditor: 'betweenEditor',valueSetter: 'newValueSetter', },
+            {headerName: 'Between',field: 'between',cellRenderer: 'betweenRenderer',cellEditor: 'betweenEditor',valueSetter: 'newValueSetter'},
             {headerName: 'Not Between',field: 'notbetween',cellRenderer: 'betweenRenderer',cellEditor: 'betweenEditor',valueSetter: 'newValueSetter'},
             {headerName: 'Daily',field: 'daily',cellEditor: 'multiselector', valueSetter: 'valueSetter'},
             {
-            headerName: 'Sky',
-            children: [
-                {headerName: 'Min Target Elevation',field: 'min_target_elevation', cellStyle: function(params) {
-                    if  (params.value){
-                        if ( !Number(params.value)){
-                            return { backgroundColor: BG_COLOR};
+                headerName: 'Sky',
+                children: [
+                    {headerName: 'Min Target Elevation',field: 'min_target_elevation', cellStyle: function(params) {
+                        if  (params.value){
+                            if ( !Number(params.value)){
+                                return { backgroundColor: BG_COLOR};
+                            }
+                            else if ( Number(params.value) < 0||   Number(params.value) > 90) {
+                                return { backgroundColor: BG_COLOR};
+                            } else{
+                                return { backgroundColor: ''};
+                            }
                         }
-                        else if ( Number(params.value) < 0||   Number(params.value) > 90) {
-                            return { backgroundColor: BG_COLOR};
-                        } else{
+                    }, },
+                    {headerName: 'Min Calibrator Elevation',field: 'min_calibrator_elevation',  cellStyle: function(params) {
+                        if  (params.value){
+                            if ( !Number(params.value)){
+                                return { backgroundColor: BG_COLOR};
+                            }
+                            else if ( Number(params.value) < 0||   Number(params.value) > 90) {
+                                return { backgroundColor: BG_COLOR};
+                            } else{
+                                return { backgroundColor: ''};
+                            }
+                        }
+                    }, },
+                    {headerName: 'Offset Window From',field: 'offset_from', cellStyle: function(params) {
+                    
+                        if  (params.value){
+                            if  (params.value === 'undefined' || params.value === ''){
+                                return { backgroundColor: ''};
+                            }
+                            if(params.value === "0"){
+                                return { backgroundColor: ''};
+                            }
+                            if (!Number(params.value)){
+                                return { backgroundColor: BG_COLOR};
+                            }
+                            else if ( Number(params.value) < -0.20943951 ||   Number(params.value) > 0.20943951) {
+                                return { backgroundColor: BG_COLOR};
+                            } else{
+                                return { backgroundColor: ''};
+                            }
+                        }  else  {
                             return { backgroundColor: ''};
                         }
-                    }
-                }, },
-                {headerName: 'Min Calibrator Elevation',field: 'min_calibrator_elevation',  cellStyle: function(params) {
-                    if  (params.value){
-                        if ( !Number(params.value)){
-                            return { backgroundColor: BG_COLOR};
-                        }
-                        else if ( Number(params.value) < 0||   Number(params.value) > 90) {
-                            return { backgroundColor: BG_COLOR};
-                        } else{
+                    }, },
+                    {headerName: 'Offset Window To',field: 'offset_to', cellStyle: function(params) {
+                        if  (params.value){
+                            if  (params.value === 'undefined' || params.value === ''){
+                                return { backgroundColor: ''};
+                            }
+                            if(params.value === "0"){
+                                return { backgroundColor: ''};
+                            }
+                            if ( !Number(params.value)){
+                                return { backgroundColor: BG_COLOR};
+                            }
+                            else if ( Number(params.value) < -0.20943951 ||   Number(params.value) > 0.20943951) {
+                                return { backgroundColor: BG_COLOR};
+                            } else{
+                                return { backgroundColor: ''};
+                            }
+                        }  else  {
                             return { backgroundColor: ''};
                         }
-                    }
-                }, },
-                {headerName: 'Offset Window From',field: 'offset_from', cellStyle: function(params) {
-                    if  (params.value){
-                        if  (params.value === 'undefined' || params.value === ''){
-                            return { backgroundColor: ''};
-                        }
-                        if ( !Number(params.value)){
-                            return { backgroundColor: BG_COLOR};
-                        }
-                        else if ( Number(params.value) < -0.20943951 ||   Number(params.value) > 0.20943951) {
-                            return { backgroundColor: BG_COLOR};
-                        } else{
-                            return { backgroundColor: ''};
-                        }
-                    }  else  {
-                        return { backgroundColor: ''};
-                    }
-                }, },
-                {headerName: 'Offset Window To',field: 'offset_to', cellStyle: function(params) {
-                    if  (params.value){
-                        if  (params.value === 'undefined' || params.value === ''){
-                            return { backgroundColor: ''};
-                        }
-                        if ( !Number(params.value)){
-                            return { backgroundColor: BG_COLOR};
-                        }
-                        else if ( Number(params.value) < -0.20943951 ||   Number(params.value) > 0.20943951) {
-                            return { backgroundColor: BG_COLOR};
-                        } else{
-                            return { backgroundColor: ''};
-                        }
-                    }  else  {
-                        return { backgroundColor: ''};
-                    }
-                }, },
-            ],
+                    }, },
+                ],
             },
             {
             headerName: 'Min_distance',
@@ -507,6 +552,7 @@ export class SchedulingSetCreate extends Component {
             ],
             },
         ];
+        // Column order in excel to clipboard and vice versa 
         colKeyOrder.push('scheduler');
         colKeyOrder.push('timeat');
         colKeyOrder.push('timeafter');
@@ -522,32 +568,73 @@ export class SchedulingSetCreate extends Component {
         colKeyOrder.push('md_moon');
         colKeyOrder.push('md_jupiter');
 
+        defaultCellValues['scheduler'] = constraintSchema.schema.properties.scheduler.default;
+        defaultCellValues['min_target_elevation'] = constraintSchema.schema.properties.sky.properties.min_target_elevation.default;
+        defaultCellValues['min_calibrator_elevation'] = constraintSchema.schema.properties.sky.properties.min_calibrator_elevation.default;
+        defaultCellValues['offset_from'] = 0;
+        defaultCellValues['offset_to'] = 0;
+        defaultCellValues['md_sun'] = constraintSchema.schema.properties.sky.properties.min_distance.properties.sun.default;
+        defaultCellValues['md_moon'] = constraintSchema.schema.properties.sky.properties.min_distance.properties.moon.default;
+        defaultCellValues['md_jupiter'] = constraintSchema.schema.properties.sky.properties.min_distance.properties.jupiter.default;
+        
+        if(this.state.defaultStationGroups){
+            let stationValue = '';
+            this.state.defaultStationGroups.map(stationGroup =>{
+                stationValue += stationGroup.stations+':'+stationGroup.max_nr_missing+"|";
+            })
+            defaultCellValues['stations'] = stationValue;
+        }
         colProperty ={'ID':'id', 'Name':'suname', 'Description':'sudesc'};
         columnMap['Scheduling Unit'] = colProperty;
-
-        let definitions = schema.definitions.pointing.properties;
-        let properties = schema.properties;
+        
+        let defaultSchema = await this.getTaskTemplateSchema(scheduleUnit, 'Target Observation');
+        defaultSchema = await this.resolveSchema(defaultSchema);
+        let definitions = defaultSchema.definitions.pointing.properties;
+        let properties = defaultSchema.properties;
         const propsKeys = Object.keys(properties);
         for(const propKey of propsKeys){
             let property = properties[propKey];
             let childern = [];
-            colProperty = {};
-            
-            let childalias = property.title;
-            childalias = _.lowerCase(childalias).split(' ').map(x => x[0]).join('');
-            const paramKeys = Object.keys(property.default);
-            paramKeys.forEach(key =>{
-                colProperty[key] = childalias+key;
+            let colProperty = {};
+            if (property.title === 'Duration'){
                 let cellAttr = {};
-                cellAttr['headerName'] = definitions[key].title;
-                cellAttr['field'] = childalias+key;
-                colKeyOrder.push(childalias+key);
-                let cellKeys =  Object.keys(cellProps[key]);
+                cellAttr['headerName'] = 'Duration';
+                cellAttr['field'] = 'duration';
+                let cellKeys =  Object.keys(cellProps['duration']);
                 for(const cellKey of cellKeys){
-                    cellAttr[cellKey] = cellProps[key][cellKey];
-                };
+                    cellAttr[cellKey] = cellProps['duration'][cellKey];
+                }; 
+                    
+                colKeyOrder.push('duration');
                 childern.push(cellAttr);
-            })
+                colProperty[propKey] = 'duration';
+                defaultCellValues['duration'] = property.default;
+            } 
+            else {
+                let childalias = property.title;
+                childalias = _.lowerCase(childalias).split(' ').map(x => x[0]).join('');
+                const paramKeys = Object.keys(property.default);
+                paramKeys.forEach(key =>{
+                    if (key === 'angle1'){
+                        defaultCellValues[childalias+key] = UnitConverter.getAngleInput(property.default[key], false);
+                    } else if (key === 'angle2') {
+                        defaultCellValues[childalias+key] = UnitConverter.getAngleInput(property.default[key], true);
+                    } else {
+                        defaultCellValues[childalias+key] = property.default[key];
+                    }
+                    colProperty[key] = childalias+key;
+                    let cellAttr = {};
+                    cellAttr['headerName'] = definitions[key].title;
+                    cellAttr['field'] = childalias+key;
+                    colKeyOrder.push(childalias+key);
+                    let cellKeys =  Object.keys(cellProps[key]);
+                    for(const cellKey of cellKeys){
+                        cellAttr[cellKey] = cellProps[key][cellKey];
+                    };
+                    childern.push(cellAttr);
+                });
+            }
+            
             columnDefs.push({
                 headerName:property.title,
                 children:childern
@@ -559,8 +646,64 @@ export class SchedulingSetCreate extends Component {
         this.setState({
             columnDefs:columnDefs,
             columnMap:columnMap,
-            colKeyOrder:colKeyOrder
+            colKeyOrder:colKeyOrder,
+            defaultCellValues: defaultCellValues,
         })
+    }
+
+    async getTaskTemplateSchema(scheduleUnit, taskName) {
+        let strategyId = scheduleUnit.observation_strategy_template_id;
+        let templates = await ScheduleService.getObservationStrategies();
+        const observStrategy = _.find(templates, {'id': strategyId});
+        const tasks = observStrategy.template.tasks;    
+         
+        let schema = { type: 'object', additionalProperties: false, 
+                        properties: {}, definitions:{}
+                     };
+        let paramsOutput = {};
+        for (const taskName in tasks) {
+            const task = tasks[taskName];
+            if (task['specifications_template'] === 'target observation') {
+                //Resolve task from the strategy template
+                const $taskRefs = await $RefParser.resolve(task);
+                // Identify the task specification template of every task in the strategy template
+                const taskTemplate = _.find(this.taskTemplates, {'name': task['specifications_template']});
+                schema['$id'] = taskTemplate.schema['$id'];
+                schema['$schema'] = taskTemplate.schema['$schema'];
+                let index = 0;
+                for (const param of observStrategy.template.parameters) {
+                    if (param.refs[0].indexOf(`/tasks/${taskName}`) > 0) {
+                        // tasksToUpdate[taskName] = taskName;
+                        // Resolve the identified template
+                        const $templateRefs = await $RefParser.resolve(taskTemplate);
+                        let property = { };
+                        let tempProperty = null;
+                        const taskPaths = param.refs[0].split("/");
+                        // Get the property type from the template and create new property in the schema for the parameters
+                        try {
+                            const parameterRef = param.refs[0];
+                            tempProperty = $templateRefs.get(parameterRef);
+                        }   catch(error) {
+                            tempProperty = _.cloneDeep(taskTemplate.schema.properties[taskPaths[4]]);
+                            if (tempProperty.type === 'array') {
+                                tempProperty = tempProperty.items.properties[taskPaths[6]];
+                            }
+                            property = tempProperty;
+                        }
+                        property.title = param.name;
+                        property.default = $taskRefs.get(param.refs[0].replace(`#/tasks/${taskName}`, '#'));
+                        paramsOutput[`param_${index}`] = property.default;
+                        schema.properties[`param_${index}`] = property;
+                        // Set property defintions taken from the task template in new schema
+                        for (const definitionName in taskTemplate.schema.definitions) {
+                            schema.definitions[definitionName] = taskTemplate.schema.definitions[definitionName];
+                        }
+                    }
+                index++;
+                }
+            }
+        }
+    return schema;
     }
 
     async getTaskSchema(scheduleUnit) {
@@ -572,12 +715,11 @@ export class SchedulingSetCreate extends Component {
         let schema = { type: 'object', additionalProperties: false, 
                         properties: {}, definitions:{}
                      };
-        
         let taskDrafts= [];
         await ScheduleService.getTasksDraftBySchedulingUnitId(scheduleUnit.id).then(response =>{
             taskDrafts= response.data.results;
-        })
-     
+        }); 
+        
         for (const taskName in tasks)  {
             const task = tasks[taskName];
             const taskDraft = taskDrafts.find(taskD => taskD.name === taskName);
@@ -622,9 +764,15 @@ export class SchedulingSetCreate extends Component {
                 }
                 index++;
             }
+            if (taskTemplate.type_value==='observation' && task.specifications_doc.station_groups) {
+                tasksToUpdate[taskName] = taskName;
+            }
+            this.setState({ paramsOutput: paramsOutput, tasksToUpdate: tasksToUpdate});
         }
         return schema;
     }
+
+
     /**
      * CallBack Function : update time value in master grid
      */
@@ -674,13 +822,9 @@ export class SchedulingSetCreate extends Component {
                 this.stations = responses[4];
                 let stationGroups = [];
                 if (schedulingUnit && schedulingUnit.observation_strategy_template_id) {
-                  let targetObservation = schedulingUnit.requirements_doc.tasks['Target Observation'];
-                  if (targetObservation && targetObservation.specifications_doc.station_groups){
+                    let targetObservation = schedulingUnit.requirements_doc.tasks['Target Observation'];
+                    targetObservation = taskDrafts.data.results.find(task => {return task.specifications_doc.station_groups?true:false});
                     stationGroups = targetObservation?targetObservation.specifications_doc.station_groups:[];
-                  }  else  {
-                     targetObservation = taskDrafts.data.results.find(task => {return task.specifications_doc.station_groups?true:false});
-                     stationGroups = targetObservation?targetObservation.specifications_doc.station_groups:[];
-                  }
                 } 
                 
                 if (stationGroups) {
@@ -691,6 +835,61 @@ export class SchedulingSetCreate extends Component {
             });
         }
         return stationValue;
+    }
+
+    async getObservationValueFromTask(scheduleunit) {
+        let res = await ScheduleService.getTasksDraftBySchedulingUnitId(scheduleunit.id);
+        let taskDrafts = res.data.results;
+        let tasksToUpdate = {};
+        const observStrategy = _.find(this.observStrategies, {'id': scheduleunit.observation_strategy_template_id});
+        const tasks = observStrategy.template.tasks;    
+        let paramsOutput = [];
+        let schema = { type: 'object', additionalProperties: false, 
+                        properties: {}, definitions:{}
+                     };
+        for (const taskName in tasks)  {
+            const task = tasks[taskName];
+            const taskDraft = taskDrafts.find(taskD => taskD.name === taskName);
+            if (taskDraft) {
+                task.specifications_doc = taskDraft.specifications_doc;
+            }
+            //Resolve task from the strategy template
+            const $taskRefs = await $RefParser.resolve(task);
+
+            // Identify the task specification template of every task in the strategy template
+            const taskTemplate = _.find(this.taskTemplates, {'name': task['specifications_template']});
+            schema['$id'] = taskTemplate.schema['$id'];
+            schema['$schema'] = taskTemplate.schema['$schema'];
+            for (const param of observStrategy.template.parameters) {
+                if (param.refs[0].indexOf(`/tasks/${taskName}`) > 0) {
+                    tasksToUpdate[taskName] = taskName;
+                    // Resolve the identified template
+                    const $templateRefs = await $RefParser.resolve(taskTemplate);
+                    let property = { };
+                    let tempProperty = null;
+                    const taskPaths = param.refs[0].split("/");
+                    // Get the property type from the template and create new property in the schema for the parameters
+                    try {
+                        const parameterRef = param.refs[0];//.replace(`#/tasks/${taskName}/specifications_doc`, '#/schema/properties');
+                        tempProperty = $templateRefs.get(parameterRef);
+                    }   catch(error) {
+                        tempProperty = _.cloneDeep(taskTemplate.schema.properties[taskPaths[4]]);
+                        if (tempProperty.type === 'array') {
+                            tempProperty = tempProperty.items.properties[taskPaths[6]];
+                        }
+                        property = tempProperty;
+                    }
+                    property.title = param.name;
+                    property.default = $taskRefs.get(param.refs[0].replace(`#/tasks/${taskName}`, '#'));
+                    if ( param.name === 'Duration') {
+                        paramsOutput[param.name] = {'param_0': property.default};
+                    } else {
+                        paramsOutput[param.name] = property.default;
+                    }
+                }
+            }
+        }
+        return paramsOutput;        
     }
 
     /**
@@ -714,33 +913,59 @@ export class SchedulingSetCreate extends Component {
                 isValid: true,
             };
 
-            let parameters = scheduleunit['requirements_doc'].parameters;
-            for(const parameter of parameters){
-                let refUrl = parameter['refs'];
-                let valueItem = (await $RefParser.resolve( scheduleunit['requirements_doc'])).get(refUrl[0]);
-                let excelColumns = this.state.columnMap[parameter.name];
-                let excelColumnsKeys =  Object.keys(excelColumns);
-                for(const eColKey of excelColumnsKeys){
-                    if  (eColKey === 'angle1') {
-                        observationProps[excelColumns[eColKey]] = UnitConverter.getAngleInput(valueItem[eColKey], false);
+            if (scheduleunit.observation_strategy_template_id) {
+                let parameters = await this.getObservationValueFromTask(scheduleunit);
+                let parametersName = Object.keys(parameters);
+                for(const parameter of parametersName){
+                    let valueItem = parameters[parameter];
+                    let excelColumns = this.state.columnMap[parameter];
+                    if (excelColumns) {
+                        let excelColumnsKeys =  Object.keys(excelColumns);
+                        for(const eColKey of excelColumnsKeys){
+                            if  (eColKey === 'angle1') {
+                                observationProps[excelColumns[eColKey]] = UnitConverter.getAngleInput(valueItem[eColKey], false);
+                            }
+                            else if  (eColKey === 'angle2') {
+                                observationProps[excelColumns[eColKey]] = UnitConverter.getAngleInput(valueItem[eColKey], true);
+                            }
+                            else {
+                                observationProps[excelColumns[eColKey]] = valueItem[eColKey];
+                            }
+                        }
                     }
-                    else if  (eColKey === 'angle2') {
-                        observationProps[excelColumns[eColKey]] = UnitConverter.getAngleInput(valueItem[eColKey], true);
-                    }
-                    else {
-                        observationProps[excelColumns[eColKey]] = valueItem[eColKey];
+                }
+            } else {
+                let parameters = scheduleunit['requirements_doc'].parameters;
+                for(const parameter of parameters){
+                    let refUrl = parameter['refs'];
+                    let valueItem = (await $RefParser.resolve( scheduleunit['requirements_doc'])).get(refUrl[0]);
+                    let excelColumns = this.state.columnMap[parameter.name];
+                    if (excelColumns) {
+                        let excelColumnsKeys =  Object.keys(excelColumns);
+                        for(const eColKey of excelColumnsKeys){
+                            if  (eColKey === 'angle1') {
+                                observationProps[excelColumns[eColKey]] = UnitConverter.getAngleInput(valueItem[eColKey], false);
+                            }
+                            else if  (eColKey === 'angle2') {
+                                observationProps[excelColumns[eColKey]] = UnitConverter.getAngleInput(valueItem[eColKey], true);
+                            }
+                            else {
+                                observationProps[excelColumns[eColKey]] = valueItem[eColKey];
+                            }
+                        }
                     }
                 }
             }
+           
             observationProps['stations'] = await this.getStationGrops(scheduleunit);
             let constraint = scheduleunit.scheduling_constraints_doc;
-            if  (constraint){
+            if (constraint){
                 if  (constraint.scheduler){
                     observationProps['scheduler'] = constraint.scheduler;
                 }
-                observationProps['timeat'] = moment.utc(constraint.time.at).format(DATE_TIME_FORMAT);
-                observationProps['timeafter'] = moment.utc(constraint.time.after).format(DATE_TIME_FORMAT);
-                observationProps['timebefore'] = moment.utc(constraint.time.before).format(DATE_TIME_FORMAT);
+                observationProps['timeat'] = this.isNotEmpty(constraint.time.at)?moment.utc(constraint.time.at).format(DATE_TIME_FORMAT): '';
+                observationProps['timeafter'] =  this.isNotEmpty(constraint.time.after)?moment.utc(constraint.time.after).format(DATE_TIME_FORMAT):'';
+                observationProps['timebefore'] = this.isNotEmpty(constraint.time.before)?moment.utc(constraint.time.before).format(DATE_TIME_FORMAT):'';
                 if  (constraint.time.between){
                     observationProps['between'] = this.getBetweenStringValue(constraint.time.between);
                 }
@@ -762,7 +987,6 @@ export class SchedulingSetCreate extends Component {
                 observationProps['md_moon'] =  (constraint.sky.min_distance.moon)?constraint.sky.min_distance.moon:'';
                 observationProps['md_jupiter'] =  (constraint.sky.min_distance.jupiter)?constraint.sky.min_distance.jupiter:'';
                }
-                
             }
             observationPropsList.push(observationProps);
         }
@@ -795,6 +1019,8 @@ export class SchedulingSetCreate extends Component {
             noOfSU: totalSU,
             emptyRow: this.tmpRowData[this.tmpRowData.length-1]
         });
+
+        this.setDefaultCellValue();
     }
  
     /**
@@ -847,29 +1073,11 @@ export class SchedulingSetCreate extends Component {
         }
     }  
 
- /*
- // to resolve the invalid degree and time
-    resolveCellData(data){
-        console.log('data >',data)
-        let angleData = _.split(data, ":");
-        let returnValue ='';
-        if  (angleData.length === 3){
-            returnValue = (angleData[0].length === 2)?angleData[0] :'0'+angleData[0]+":";
-            returnValue += (angleData[1].length === 2)?angleData[1] :'0'+angleData[1]+":";
-            returnValue += (angleData[2].length === 2)?angleData[2] :'0'+angleData[2];
-           
-        }
-        console.log('returnValue',returnValue)
-        return returnValue;    
-    } 
-    */
-
       /**
      * Copy data to/from clipboard
      * @param {*} e 
      */
     async clipboardEvent(e){
-        //let angleCellKey = ['tp1angle1','tp1angle2','tp2angle1','tp2angle2','tpangle1','tpangle2'];
         var key = e.which || e.keyCode;
         var ctrl = e.ctrlKey ? e.ctrlKey : ((key === 17) ? true : false);
         if ( key === 86 && ctrl ) {
@@ -896,11 +1104,7 @@ export class SchedulingSetCreate extends Component {
                         suGridRowData['id']= 0;
                         suGridRowData['isValid']= true;
                         for(const key of this.state.colKeyOrder){
-                            /* if  (_.includes(angleCellKey, key)){
-                                 suGridRowData[key]= this.resolveCellData(suRow[colCount]);
-                             }  else  {*/
-                                suGridRowData[key]= suRow[colCount];
-                          //  }
+                            suGridRowData[key]= suRow[colCount];
                             colCount++;
                         }
                         this.tmpRowData[dataRowCount]= (suGridRowData);
@@ -978,25 +1182,35 @@ export class SchedulingSetCreate extends Component {
         let tmpRowData = this.state.rowData;
         this.state.gridApi.forEachNode(function (node) {
             isValidRow = true;
-            let errorMsg =  'Row Id ['+(Number(node.rowIndex)+1) +'] : ';
+            let errorMsg =  'Row # ['+(Number(node.rowIndex)+1) +'] : ';
             tmpMandatoryKeys = [];
             const rowData = node.data;
             let isManualScheduler = false;
             if  (rowData) {
                 for(const key of mandatoryKeys) {
                     if  (rowData[key] === '') {
-                        tmpMandatoryKeys.push(key);
+                        if ( key === 'suname' ){
+                            if( rowData['sudesc'] !== ''){
+                                tmpMandatoryKeys.push(key);
+                            }
+                        } else if ( key === 'sudesc' ){
+                            if( rowData['suname'] !== ''){
+                                tmpMandatoryKeys.push(key);
+                            }
+                        } else {
+                            tmpMandatoryKeys.push(key);
+                        }
                     }   else if (key === 'scheduler' && rowData[key] === 'manual' ) {
                         isManualScheduler = true;
                     }
                 }
                 if  (tmpMandatoryKeys.length !== mandatoryKeys.length) {
-                    let rowNoColumn = {};
+                    //let rowNoColumn = {};
                     isValidRow = true;
                     for (var i = 0; i< node.columnController.gridColumns.length; i++) {
                        let column = node.columnController.gridColumns[i];
                         if  (column.colId === '0'){
-                            rowNoColumn = column;
+                           // rowNoColumn = column;
                         }  else  {
                             if  (_.includes(tmpMandatoryKeys, column.colId)){
                                 isValidRow = false;
@@ -1004,20 +1218,20 @@ export class SchedulingSetCreate extends Component {
                                 //column.colDef.cellStyle = { backgroundColor: BG_COLOR};
                                 //rowNoColumn.colDef.cellStyle = { backgroundColor: BG_COLOR};
                             }  else  {
-                                if  (column.colId === 'timeat' && isManualScheduler && rowData[column.colId] === ''){
-                                    isValidRow = false;
+                                if  ((column.colId === 'timeat')  && isManualScheduler && rowData[column.colId] === ''){
+                                     isValidRow = false;
                                      errorMsg += column.colDef.headerName+", ";
                                    // column.colDef.cellStyle = { backgroundColor: BG_COLOR};
                                    // rowNoColumn.colDef.cellStyle = { backgroundColor: BG_COLOR};
-                                } else if (column.colId === 'min_target_elevation' || column.colId === 'min_calibrator_elevation' || _.endsWith(column.colId, "angle3")){
-                                    if  (Number(rowData[column.colId]) < 0 ||   Number(rowData[column.colId]) > 90){
+                                } else if (column.colId === 'min_target_elevation' || column.colId === 'min_calibrator_elevation' ){
+                                    if  (Number(rowData[column.colId]) <= 0 ||   Number(rowData[column.colId]) > 90){
                                         isValidRow = false;
                                          errorMsg += column.colDef.headerName+", ";
                                       //  column.colDef.cellStyle = { backgroundColor: BG_COLOR};
                                       //  rowNoColumn.colDef.cellStyle = { backgroundColor: BG_COLOR};
                                     }
                                 } else if (column.colId === 'offset_from' || column.colId === 'offset_to'){
-                                    if ( !Number(rowData[column.colId])){
+                                    if ( Number(rowData[column.colId] < 0)){
                                         isValidRow = false;
                                          errorMsg += column.colDef.headerName+", ";
                                        // column.colDef.cellStyle = { backgroundColor: BG_COLOR};
@@ -1042,9 +1256,24 @@ export class SchedulingSetCreate extends Component {
                                    // rowNoColumn.colDef.cellStyle = { backgroundColor: BG_COLOR};
                                 } else if (_.endsWith(column.colId, "angle2") && !Validator.validateAngle(rowData[column.colId])){
                                     isValidRow = false;
-                                     errorMsg += column.colDef.headerName+", ";
+                                    errorMsg += column.colDef.headerName+", ";
                                     //column.colDef.cellStyle = { backgroundColor: BG_COLOR};
                                     //rowNoColumn.colDef.cellStyle = { backgroundColor: BG_COLOR};
+                                } else if(_.endsWith(column.colId, "angle3")){
+                                    if  (!Number(rowData[column.colId])){
+                                        isValidRow = false;
+                                        errorMsg += column.colDef.headerName+", ";
+                                    }
+                                } else if(_.endsWith(column.colId, "stations")){
+                                    let sgCellValue = rowData[column.colId];
+                                    let stationGroups = _.split(sgCellValue,  "|");
+                                    stationGroups.map(stationGroup =>{
+                                        let sgValue = _.split(stationGroup, ":");
+                                        if (rowData['suname'] !== '' && rowData['sudesc'] !== '' && (sgValue[1] === 'undefined' || sgValue[1] === 'NaN' || Number(sgValue[1]) < 0 )){
+                                            isValidRow = false;
+                                            errorMsg += column.colDef.headerName+", ";
+                                        }
+                                    });
                                 }
                             }
                         }
@@ -1064,7 +1293,7 @@ export class SchedulingSetCreate extends Component {
         
         if (validCount > 0 && inValidCount === 0) {
             // save SU directly
-            this. saveSU();
+            this.saveSU();
         } else if (validCount === 0 && inValidCount === 0) {
             // leave with no change
         }  else  {
@@ -1088,7 +1317,7 @@ export class SchedulingSetCreate extends Component {
 
 
     /**
-     * Save/Update Scheduling Unit 
+     * Save/Update Scheduling Unit
      */
     async saveSU() {
         let newSUCount = 0;
@@ -1097,8 +1326,7 @@ export class SchedulingSetCreate extends Component {
             this.setState({
                 saveDialogVisible: false
             })
-            let observStrategy = _.cloneDeep(this.state.observStrategy);
-            const $refs = await $RefParser.resolve(observStrategy.template);
+         
             let newSU = this.state.schedulingUnit;
             let parameters = this.state.schedulingUnitList[0]['requirements_doc'].parameters;
             let columnMap = this.state.columnMap;
@@ -1127,7 +1355,10 @@ export class SchedulingSetCreate extends Component {
                                 return;
                             }
                             paramOutput[key] = UnitConverter.getAngleOutput(suRow[result[key]],true);
-                        }  else  {
+                        }  else if (key === 'angle3'){
+                            paramOutput[key] = Number(suRow[result[key]]);
+
+                        } else  {
                             paramOutput[key] = suRow[result[key]];
                         }
                     })
@@ -1137,44 +1368,48 @@ export class SchedulingSetCreate extends Component {
                 if  (!validRow){
                     continue;
                 }
-                observStrategy.template.parameters.forEach(async(param, index) => {
-                    $refs.set(observStrategy.template.parameters[index]['refs'][0], paramsOutput['param_' + index]);
-                });
-
+               
                 //Stations
                 let sgCellValue = suRow.stations;
                 let tmpStationGroups = [];
-                if  (sgCellValue && sgCellValue.length >0){
-                    tmpStationGroups = [];
-                    let tmpStationGroup = {};
-                    let stationGroups = _.split(sgCellValue,  "|");
-                    stationGroups.map(stationGroup =>{
-                      tmpStationGroup = {};
-                      let sgValue = _.split(stationGroup, ":");
-                      if  (sgValue && sgValue[0].length>0){
-                        let stationArray = _.split(sgValue[0], ",");
-                         
-                        tmpStationGroup['stations'] = stationArray;
-                        tmpStationGroup['max_nr_missing'] = sgValue[1];
-                        tmpStationGroups.push(tmpStationGroup);
-                      }
+                let tmpStationGroup = {};
+                let stationGroups = _.split(sgCellValue,  "|");
+                stationGroups.map(stationGroup =>{
+                    tmpStationGroup = {};
+                    let sgValue = _.split(stationGroup, ":");
+                    if  (sgValue && sgValue[0].length>0){
+                    let stationArray = _.split(sgValue[0], ",");
+                    tmpStationGroup['stations'] = stationArray;
+                    tmpStationGroup['max_nr_missing'] = Number(sgValue[1]);
+                    tmpStationGroups.push(tmpStationGroup);
+                    }
                       
-                    })
+                })
+                     
+                let observStrategy = _.cloneDeep(this.state.observStrategy);
+                const $refs = await $RefParser.resolve(observStrategy.template);
+                observStrategy.template.parameters.forEach(async(param, index) => {
+                    let key = observStrategy.template.parameters[index]['refs'][0];
+                    let fieldValue = paramsOutput['param_' + index];
+                    let value = (key.endsWith('duration'))? fieldValue['param_' + index] : fieldValue;
+                   $refs.set(observStrategy.template.parameters[index]['refs'][0], value);
+                });
+                if ( suRow.id === 0) {
                     for (const taskName in observStrategy.template.tasks) {
                         let task = observStrategy.template.tasks[taskName];
                         if (task.specifications_doc.station_groups) {
                             task.specifications_doc.station_groups = tmpStationGroups;
                         }
-                    }  
+                    }
                 }
-
+               
                 let between = this.getBetWeenDateValue(suRow.between);
                 let notbetween = this.getBetWeenDateValue(suRow.notbetween);
                 
                 let isNewConstraint = false;
                 let newConstraint = {};
                 let constraint = null;
-                if  (suRow.id >0){
+                if  (suRow.id > 0){
                     newSU = _.find(this.state.schedulingUnitList, {'id': suRow.id}); 
                     constraint = newSU.scheduling_constraints_doc;
                 } 
@@ -1184,27 +1419,48 @@ export class SchedulingSetCreate extends Component {
                     isNewConstraint = true;
                 }
                 
-                //If No SU Constraint create default ( maintan default struc)
+                //If No SU Constraint create default ( maintain default struc)
                 constraint['scheduler'] = suRow.scheduler;
-                if  (suRow.scheduler === 'online'){
-                    if  (!constraint.time.at){
-                        delete constraint.time.at;
+                if  (suRow.scheduler === 'dynamic'  || suRow.scheduler === 'online'){
+                    if (!this.isNotEmpty(suRow.timeat)) {
+                        delete constraint.time.timeat;
+                    } else {
+                        constraint.time.at = `${moment(suRow.timeat).format("YYYY-MM-DDTHH:mm:ss.SSSSS", { trim: false })}Z`;
                     }
-                    if (!constraint.time.after) {
+                  
+                    if (!this.isNotEmpty(suRow.timeafter)) {
                         delete constraint.time.after;
+                    } else {
+                        constraint.time.after = `${moment(suRow.timeafter).format("YYYY-MM-DDTHH:mm:ss.SSSSS", { trim: false })}Z`;
                     }
-                    if (!constraint.time.before) {
+                   
+                    if (!this.isNotEmpty(suRow.timebefore)) {
                         delete constraint.time.before;
-                     }
-                }  else  {
+                    } else {
+                        constraint.time.before = `${moment(suRow.timebefore).format("YYYY-MM-DDTHH:mm:ss.SSSSS", { trim: false })}Z`;
+                    }
+                }  
+                else  {
+                    //mandatory
                     constraint.time.at = `${moment(suRow.timeat).format("YYYY-MM-DDTHH:mm:ss.SSSSS", { trim: false })}Z`;
-                    constraint.time.after = `${moment(suRow.timeafter).format("YYYY-MM-DDTHH:mm:ss.SSSSS", { trim: false })}Z`;
-                    constraint.time.before = `${moment(suRow.timebefore).format("YYYY-MM-DDTHH:mm:ss.SSSSS", { trim: false })}Z`;
+                    //optional
+                    if (!this.isNotEmpty(suRow.timeafter)) {
+                        delete constraint.time.after;
+                    } else {
+                        constraint.time.after = `${moment(suRow.timeafter).format("YYYY-MM-DDTHH:mm:ss.SSSSS", { trim: false })}Z`;
+                    }
+                   
+                    if (!this.isNotEmpty(suRow.timebefore)) {
+                        delete constraint.time.before;
+                    } else {
+                        constraint.time.before = `${moment(suRow.timebefore).format("YYYY-MM-DDTHH:mm:ss.SSSSS", { trim: false })}Z`;
+                    }
                 }
-                if  (between && between.length>0){
+
+                if  (this.isNotEmpty(between)){
                     constraint.time.between = between;
                 }
-                if  (notbetween && notbetween.length>0){
+                if  (this.isNotEmpty(notbetween)){
                     constraint.time.not_between = notbetween; 
                 }
                 let dailyValueSelected = _.split(suRow.daily, ",");
@@ -1232,10 +1488,11 @@ export class SchedulingSetCreate extends Component {
                 constraint.sky.min_calibrator_elevation = suRow.min_calibrator_elevation;
                 
                 UnitConversion.degreeToRadians(constraint.sky);
+                
                 if  (isNewConstraint){
                     newSU.scheduling_constraints_doc = constraint;
                 }
-               
+              
                 if  (suRow.id === 0){
                     newConstraint['scheduling_constraints_doc'] = constraint;
                     newConstraint['id'] = this.state.constraintId;
@@ -1243,20 +1500,26 @@ export class SchedulingSetCreate extends Component {
                     newConstraint.constraint.url = this.state.constraintUrl;
                 }
 
-                if  (suRow.id >0 && suRow.suname.length>0 && suRow.sudesc.length>0){
+                if  (suRow.id > 0 && this.isNotEmpty(suRow.suname) && this.isNotEmpty(suRow.sudesc)){
                     newSU = _.find(this.state.schedulingUnitList, {'id': suRow.id}); 
                     newSU['name'] = suRow.suname;
                     newSU['description'] = suRow.sudesc;
- 
-                    newSU.requirements_doc.tasks= observStrategy.template.tasks;
-                    await ScheduleService.updateSUDraftFromObservStrategy(observStrategy, newSU, this.state.taskDrafts, this.state.tasksToUpdate);
+                    let taskdata = await ScheduleService.getTasksDraftBySchedulingUnitId(suRow.id);
+                    let taskDrafts =[];
+                    if(taskdata){
+                        taskDrafts = taskdata.data.results;
+                    }
+                    await ScheduleService.updateSUDraftFromObservStrategy(observStrategy, newSU, taskDrafts, this.state.tasksToUpdate, tmpStationGroups);
                     existingSUCount++;
                 }
-                else if  (suRow.id === 0 && suRow.suname.length>0 && suRow.sudesc.length>0){
-                    newSU['id'] = suRow.id;
-                    newSU['name'] = suRow.suname;
-                    newSU['description'] = suRow.sudesc;
-                    await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, newSU, newConstraint);
+                else if  (suRow.id === 0 && this.isNotEmpty(suRow.suname) && this.isNotEmpty(suRow.sudesc)){
+                    let newSchedulueUnit = {
+                        description: suRow.sudesc,
+                        name: suRow.suname,
+                        scheduling_constraints_template_id: newSU['scheduling_constraints_template_id'],
+                        scheduling_set_id: newSU['scheduling_set_id']
+                    }
+                    await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, newSchedulueUnit, newConstraint, tmpStationGroups);
                     newSUCount++;
                 }
             }
@@ -1272,6 +1535,18 @@ export class SchedulingSetCreate extends Component {
         }
     }
   
+    /**
+     * Check is empty string 
+     * @param {*} value 
+     */
+    isNotEmpty(value){
+        if ( !value || value === 'undefined' || value.length === 0 ){
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     /**
      * Convert the date to string value for Between And Not-Between Columns
      * @param {*} dates 
@@ -1356,8 +1631,8 @@ export class SchedulingSetCreate extends Component {
         if (this.state.rowData && this.state.rowData.length >0 && this.state.emptyRow) {
             if (this.state.totalCount <= noOfSU) {
                 // set API data
-                for (var i = 0; i < totalCount; i++) {
-                    this.tmpRowData.push(this.state.rowData[i]);
+                for (var count = 0; count < totalCount; count++) {
+                    this.tmpRowData.push(this.state.rowData[count]);
                 }
                 // add empty row
                 for(var i = this.state.totalCount; i < noOfSU; i++) {
@@ -1436,12 +1711,39 @@ export class SchedulingSetCreate extends Component {
      * Show the content in custom dialog
      */
     showDialogContent(){
-        return <> Invalid Rows:- Row # and Invalid columns, <br/>{this.state.errorDisplay && this.state.errorDisplay.length>0 && 
+        return <> <br/>Invalid Rows:- Row # and Invalid columns <br/>{this.state.errorDisplay && this.state.errorDisplay.length>0 && 
             this.state.errorDisplay.map((msg, index) => (
-            <React.Fragment key={index+10} className="col-lg-9 col-md-9 col-sm-12">
+            <React.Fragment key={index+10} >
                 <span key={'label1-'+ index}>{msg}</span> <br />
             </React.Fragment>
         ))} </>
+    }
+
+    /**
+     * Set default value for empty rows
+     */
+    async setDefaultCellValue(){
+        if(this.state.rowData && this.state.rowData.length > 0){
+            if (!this.state.showDefault){
+                let tmpRowData = this.state.rowData;
+                let defaultValueColumns = Object.keys(this.state.defaultCellValues);
+                await tmpRowData.forEach(rowData =>{
+                    defaultValueColumns.forEach(key =>{
+                        if(!this.isNotEmpty(rowData[key])){
+                            rowData[key] = this.state.defaultCellValues[key];
+                        }
+                    })
+                });
+                await this.setState({
+                    rowData: tmpRowData,
+                   // showDefault: true,
+                });
+               
+            }
+            {this.state.gridApi && 
+                this.state.gridApi.setRowData(this.state.rowData);
+            }
+        }
     }
 
     render() {
@@ -1512,6 +1814,17 @@ export class SchedulingSetCreate extends Component {
                                     </label>
                                 </div>
                             </div>
+                            {/*}
+                            <div className="p-field p-grid">
+                                <label htmlFor="observStrategy" className="col-lg-2 col-md-2 col-sm-12">Show Default Value</label>
+                                <div className="col-lg-3 col-md-3 col-sm-12" data-testid="observStrategy" >
+                                     <InputSwitch 
+                                     checked={this.state.showDefault} 
+                                     onChange={(e) => this.setState({ showDefault: e.value }), this.setDefaultCellValue} 
+                                      />
+                                </div>
+                            </div>
+                             */}
                         </div>
                         <>
                         { this.state.isAGLoading ? <AppLoader /> :
@@ -1531,7 +1844,6 @@ export class SchedulingSetCreate extends Component {
                                         components={this.state.components}
                                         modules={this.state.modules}        
                                         enableRangeSelection={true}
-                                        rowSelection={this.state.rowSelection}
                                     >
                                     </AgGridReact>
                                 </div>

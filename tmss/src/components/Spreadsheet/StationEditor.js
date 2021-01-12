@@ -161,7 +161,7 @@ render() {
     <>  
     
       <Dialog header={_.startCase(this.state.dialogTitle)} visible={this.state.showDialog} maximized={false}  
-      onHide={() => {this.updateStationGroup()}} inputId="confirm_dialog"
+      onHide={() => {this.updateStationGroup()}} inputId="confirm_dialog" className="stations_dialog"
       footer={<div>
         <Button key="back" label="Close" onClick={() => {this.updateStationGroup()}} />
         </div>
@@ -170,6 +170,7 @@ render() {
           <Stations
               stationGroup={this.state.stationGroup}
               onUpdateStations={this.onUpdateStations.bind(this)}
+              height={'30em'}
           />
         </div>
       </Dialog>

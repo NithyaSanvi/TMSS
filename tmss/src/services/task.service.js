@@ -62,7 +62,10 @@ const TaskService = {
         return response.data;
       } catch (error) {
         console.error(error);
-        return null;
+        return {
+          error: true,
+          message: 'Unable to update task'
+        };
       }
     },
     getTaskRelation: async function(type, id) {
@@ -185,6 +188,14 @@ const TaskService = {
         console.error(error);
       }
       return statusLogs;
+    },
+    getSubtaskTemplates: async function(templateId) {
+      try {
+        const response = await axios.get(`/api/subtask_template/`);
+        return response.data.results;
+      } catch(error) {
+        console.error(error);
+      }
     },
     getSubtaskTemplate: async function(templateId) {
       try {

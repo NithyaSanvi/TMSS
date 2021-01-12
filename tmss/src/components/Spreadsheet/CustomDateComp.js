@@ -42,7 +42,7 @@ export default class CustomDateComp extends Component {
               showTime= {true}
               showSeconds= {true}
               hourFormat= "24"
-              showIcon= {true}
+              showIcon= {false} inline
           />
         );
   }

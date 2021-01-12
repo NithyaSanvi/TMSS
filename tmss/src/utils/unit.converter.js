@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 const UnitConverter = {
     resourceUnitMap: {'time':{display: 'Hours', conversionFactor: 3600, mode:'decimal', minFractionDigits:0, maxFractionDigits: 2 }, 
                       'bytes': {display: 'TB', conversionFactor: (1024*1024*1024*1024), mode:'decimal', minFractionDigits:0, maxFractionDigits: 3}, 
@@ -28,6 +30,13 @@ const UnitConverter = {
             return (hh<10?`0${hh}`:`${hh}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`);
         }
         return seconds;
+    },
+    getHHmmssToSecs: function(seconds) {
+        if (seconds) {
+            const strSeconds = _.split(seconds, ":");
+            return strSeconds[0]*3600 + strSeconds[1]*60 + Number(strSeconds[2]);
+        }
+        return 0;
     },
     radiansToDegree: function(object) {
         for(let type in object) {

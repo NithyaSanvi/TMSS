@@ -89,6 +89,10 @@ class SchedulingUnitList extends Component{
                         blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                         blueP.project = project.name;
                         blueP.canSelect = false;
+                        // blueP.links = ['Project'];
+                        // blueP.linksURL = {
+                        //     'Project': `/project/view/${project.name}`
+                        // }
                         return blueP; 
                     });
                     output.push(...blueprintdata);
@@ -99,6 +103,10 @@ class SchedulingUnitList extends Component{
                     scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                     scheduleunit.project = project.name;
                     scheduleunit.canSelect = true;
+                    // scheduleunit.links = ['Project'];
+                    // scheduleunit.linksURL = {
+                    //     'Project': `/project/view/${project.name}`
+                    // }
                     output.push(scheduleunit);
                 }
                 this.setState({
