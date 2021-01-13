@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import PageHeader from '../../layout/components/PageHeader';
 import {Growl} from 'primereact/components/growl/Growl';
 import { Link } from 'react-router-dom';
+import _ from 'lodash';
 import ScheduleService from '../../services/schedule.service';
 import Scheduled from './Scheduled';
 import ProcessingDone from './processing.done';
@@ -10,6 +11,8 @@ import QAsos from './qa.sos';
 import PIverification from './pi.verification';
 import DecideAcceptance from './decide.acceptance';
 import IngestDone from './ingest.done';
+import DataProduct from './dataProduct';
+import UnitConverter from '../../utils/unit.converter';
 
 //Workflow Page Title 
 const pageTitle = ['Scheduled','Processing Done','QA Reporting (TO)', 'QA Reporting (SDCO)', 'PI Verification', 'Decide Acceptance','Ingest Done'];
@@ -17,6 +20,7 @@ const pageTitle = ['Scheduled','Processing Done','QA Reporting (TO)', 'QA Report
 export default (props) => {
     let growl;
     const [state, setState] = useState({});
+    const [outputDataProducts, setOutputDataProducts] = useState({});
     const [currentStep, setCurrentStep] = useState(1);
     const [schedulingUnit, setSchedulingUnit] = useState();
     const [ingestTask, setInjestTask] = useState({});
@@ -30,7 +34,27 @@ export default (props) => {
             const promises = [ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id), ScheduleService.getTaskType()]
             Promise.all(promises).then(responses => {
                 setSchedulingUnit(responses[0]);
-                ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false).then(response => {
+                ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false, false, true).then(response => {
+                    const dataProducts = _.groupBy(response.filter(task => task.template.name !== 'ingest'), 'template_name');
+                    const outputProductData = {};
+                    Object.keys(dataProducts).map(type => {
+                        (dataProducts[type]).map(task => (task.dataProducts || []).map(product => {
+                            if (typeof outputProductData[type] === 'undefined') {
+                                outputProductData[type] = 0
+                            }
+                            outputProductData[type] += product.size;
+                            if (!product.deleted_since) {
+                                if (typeof outputProductData[`${type}_deletedSince`] === 'undefined') {
+                                    outputProductData[`${type}_deletedSince`] = 0
+                                }
+                                outputProductData[`${type}_deletedSince`] += product.size;
+                            }
+                        }));
+                        outputProductData[type] = UnitConverter.getUIResourceUnit('bytes', (outputProductData[type] || 0));
+                        outputProductData[`${type}_deletedSince`] = UnitConverter.getUIResourceUnit('bytes', (outputProductData[`${type}_deletedSince`] || 0));
+                    });
+                    debugger
+                    setOutputDataProducts(outputProductData);
                     setInjestTask(response.find(task => task.template.type_value==='observation'));
                 });
             });
@@ -84,7 +108,7 @@ export default (props) => {
                         {currentStep === 5 && <PIverification onNext={onNext} {...state} />}
                         {currentStep === 6 && <DecideAcceptance onNext={onNext} {...state} />}
                         {currentStep === 7 && <IngestDone onNext={onNext}{...state} task={ingestTask} />}
-                      
+                        {currentStep === 8 && <DataProduct onNext={onNext} data={outputDataProducts} />}
                     </div>
                 </>
             }
