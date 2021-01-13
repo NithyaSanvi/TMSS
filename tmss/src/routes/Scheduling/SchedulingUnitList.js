@@ -116,7 +116,10 @@ class SchedulingUnitList extends Component{
                         su[`target${index}referenceframe`] = target.digital_pointing.direction_type;
                         defaultColumns[`target${index}angle1`] = `Target ${index + 1} - Angle 1`;
                         defaultColumns[`target${index}angle2`] = `Target ${index + 1} - Angle 2`;
-                        defaultColumns[`target${index}referenceframe`] = `Target ${index + 1} - Reference Frame`;
+                        defaultColumns[`target${index}referenceframe`] = {
+                            name: `Target ${index + 1} - Reference Frame`,
+                            filter: "select"
+                        };
                     });
                 });
                 this.setState({
