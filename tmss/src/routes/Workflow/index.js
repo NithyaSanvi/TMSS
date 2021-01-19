@@ -22,7 +22,7 @@ export default (props) => {
     const [state, setState] = useState({});
     const [tasks, setTasks] = useState([]);
     const [outputDataProducts, setOutputDataProducts] = useState({});
-    const [currentStep, setCurrentStep] = useState(1);
+    const [currentStep, setCurrentStep] = useState(8);
     const [schedulingUnit, setSchedulingUnit] = useState();
     const [ingestTask, setInjestTask] = useState({});
     useEffect(() => {
@@ -36,25 +36,31 @@ export default (props) => {
             Promise.all(promises).then(responses => {
                 setSchedulingUnit(responses[0]);
                 ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false, false, true).then(response => {
-                    const dataProducts = _.groupBy(response.filter(task => task.template.name !== 'ingest'), 'template_name');
-                    const outputProductData = {
-                        overallProducts: 0,
-                        overallProductsDeleted: 0
-                    };
-                    Object.keys(dataProducts).map(type => {
-                        (dataProducts[type]).map(task => (task.dataProducts || []).map(product => {
+                    response.map(task => {
+                        (task.dataProducts || []).map(product => {
                             if (product.size) {
-                                outputProductData.overallProducts += product.size;
-                                if (!product.deleted_since) {
-                                    outputProductData.overallProductsDeleted += product.size;
+                                if (!task.totalSize) {
+                                    task.totalSize = 0;
+                                }
+                                task.totalSize += product.size;
+    
+                                // For deleted since
+                                if (!product.deleted_since && product.size) {
+                                    if (!task.totalDeletedSize) {
+                                        task.totalDeletedSize = 0;
+                                    }
+                                    task.totalDeletedSize += product.size;
                                 }
                             }
-                        }));
+                        });
+                        if (task.totalSize) {
+                            task.totalSize = UnitConverter.getUIResourceUnit('bytes', (task.totalSize));
+                        }
+                        if (task.totalDeletedSize) {
+                            task.totalDeletedSize = UnitConverter.getUIResourceUnit('bytes', (task.totalDeletedSize));
+                        }
                     });
-                    outputProductData.overallProducts = UnitConverter.getUIResourceUnit('bytes', (outputProductData.overallProducts));
-                    outputProductData.overallProductsDeleted = UnitConverter.getUIResourceUnit('bytes', (outputProductData.overallProductsDeleted));
                     setTasks(response);
-                    setOutputDataProducts(outputProductData);
                     setInjestTask(response.find(task => task.template.type_value==='observation'));
                 });
             });

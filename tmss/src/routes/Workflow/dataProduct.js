@@ -2,9 +2,27 @@ import React, { useState } from 'react';
 import { Button } from 'primereact/button';
 import { Link } from 'react-router-dom';
 import { Dialog } from 'primereact/dialog';
+import ViewTable from './../../components/ViewTable';
 
 export default ({ data, tasks, schedulingUnit }) => {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const defaultcolumns = [ {
+        name: "Name",
+        totalSize:{
+          name:"Total Size", 
+          filter:"minMax"
+        },
+        totalDeletedSize:{
+          name:"Deleted Since",
+          filter:"minMax"
+        }
+    }];
+    const optionalcolumns = [{}];
+    const defaultSortColumn = [{name: "Name", desc: true}];
+    const columnclassname = [{
+        "Name" : "filter-input-50", "Total Size" : "filter-input-50", "Deleted Since": "filter-input-50"
+    }];
+
     const toggleDialog = () => {
         setShowConfirmDialog(!showConfirmDialog)
     };
@@ -12,17 +30,6 @@ export default ({ data, tasks, schedulingUnit }) => {
     return (
         <div className="p-fluid">
             <div className="p-field p-grid">
-
-                <label htmlFor="suName" className="col-lg-2 col-md-2 col-sm-12">Total Products</label>
-                <div className="col-lg-3 col-md-3 col-sm-12">
-                    <span>{data.overallProducts}</span>
-                </div>
-
-                <div className="col-lg-1 col-md-1 col-sm-12"></div>
-                <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Total Products Deleted Since</label>
-                <div className="col-lg-3 col-md-3 col-sm-12">
-                    <span>{data.overallProductsDeleted}</span>
-                </div>
 
                 <label htmlFor="viewPlots" className="col-lg-2 col-md-2 col-sm-12">View Data Product</label>
                 <div className="col-lg-3 col-md-3 col-sm-12" style={{ paddingLeft: '2px' }}>
@@ -35,6 +42,16 @@ export default ({ data, tasks, schedulingUnit }) => {
                     ))}
                 </div>
             </div>
+            <ViewTable 
+                data={tasks.filter(task => task.template.name !== 'ingest')} 
+                optionalcolumns={optionalcolumns}
+                defaultcolumns={defaultcolumns} 
+                defaultSortColumn={defaultSortColumn}
+                columnclassname={columnclassname}
+                showaction="false"
+                keyaccessor="id"
+                defaultpagesize={tasks.length}
+            />
             <div className="p-grid p-justify-start">
                 <div className="p-col-1">
                     <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={toggleDialog} />
