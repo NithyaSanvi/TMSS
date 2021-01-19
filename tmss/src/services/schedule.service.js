@@ -58,6 +58,12 @@ const ScheduleService = {
                     schedulingUnit.draft_object = schedulingUnitDraft;
                     schedulingUnit.scheduling_set_id = schedulingUnitDraft.scheduling_set_id;
                     schedulingUnit.scheduling_constraints_doc = schedulingUnitDraft.scheduling_constraints_doc;
+                } else {
+                    // Fetch all blueprints data associated with draft to display the name
+                    const promise = [];
+                    schedulingUnit.scheduling_unit_blueprints_ids.map(bID => promise.push(axios.get(`/api/scheduling_unit_blueprint_extended/${bID}/`)));
+                    const blueprintList = await Promise.all(promise);
+                    schedulingUnit.blueprintList = blueprintList.map(detail => detail.data);
                 }
                 const schedulingSet = (await axios.get(`/api/scheduling_set/${schedulingUnit.scheduling_set_id}`)).data;
                 schedulingUnit.scheduling_set_object = schedulingSet;

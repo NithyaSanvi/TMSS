@@ -14,7 +14,7 @@ import SchedulingConstraint from './Scheduling.Constraints';
 import { Dialog } from 'primereact/dialog';
 import TaskStatusLogs from '../Task/state_logs';
 import Stations from './Stations';
-import { Redirect } from 'react-router-dom';
+import { Link, Redirect } from 'react-router-dom';
 import { CustomDialog } from '../../layout/components/CustomDialog';
 import { CustomPageSpinner } from '../../components/CustomPageSpinner';
 import { Growl } from 'primereact/components/growl/Growl';
@@ -339,9 +339,18 @@ class ViewSchedulingUnit extends Component{
                              {this.props.match.params.type === 'blueprint' &&
                             <span className="col-lg-2 col-md-2 col-sm-12">{this.state.scheduleunit.status}</span>}
                          </div>
-                     <div className="p-grid">
-                        <label  className="col-lg-2 col-md-2 col-sm-12">Tags</label>
-                        <Chips className="p-col-4 chips-readonly" disabled value={this.state.scheduleunit.tags}></Chips>
+                        <div className="p-grid">
+                            <label  className="col-lg-2 col-md-2 col-sm-12">Tags</label>
+                            <Chips className="p-col-4 chips-readonly" disabled value={this.state.scheduleunit.tags}></Chips>
+                            <label  className="col-lg-2 col-md-2 col-sm-12">{this.props.match.params.type === 'blueprint' ? 'Draft' : 'Blueprint'}</label>
+                            <span className="col-lg-4 col-md-4 col-sm-12">
+                                {(this.state.scheduleunit.blueprintList || []).map(blueprint => (<label className="col-sm-10 p-0">
+                                    <Link to={{ pathname: `/schedulingunit/view/blueprint/${blueprint.id}`}}>{blueprint.name}</Link>
+                                </label>))}
+                                {this.state.scheduleunit.draft_object && <Link to={{ pathname: `/schedulingunit/view/draft/${this.state.scheduleunit.draft_object.id}` }}>
+                                    {this.state.scheduleunit.draft_object.name}
+                                </Link>}
+                            </span>
                         </div>
                     </div>
                 </>
