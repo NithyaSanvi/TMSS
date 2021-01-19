@@ -15,13 +15,14 @@ import DataProduct from './dataProduct';
 import UnitConverter from '../../utils/unit.converter';
 
 //Workflow Page Title 
-const pageTitle = ['Scheduled','Processing Done','QA Reporting (TO)', 'QA Reporting (SDCO)', 'PI Verification', 'Decide Acceptance','Ingest Done'];
+const pageTitle = ['Scheduled','Processing Done','QA Reporting (TO)', 'QA Reporting (SDCO)', 'PI Verification', 'Decide Acceptance','Ingest Done', 'Data Product'];
 
 export default (props) => {
     let growl;
     const [state, setState] = useState({});
+    const [tasks, setTasks] = useState([]);
     const [outputDataProducts, setOutputDataProducts] = useState({});
-    const [currentStep, setCurrentStep] = useState(1);
+    const [currentStep, setCurrentStep] = useState(8);
     const [schedulingUnit, setSchedulingUnit] = useState();
     const [ingestTask, setInjestTask] = useState({});
     useEffect(() => {
@@ -39,21 +40,27 @@ export default (props) => {
                     const outputProductData = {};
                     Object.keys(dataProducts).map(type => {
                         (dataProducts[type]).map(task => (task.dataProducts || []).map(product => {
-                            if (typeof outputProductData[type] === 'undefined') {
-                                outputProductData[type] = 0
-                            }
-                            outputProductData[type] += product.size;
-                            if (!product.deleted_since) {
-                                if (typeof outputProductData[`${type}_deletedSince`] === 'undefined') {
-                                    outputProductData[`${type}_deletedSince`] = 0
+                            if (product.size) {
+                                if (typeof outputProductData[type] === 'undefined') {
+                                    outputProductData[type] = 0
                                 }
-                                outputProductData[`${type}_deletedSince`] += product.size;
+                                outputProductData[type] += product.size;
+                                if (!product.deleted_since) {
+                                    if (typeof outputProductData[`${type}_deletedSince`] === 'undefined') {
+                                        outputProductData[`${type}_deletedSince`] = 0
+                                    }
+                                    outputProductData[`${type}_deletedSince`] += product.size;
+                                }
                             }
                         }));
-                        outputProductData[type] = UnitConverter.getUIResourceUnit('bytes', (outputProductData[type] || 0));
-                        outputProductData[`${type}_deletedSince`] = UnitConverter.getUIResourceUnit('bytes', (outputProductData[`${type}_deletedSince`] || 0));
+                        if (outputProductData[type]) {
+                            outputProductData[type] = UnitConverter.getUIResourceUnit('bytes', (outputProductData[type] || 0));
+                        }
+                        if (outputProductData[`${type}_deletedSince`]) {
+                            outputProductData[`${type}_deletedSince`] = UnitConverter.getUIResourceUnit('bytes', (outputProductData[`${type}_deletedSince`] || 0));
+                        }
                     });
-                    debugger
+                    setTasks(response);
                     setOutputDataProducts(outputProductData);
                     setInjestTask(response.find(task => task.template.type_value==='observation'));
                 });
@@ -108,7 +115,7 @@ export default (props) => {
                         {currentStep === 5 && <PIverification onNext={onNext} {...state} />}
                         {currentStep === 6 && <DecideAcceptance onNext={onNext} {...state} />}
                         {currentStep === 7 && <IngestDone onNext={onNext}{...state} task={ingestTask} />}
-                        {currentStep === 8 && <DataProduct onNext={onNext} data={outputDataProducts} />}
+                        {currentStep === 8 && <DataProduct onNext={onNext} data={outputDataProducts} tasks={tasks} schedulingUnit={schedulingUnit} />}
                     </div>
                 </>
             }

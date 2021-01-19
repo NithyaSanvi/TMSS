@@ -77,7 +77,7 @@ export class DataProduct extends Component{
                 }
               }).then(
                 await  DataProductService.getSubtaskOutputDataproduct(id).then(outputdata =>{
-                  for(const dataproduct of outputdata){
+                  for(const dataproduct of outputdata.data){
                     dataproduct['type'] = 'Output';
                     dataproduct['size'] = UnitConverter.getUIResourceUnit('bytes', dataproduct['size']);
                     dataproduct['fullpath'] = dataproduct['directory'];
