@@ -12,41 +12,18 @@ export default ({ data, tasks, schedulingUnit }) => {
     return (
         <div className="p-fluid">
             <div className="p-field p-grid">
-                {data.observation && (
-                    <>
-                        <label htmlFor="suName" className="col-lg-2 col-md-2 col-sm-12">Observation</label>
-                        <div className="col-lg-3 col-md-3 col-sm-12">
-                            <span>{data.observation}</span>
-                        </div>
-                    </>
-                )}
-                <div className="col-lg-1 col-md-1 col-sm-12"></div>
-                {data.observation_deletedSince && (
-                    <>
-                        <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Observation Deleted Since</label>
-                        <div className="col-lg-3 col-md-3 col-sm-12">
-                            <span>{data.observation_deletedSince}</span>
-                        </div>
-                    </>
-                )}
 
-                {data.pipeline && (
-                    <>
-                        <label htmlFor="suName" className="col-lg-2 col-md-2 col-sm-12">Pipeline</label>
-                        <div className="col-lg-3 col-md-3 col-sm-12">
-                            <span>{data.pipeline}</span>
-                        </div>
-                    </>
-                )}
+                <label htmlFor="suName" className="col-lg-2 col-md-2 col-sm-12">Total Products</label>
+                <div className="col-lg-3 col-md-3 col-sm-12">
+                    <span>{data.overallProducts}</span>
+                </div>
+
                 <div className="col-lg-1 col-md-1 col-sm-12"></div>
-                {data.pipeline_deletedSince && (
-                    <>
-                        <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Pipeline Deleted Since</label>
-                        <div className="col-lg-3 col-md-3 col-sm-12">
-                            <span>{data.pipeline_deletedSince}</span>
-                        </div>
-                    </>
-                )}
+                <label htmlFor="suStatus" className="col-lg-2 col-md-2 col-sm-12">Total Products Deleted Since</label>
+                <div className="col-lg-3 col-md-3 col-sm-12">
+                    <span>{data.overallProductsDeleted}</span>
+                </div>
+
                 <label htmlFor="viewPlots" className="col-lg-2 col-md-2 col-sm-12">View Data Product</label>
                 <div className="col-lg-3 col-md-3 col-sm-12" style={{ paddingLeft: '2px' }}>
                     {tasks.map(task => (
@@ -79,7 +56,7 @@ export default ({ data, tasks, schedulingUnit }) => {
                             <i className="pi pi-check-circle pi-large pi-success"></i>
                         </div>
                         <div className="col-lg-10 col-md-10 col-sm-10">
-                            Are you sure want to delete 
+                            Are you sure want to delete
                             <div>SU {schedulingUnit.id}</div>
                             <div>SU Name {schedulingUnit.name}</div>
                             <div>SU Desc {schedulingUnit.description}</div>

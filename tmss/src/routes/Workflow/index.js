@@ -22,7 +22,7 @@ export default (props) => {
     const [state, setState] = useState({});
     const [tasks, setTasks] = useState([]);
     const [outputDataProducts, setOutputDataProducts] = useState({});
-    const [currentStep, setCurrentStep] = useState(8);
+    const [currentStep, setCurrentStep] = useState(1);
     const [schedulingUnit, setSchedulingUnit] = useState();
     const [ingestTask, setInjestTask] = useState({});
     useEffect(() => {
@@ -37,29 +37,22 @@ export default (props) => {
                 setSchedulingUnit(responses[0]);
                 ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false, false, true).then(response => {
                     const dataProducts = _.groupBy(response.filter(task => task.template.name !== 'ingest'), 'template_name');
-                    const outputProductData = {};
+                    const outputProductData = {
+                        overallProducts: 0,
+                        overallProductsDeleted: 0
+                    };
                     Object.keys(dataProducts).map(type => {
                         (dataProducts[type]).map(task => (task.dataProducts || []).map(product => {
                             if (product.size) {
-                                if (typeof outputProductData[type] === 'undefined') {
-                                    outputProductData[type] = 0
-                                }
-                                outputProductData[type] += product.size;
+                                outputProductData.overallProducts += product.size;
                                 if (!product.deleted_since) {
-                                    if (typeof outputProductData[`${type}_deletedSince`] === 'undefined') {
-                                        outputProductData[`${type}_deletedSince`] = 0
-                                    }
-                                    outputProductData[`${type}_deletedSince`] += product.size;
+                                    outputProductData.overallProductsDeleted += product.size;
                                 }
                             }
                         }));
-                        if (outputProductData[type]) {
-                            outputProductData[type] = UnitConverter.getUIResourceUnit('bytes', (outputProductData[type] || 0));
-                        }
-                        if (outputProductData[`${type}_deletedSince`]) {
-                            outputProductData[`${type}_deletedSince`] = UnitConverter.getUIResourceUnit('bytes', (outputProductData[`${type}_deletedSince`] || 0));
-                        }
                     });
+                    outputProductData.overallProducts = UnitConverter.getUIResourceUnit('bytes', (outputProductData.overallProducts));
+                    outputProductData.overallProductsDeleted = UnitConverter.getUIResourceUnit('bytes', (outputProductData.overallProductsDeleted));
                     setTasks(response);
                     setOutputDataProducts(outputProductData);
                     setInjestTask(response.find(task => task.template.type_value==='observation'));
