@@ -329,7 +329,7 @@ class ViewSchedulingUnit extends Component{
                             <label className="col-lg-2 col-md-2 col-sm-12">Template ID</label>
                             <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.requirements_template_id}</span>
                             <label  className="col-lg-2 col-md-2 col-sm-12">Scheduling set</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.scheduling_set_object.name}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.scheduling_set_object ? this.state.scheduleunit.scheduling_set_object.name : null}</span>
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12" >Duration (HH:mm:ss)</label>
