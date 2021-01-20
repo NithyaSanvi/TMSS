@@ -7,14 +7,8 @@ export default ({ tasks, schedulingUnit }) => {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const defaultcolumns = [ {
         name: "Name",
-        totalSize:{
-          name:"Total Data Size(TB)", 
-          filter:"slider"
-        },
-        totalDeletedSize:{
-          name:"Data Size Not Deleted(TB)",
-          filter:"slider"
-        }
+        totalSize:"Total Data Size(TB)",
+        totalDeletedSize: "Data Size Not Deleted(TB)"
     }];
     const optionalcolumns = [{
         actionpath:"actionpath",
@@ -39,20 +33,21 @@ export default ({ tasks, schedulingUnit }) => {
                 showGlobalFilter={false}
                 showTopTotal={false}
                 allowColumnSelection={false}
+                showColumnFilter={false}
                 showaction="true"
                 keyaccessor="id"
                 defaultpagesize={tasks.length}
              />
            <div className="p-grid p-justify-start mt-2">
                 <div className="p-col-1">
-                    <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={toggleDialog} />
+                    <Button label="Delete" className="p-button-primary" icon="pi pi-trash" onClick={toggleDialog} />
                 </div>
                 <div className="p-col-1">
                     <Button label="Cancel" className="p-button-danger" icon="pi pi-times" style={{ width: '90px' }} />
                 </div>
             </div>
             <div className="p-grid" data-testid="confirm_dialog">
-                <Dialog header={'Request confirmation for data deletion'} visible={showConfirmDialog} style={{ width: '40vw' }} inputId="confirm_dialog"
+                <Dialog header={ConfirmationHeader} visible={showConfirmDialog} style={{ width: '40vw' }} inputId="confirm_dialog"
                     modal={true} onHide={() => setShowConfirmDialog(false)}
                     footer={<div>
                         <Button key="back" onClick={() => setShowConfirmDialog(false)} label="Yes" />
@@ -72,3 +67,4 @@ export default ({ tasks, schedulingUnit }) => {
         </div>
     )
 }
+const ConfirmationHeader = <>Request confirmation for data deletion <i className="fa fa-question"></i></>;
