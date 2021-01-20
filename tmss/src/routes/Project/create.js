@@ -35,7 +35,8 @@ export class ProjectCreate extends Component {
                 trigger_priority: 1000,
                 priority_rank: null,
                 quota: [],                          // Mandatory Field in the back end, so an empty array is passed
-                can_trigger: false
+                can_trigger: false,
+                auto_pin: false
             },
             projectQuota: {},                       // Resource Allocations
             validFields: {},                        // For Validation
@@ -460,8 +461,7 @@ export class ProjectCreate extends Component {
                                         value={this.state.project.cycles} 
                                         options={this.state.cycles} 
                                         onChange={(e) => {this.setProjectParams('cycles',e.value)}} 
-                                        
-                                />
+                                 />
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="projRank" className="col-lg-2 col-md-2 col-sm-12">Project Rank <span style={{color:'red'}}>*</span></label>
@@ -501,7 +501,14 @@ export class ProjectCreate extends Component {
                                         {this.state.errors.archive_subdirectory ? this.state.errors.archive_subdirectory : "Max 1024 characters"}
                                     </label>
                             </div>
-                            
+                            <div className="col-lg-1 col-md-1 col-sm-12"></div>
+                            <label htmlFor="preventdeletionafteringest" className="col-lg-2 col-md-2 col-sm-12">Prevent Automatic Deletion After Ingest</label>
+                            <div className="col-lg-3 col-md-3 col-sm-12" data-testid="preventdeletionafteringest">
+                                <Checkbox inputId="preventdeletionafteringest" role="preventdeletionafteringest" 
+                                        tooltip="Prevent automatic deletion after ingest" 
+                                        tooltipOptions={this.tooltipOptions}
+                                        checked={this.state.project.auto_pin} onChange={e => this.setProjectParams('auto_pin', e.target.checked)}></Checkbox>
+                            </div>
                             </div>
                             {this.defaultResourcesEnabled && this.state.resourceList &&
                             <div className="p-fluid">

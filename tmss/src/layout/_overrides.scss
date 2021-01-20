@@ -189,11 +189,14 @@
 .td_pre {
     white-space: pre;
 }
+.p-ingest-grid{
+    position: absolute;
+    right: 80px;
+}
+.capitalize {
+    text-transform: capitalize;
+} 
+
 .p-growl {
     z-index: 3000 !important;
-}
-.data-product {
-    label {
-        display: block;
-    }
 }

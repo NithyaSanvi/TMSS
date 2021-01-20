@@ -122,10 +122,10 @@ export class TimelineView extends Component {
                         suBlueprint.tasks = suBlueprint.task_blueprints;
                         // Select only blueprints with start_time and stop_time in the default time limit
                         if (suBlueprint.start_time && 
-                            (moment.utc(suBlueprint.start_time).isBetween(defaultStartTime, defaultEndTime) ||
+                            ((moment.utc(suBlueprint.start_time).isBetween(defaultStartTime, defaultEndTime) ||
                              moment.utc(suBlueprint.stop_time).isBetween(defaultStartTime, defaultEndTime))	 
                              || (moment.utc(suBlueprint.start_time).isSameOrBefore(defaultStartTime) && 
-                                 moment.utc(suBlueprint.stop_time).isSameOrAfter(defaultEndTime))) {
+                                 moment.utc(suBlueprint.stop_time).isSameOrAfter(defaultEndTime)))) {
                             items.push(this.getTimelineItem(suBlueprint));
                             if (!_.find(group, {'id': suDraft.id})) {
                                 group.push({'id': suDraft.id, title: suDraft.name});

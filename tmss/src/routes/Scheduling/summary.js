@@ -114,6 +114,7 @@ export class SchedulingUnitSummary extends Component {
     render() {
         const schedulingUnit = this.props.schedulingUnit;
         const suTaskList = this.props.suTaskList;
+        suTaskList.map(task=>task.typeValue = task.specifications_template.type_value);
         const constraintsTemplate = this.props.constraintsTemplate;
         // After receiving output from the SchedulingConstraint editor order and format it to display
         let constraintsDoc = this.state.constraintsDoc?this.getOrderedConstraints(this.state.constraintsDoc, this.constraintsOrder):null;
@@ -171,10 +172,10 @@ export class SchedulingUnitSummary extends Component {
                         <label>Tasks:</label>
                         <ViewTable 
                             data={suTaskList} 
-                            defaultcolumns={[{id: "ID", subTaskID: 'Control ID', start_time:"Start Time", stop_time:"End Time", status: "Status", 
+                            defaultcolumns={[{id: "ID", name: "Name", typeValue:"Type", subTaskID: 'Control ID', start_time:"Start Time", stop_time:"End Time", status: "Status", 
                                                 antenna_set: "Antenna Set", band: 'Band'}]}
                             optionalcolumns={[{actionpath: "actionpath"}]}
-                            columnclassname={[{"ID": "filter-input-50","Control ID":"filter-input-75", "Start Time": "filter-input-75", "End Time": "filter-input-75",
+                            columnclassname={[{"ID": "filter-input-50","Name":"filter-input-75","Type":"filter-input-75","Control ID":"filter-input-75", "Start Time": "filter-input-75", "End Time": "filter-input-75",
                                                 "Status": "filter-input-75", "Antenna Set": "filter-input-75", "Band": "filter-input-75"}]}
                             defaultSortColumn= {[{id: "ID", desc: false}]}
                             showaction="false"

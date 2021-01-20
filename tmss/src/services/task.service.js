@@ -211,6 +211,23 @@ const TaskService = {
       } catch(error) {
         console.error(error);
       }
+    },
+    /**
+     * Function to get the task relation objects
+     * @param {Array} relationIds - Array of task_relation ids
+     * @param {String} type  - 'draft' or 'blueprint'
+     */
+    getTaskRelations: async function(relationIds, type) {
+      let taskRelations = [];
+      try {
+        for (const relationId of relationIds) {
+          const taskRelation = (await axios.get(`/api/task_relation_${type}/${relationId}`)).data;
+          taskRelations.push(taskRelation);
+        }
+      } catch(error) {
+
+      }
+      return taskRelations;
     }
 }
 

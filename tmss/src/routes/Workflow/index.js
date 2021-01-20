@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import PageHeader from '../../layout/components/PageHeader';
 import {Growl} from 'primereact/components/growl/Growl';
 import { Link } from 'react-router-dom';
-import _ from 'lodash';
 import ScheduleService from '../../services/schedule.service';
 import Scheduled from './Scheduled';
 import ProcessingDone from './processing.done';
@@ -11,16 +10,13 @@ import QAsos from './qa.sos';
 import PIverification from './pi.verification';
 import DecideAcceptance from './decide.acceptance';
 import IngestDone from './ingest.done';
-import DataProduct from './dataProduct';
-import UnitConverter from '../../utils/unit.converter';
 
 //Workflow Page Title 
-const pageTitle = ['Scheduled','Processing Done','QA Reporting (TO)', 'QA Reporting (SDCO)', 'PI Verification', 'Decide Acceptance','Ingest Done', 'Data Product'];
+const pageTitle = ['Scheduled','Processing Done','QA Reporting (TO)', 'QA Reporting (SDCO)', 'PI Verification', 'Decide Acceptance','Ingest Done'];
 
 export default (props) => {
     let growl;
     const [state, setState] = useState({});
-    const [tasks, setTasks] = useState([]);
     const [currentStep, setCurrentStep] = useState(1);
     const [schedulingUnit, setSchedulingUnit] = useState();
     const [ingestTask, setInjestTask] = useState({});
@@ -34,33 +30,7 @@ export default (props) => {
             const promises = [ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id), ScheduleService.getTaskType()]
             Promise.all(promises).then(responses => {
                 setSchedulingUnit(responses[0]);
-                ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false, false, true).then(response => {
-                    response.map(task => {
-                        task.actionpath = `/task/view/blueprint/${task.id}/dataproducts`;
-                        (task.dataProducts || []).map(product => {
-                            if (product.size) {
-                                if (!task.totalSize) {
-                                    task.totalSize = 0;
-                                }
-                                task.totalSize += product.size;
-    
-                                // For deleted since
-                                if (!product.deleted_since && product.size) {
-                                    if (!task.totalDeletedSize) {
-                                        task.totalDeletedSize = 0;
-                                    }
-                                    task.totalDeletedSize += product.size;
-                                }
-                            }
-                        });
-                        if (task.totalSize) {
-                            task.totalSize = UnitConverter.getUIResourceUnit('bytes', (task.totalSize));
-                        }
-                        if (task.totalDeletedSize) {
-                            task.totalDeletedSize = UnitConverter.getUIResourceUnit('bytes', (task.totalDeletedSize));
-                        }
-                    });
-                    setTasks(response);
+                ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false).then(response => {
                     setInjestTask(response.find(task => task.template.type_value==='observation'));
                 });
             });
@@ -114,7 +84,7 @@ export default (props) => {
                         {currentStep === 5 && <PIverification onNext={onNext} {...state} />}
                         {currentStep === 6 && <DecideAcceptance onNext={onNext} {...state} />}
                         {currentStep === 7 && <IngestDone onNext={onNext}{...state} task={ingestTask} />}
-                        {currentStep === 8 && <DataProduct onNext={onNext} tasks={tasks} schedulingUnit={schedulingUnit} />}
+                      
                     </div>
                 </>
             }

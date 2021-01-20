@@ -105,10 +105,10 @@ export class WeekTimelineView extends Component {
                         suBlueprint.tasks = suBlueprint.task_blueprints;
                         // Select only blueprints with start_time and stop_time in the default time limit
                         if (suBlueprint.start_time && 
-                            (moment.utc(suBlueprint.start_time).isBetween(defaultStartTime, defaultEndTime) ||
+                            ((moment.utc(suBlueprint.start_time).isBetween(defaultStartTime, defaultEndTime) ||
                              moment.utc(suBlueprint.stop_time).isBetween(defaultStartTime, defaultEndTime))	 
                              || (moment.utc(suBlueprint.start_time).isSameOrBefore(defaultStartTime, defaultEndTime) && 
-                                 moment.utc(suBlueprint.stop_time).isSameOrAfter(defaultStartTime, defaultEndTime))) {
+                                 moment.utc(suBlueprint.stop_time).isSameOrAfter(defaultStartTime, defaultEndTime)))) {
 
                             const startTime = moment.utc(suBlueprint.start_time);
                             const endTime = moment.utc(suBlueprint.stop_time);

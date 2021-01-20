@@ -12,6 +12,8 @@ import PageHeader from '../../layout/components/PageHeader';
 import ProjectService from '../../services/project.service';
 import UnitConverter from '../../utils/unit.converter';
 import SchedulingUnitList from './../Scheduling/SchedulingUnitList';
+import SUBCreator from '../Scheduling/sub.create';
+
 /**
  * Component to view the details of a project
  */
@@ -32,7 +34,8 @@ export class ProjectView extends Component {
         this.state.redirect = this.state.projectId?"":'/project'         // If no project id is passed, redirect to Project list page
         this.resourceUnitMap = UnitConverter.resourceUnitMap;       // Resource unit conversion factor and constraints
         this.optionsMenu = React.createRef();
-        this.menuOptions = [ {label:'Add Scheduling Unit', icon: "fa fa-", command: () => {this.selectOptionMenu('Add SU')}} ];
+        this.menuOptions = [ {label:'Add Scheduling Unit', icon: "fa fa-", command: () => {this.selectOptionMenu('Add SU')}},
+                             {label:'Create SU Blueprint', icon: "fa fa-", command: () => {this.selectOptionMenu('Create SUB')}} ];
         
         this.showOptionMenu = this.showOptionMenu.bind(this);
         this.selectOptionMenu = this.selectOptionMenu.bind(this);
@@ -98,6 +101,12 @@ export class ProjectView extends Component {
                 this.setState({redirect: `/project/${this.state.project.name}/schedulingunit/create`});
                 break;
             }
+            case 'Create SUB': {
+                if (this.subCreator) {
+                    this.subCreator.checkAndCreateBlueprint(this.suList);
+                }
+                break;
+            }
             default: {
                 break;
             }
@@ -112,9 +121,9 @@ export class ProjectView extends Component {
         return (
             <React.Fragment>
                 <TieredMenu className="app-header-menu" model={this.menuOptions} popup ref={el => this.optionsMenu = el} />
-                <PageHeader location={this.props.location} title={'Project - View'} 
+                <PageHeader location={this.props.location} title={'Project - Details'} 
                             actions={[  {icon:'fa-bars',title: '', type:'button',
-                                         actOn:'mouseOver', props : { callback: this.showOptionMenu},
+                                         actOn:'mouseOver', props : { callback: this.showOptionMenu}, 
                                         },
                                         {icon: 'fa-edit',title:'Click to Edit Project', type:'link',
                                          props : { pathname: `/project/edit/${this.state.project.name}`, 
@@ -160,6 +169,10 @@ export class ProjectView extends Component {
                                 <label className="col-lg-2 col-md-2 col-sm-12">LTA Storage Path</label>
                                 <span className="col-lg-4 col-md-4 col-sm-12">{this.state.project.archive_subdirectory	}</span>
                             </div>
+                            <div className="p-grid">
+                                <label className="col-lg-2 col-md-2 col-sm-12">Prevent Automatic Deletion After Ingest</label>
+                                <span className="col-lg-4 col-md-4 col-sm-12"><i className={this.state.project.auto_pin?'fa fa-check-circle':'fa fa-times-circle'}></i></span>
+                            </div>
                             <div className="p-fluid">
                                 <div className="p-field p-grid">
                                     <div className="col-lg-3 col-md-3 col-sm-12">
@@ -187,8 +200,10 @@ export class ProjectView extends Component {
                                     </div>
                                 </div>
                             </div>
-                            <SchedulingUnitList project={this.state.project.name} hideProjectColumn/>
+                            <SchedulingUnitList project={this.state.project.name} hideProjectColumn 
+                                allowRowSelection={true} ref={suList => {this.suList = suList}} />
                         </div>
+                        <SUBCreator ref={subCreator => {this.subCreator = subCreator}}/>
                     </React.Fragment>
                 }
             </React.Fragment>
