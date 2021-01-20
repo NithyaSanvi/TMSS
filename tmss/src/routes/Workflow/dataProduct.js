@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Dialog } from 'primereact/dialog';
 import ViewTable from './../../components/ViewTable';
 
-export default ({ data, tasks, schedulingUnit }) => {
+export default ({ tasks, schedulingUnit }) => {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const defaultcolumns = [ {
         name: "Name",
@@ -17,7 +17,9 @@ export default ({ data, tasks, schedulingUnit }) => {
           filter:"minMax"
         }
     }];
-    const optionalcolumns = [{}];
+    const optionalcolumns = [{
+        actionpath:"actionpath",
+    }];
     const defaultSortColumn = [{name: "Name", desc: true}];
     const columnclassname = [{
         "Name" : "filter-input-50", "Total Size" : "filter-input-50", "Deleted Since": "filter-input-50"
@@ -28,27 +30,14 @@ export default ({ data, tasks, schedulingUnit }) => {
     };
 
     return (
-        <div className="p-fluid">
-            <div className="p-field p-grid">
-
-                <label htmlFor="viewPlots" className="col-lg-2 col-md-2 col-sm-12">View Data Product</label>
-                <div className="col-lg-3 col-md-3 col-sm-12" style={{ paddingLeft: '2px' }}>
-                    {tasks.map(task => (
-                        <>
-                            {(task.dataProducts || []).length > 0 && <label className="col-sm-10 ">
-                                <Link to={{ pathname: `/task/view/blueprint/${task.id}/dataproducts` }}>{task.name}</Link>
-                            </label>}
-                        </>
-                    ))}
-                </div>
-            </div>
+        <div className="p-fluid mt-2">
             <ViewTable 
                 data={tasks.filter(task => task.template.name !== 'ingest' && (task.totalSize || task.totalDeletedSize))} 
                 optionalcolumns={optionalcolumns}
                 defaultcolumns={defaultcolumns} 
                 defaultSortColumn={defaultSortColumn}
                 columnclassname={columnclassname}
-                showaction="false"
+                showaction="true"
                 keyaccessor="id"
                 defaultpagesize={tasks.length}
             />

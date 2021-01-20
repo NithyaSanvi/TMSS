@@ -21,7 +21,6 @@ export default (props) => {
     let growl;
     const [state, setState] = useState({});
     const [tasks, setTasks] = useState([]);
-    const [outputDataProducts, setOutputDataProducts] = useState({});
     const [currentStep, setCurrentStep] = useState(1);
     const [schedulingUnit, setSchedulingUnit] = useState();
     const [ingestTask, setInjestTask] = useState({});
@@ -37,6 +36,7 @@ export default (props) => {
                 setSchedulingUnit(responses[0]);
                 ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false, false, true).then(response => {
                     response.map(task => {
+                        task.actionpath = `/task/view/blueprint/${task.id}/dataproducts`;
                         (task.dataProducts || []).map(product => {
                             if (product.size) {
                                 if (!task.totalSize) {
@@ -114,7 +114,7 @@ export default (props) => {
                         {currentStep === 5 && <PIverification onNext={onNext} {...state} />}
                         {currentStep === 6 && <DecideAcceptance onNext={onNext} {...state} />}
                         {currentStep === 7 && <IngestDone onNext={onNext}{...state} task={ingestTask} />}
-                        {currentStep === 8 && <DataProduct onNext={onNext} data={outputDataProducts} tasks={tasks} schedulingUnit={schedulingUnit} />}
+                        {currentStep === 8 && <DataProduct onNext={onNext} tasks={tasks} schedulingUnit={schedulingUnit} />}
                     </div>
                 </>
             }
