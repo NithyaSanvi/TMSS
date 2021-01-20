@@ -20,7 +20,6 @@ import { Growl } from 'primereact/components/growl/Growl';
 import Schedulingtaskrelation from './Scheduling.task.relation';
 import TaskService from '../../services/task.service';
 
-
 class ViewSchedulingUnit extends Component{
     constructor(props){
         super(props)
@@ -333,7 +332,7 @@ class ViewSchedulingUnit extends Component{
                             actions={this.actions}/>
 				{ this.state.isLoading ? <AppLoader/> :this.state.scheduleunit &&
 			    <>
-		        <div className="main-content">
+		            <div className="main-content">
                         <div className="p-grid">
                             <label  className="col-lg-2 col-md-2 col-sm-12">Name</label>
                             <span className="p-col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.name}</span>
@@ -359,7 +358,7 @@ class ViewSchedulingUnit extends Component{
                             <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.requirements_template_id}</span>
                         </div>
                         <div className="p-grid">
-                            {this.state.scheduleunit.scheduling_set_object && this.state.scheduleunit.scheduling_set_object.project_id && 
+                            {this.state.scheduleunit.scheduling_set_object.project_id && 
                                 <>
                                     <label className="col-lg-2 col-md-2 col-sm-12">Project</label>
                                     <span className="col-lg-4 col-md-4 col-sm-12">
@@ -368,29 +367,18 @@ class ViewSchedulingUnit extends Component{
                                 </>
                                 }
                             <label  className="col-lg-2 col-md-2 col-sm-12">Scheduling set</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.scheduling_set_object ? this.state.scheduleunit.scheduling_set_object.name : null}</span>
-                        </div>
-                        <div className="p-grid">
-                            <label  className="col-lg-2 col-md-2 col-sm-12">{this.props.match.params.type === 'blueprint' ? 'Draft' : 'Blueprint'}</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">
-                                {(this.state.scheduleunit.blueprintList || []).map(blueprint => (<label className="col-sm-10 p-0">
-                                    <Link to={{ pathname: `/schedulingunit/view/blueprint/${blueprint.id}`}}>{blueprint.name}</Link>
-                                </label>))}
-                                {this.state.scheduleunit.draft_object && <Link to={{ pathname: `/schedulingunit/view/draft/${this.state.scheduleunit.draft_object.id}` }}>
-                                    {this.state.scheduleunit.draft_object.name}
-                                </Link>}
-                            </span>
-                            {this.props.match.params.type === 'blueprint' &&
-                            <label className="col-lg-2 col-md-2 col-sm-12 ">Status</label> }
-                            {this.props.match.params.type === 'blueprint' &&
-                            <span className="col-lg-2 col-md-2 col-sm-12">{this.state.scheduleunit.status}</span>}
-                    </div> 
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.scheduling_set_object.name}</span>
+                            
+                         </div>
                      <div className="p-grid">
                         <label  className="col-lg-2 col-md-2 col-sm-12">Tags</label>
                         <Chips className="p-col-4 chips-readonly" disabled value={this.state.scheduleunit.tags}></Chips>
+                        {this.props.match.params.type === 'blueprint' &&
+                        <label className="col-lg-2 col-md-2 col-sm-12 ">Status</label> }
+                        {this.props.match.params.type === 'blueprint' &&
+                        <span className="col-lg-2 col-md-2 col-sm-12">{this.state.scheduleunit.status}</span>}
                     </div>
-                    
-                </div>
+                    </div>
                 </>
 			    }
                

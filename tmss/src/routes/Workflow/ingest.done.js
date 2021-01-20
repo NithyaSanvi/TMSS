@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Button } from 'primereact/button';
 import { Link } from 'react-router-dom';
 
 class IngestDone extends Component {
@@ -37,6 +38,14 @@ class IngestDone extends Component {
                             {/* <div className="col-lg-3 col-md-3 col-sm-12">
                                 <Link to={{ pathname: `http://lexar003.control.lofar:9632/` }}> View Ingest Monitoring &nbsp;<span class="fas fa-desktop"></span></Link>
                             </div> */}
+                        </div>
+                        <div className="p-grid p-justify-start">
+                        <div className="p-col-1">
+                            <Button label="Next" className="p-button-primary" icon="pi pi-check"  onClick={ this.onSave }/>
+                        </div>
+                        <div className="p-col-1">
+                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} />
+                        </div>
                         </div>
                     </div>
                </>

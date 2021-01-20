@@ -101,6 +101,7 @@ export class TaskView extends Component {
                 }
             });
         }
+        
     }
 
     render() {
