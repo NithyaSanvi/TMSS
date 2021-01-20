@@ -359,7 +359,7 @@ class ViewSchedulingUnit extends Component{
                             <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.requirements_template_id}</span>
                         </div>
                         <div className="p-grid">
-                            {this.state.scheduleunit.scheduling_set_object.project_id && 
+                            {this.state.scheduleunit.scheduling_set_object && this.state.scheduleunit.scheduling_set_object.project_id && 
                                 <>
                                     <label className="col-lg-2 col-md-2 col-sm-12">Project</label>
                                     <span className="col-lg-4 col-md-4 col-sm-12">
