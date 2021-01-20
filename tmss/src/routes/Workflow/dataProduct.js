@@ -43,7 +43,7 @@ export default ({ data, tasks, schedulingUnit }) => {
                 </div>
             </div>
             <ViewTable 
-                data={tasks.filter(task => task.template.name !== 'ingest')} 
+                data={tasks.filter(task => task.template.name !== 'ingest' && (task.totalSize || task.totalDeletedSize))} 
                 optionalcolumns={optionalcolumns}
                 defaultcolumns={defaultcolumns} 
                 defaultSortColumn={defaultSortColumn}
@@ -52,7 +52,7 @@ export default ({ data, tasks, schedulingUnit }) => {
                 keyaccessor="id"
                 defaultpagesize={tasks.length}
             />
-            <div className="p-grid p-justify-start">
+            <div className="p-grid p-justify-start mt-2">
                 <div className="p-col-1">
                     <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={toggleDialog} />
                 </div>
