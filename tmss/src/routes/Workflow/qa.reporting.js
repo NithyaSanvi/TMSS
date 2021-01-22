@@ -1,8 +1,10 @@
 import React, { Component } from 'react';
 import { Button } from 'primereact/button';
+import {Checkbox} from 'primereact/checkbox';
 import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css'; // Import Sun Editor's CSS File
 import { Dropdown } from 'primereact/dropdown';
+import WorkflowService from '../../services/workflow.service';
 //import katex from 'katex' // for mathematical operations on sun editor this component should be added
 //import 'katex/dist/katex.min.css'
 
@@ -11,10 +13,16 @@ class QAreporting extends Component{
     constructor(props) {
         super(props);
         this.state={
-            content: props.report
+            content: props.report,
+            assignTo: '',
+            operator_accept: false
         };
         this.Next = this.Next.bind(this);
         this.handleChange = this.handleChange.bind(this);
+    }
+
+    componentDidMount() {
+        WorkflowService.getSchedulingUnitTask().then(response => this.setState({ qaSchedulingTasks: response }));
     }
 
     /**
@@ -22,7 +30,16 @@ class QAreporting extends Component{
      * here onNext props coming from parent, where will handle redirection to other page
      */
      Next() {
-        this.props.onNext({ report: this.state.content });
+        const qaSchedulingTasksId = this.state.qaSchedulingTasks.find(task => task.flow_task.toLowerCase() === 'qa reporting to');
+        if (!qaSchedulingTasksId) {
+            return
+        }
+        const promise = [];
+        promise.push(WorkflowService.updateAssignTo(qaSchedulingTasksId.id, { owner: this.state.assignTo }));
+        promise.push(WorkflowService.updateQA_Perform(qaSchedulingTasksId.process, {"operator_report": this.state.content, "operator_accept": this.state.operator_accept}));
+        Promise.all(promise).then(() => {
+            this.props.onNext({ report: this.state.content });
+        });
      }
 
     /**
@@ -45,8 +62,8 @@ class QAreporting extends Component{
                 <div className="p-field p-grid">
                     <label htmlFor="assignTo" className="col-lg-2 col-md-2 col-sm-12">Assign To </label>
                     <div className="col-lg-3 col-md-3 col-sm-12" data-testid="assignTo" >
-                        <Dropdown inputId="assignToValue" optionLabel="value" optionValue="value"
-                            options={[{ value: 'User 1' }, { value: 'User 2' }, { value: 'User 3' }]}
+                        <Dropdown inputId="assignToValue" value={this.state.assignTo} optionLabel="value" optionValue="id" onChange={(e) => this.setState({assignTo: e.value})}
+                            options={[{ value: 'User 1', id: 1 }, { value: 'User 2', id: 2 }, { value: 'User 3', id: 3 }]}
                             placeholder="Assign To" />
                     </div>
                 </div>
@@ -62,6 +79,12 @@ class QAreporting extends Component{
                                     'superscript', 'outdent', 'indent', 'fullScreen', 'showBlocks', 'codeView', 'preview', 'print', 'removeFormat']
                             ]
                         }} />
+                </div>
+                <div className="p-grid">
+                    <div className="p-col-12">
+                        <Checkbox inputId="operator_accept" onChange={e => this.setState({operator_accept: e.checked})} checked={this.state.operator_accept}></Checkbox>
+                        <label htmlFor="operator_accept " className="p-checkbox-label">Operator Accept</label>
+                    </div>
                 </div>
             </div>
             <div className="p-grid p-justify-start">
