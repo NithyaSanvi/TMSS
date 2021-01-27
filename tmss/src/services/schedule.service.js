@@ -126,6 +126,15 @@ const ScheduleService = {
             return null;
         };
     },
+    getSubtaskOutputDataproduct: async function(id){
+        try {
+          const url = `/api/subtask/${id}/output_dataproducts/`;
+          const response = await axios.get(url);
+          return response.data;
+        } catch (error) {
+          console.error('[data.product.getSubtaskOutputDataproduct]',error);
+        }
+    },
     getSchedulingUnitDraftById: async function (id){
         try {
             const schedulingUnit = (await axios.get('/api/scheduling_unit_draft/'+id)).data;

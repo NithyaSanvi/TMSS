@@ -140,10 +140,14 @@ class ViewSchedulingUnit extends Component{
                     let tasks = schedulingUnit.task_drafts?(await this.getFormattedTaskDrafts(schedulingUnit)):this.getFormattedTaskBlueprints(schedulingUnit);
                     let ingestGroup = tasks.map(task => ({name: task.name, canIngest: task.canIngest, type_value: task.type_value, id: task.id }));
                     ingestGroup = _.groupBy(_.filter(ingestGroup, 'type_value'), 'type_value');
-                    tasks.map(task => {
+                    tasks.map(async task => {
                         task.status_logs = task.tasktype === "Blueprint"?this.subtaskComponent(task):"";
                         //Displaying SubTask ID of the 'control' Task
                         const subTaskIds = task.subTasks?task.subTasks.filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1):[];
+                        const promise = [];
+                        subTaskIds.map(subTask => promise.push(ScheduleService.getSubtaskOutputDataproduct(subTask.id)));
+                        const dataProducts = await Promise.all(promise);
+                        task.dataProducts = dataProducts;
                         task.subTaskID = subTaskIds.length ? subTaskIds[0].id : ''; 
                         return task;
                     });
