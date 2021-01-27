@@ -20,6 +20,7 @@ import { Growl } from 'primereact/components/growl/Growl';
 import Schedulingtaskrelation from './Scheduling.task.relation';
 import TaskService from '../../services/task.service';
 
+
 class ViewSchedulingUnit extends Component{
     constructor(props){
         super(props)
@@ -36,6 +37,7 @@ class ViewSchedulingUnit extends Component{
             missingStationFieldsErrors: [],
             defaultcolumns: [ {
                 status_logs: "Status Logs",
+                status:"Status",
                 tasktype:{
                     name:"Type",
                     filter:"select"
@@ -44,6 +46,20 @@ class ViewSchedulingUnit extends Component{
                 subTaskID: 'Control ID',
                 name:"Name",
                 description:"Description",
+                start_time:"Start Time",
+                stop_time:"End Time",
+                duration:"Duration (HH:mm:ss)",
+                relative_start_time:"Relative Start Time (HH:mm:ss)",
+                relative_stop_time:"Relative End Time (HH:mm:ss)",
+                 do_cancel:{
+                    name: "Cancelled",
+                    filter: "switch"
+                },
+            }],
+            optionalcolumns:  [{
+                tags:"Tags",
+                blueprint_draft:"BluePrint / Task Draft link",
+                url:"URL",
                 created_at:{
                     name: "Created at",
                     filter: "date"
@@ -52,21 +68,6 @@ class ViewSchedulingUnit extends Component{
                     name: "Updated at",
                     filter: "date"
                 },
-                do_cancel:{
-                    name: "Cancelled",
-                    filter: "switch"
-                },
-                start_time:"Start Time",
-                stop_time:"End Time",
-                duration:"Duration (HH:mm:ss)",
-                status:"Status"
-            }],
-            optionalcolumns:  [{
-                relative_start_time:"Relative Start Time (HH:mm:ss)",
-                relative_stop_time:"Relative End Time (HH:mm:ss)",
-                tags:"Tags",
-                blueprint_draft:"BluePrint / Task Draft link",
-                url:"URL",
                 actionpath:"actionpath"
             }],
             columnclassname: [{
@@ -368,16 +369,33 @@ class ViewSchedulingUnit extends Component{
                                 }
                             <label  className="col-lg-2 col-md-2 col-sm-12">Scheduling set</label>
                             <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.scheduling_set_object.name}</span>
-                            
-                         </div>
-                     <div className="p-grid">
-                        <label  className="col-lg-2 col-md-2 col-sm-12">Tags</label>
-                        <Chips className="p-col-4 chips-readonly" disabled value={this.state.scheduleunit.tags}></Chips>
-                        {this.props.match.params.type === 'blueprint' &&
-                        <label className="col-lg-2 col-md-2 col-sm-12 ">Status</label> }
-                        {this.props.match.params.type === 'blueprint' &&
-                        <span className="col-lg-2 col-md-2 col-sm-12">{this.state.scheduleunit.status}</span>}
-                    </div>
+                        </div>
+                        <div className="p-grid">
+                            <label  className="col-lg-2 col-md-2 col-sm-12">{this.props.match.params.type === 'blueprint' ? 'Draft' : 'Blueprints'}</label>
+                            <span className="col-lg-4 col-md-4 col-sm-12">
+                                <ul className="task-list">
+                                {(this.state.scheduleunit.blueprintList || []).map(blueprint => (
+                                    <li>
+                                        <Link to={{ pathname: `/schedulingunit/view/blueprint/${blueprint.id}`}}>{blueprint.name}</Link>
+                                    </li>))}
+                                {this.state.scheduleunit.draft_object && 
+                                    <li>
+                                        <Link to={{ pathname: `/schedulingunit/view/draft/${this.state.scheduleunit.draft_object.id}` }}>
+                                        {this.state.scheduleunit.draft_object.name}
+                                        </Link>
+                                    </li>}
+                                </ul>
+                            </span>
+                            {this.props.match.params.type === 'blueprint' &&
+                            <label className="col-lg-2 col-md-2 col-sm-12 ">Status</label> }
+                            {this.props.match.params.type === 'blueprint' &&
+                            <span className="col-lg-2 col-md-2 col-sm-12">{this.state.scheduleunit.status}</span>}
+                       </div> 
+                        <div className="p-grid">
+                            <label  className="col-lg-2 col-md-2 col-sm-12">Tags</label>
+                            <Chips className="p-col-4 chips-readonly" disabled value={this.state.scheduleunit.tags}></Chips>
+                        </div>
+                        
                     </div>
                 </>
 			    }

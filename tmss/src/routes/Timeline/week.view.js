@@ -53,8 +53,9 @@ export class WeekTimelineView extends Component {
         this.STATUS_BEFORE_SCHEDULED = ['defining', 'defined', 'schedulable'];  // Statuses before scheduled to get station_group
         this.mainStationGroups = {};
         this.optionsMenu = React.createRef();
-        this.menuOptions = [ {label:'Add Reservation', icon: "fa fa-", command: () => {this.selectOptionMenu('Add Reservation')}},
-                              ];
+        this.menuOptions = [ {label:'Add Reservation', icon: "fa fa-", command: () => {this.selectOptionMenu('Add Reservation')}}, 
+                            {label:'Reservation List', icon: "fa fa-", command: () => {this.selectOptionMenu('Reservation List')}},
+                           ];
         
         this.showOptionMenu = this.showOptionMenu.bind(this);
         this.selectOptionMenu = this.selectOptionMenu.bind(this);
@@ -415,6 +416,10 @@ export class WeekTimelineView extends Component {
 
     selectOptionMenu(menuName) {
         switch(menuName) {
+            case 'Reservation List': {
+                this.setState({redirect: `/su/timelineview/reservation/reservation/list`});
+                break;
+            }
             case 'Add Reservation': {
                 this.setState({redirect: `/su/timelineview/reservation/create`});
                 break;
@@ -424,6 +429,7 @@ export class WeekTimelineView extends Component {
             }
         }
     }
+
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -441,9 +447,7 @@ export class WeekTimelineView extends Component {
                  <TieredMenu className="app-header-menu" model={this.menuOptions} popup ref={el => this.optionsMenu = el} />
                 <PageHeader location={this.props.location} title={'Scheduling Units - Week View'} 
                     actions={[
-                        {icon:'fa-bars',title: '', type:'button',
-                        actOn:'mouseOver', props : { callback: this.showOptionMenu},
-                       },
+                        {icon:'fa-bars',title: '', type:'button', actOn:'mouseOver', props : { callback: this.showOptionMenu},},
                         {icon: 'fa-clock',title:'View Timeline', props : { pathname: `/su/timelineview`}}]}/>
                 { this.state.isLoading ? <AppLoader /> :
                     <>

@@ -14,6 +14,12 @@ import { Slider } from 'primereact/slider';
 import { Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { InputNumber } from "primereact/inputnumber";
+import {MultiSelect} from 'primereact/multiselect';
+import { RadioButton } from 'primereact/radiobutton';
+import { useExportData } from "react-table-plugins";
+import Papa from "papaparse";
+import JsPDF from "jspdf";
+import "jspdf-autotable";
 
 let tbldata =[], filteredData = [] ;
 let selectedRows = [];
@@ -25,6 +31,8 @@ let allowColumnSelection = true;
 let allowRowSelection = false;
 let columnclassname =[];
 let parentCallbackFunction, parentCBonSelection;
+let showCSV = false;
+let anyOfFilter = '';
 
 // Define a default UI for filtering
 function GlobalFilter({
@@ -46,6 +54,7 @@ function GlobalFilter({
     </span>
   )
 }
+
 
 // Define a default UI for filtering
 function DefaultColumnFilter({
@@ -70,7 +79,32 @@ function DefaultColumnFilter({
     </div>
   )
 }
-
+ 
+/* 
+Generate and download csv 
+*/
+function getExportFileBlob({ columns, data, fileType, fileName }) {
+  if (fileType === "csv") {
+    // CSV example
+    const headerNames = columns.map((col) => col.exportValue);
+    const csvString = Papa.unparse({ fields: headerNames, data });
+    return new Blob([csvString], { type: "text/csv" });
+  } //PDF example
+  else if (fileType === "pdf") {
+    const headerNames = columns.map((column) => column.exportValue);
+    const doc = new JsPDF();
+    var index = headerNames.indexOf('Action');
+    if (index > -1) { 
+      headerNames.splice(index, 1);
+    }
+    doc.autoTable({
+      head: [headerNames],
+      body: data,
+    });
+    doc.save(`${fileName}.pdf`);
+    return false;
+  }
+}
 
 // This is a custom filter UI for selecting
 // a unique option from a list
@@ -111,6 +145,74 @@ function SelectColumnFilter({
         </option>
       ))}
       </select>
+   </div>
+  )
+}
+
+// Multi-Select Custom Filter and set unique options value
+function MultiSelectColumnFilter({
+  column: { filterValue, setFilter, preFilteredRows, id },
+}) {
+  const [value, setValue] = useState('');
+  const [filtertype, setFiltertype] = useState('Any');
+  // Set Any / All Filter type
+  const setSelectTypeOption = (option) => {
+      setFiltertype(option);
+      anyOfFilter = option
+      if(value !== ''){
+          setFilter(value);
+      }
+  };
+
+  React.useEffect(() => {
+    if (!filterValue && value) {
+        setValue('');
+        setFiltertype('Any');
+    }
+  }, [filterValue, value, filtertype]);
+    anyOfFilter = filtertype;
+    const options = React.useMemo(() => {
+    let options = new Set();
+    preFilteredRows.forEach(row => {
+        row.values[id].split(',').forEach( value => {
+            if ( value !== '') {
+                let hasValue = false;
+                options.forEach( option => {
+                    if(option.name === value){
+                       hasValue = true;
+                    }
+                });
+                if(!hasValue) {
+                  let option = { 'name': value, 'value':value};
+                  options.add(option);
+                }
+            }
+        });
+    }); 
+    return [...options.values()]
+  }, [id, preFilteredRows]);
+
+   // Render a multi-select box
+  return (
+    <div onClick={e => { e.stopPropagation() }} >
+       <div className="p-field-radiobutton">
+            <RadioButton inputId="filtertype1" name="filtertype" value="Any" onChange={(e) => setSelectTypeOption(e.value)} checked={filtertype === 'Any'} />
+            <label htmlFor="filtertype1">Any</label>
+        </div>
+        <div className="p-field-radiobutton">
+            <RadioButton inputId="filtertype2" name="filtertype" value="All" onChange={(e) => setSelectTypeOption(e.value)} checked={filtertype === 'All'} />
+            <label htmlFor="filtertype2">All</label>
+        </div>  
+        <div style={{position: 'relative'}} >
+        <MultiSelect data-testid="multi-select" id="multi-select" optionLabel="value" optionValue="value" filter={true}
+            value={value}
+            options={options} 
+            onChange={e => { setValue(e.target.value);
+              setFilter(e.target.value|| undefined, filtertype)
+            }}
+            className="multi-select"
+        />
+        </div>
    </div>
   )
 }
@@ -186,6 +288,123 @@ function CalendarColumnFilter({
   )
 }
 
+// This is a custom filter UI that uses a
+// calendar to set the value
+function DateTimeColumnFilter({
+  column: { setFilter, filterValue},
+}) {
+  const [value, setValue] = useState('');
+  React.useEffect(() => {
+    if (!filterValue && value) {
+      setValue(null);
+    }
+  }, [filterValue, value]);
+  return (
+    
+    <div className="table-filter" onClick={e => { e.stopPropagation() }}>
+       <Calendar value={value} appendTo={document.body} onChange={(e) => {
+        const value = moment(e.value, moment.ISO_8601).format("YYYY-MMM-DD HH:mm:SS")
+          setValue(value); setFilter(value); 
+        }} showIcon
+       // showTime= {true}
+        //showSeconds= {true}
+       // hourFormat= "24"
+        ></Calendar>
+       {value && <i onClick={() => {setFilter(undefined); setValue('') }} className="tb-cal-reset fa fa-times" />}
+        </div>
+  )
+}
+
+/**
+ * Custom function to filter data from date field.
+ * @param {Array} rows 
+ * @param {String} id 
+ * @param {String} filterValue 
+ */
+function fromDatetimeFilterFn(rows, id, filterValue) {
+  const filteredRows = _.filter(rows, function(row) {
+                        // If cell value is null or empty
+                        if (!row.values[id]) {
+                          return false;
+                        }
+                        //Remove microsecond if value passed is UTC string in format "YYYY-MM-DDTHH:mm:ss.sssss"
+                        let rowValue = moment.utc(row.values[id].split('.')[0]);
+                        if (!rowValue.isValid()) {
+                            // For cell data in format 'YYYY-MMM-DD'
+                            rowValue = moment.utc(moment(row.values[id], 'YYYY-MMM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
+                        }
+                        const start = moment.utc(moment(filterValue, 'YYYY-MMM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
+                        
+                        return (start.isSameOrBefore(rowValue));
+                      } );
+  return filteredRows;
+}
+
+/**
+ * Custom function to filter Multi selection based on filter type (Any/All) .
+ * @param {Array} rows 
+ * @param {String} id 
+ * @param {String} filterValue 
+ */
+function multiSelectFilterFn(rows, id, filterValue) {
+  if (filterValue) {
+        const filteredRows = _.filter(rows, function(row) {
+          if ( filterValue.length === 0){
+            return true;
+          }
+          // If cell value is null or empty
+          if (!row.values[id]) {
+            return false;
+          }
+          let rowValue = row.values[id];
+          let hasData = false;
+          if ( anyOfFilter === 'Any' ) {
+              hasData = false;
+              filterValue.forEach(filter => {
+                  if( rowValue.includes( filter )) {
+                      hasData = true;
+                  }
+              }); 
+          }
+          else {
+              hasData = true;
+              filterValue.forEach(filter => {
+                  if( !rowValue.includes( filter )) {
+                      hasData = false;
+                  }                  
+              });  
+          }
+          return hasData;
+        } );
+        return filteredRows;
+    }
+}
+
+/**
+ * Custom function to filter data from date field.
+ * @param {Array} rows 
+ * @param {String} id 
+ * @param {String} filterValue 
+ */
+function toDatetimeFilterFn(rows, id, filterValue) {
+  let end = moment.utc(moment(filterValue, 'YYYY-MMM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
+  end =   moment(end, "DD-MM-YYYY").add(1, 'days');
+  const filteredRows = _.filter(rows, function(row) {
+                        // If cell value is null or empty
+                        if (!row.values[id]) {
+                          return false;
+                        }
+                        //Remove microsecond if value passed is UTC string in format "YYYY-MM-DDTHH:mm:ss.sssss"
+                        let rowValue = moment.utc(row.values[id].split('.')[0]);
+                        if (!rowValue.isValid()) {
+                            // For cell data in format 'YYYY-MMM-DD'
+                            rowValue = moment.utc(moment(row.values[id], 'YYYY-MMM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
+                        }
+                        return (end.isSameOrAfter(rowValue));
+                      } );
+  return filteredRows;
+}
+
 /**
  * Custom function to filter data from date field.
  * @param {Array} rows 
@@ -210,8 +429,6 @@ function dateFilterFn(rows, id, filterValue) {
                       } );
   return filteredRows;
 }
-
-
 
 // This is a custom UI for our 'between' or number range
 // filter. It uses slider to filter between min and max values.
@@ -243,8 +460,6 @@ function RangeColumnFilter({
       <Slider value={filterValue} min={min} max={max} className="filter-slider"
               style={{}}
               onChange={(e) => { setFilter(e.value); }} range />
-      
-      
     </>
   );
 }
@@ -329,6 +544,10 @@ const filterTypes = {
   'select': { 
     fn: SelectColumnFilter,
   },
+  'multiselect': { 
+    fn: MultiSelectColumnFilter,
+    type: multiSelectFilterFn 
+  },
   'switch': {
     fn: BooleanColumnFilter
   },
@@ -338,6 +557,14 @@ const filterTypes = {
   'date': {
     fn: CalendarColumnFilter,
     type: dateFilterFn
+  },
+  'fromdatetime': {
+    fn: DateTimeColumnFilter,
+    type: fromDatetimeFilterFn
+  },
+  'todatetime': {
+    fn: DateTimeColumnFilter,
+    type: toDatetimeFilterFn
   },
   'range': {
     fn: RangeColumnFilter,
@@ -364,6 +591,7 @@ const IndeterminateCheckbox = React.forwardRef(
 
 // Our table component
 function Table({ columns, data, defaultheader, optionalheader, tablename, defaultSortColumn,defaultpagesize }) {
+ 
   const filterTypes = React.useMemo(
     () => ({
       // Add a new fuzzyTextFilterFn filter type.
@@ -384,69 +612,72 @@ function Table({ columns, data, defaultheader, optionalheader, tablename, defaul
     []
   )
 
-const defaultColumn = React.useMemo(
-    () => ({
-      // Let's set up our default Filter UI
-      Filter: DefaultColumnFilter,
-     
-    }),
-    []
-  )
+  const defaultColumn = React.useMemo(
+      () => ({
+        // Let's set up our default Filter UI
+        Filter: DefaultColumnFilter,
+      
+      }),
+      []
+    )
 
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    rows,
-    prepareRow,
-    setAllFilters,
-    allColumns,
-    getToggleHideAllColumnsProps,
-    state,
-    page,
-    preGlobalFilteredRows,
-    setGlobalFilter,
-    setHiddenColumns,
-    gotoPage,
-    setPageSize,
-    selectedFlatRows,
-    } = useTable(
-      {
-        columns,
-        data,
-        defaultColumn,
-        filterTypes,
-        initialState: { pageIndex: 0,
-          pageSize: (defaultpagesize && defaultpagesize>0)?defaultpagesize:10,
-          sortBy: defaultSortColumn }
-      },
-      useFilters,
-      useGlobalFilter,
-      useSortBy,   
-      usePagination,
-      useRowSelect
-    );
-  React.useEffect(() => {
-    setHiddenColumns(
-      columns.filter(column => !column.isVisible).map(column => column.accessor)
-    );
-  }, [setHiddenColumns, columns]);
+    const {
+      getTableProps,
+      getTableBodyProps,
+      headerGroups,
+      rows,
+      prepareRow,
+      setAllFilters,
+      allColumns,
+      getToggleHideAllColumnsProps,
+      state,
+      page,
+      preGlobalFilteredRows,
+      setGlobalFilter,
+      setHiddenColumns,
+      gotoPage,
+      setPageSize,
+      selectedFlatRows,
+      exportData,
+      } = useTable(
+        {
+          columns,
+          data,
+          defaultColumn,
+          filterTypes,
+          initialState: { pageIndex: 0,
+            pageSize: (defaultpagesize && defaultpagesize>0)?defaultpagesize:10,
+            sortBy: defaultSortColumn },
+            getExportFileBlob,
+        },
+        useFilters,
+        useGlobalFilter,
+        useSortBy,   
+        usePagination,
+        useRowSelect,
+        useExportData
+      );
+    React.useEffect(() => {
+      setHiddenColumns(
+        columns.filter(column => !column.isVisible).map(column => column.accessor)
+      );
+    }, [setHiddenColumns, columns]);
 
-  let op = useRef(null);
+    let op = useRef(null);
 
-  const [currentpage, setcurrentPage] = React.useState(0);
-  const [currentrows, setcurrentRows] = React.useState(defaultpagesize);
-  const [custompagevalue,setcustompagevalue] = React.useState();
+    const [currentpage, setcurrentPage] = React.useState(0);
+    const [currentrows, setcurrentRows] = React.useState(defaultpagesize);
+    const [custompagevalue,setcustompagevalue] = React.useState();
 
   const onPagination = (e) => {
-    gotoPage(e.page);
-    setcurrentPage(e.first);
-    setcurrentRows(e.rows);
-    setPageSize(e.rows)
-    if([10,25,50,100].includes(e.rows)){
-      setcustompagevalue();
-    }
-  };
+      gotoPage(e.page);
+      setcurrentPage(e.first);
+      setcurrentRows(e.rows);
+      setPageSize(e.rows)
+      if([10,25,50,100].includes(e.rows)){
+        setcustompagevalue();
+      }
+    };
   const onCustomPage = (e) => {
     if(typeof custompagevalue === 'undefined' || custompagevalue == null) return;
     gotoPage(0);
@@ -495,41 +726,42 @@ const defaultColumn = React.useMemo(
   
   return (
     <>
-     <div id="block_container"> 
-     { allowColumnSelection &&
-          <div   style={{textAlign:'left', marginRight:'30px'}}>
-                <i className="fa fa-columns col-filter-btn" label="Toggle Columns" onClick={(e) => op.current.toggle(e)}  />
-                {showColumnFilter &&
-                <div style={{position:"relative",top: "-25px",marginLeft: "50px",color: "#005b9f"}} onClick={() => setAllFilters([])} >
-                  <i class="fas fa-sync-alt" title="Clear All Filters"></i></div>}
-                <OverlayPanel ref={op} id="overlay_panel" showCloseIcon={false} >
-                  <div>
-                      <div style={{textAlign: 'center'}}>
-                        <label>Select column(s) to view</label>
-                      </div>
-                      <div style={{float: 'left', backgroundColor: '#d1cdd936', width: '250px', height: '400px', overflow: 'auto', marginBottom:'10px', padding:'5px'}}>
-                      <div id="tagleid"  >
-                        <div >
-                          <div style={{marginBottom:'5px'}}>
-                            <IndeterminateCheckbox {...getToggleHideAllColumnsProps()} /> Select All
-                          </div>
-                          {allColumns.map(column => (
-                            <div key={column.id} style={{'display':column.id !== 'actionpath'?'block':'none'}}> 
-                                <input type="checkbox" {...column.getToggleHiddenProps()} 
-                                id={(defaultheader[column.id])?defaultheader[column.id]:(optionalheader[column.id]?optionalheader[column.id]:column.id)}
-                                onClick={onToggleChange}
-                                /> {
-                                  (defaultheader[column.id]) ? defaultheader[column.id] : (optionalheader[column.id] ? optionalheader[column.id] : column.id)}
+    <div style={{display: 'flex', justifyContent: 'space-between'}}>
+    <div id="block_container" > 
+      { allowColumnSelection &&
+            <div   style={{textAlign:'left', marginRight:'30px'}}>
+                  <i className="fa fa-columns col-filter-btn" label="Toggle Columns" onClick={(e) => op.current.toggle(e)}  />
+                  {showColumnFilter &&
+                  <div style={{position:"relative",top: "-25px",marginLeft: "50px",color: "#005b9f"}} onClick={() => setAllFilters([])} >
+                    <i class="fas fa-sync-alt" title="Clear All Filters"></i></div>}
+                  <OverlayPanel ref={op} id="overlay_panel" showCloseIcon={false} >
+                    <div>
+                        <div style={{textAlign: 'center'}}>
+                          <label>Select column(s) to view</label>
+                        </div>
+                        <div style={{float: 'left', backgroundColor: '#d1cdd936', width: '250px', height: '400px', overflow: 'auto', marginBottom:'10px', padding:'5px'}}>
+                        <div id="tagleid"  >
+                          <div >
+                            <div style={{marginBottom:'5px'}}>
+                              <IndeterminateCheckbox {...getToggleHideAllColumnsProps()} /> Select All
                             </div>
-                          ))}
-                          <br />
+                            {allColumns.map(column => (
+                              <div key={column.id} style={{'display':column.id !== 'actionpath'?'block':'none'}}> 
+                                  <input type="checkbox" {...column.getToggleHiddenProps()} 
+                                  id={(defaultheader[column.id])?defaultheader[column.id]:(optionalheader[column.id]?optionalheader[column.id]:column.id)}
+                                  onClick={onToggleChange}
+                                  /> {
+                                    (defaultheader[column.id]) ? defaultheader[column.id] : (optionalheader[column.id] ? optionalheader[column.id] : column.id)}
+                              </div>
+                            ))}
+                            <br />
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </OverlayPanel>
-            </div> 
-      }
+                  </OverlayPanel>
+              </div> 
+        }
         <div  style={{textAlign:'right'}}>
         {tbldata.length>0 && !isunittest && showGlobalFilter &&
               <GlobalFilter
@@ -539,76 +771,99 @@ const defaultColumn = React.useMemo(
               />
             }
         </div>
+        
+        
         { showTopTotal && filteredData.length === data.length &&
           <div className="total_records_top_label"> <label >Total records ({data.length})</label></div>
-        }
+        } 
+         
         { showTopTotal && filteredData.length < data.length &&
             <div className="total_records_top_label" ><label >Filtered {filteredData.length} from {data.length}</label></div>}
-  </div>
+        
+      </div>
+      {showCSV && 
+          <div className="total_records_top_label" style={{marginTop: '20px'}} >
+            <a href="#" onClick={() => {exportData("csv", false);}} title="Download CSV" style={{verticalAlign: 'middle'}}>
+                <i class="fas fa-file-csv" style={{color: 'green', fontSize: '20px'}} ></i>
+            </a>
+          </div>
+          /* 
+            <div className="total_records_top_label" >
+              <a href="#"  onClick={() => {exportData("pdf", false);}} title="Download PDF" style={{verticalAlign: 'middle'}}>
+                  <i class="fas fa-file-pdf" style={{color: 'red', fontSize: '20px'}}></i>
+              </a>
+            </div> */
+        }
+    </div>
+     
 
       <div className="tmss-table table_container">
-      <table {...getTableProps()} data-testid="viewtable" className="viewtable" >
-          <thead>
-            {headerGroups.map(headerGroup =>  (
-              <tr {...headerGroup.getHeaderGroupProps()}>
-                {headerGroup.headers.map(column => (
-                  <th> 
-                    <div {...column.getHeaderProps(column.getSortByToggleProps())}>
-                      {column.Header !== 'actionpath' && column.render('Header')}
-                      {column.Header !== 'Action'? 
-                        column.isSorted ? (column.isSortedDesc ? <i className="pi pi-sort-down" aria-hidden="true"></i> : <i className="pi pi-sort-up" aria-hidden="true"></i>) : ""
-                        : ""
-                      }
-                    </div>
+        <table {...getTableProps()} data-testid="viewtable" className="viewtable" >
+            <thead>
+              {headerGroups.map(headerGroup =>  (
+                <tr {...headerGroup.getHeaderGroupProps()}>
+                  {headerGroup.headers.map(column => (
+                    <th> 
+                      <div {...column.getHeaderProps(column.getSortByToggleProps())}>
+                        {column.Header !== 'actionpath' && column.render('Header')}
+                        {column.Header !== 'Action'? 
+                          column.isSorted ? (column.isSortedDesc ? <i className="pi pi-sort-down" aria-hidden="true"></i> : <i className="pi pi-sort-up" aria-hidden="true"></i>) : ""
+                          : ""
+                        }
+                      </div>
 
-                    {/* Render the columns filter UI */} 
-                      {column.Header !== 'actionpath' &&
-                        <div className={columnclassname[0][column.Header]}  > 
-                          {column.canFilter && column.Header !== 'Action' ? column.render('Filter') : null}
+                      {/* Render the columns filter UI */} 
+                        {column.Header !== 'actionpath' &&
+                          <div className={columnclassname[0][column.Header]}  > 
+                            {column.canFilter && column.Header !== 'Action' ? column.render('Filter') : null}
 
-                        </div>
-                      }
-                  </th> 
-                ))}
-                 </tr>
-                 ))}
-                  </thead>
-                 <tbody {...getTableBodyProps()}>
-                 {page.map((row, i) => {
-                     prepareRow(row)
-                     return (
-                       <tr {...row.getRowProps()}>
-                         {row.cells.map(cell => {
-                          if(cell.column.id !== 'actionpath')
-                          return <td {...cell.getCellProps()}>
-                          {(cell.row.original.links || []).includes(cell.column.id) ? <Link to={cell.row.original.linksURL[cell.column.id]}>{cell.render('Cell')}</Link> : cell.render('Cell')}
-                          </td>
-                        else 
-                          return "";
-                         })}
-                       </tr>
-                     )
-                   })}
-                 </tbody>
-               </table>
-               </div>
-               <div className="pagination p-grid" >
-               {filteredData.length === data.length &&
-               <div className="total_records_bottom_label" ><label >Total records ({data.length})</label></div>}
-               {filteredData.length < data.length &&
-               <div className="total_records_bottom_label" ><label >Filtered {filteredData.length} from {data.length}</label></div>}
-               <div>
-        <Paginator rowsPerPageOptions={[10,25,50,100]} first={currentpage} rows={currentrows} totalRecords={rows.length} onPageChange={onPagination}></Paginator>
+                          </div>
+                        }
+                    </th> 
+                  ))}
+                  </tr>
+                  ))}
+            </thead>
+            <tbody {...getTableBodyProps()}>
+              {page.map((row, i) => {
+                  prepareRow(row)
+                  return (
+                      <tr {...row.getRowProps()}>
+                          {row.cells.map(cell => {
+                              if(cell.column.id !== 'actionpath'){
+                                  return <td {...cell.getCellProps()}>
+                                    {(cell.row.original.links || []).includes(cell.column.id) ? <Link to={cell.row.original.linksURL[cell.column.id]}>{cell.render('Cell')}</Link> : cell.render('Cell')}
+                                    </td>
+                              }
+                              else {
+                                  return "";
+                              }
+                          }
+                        )}
+                      </tr>
+                  );
+                })}
+            </tbody>
+          </table>
         </div>
-        <div>
-            <InputNumber id="custompage" value={custompagevalue} onChange ={onChangeCustompagevalue}
-              min={0} style={{width:'100px'}} />
-              <label >Records/Page</label>
-            <Button onClick={onCustomPage}> Show </Button>
-            <Button onClick={onShowAllPage} style={{marginLeft: "1em"}}> Show All </Button>
-          </div>  
+        <div className="pagination p-grid" >
+            {filteredData.length === data.length &&
+                <div className="total_records_bottom_label" ><label >Total records ({data.length})</label></div>
+            }
+            {filteredData.length < data.length &&
+                    <div className="total_records_bottom_label" ><label >Filtered {filteredData.length} from {data.length}</label></div>
+            }
+            <div>
+                <Paginator rowsPerPageOptions={[10,25,50,100]} first={currentpage} rows={currentrows} totalRecords={rows.length} onPageChange={onPagination}></Paginator>
+            </div>
+            <div>
+                <InputNumber id="custompage" value={custompagevalue} onChange ={onChangeCustompagevalue}
+                    min={0} style={{width:'100px'}} />
+                <label >Records/Page</label>
+                <Button onClick={onCustomPage}> Show </Button>
+                <Button onClick={onShowAllPage} style={{marginLeft: "1em"}}> Show All </Button>
+            </div>  
       </div>
-      
     </>
   )
 }
@@ -632,6 +887,8 @@ function ViewTable(props) {
     const history = useHistory();
     // Data to show in table
     tbldata = props.data;
+    showCSV= (props.showCSV)?props.showCSV:false;
+
     parentCallbackFunction = props.filterCallback; 
     parentCBonSelection = props.onRowSelection;
     isunittest = props.unittest;
@@ -768,7 +1025,9 @@ optionaldataheader.forEach(header => {
             }
           })
           return  retval;
-        }else if(typeof value == "string"){
+        }else if(typeof value == "boolean"){
+          return value.toString();
+        } else if(typeof value == "string"){
           const dateval = moment(value, moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
           if(dateval !== 'Invalid date'){
             return dateval;

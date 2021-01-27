@@ -4,8 +4,6 @@ import UnitConverter from './../utils/unit.converter'
 
 const axios = require('axios');
 
-axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
-
 const ProjectService = {
     getProjectCategories: async function() {
         try {

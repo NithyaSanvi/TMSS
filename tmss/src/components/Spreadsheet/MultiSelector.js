@@ -42,7 +42,7 @@ export default class SkySllector extends Component {
     dailyValue = _.trim(dailyValue)
     dailyValue = dailyValue.replace(/,([^,]*)$/, '' + '$1')   
   
-    this.props.context.componentParent.updateDailyCell(
+    this.props.context.componentParent.updateCell(
       this.props.node.rowIndex,this.props.colDef.field,dailyValue
      );
      

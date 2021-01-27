@@ -4,8 +4,6 @@ import TaskService from './task.service';
 import moment from 'moment';
 import DataProductService from './data.product.service';
 
-axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
-
 const ScheduleService = { 
     getSchedulingUnitDraft: async function (){
         let res = [];
@@ -54,14 +52,18 @@ const ScheduleService = {
             schedulingUnit = response.data;
             if (schedulingUnit) {
                 if (type === "blueprint") {
-                    const schedulingUnitDraft = (await axios.get(`/api/scheduling_unit_draft/${id}/`)).data;
+                    const schedulingUnitDraft = (await axios.get(`/api/scheduling_unit_draft/${schedulingUnit.draft_id}/`)).data;
                     schedulingUnit.draft_object = schedulingUnitDraft;
                     schedulingUnit.scheduling_set_id = schedulingUnitDraft.scheduling_set_id;
                     schedulingUnit.scheduling_constraints_doc = schedulingUnitDraft.scheduling_constraints_doc;
+                }   else {
+                    // Fetch all blueprints data associated with draft to display the name
+                    schedulingUnit.blueprintList = (await this.getBlueprintsByschedulingUnitId(schedulingUnit.id)).data.results;
                 }
                 const schedulingSet = (await axios.get(`/api/scheduling_set/${schedulingUnit.scheduling_set_id}`)).data;
                 schedulingUnit.scheduling_set_object = schedulingSet;
                 schedulingUnit.scheduling_set = schedulingSet.url;
+                
             }
         }   catch(error) {
             console.error('[schedule.services.getSchedulingUnitExtended]',error);

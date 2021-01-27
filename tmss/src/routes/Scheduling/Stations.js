@@ -233,13 +233,7 @@ export default (props) => {
         setCustomStations(custom_selected_options);
         updateSchedulingComp(state, selectedStations, missing_StationFieldsErrors, custom_selected_options);
     };
-
-    /**
-     * Funtion required to  popup the component in AG-Grid
-     */
-    const isPopup =() =>{
-        return true;
-      } 
+ 
     return (
         <div className={`p-field p-grid grouping p-fluid ${props.isSummary && 'p-col-12'}`} style={{height: props.height}}>
             <fieldset>

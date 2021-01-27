@@ -7,8 +7,8 @@ export default ({ tasks, schedulingUnit }) => {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const defaultcolumns = [ {
         name: "Name",
-        totalSize:"Total Data Size(TB)",
-        totalDeletedSize: "Data Size Not Deleted(TB)"
+        totalDataSize:"Total Data Size(TB)", 
+        dataSizeNotDeleted :"Data Size Not Deleted(TB)"
     }];
     const optionalcolumns = [{
         actionpath:"actionpath",
@@ -23,17 +23,17 @@ export default ({ tasks, schedulingUnit }) => {
 
     return (
         <div className="p-fluid mt-2">
-        <label>Data Products Details of Task</label>
-            <ViewTable 
-                 data={tasks.filter(task => task.template.name !== 'ingest' && (task.totalSize || task.totalDeletedSize))} 
+        <label><h6>Details of data products of Tasks</h6></label>
+         <ViewTable 
+                 data={tasks.filter(task => task.template.name !== 'ingest' && (task.totalDataSize || task.dataSizeNotDeleted))} 
                 optionalcolumns={optionalcolumns}
                 defaultcolumns={defaultcolumns} 
                 defaultSortColumn={defaultSortColumn}
                 columnclassname={columnclassname}
+                showColumnFilter={false}
                 showGlobalFilter={false}
                 showTopTotal={false}
                 allowColumnSelection={false}
-                showColumnFilter={false}
                 showaction="true"
                 keyaccessor="id"
                 defaultpagesize={tasks.length}
@@ -47,7 +47,7 @@ export default ({ tasks, schedulingUnit }) => {
                 </div>
             </div>
             <div className="p-grid" data-testid="confirm_dialog">
-                <Dialog header={ConfirmationHeader} visible={showConfirmDialog} style={{ width: '40vw' }} inputId="confirm_dialog"
+                <Dialog header={'Confirm'} visible={showConfirmDialog} style={{ width: '40vw' }} inputId="confirm_dialog"
                     modal={true} onHide={() => setShowConfirmDialog(false)}
                     footer={<div>
                         <Button key="back" onClick={() => setShowConfirmDialog(false)} label="Yes" />
@@ -56,10 +56,10 @@ export default ({ tasks, schedulingUnit }) => {
                     } >
                     <div className="p-grid">
                         <div className="col-lg-2 col-md-2 col-sm-2" style={{ margin: 'auto' }}>
-                            <i className="pi pi-check-circle pi-large pi-success"></i>
+                            <i className="pi pi-large pi-question-circle pi-warning"></i>
                         </div>
                         <div className="col-lg-10 col-md-10 col-sm-10">
-                            Are you sure you want to delete dataproducts for scheduling unit {schedulingUnit.id} - {schedulingUnit.name} - {schedulingUnit.description} with status {schedulingUnit.status} ?
+                            Are you sure you want to delete dataproducts for scheduling unit {schedulingUnit.id} - {schedulingUnit.name} - {schedulingUnit.description} with status {schedulingUnit.status} 
                         </div>
                     </div>
                 </Dialog>
@@ -67,4 +67,3 @@ export default ({ tasks, schedulingUnit }) => {
         </div>
     )
 }
-const ConfirmationHeader = <>Request confirmation for data deletion <i className="fa fa-question"></i></>;

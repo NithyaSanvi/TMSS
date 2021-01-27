@@ -40,25 +40,25 @@ export default (props) => {
                     task.actionpath = `/task/view/blueprint/${task.id}/dataproducts`;
                     (task.dataProducts || []).map(product => {
                         if (product.size) {
-                            if (!task.totalSize) {
-                                task.totalSize = 0;
+                            if (!task.totalDataSize) {
+                                task.totalDataSize = 0;
                             }
-                            task.totalSize += product.size;
+                            task.totalDataSize += product.size;
 
                             // For deleted since
                             if (!product.deleted_since && product.size) {
-                                if (!task.totalDeletedSize) {
-                                    task.totalDeletedSize = 0;
+                                if (!task.dataSizeNotDeleted) {
+                                    task.dataSizeNotDeleted = 0;
                                 }
-                                task.totalDeletedSize += product.size;
+                                task.dataSizeNotDeleted += product.size;
                             }
                         }
                     });
-                    if (task.totalSize) {
-                        task.totalSize = UnitConverter.getUIResourceUnit('bytes', (task.totalSize));
+                    if (task.totalDataSize) {
+                        task.totalDataSize = UnitConverter.getUIResourceUnit('bytes', (task.totalDataSize));
                     }
-                    if (task.totalDeletedSize) {
-                        task.totalDeletedSize = UnitConverter.getUIResourceUnit('bytes', (task.totalDeletedSize));
+                    if (task.dataSizeNotDeleted) {
+                        task.dataSizeNotDeleted = UnitConverter.getUIResourceUnit('bytes', (task.dataSizeNotDeleted));
                     }
                 });
                 setTasks(response);

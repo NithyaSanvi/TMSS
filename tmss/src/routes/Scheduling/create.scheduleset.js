@@ -5,6 +5,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/components/dialog/Dialog';
 import { Growl } from 'primereact/components/growl/Growl';
+import { Checkbox } from 'primereact/checkbox';
 
 import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModules } from '@ag-grid-community/all-modules';
@@ -36,6 +37,7 @@ import _ from 'lodash';
 
 import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
+import { CustomPageSpinner } from '../../components/CustomPageSpinner';
 
 const DATE_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 const BG_COLOR= '#f878788f';
@@ -52,6 +54,7 @@ export class SchedulingSetCreate extends Component {
         this.tmpRowData = [];
         this.daily = [];
         this.state = {
+            copyHeader: false,                    // Copy Table Header to clipboard
             dailyOption: [],
             projectDisabled: (props.match?(props.match.params.project? true:false):false),
             isLoading: true, 
@@ -135,6 +138,8 @@ export class SchedulingSetCreate extends Component {
         this.showDialogContent = this.showDialogContent.bind(this);
         this.isNotEmpty = this.isNotEmpty.bind(this);
         this.setDefaultCellValue = this.setDefaultCellValue.bind(this);
+        this.copyHeader = this.copyHeader.bind(this);
+        this.copyOnlyHeader = this.copyOnlyHeader.bind(this);
 
         this.projects = [];                         // All projects to load project dropdown
         this.schedulingSets = [];                   // All scheduling sets to be filtered for project
@@ -176,7 +181,7 @@ export class SchedulingSetCreate extends Component {
         const projectSchedluingSets = _.filter(this.schedulingSets, {'project_id': projectName});
         let schedulingUnit = this.state.schedulingUnit;
         schedulingUnit.project = projectName;
-        this.setState({schedulingUnit: schedulingUnit, schedulingSets: projectSchedluingSets, validForm: this.validateForm('project'), rowData: [],observStrategy: {}});
+        this.setState({schedulingUnit: schedulingUnit, schedulingSets: projectSchedluingSets, validForm: this.validateForm('project'), rowData: [],observStrategy: {}, copyHeader: false});
     }
  
     /**
@@ -185,7 +190,7 @@ export class SchedulingSetCreate extends Component {
      * @param {object} value 
      */
     async setSchedulingSetParams(key, value) {
-        this.setState({isAGLoading: true});
+        this.setState({isAGLoading: true, copyHeader: false});
 
         let schedulingUnit = this.state.schedulingUnit;
         schedulingUnit[key] = value;
@@ -244,7 +249,7 @@ export class SchedulingSetCreate extends Component {
      * @param {number} strategyId 
      */
     async changeStrategy (strategyId) {
-        this.setState({isAGLoading: true});
+        await this.setState({isAGLoading: true, copyHeader: false, rowData: []});
         const observStrategy = _.find(this.observStrategies, {'id': strategyId});
         let schedulingUnitList= await ScheduleService.getSchedulingBySet(this.state.selectedSchedulingSetId);
         schedulingUnitList = _.filter(schedulingUnitList,{'observation_strategy_template_id': strategyId}) ;
@@ -789,12 +794,12 @@ export class SchedulingSetCreate extends Component {
       }
 
       /**
-       * Update the Daily column value from external component
+       * Update the Daily/Station column value from external component
        * @param {*} rowIndex 
        * @param {*} field 
        * @param {*} value 
        */
-    async updateDailyCell(rowIndex, field, value) {
+    async updateCell(rowIndex, field, value) {
         let row = this.state.rowData[rowIndex];
         row[field] = value;
         let tmpRowData =this.state.rowData;
@@ -802,6 +807,12 @@ export class SchedulingSetCreate extends Component {
         await this.setState({
            rowData: tmpRowData
         });
+        if(field !== 'daily') {
+            this.state.gridApi.stopEditing();
+            var focusedCell = this.state.gridColumnApi.getColumn(field)
+            this.state.gridApi.ensureColumnVisible(focusedCell);
+            this.state.gridApi.setFocusedCell(rowIndex, focusedCell);
+        }
     }
  
     async getStationGrops(schedulingUnit){
@@ -1017,7 +1028,8 @@ export class SchedulingSetCreate extends Component {
             rowData: this.tmpRowData,
             totalCount: totalCount,
             noOfSU: totalSU,
-            emptyRow: this.tmpRowData[this.tmpRowData.length-1]
+            emptyRow: this.tmpRowData[this.tmpRowData.length-1],
+            isAGLoading: false
         });
 
         this.setDefaultCellValue();
@@ -1080,64 +1092,22 @@ export class SchedulingSetCreate extends Component {
     async clipboardEvent(e){
         var key = e.which || e.keyCode;
         var ctrl = e.ctrlKey ? e.ctrlKey : ((key === 17) ? true : false);
-        if ( key === 86 && ctrl ) {
-            // Ctrl+V
-            this.tmpRowData = this.state.rowData;
-            let dataRowCount = this.state.totalCount;
-            try {
-                let clipboardData = '';
-                try{
-                     //Read Clipboard Data
-                    clipboardData = await this.readClipBoard();
-                }catch(err){
-                    console.log("error :",err);
-                }
-              if  (clipboardData){
-                    clipboardData = _.trim(clipboardData);
-                    let suGridRowData= this.state.emptyRow;
-                    clipboardData = _.trim(clipboardData);
-                    let suRows = clipboardData.split("\n");
-                    suRows.forEach(line =>{
-                        let colCount = 0;
-                        suGridRowData ={};
-                        let suRow = line.split("\t");
-                        suGridRowData['id']= 0;
-                        suGridRowData['isValid']= true;
-                        for(const key of this.state.colKeyOrder){
-                            suGridRowData[key]= suRow[colCount];
-                            colCount++;
-                        }
-                        this.tmpRowData[dataRowCount]= (suGridRowData);
-                        dataRowCount++
-                    }) 
-                }
-                let emptyRow = this.state.emptyRow;
-                let tmpNoOfSU= this.state.noOfSU;
-                if  (dataRowCount >= tmpNoOfSU){
-                    tmpNoOfSU = dataRowCount+5;
-                    //Create additional empty row at the end
-                    for(let i= this.tmpRowData.length; i<=tmpNoOfSU; i++){
-                        this.tmpRowData.push(emptyRow);
-                    }
-                }
-
-                await this.setState({
-                    rowData: this.tmpRowData,
-                    noOfSU: this.tmpRowData.length,
-                    totalCount: dataRowCount,
-                })
-                
-                this.state.gridApi.setRowData(this.state.rowData);
-                this.state.gridApi.redrawRows();
-
-              }catch (err) {
-                console.error('Error: ', err);
-              }
-             
-        } else if ( key === 67 && ctrl ) {
+        if ( key === 67 && ctrl ) {
             //Ctrl+C
+            var columnsName = this.state.gridColumnApi.getAllGridColumns();
             var selectedRows = this.state.gridApi.getSelectedRows();
             let clipboardData = '';
+            if ( this.state.copyHeader ) {
+                var line = '';
+                columnsName.map( column => {
+                    if ( column.colId !== '0'){
+                        line += column.colDef.headerName + '\t';
+                    }
+                })
+                line = _.trim(line);
+                clipboardData += line + '\r\n'; 
+               // this.setState({copyHeader: false});
+            }
             for(const rowData of selectedRows){
                 var line = '';
                 for(const key of this.state.colKeyOrder){
@@ -1151,7 +1121,76 @@ export class SchedulingSetCreate extends Component {
             const queryOpts = { name: 'clipboard-write', allowWithoutGesture: true };
             await navigator.permissions.query(queryOpts);
             await navigator.clipboard.writeText(clipboardData);
-        } else if ( key  === 46){
+        } 
+        else if ( key === 86 && ctrl ) {
+            // Ctrl+V
+            try {
+                var selectedRows = this.state.gridApi.getSelectedNodes();
+                this.tmpRowData = this.state.rowData;
+                let dataRowCount = this.state.totalCount;
+                //Read Clipboard Data
+                let clipboardData = await this.readClipBoard();
+                let selectedRowIndex = 0;
+                if  (selectedRows){
+                    await selectedRows.map(selectedRow =>{
+                        selectedRowIndex = selectedRow.rowIndex;
+                        if  (clipboardData){
+                            clipboardData = _.trim(clipboardData);
+                            let suGridRowData= this.state.emptyRow;
+                            clipboardData = _.trim(clipboardData);
+                            let suRows = clipboardData.split("\n");
+                            suRows.forEach(line =>{
+                                suGridRowData ={};
+                                suGridRowData['id']= 0;
+                                suGridRowData['isValid']= true;
+
+                                if ( this.tmpRowData.length <= selectedRowIndex ) {
+                                    this.tmpRowData.push(this.state.emptyRow);
+                                }
+                                
+                                let colCount = 0;
+                                let suRow = line.split("\t");
+                                for(const key of this.state.colKeyOrder){
+                                    suGridRowData[key]= suRow[colCount];
+                                    colCount++;
+                                }
+                                if (this.tmpRowData[selectedRowIndex].id > 0 ) {
+                                    suGridRowData['id'] = this.tmpRowData[selectedRowIndex].id;
+                                }
+                                this.tmpRowData[selectedRowIndex]= (suGridRowData);
+                                selectedRowIndex++
+                            }) 
+                        }
+                    });
+                    dataRowCount = selectedRowIndex;
+                    let emptyRow = this.state.emptyRow;
+                    let tmpNoOfSU= this.state.noOfSU;
+                    if  (dataRowCount >= tmpNoOfSU){
+                        tmpNoOfSU = dataRowCount;
+                        //Create additional empty row at the end
+                        for(let i= this.tmpRowData.length; i<=tmpNoOfSU; i++){
+                            this.tmpRowData.push(emptyRow);
+                        }
+                    }
+                    await this.setState({
+                        rowData: this.tmpRowData,
+                        noOfSU: this.tmpRowData.length,
+                        totalCount: dataRowCount,
+                    })
+                    this.state.gridApi.setRowData(this.state.rowData);
+                    this.state.gridApi.redrawRows();
+                }
+            }
+            catch (err) {
+                console.error('Error: ', err);
+            }
+        }
+
+        //>>>>>> Resolved Conflicts by Ramesh. Remove or update this block as applicable.
+        /*else if ( key  === 46){
+            this.growl.show({severity: 'success', summary: '', detail: selectedRows.length+' row(s) copied to clipboard '});
+        } 
+       /* else if ( key  === 46){
             // Delete selected rows
             let tmpRowData = this.state.rowData;
           
@@ -1167,8 +1206,42 @@ export class SchedulingSetCreate extends Component {
                 this.state.gridApi.redrawRows();
             }
         }
+        } *///<<<<<< Resolved Conflicts
     }
  
+    /**
+     * Copy the table header to clipboard
+     */
+    async copyOnlyHeader() {
+        this.setState({ fade: true });
+        let clipboardData = '';
+        if (this.state.gridColumnApi) {
+            var columnsName = this.state.gridColumnApi.getAllGridColumns();
+            var line = '';
+            if( columnsName ) {
+                columnsName.map( column => {
+                    if ( column.colId !== '0'){
+                        line += column.colDef.headerName + '\t';
+                    }
+                });
+            }
+            line = _.trim(line);
+            clipboardData += line + '\r\n'; 
+            clipboardData = _.trim(clipboardData);
+            const queryOpts = { name: 'clipboard-write', allowWithoutGesture: true };
+            await navigator.permissions.query(queryOpts);
+            await navigator.clipboard.writeText(clipboardData);
+            this.growl.show({severity: 'success', summary: '', detail: 'Header copied to clipboard '});
+        }
+    }
+    /**
+     * Set state to copy the table header to clipboard
+     * @param {*} value 
+     */
+    async copyHeader(value) {
+        await this.setState({'copyHeader': value});
+    }
+
     /**
      * Validate Grid values on click Save button from UI
      */
@@ -1324,7 +1397,8 @@ export class SchedulingSetCreate extends Component {
         let existingSUCount = 0;
         try{
             this.setState({
-                saveDialogVisible: false
+                saveDialogVisible: false,
+                showSpinner: true
             })
          
             let newSU = this.state.schedulingUnit;
@@ -1526,7 +1600,7 @@ export class SchedulingSetCreate extends Component {
             
             if  ((newSUCount+existingSUCount)>0){
                 const dialog = {header: 'Success', detail: '['+newSUCount+'] Scheduling Units are created & ['+existingSUCount+'] Scheduling Units are updated successfully.'};
-                this.setState({  dialogVisible: true, dialog: dialog});
+                this.setState({  showSpinner: false, dialogVisible: true, dialog: dialog, isAGLoading: true, copyHeader: false, rowData: []});
             }  else  {
                 this.growl.show({severity: 'error', summary: 'Warning', detail: 'No Scheduling Units create/update '});
             }
@@ -1797,6 +1871,9 @@ export class SchedulingSetCreate extends Component {
                                             options={this.observStrategies} 
                                             onChange={(e) => {this.changeStrategy(e.value)}} 
                                             placeholder="Select Strategy" />
+                                    <label className={this.state.errors.noOfSU ?"error":"info"}>
+                                        {this.state.errors.noOfSU ? this.state.errors.noOfSU : "Select Observation Strategy"}
+                                    </label>
                                 </div>
                                 <div className="col-lg-1 col-md-1 col-sm-12"></div>
                                 <label htmlFor="schedSet" className="col-lg-2 col-md-2 col-sm-12">No of Scheduling Unit <span style={{color:'red'}}>*</span></label>
@@ -1814,17 +1891,22 @@ export class SchedulingSetCreate extends Component {
                                     </label>
                                 </div>
                             </div>
-                            {/*}
-                            <div className="p-field p-grid">
-                                <label htmlFor="observStrategy" className="col-lg-2 col-md-2 col-sm-12">Show Default Value</label>
-                                <div className="col-lg-3 col-md-3 col-sm-12" data-testid="observStrategy" >
-                                     <InputSwitch 
-                                     checked={this.state.showDefault} 
-                                     onChange={(e) => this.setState({ showDefault: e.value }), this.setDefaultCellValue} 
+                            { this.state.rowData && this.state.rowData.length > 0 &&
+                                <div className="p-field p-grid">
+                                    <label htmlFor="observStrategy" className="col-lg-2 col-md-2 col-sm-12">Copy Data With Header</label>
+                                    <div className="col-lg-3 col-md-3 col-sm-12" >
+                                    <Checkbox inputId="csvheader" role="csvheader" 
+                                            tooltip="Include column headers while copying the data to clipboard" 
+                                            tooltipOptions={this.tooltipOptions}
+                                            checked={this.state.copyHeader} onChange={e => this.copyHeader(e.target.checked)}></Checkbox>
+                                    
+                                    <Button label="Copy Only Header"  icon="fas fa-copy" onClick={this.copyOnlyHeader} style={{marginLeft: '3em', width: '12em'}}
+                                     onAnimationEnd={() => this.setState({ fade: false })}
+                                     className={this.state.fade ? 'p-button-primary fade' : 'p-button-primary'} tooltip="Copy only header to clipboard" 
                                       />
+                                    </div>
                                 </div>
-                            </div>
-                             */}
+                              }
                         </div>
                         <>
                         { this.state.isAGLoading ? <AppLoader /> :
@@ -1844,6 +1926,11 @@ export class SchedulingSetCreate extends Component {
                                         components={this.state.components}
                                         modules={this.state.modules}        
                                         enableRangeSelection={true}
+                                        rowSelection={this.state.rowSelection}
+                                        stopEditingWhenGridLosesFocus={true}
+                                        undoRedoCellEditing={true}
+                                        undoRedoCellEditingLimit={20}
+                                        exportDataAsCsv={true}
                                     >
                                     </AgGridReact>
                                 </div>
@@ -1888,7 +1975,7 @@ export class SchedulingSetCreate extends Component {
                     header={'Save Scheduling Unit(s)'} message={' Some of the Scheduling Unit(s) has invalid data, Do you want to ignore and save valid Scheduling Unit(s) only?'} 
                     content={this.showDialogContent} onClose={this.close} onCancel={this.close} onSubmit={this.saveSU}>
                 </CustomDialog>
- 
+                <CustomPageSpinner visible={this.state.showSpinner} />
             </React.Fragment>
         );
     }

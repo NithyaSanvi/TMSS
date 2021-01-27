@@ -14,11 +14,9 @@ import ViewSchedulingUnit from './Scheduling/ViewSchedulingUnit'
 import SchedulingUnitCreate from './Scheduling/create';
 import EditSchedulingUnit from './Scheduling/edit';
 import { CycleList, CycleCreate, CycleView, CycleEdit } from './Cycle';
-import {TimelineView, WeekTimelineView, ReservationCreate} from './Timeline';
+import { TimelineView, WeekTimelineView, ReservationCreate, ReservationList } from './Timeline';
 import SchedulingSetCreate from './Scheduling/create.scheduleset';
 import Workflow from './Workflow';
-
-
 
 export const routes = [
     {
@@ -153,6 +151,12 @@ export const routes = [
        component: Workflow,
        name: 'Workflow',
        title: 'QA Reporting (TO)'
+    },
+    {
+        path: "/su/timelineview/reservation/reservation/list",
+        component: ReservationList,
+        name: 'Reservation List',
+        title:'Reservation List'
     },
     {
         path: "/su/timelineview/reservation/create",
