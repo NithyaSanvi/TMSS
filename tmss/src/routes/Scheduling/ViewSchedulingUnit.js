@@ -19,6 +19,7 @@ import { CustomPageSpinner } from '../../components/CustomPageSpinner';
 import { Growl } from 'primereact/components/growl/Growl';
 import Schedulingtaskrelation from './Scheduling.task.relation';
 import TaskService from '../../services/task.service';
+import UnitConverter from '../../utils/unit.converter';
 
 
 class ViewSchedulingUnit extends Component{
@@ -46,6 +47,9 @@ class ViewSchedulingUnit extends Component{
                 subTaskID: 'Control ID',
                 name:"Name",
                 description:"Description",
+                size: "Size",
+                diskSize: "Data Size on Disk",
+                outputProductsLength: "# of Output Products",
                 start_time:"Start Time",
                 stop_time:"End Time",
                 duration:"Duration (HH:mm:ss)",
@@ -128,6 +132,10 @@ class ViewSchedulingUnit extends Component{
             </button>
         );
     };
+
+    constructTaskForDataProducts = async (tasks) => {
+        
+    }
     
     getSchedulingUnitDetails(schedule_type, schedule_id) {
         ScheduleService.getSchedulingUnitExtended(schedule_type, schedule_id)
@@ -140,17 +148,36 @@ class ViewSchedulingUnit extends Component{
                     let tasks = schedulingUnit.task_drafts?(await this.getFormattedTaskDrafts(schedulingUnit)):this.getFormattedTaskBlueprints(schedulingUnit);
                     let ingestGroup = tasks.map(task => ({name: task.name, canIngest: task.canIngest, type_value: task.type_value, id: task.id }));
                     ingestGroup = _.groupBy(_.filter(ingestGroup, 'type_value'), 'type_value');
-                    tasks.map(async task => {
+                    await Promise.all(tasks.map(async task => {
                         task.status_logs = task.tasktype === "Blueprint"?this.subtaskComponent(task):"";
                         //Displaying SubTask ID of the 'control' Task
                         const subTaskIds = task.subTasks?task.subTasks.filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1):[];
                         const promise = [];
                         subTaskIds.map(subTask => promise.push(ScheduleService.getSubtaskOutputDataproduct(subTask.id)));
                         const dataProducts = await Promise.all(promise);
-                        task.dataProducts = dataProducts;
+                        task.dataProducts = [];
+                        task.size = 0;
+                        task.diskSize = 0;
+                        task.outputProductsLength = 0;
+                        if (dataProducts.length && dataProducts[0].length) {
+                            task.dataProducts = dataProducts[0];
+                            task.outputProductsLength = dataProducts[0].length;
+                            dataProducts[0].map(product => {
+                                task.size += product.size;
+                                if (!task.deleted_since) {
+                                    task.diskSize += product.size;
+                                }
+                            });
+                            if (task.size) {
+                                task.size = UnitConverter.getUIResourceUnit('bytes', (task.size));
+                            }
+                            if (task.diskSize) {
+                                task.diskSize = UnitConverter.getUIResourceUnit('bytes', (task.diskSize));
+                            }
+                        }
                         task.subTaskID = subTaskIds.length ? subTaskIds[0].id : ''; 
                         return task;
-                    });
+                    }));
                     const targetObservation = _.find(tasks, (task)=> {return task.template.type_value==='observation' && task.tasktype.toLowerCase()===schedule_type && task.specifications_doc.station_groups});
                     this.setState({
                         scheduleunitId: schedule_id,
