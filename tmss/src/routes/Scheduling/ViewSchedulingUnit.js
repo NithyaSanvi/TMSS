@@ -163,9 +163,11 @@ class ViewSchedulingUnit extends Component{
                             task.dataProducts = dataProducts[0];
                             task.outputProductsLength = dataProducts[0].length;
                             dataProducts[0].map(product => {
-                                task.size += product.size;
-                                if (!task.deleted_since) {
-                                    task.diskSize += product.size;
+                                if (product.size) {
+                                    task.size += product.size;
+                                    if (!task.deleted_since) {
+                                        task.diskSize += product.size;
+                                    }
                                 }
                             });
                             if (task.size) {
