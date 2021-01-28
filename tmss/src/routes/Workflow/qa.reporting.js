@@ -90,7 +90,7 @@ class QAreporting extends Component{
             </div>
             <div className="p-grid p-justify-start">
                 <div className="p-col-1">
-                <Button disabled= {!this.state.content} label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
+                <Button disabled= {!this.state.content || this.props.disableNextButton} label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
                 </div>
                 <div className="p-col-1">
                     <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '88px' }}/>

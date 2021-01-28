@@ -41,7 +41,7 @@ class PIverification extends Component {
      * here onNext props coming from parent, where will handle redirection to other page
      */
     async Next() {
-        const qaSchedulingUnitTasksId = this.state.qaSchedulingTasks.find(task => task.flow_task.toLowerCase() === 'pi verification');
+        const qaSchedulingUnitTasksId = this.state.qaSchedulingTasks.find(task => (task.flow_task || '').toLowerCase() === 'pi verification');
         if (!qaSchedulingUnitTasksId) {
             return
         }
@@ -116,7 +116,7 @@ class PIverification extends Component {
                         </div>
                         <div className="p-grid" style={{ marginTop: '20px' }}>
                             <div className="p-col-1">
-                                <Button disabled= {!this.state.comment} label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
+                                <Button disabled= {!this.state.comment || this.props.disableNextButton} label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
                             </div>
                             <div className="p-col-1">
                                 <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} />

@@ -27,6 +27,11 @@ class QAreportingSDCO extends Component {
      * Method will trigger on change of sun-editor
      */
     handleChange(e) {
+        if (e === '<p><br></p>') {
+            localStorage.setItem('report_qa', '');
+            this.setState({ content: '' });
+            return;
+        }
         localStorage.setItem('report_qa', e);
         this.setState({ content: e });
     }
@@ -75,7 +80,10 @@ class QAreportingSDCO extends Component {
                             </div>
                         </div>
                         <div className="p-grid" style={{ padding: '10px' }}>
-                           <label htmlFor="operatorReport" >Operator Report {!this.state.showEditor && <span className="con-edit">(Click content to edit)</span>}</label>
+                           <label htmlFor="operatorReport" >
+                               Operator Report {!this.state.showEditor && <span className="con-edit">(Click content to edit)</span>}
+                               <span style={{color:'red'}}>*</span>
+                            </label>
                            <div className="col-lg-12 col-md-12 col-sm-12"></div>
                            {this.state.showEditor && <SunEditor setDefaultStyle="min-height: 250px; height: auto" enableToolbar={true}
                                 onChange={this.handleChange}
@@ -92,7 +100,7 @@ class QAreportingSDCO extends Component {
                     </div>
                     <div className="p-grid" style={{ marginTop: '20px' }}>
                         <div className="p-col-1">
-                            <Button label="Next" disabled= {!this.state.content} className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
+                            <Button label="Next" disabled= {!this.state.content || this.props.disableNextButton} className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
                         </div>
                         <div className="p-col-1">
                             <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }}  />

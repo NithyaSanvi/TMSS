@@ -27,8 +27,9 @@ const pageTitle = ['Scheduled','Processing Done','QA Reporting (TO)', 'QA Report
 
 export default (props) => {
     let growl;
+    const [disableNextButton, setDisableNextButton] = useState(false);
     const [state, setState] = useState({});
-    const [currentStep, setCurrentStep] = useState(1);
+    const [currentStep, setCurrentStep] = useState(5);
     const [schedulingUnit, setSchedulingUnit] = useState();
     const [ingestTask, setInjestTask] = useState({});
     useEffect(() => {
@@ -51,6 +52,9 @@ export default (props) => {
                     setCurrentStep(RedirectionMap[suQATask.flow_task]);
                 } else {
                     setCurrentStep(3);
+                }
+                if (suQATask.status.toLowerCase() === 'done') {
+                    setDisableNextButton(true)
                 }
                 setSchedulingUnit(responses[0]);
                 ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false).then(response => {
@@ -100,13 +104,13 @@ export default (props) => {
                                 </label>
                             </div>
                         </div>
-                        {currentStep === 1 && <Scheduled onNext={onNext} {...state} schedulingUnit={schedulingUnit} />}
-                        {currentStep === 2 && <ProcessingDone onNext={onNext} {...state} schedulingUnit={schedulingUnit} />}
-                        {currentStep === 3 && <QAreporting onNext={onNext} id={props.match.params.id} />}
-                        {currentStep === 4 && <QAsos onNext={onNext} {...state} />}
-                        {currentStep === 5 && <PIverification onNext={onNext} {...state} />}
-                        {currentStep === 6 && <DecideAcceptance onNext={onNext} {...state} />}
-                        {currentStep === 7 && <IngestDone onNext={onNext}{...state} task={ingestTask} />}
+                        {currentStep === 1 && <Scheduled onNext={onNext} {...state} schedulingUnit={schedulingUnit} disableNextButton={disableNextButton} />}
+                        {currentStep === 2 && <ProcessingDone onNext={onNext} {...state} schedulingUnit={schedulingUnit} disableNextButton={disableNextButton} />}
+                        {currentStep === 3 && <QAreporting onNext={onNext} id={props.match.params.id} disableNextButton={disableNextButton} />}
+                        {currentStep === 4 && <QAsos onNext={onNext} {...state} disableNextButton={disableNextButton} />}
+                        {currentStep === 5 && <PIverification onNext={onNext} {...state} disableNextButton={disableNextButton} />}
+                        {currentStep === 6 && <DecideAcceptance onNext={onNext} {...state} disableNextButton={disableNextButton} />}
+                        {currentStep === 7 && <IngestDone onNext={onNext}{...state} task={ingestTask} disableNextButton={disableNextButton} />}
                       
                     </div>
                 </>
