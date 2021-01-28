@@ -3,6 +3,7 @@ import { Button } from 'primereact/button';
 import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css'; // Import Sun Editor's CSS File
 import { Checkbox } from 'primereact/checkbox';
+import WorkflowService from '../../services/workflow.service';
 //import {InputTextarea} from 'primereact/inputtextarea';
 
 class PIverification extends Component {
@@ -16,9 +17,13 @@ class PIverification extends Component {
         this.handleChange = this.handleChange.bind(this);
         this.onChangePIComment = this.onChangePIComment.bind(this);
     }
+
+    async componentDidMount() {
+        WorkflowService.getSchedulingUnitTask().then(response => this.setState({ qaSchedulingTasks: response }));
+    }
     
      /**
-     * Method wiill trigger on change of operator report sun-editor
+     * Method will trigger on change of operator report sun-editor
      */
     handleChange(e) {
         this.setState({
@@ -31,11 +36,22 @@ class PIverification extends Component {
      * Method will trigger on click save buton
      * here onNext props coming from parent, where will handle redirection to other page
      */
-    Next(){
-        this.props.onNext({
-            report: this.state.content,
-            picomment: this.state.comment
+    /**
+     * Method will trigger on click save buton
+     * here onNext props coming from parent, where will handle redirection to other page
+     */
+    async Next() {
+        const qaSchedulingUnitTasksId = this.state.qaSchedulingTasks.find(task => task.flow_task.toLowerCase() === 'pi verification');
+        if (!qaSchedulingUnitTasksId) {
+            return
+        }
+        const promise = [];
+        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId.id, { owner: this.state.assignTo }));
+        promise.push(WorkflowService.updateQA_Perform(qaSchedulingUnitTasksId.process, {"pi_report": this.state.content, "pi_accept": this.state.comment}));
+        Promise.all(promise).then(() => {
+            this.props.onNext({ report: this.state.content });
         });
+       
     }
 
      /**
@@ -74,7 +90,7 @@ class PIverification extends Component {
                              <div className="operator-report" dangerouslySetInnerHTML={{ __html: this.state.content }}></div>
                         </div>
                         <div className="p-grid" style={{ padding: '10px' }}>
-                            <label htmlFor="piReport" >PI Report</label>
+                            <label htmlFor="piReport" >PI Report<span style={{color:'red'}}>*</span></label>
                             <div className="col-lg-12 col-md-12 col-sm-12"></div>
                             <SunEditor setDefaultStyle="min-height: 150px; height: auto;" enableToolbar={true}
                                 setContents={this.state.comment}
@@ -100,7 +116,7 @@ class PIverification extends Component {
                         </div>
                         <div className="p-grid" style={{ marginTop: '20px' }}>
                             <div className="p-col-1">
-                                <Button label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
+                                <Button disabled= {!this.state.comment} label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
                             </div>
                             <div className="p-col-1">
                                 <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} />

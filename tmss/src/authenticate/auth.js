@@ -1,6 +1,4 @@
-import AuthService from "../services/auth.service";
-
-const axios = require('axios');
+// import AuthService from "../services/auth.service";
 
 /**
  * Global functions to authenticate user and get user details from browser local storage.
@@ -12,7 +10,6 @@ const Auth = {
         if (user) {
             user = JSON.parse(user);
             if (user.token) {
-                axios.defaults.headers.common['Authorization'] = `Token ${user.token}`;
                 return true;
             }
         }
@@ -24,17 +21,15 @@ const Auth = {
     },
     /** Authenticate user from the backend and store user details in local storage */
     login: async(user, pass) => {
-        const authData = await AuthService.authenticate(user, pass);
-        if (authData) {
-            localStorage.setItem("user", JSON.stringify({name:user, token: authData.token}));
-            return true;
-        }   else {
-            return false;
+        // const user = await AuthService.authenticate();
+        if (user) {
+            //TODO set token and username
         }
+        localStorage.setItem("user", JSON.stringify({name:user, token: "ABCDEFGHIJ"}));
+        return true;
     },
     /** Remove user details from localstorage on logout */
     logout: () => {
-        AuthService.deAuthenticate();
         localStorage.removeItem("user");
     }
 }

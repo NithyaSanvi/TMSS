@@ -23,13 +23,8 @@
     top: 2px;
     span {
         font-size: 14px !important;
-        padding-right: 20px !important;
-        top: 10px;
+        padding: 0 !important;
     }
-    padding-left: 5px;
-    padding-top: 3px;
-    cursor: pointer;
-    font-size: 14px;
 }
 .text-caps {
     text-transform: capitalize;
@@ -38,10 +33,9 @@
     padding: 10px;
     max-height: 200px;
     overflow-y: auto;
-    span {
+    label {
         display: block;
     }
-    background-color: #d1cdd936;
 }
 .custom-label {
     padding-left: 8px !important; 
@@ -77,7 +71,7 @@
 }
 .custom-remove {
     position: absolute;
-    left: 5px;
+    left: -12px;
     background-color: transparent !important;
     border: none !important;
     padding: 0;
@@ -91,14 +85,6 @@
 /**
 * Class to set margin-left for (i) and remove button in station.js
 */
-// .icon-left{
-//     margin-left: 20%
-// }
-.p-multiselect-items-wrapper {
-    height: 150px;
-}
-
-.stations-dialog .p-overlaypanel {
-    margin-left: -250px;
-    margin-top: -250px;
+.icon-left{
+    margin-left: 10px !important;
 }

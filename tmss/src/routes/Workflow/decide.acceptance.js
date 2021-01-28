@@ -11,7 +11,7 @@ class DecideAcceptance extends Component {
             content: props.report,
             picomment: props.picomment,  //PI Comment Field
             showEditor: false,           //Sun Editor
-            checked: false,              //Checkbox
+            sos_accept_after_pi: false,              
 
         };
         this.Next = this.Next.bind(this);
@@ -93,7 +93,7 @@ class DecideAcceptance extends Component {
                             <label htmlFor="piAccept" className="col-lg-2 col-md-2 col-sm-12">SDCO accepts after PI</label>
                             <div className="col-lg-3 col-md-3 col-sm-6">
                                 <div className="p-field-checkbox">
-                                    <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
+                                    <Checkbox inputId="binary" checked={this.state.sos_accept_after_pi} onChange={e => this.setState({ sos_accept_after_pi: e.checked })} />
                                 </div>
                             </div>
                         </div>

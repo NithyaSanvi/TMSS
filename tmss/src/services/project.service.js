@@ -4,6 +4,8 @@ import UnitConverter from './../utils/unit.converter'
 
 const axios = require('axios');
 
+axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
+
 const ProjectService = {
     getProjectCategories: async function() {
         try {
@@ -196,7 +198,7 @@ const ProjectService = {
               }
               projects.map((pro,index) => {
                 if(pro.name === project.name){
-                  project['actionpath']= `/project/view/${project.name}`;
+                  project['actionpath']= '/project/view';
                   projects[index] = project;
                 }
                 return pro;

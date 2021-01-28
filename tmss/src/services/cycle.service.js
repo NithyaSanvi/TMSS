@@ -1,5 +1,8 @@
 const axios = require('axios');
 
+//axios.defaults.baseURL = 'http://192.168.99.100:8008/api';
+axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
+
 const CycleService = {
     getAllCycles: async function () {
         try {

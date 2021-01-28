@@ -10,18 +10,24 @@ import QAsos from './qa.sos';
 import PIverification from './pi.verification';
 import DecideAcceptance from './decide.acceptance';
 import IngestDone from './ingest.done';
-import _ from 'lodash';
-import DataProduct from './unpin.data';
-import UnitConverter from '../../utils/unit.converter';
 
+//
+const RedirectionMap = {
+    'Wait Scheduled': 1,
+    'Wait Processed': 2,
+    'Qa Reporting To': 3,
+    'QA Reporting Sos':4,
+    'Pi Verification':5,
+    'Decide Acceptance':6,
+    'Ingest Done':7
+ };
 
 //Workflow Page Title 
-const pageTitle = ['Scheduled','Processing Done','QA Reporting (TO)', 'QA Reporting (SDCO)', 'PI Verification', 'Decide Acceptance','Ingest Done','Unpin Data'];
+const pageTitle = ['Scheduled','Processing Done','QA Reporting (TO)', 'QA Reporting (SDCO)', 'PI Verification', 'Decide Acceptance','Ingest Done'];
 
 export default (props) => {
     let growl;
     const [state, setState] = useState({});
-    const [tasks, setTasks] = useState([]);
     const [currentStep, setCurrentStep] = useState(1);
     const [schedulingUnit, setSchedulingUnit] = useState();
     const [ingestTask, setInjestTask] = useState({});
@@ -29,43 +35,29 @@ export default (props) => {
         // Clearing Localstorage on start of the page to load fresh
         clearLocalStorage();
         ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id)
-        .then(schedulingUnit => {
-            setSchedulingUnit(schedulingUnit);
-        })
-        const promises = [ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id), ScheduleService.getTaskType()]
-        Promise.all(promises).then(responses => {
-            setSchedulingUnit(responses[0]);
-            ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false, false, true).then(response => {
-                response.map(task => {
-                    task.actionpath = `/task/view/blueprint/${task.id}/dataproducts`;
-                    (task.dataProducts || []).map(product => {
-                        if (product.size) {
-                            if (!task.totalDataSize) {
-                                task.totalDataSize = 0;
-                            }
-                            task.totalDataSize += product.size;
-
-                            // For deleted since
-                            if (!product.deleted_since && product.size) {
-                                if (!task.dataSizeNotDeleted) {
-                                    task.dataSizeNotDeleted = 0;
-                                }
-                                task.dataSizeNotDeleted += product.size;
-                            }
-                        }
-                    });
-                    if (task.totalDataSize) {
-                        task.totalDataSize = UnitConverter.getUIResourceUnit('bytes', (task.totalDataSize));
-                    }
-                    if (task.dataSizeNotDeleted) {
-                        task.dataSizeNotDeleted = UnitConverter.getUIResourceUnit('bytes', (task.dataSizeNotDeleted));
-                    }
+            .then(schedulingUnit => {
+                setSchedulingUnit(schedulingUnit);
+            })
+            const promises = [
+                ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id),
+                ScheduleService.getTaskType(),
+                ScheduleService.getQASchedulingUnitProcess(),
+                ScheduleService.getQASchedulingUnitTask()
+            ]
+            Promise.all(promises).then(responses => {
+                const suQAProcess = responses[2].find(process => process.su === parseInt(props.match.params.id));
+                const suQATask = responses[3].find(task => task.process === suQAProcess.id);
+                if (suQATask.status === 'NEW') {
+                    setCurrentStep(RedirectionMap[suQATask.flow_task]);
+                } else {
+                    setCurrentStep(3);
+                }
+                setSchedulingUnit(responses[0]);
+                ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false).then(response => {
+                    setInjestTask(response.find(task => task.template.type_value==='observation'));
                 });
-                setTasks(response);
-                setInjestTask(response.find(task => task.template.type_value==='observation'));
             });
-        });
-}, []);
+    }, []);
 
     const clearLocalStorage = () => {
         localStorage.removeItem('pi_comment');
@@ -81,7 +73,7 @@ export default (props) => {
     return (
         <>
             <Growl ref={(el) => growl = el} />
-            <PageHeader location={props.location} title={`${pageTitle[currentStep - 1]}`} actions={[{ icon: 'fa-window-close', link: props.history.goBack, title: 'Click to Close Workflow', props: { pathname: '/schedulingunit/1/workflow' } }]} />
+            {currentStep && <PageHeader location={props.location} title={`${pageTitle[currentStep - 1]}`} actions={[{ icon: 'fa-window-close', link: props.history.goBack, title: 'Click to Close Workflow', props: { pathname: '/schedulingunit/1/workflow' } }]} />}
             {schedulingUnit &&
                 <>
                     <div className="p-fluid">
@@ -109,13 +101,13 @@ export default (props) => {
                             </div>
                         </div>
                         {currentStep === 1 && <Scheduled onNext={onNext} {...state} schedulingUnit={schedulingUnit} />}
-                        {currentStep === 2 && <ProcessingDone onNext={onNext} {...state}/>}
-                        {currentStep === 3 && <QAreporting onNext={onNext}/>}
+                        {currentStep === 2 && <ProcessingDone onNext={onNext} {...state} schedulingUnit={schedulingUnit} />}
+                        {currentStep === 3 && <QAreporting onNext={onNext} id={props.match.params.id} />}
                         {currentStep === 4 && <QAsos onNext={onNext} {...state} />}
                         {currentStep === 5 && <PIverification onNext={onNext} {...state} />}
                         {currentStep === 6 && <DecideAcceptance onNext={onNext} {...state} />}
                         {currentStep === 7 && <IngestDone onNext={onNext}{...state} task={ingestTask} />}
-                        {currentStep === 8 && <DataProduct onNext={onNext} tasks={tasks} schedulingUnit={schedulingUnit} />}
+                      
                     </div>
                 </>
             }

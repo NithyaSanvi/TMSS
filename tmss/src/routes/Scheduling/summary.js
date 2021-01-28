@@ -5,7 +5,7 @@ import _ from 'lodash';
 import ViewTable from '../../components/ViewTable';
 import { JsonToTable } from "react-json-to-table";
 import SchedulingConstraints from './Scheduling.Constraints';
-// import Stations from './Stations';
+import Stations from './Stations';
 
 /**
  * Component to view summary of the scheduling unit with limited task details
@@ -114,7 +114,6 @@ export class SchedulingUnitSummary extends Component {
     render() {
         const schedulingUnit = this.props.schedulingUnit;
         const suTaskList = this.props.suTaskList;
-        suTaskList.map(task=>task.typeValue = task.specifications_template.type_value);
         const constraintsTemplate = this.props.constraintsTemplate;
         // After receiving output from the SchedulingConstraint editor order and format it to display
         let constraintsDoc = this.state.constraintsDoc?this.getOrderedConstraints(this.state.constraintsDoc, this.constraintsOrder):null;
@@ -128,7 +127,7 @@ export class SchedulingUnitSummary extends Component {
                     <div className="col-4"><label>Name:</label></div>
                     <div className="col-8">{schedulingUnit.name}</div>
                     <div className="col-4"><label>Project:</label></div>
-                    <div className="col-8">{schedulingUnit.project}</div>
+                    <div className="col-8">{schedulingUnit.project.name}</div>
                     <div className="col-4"><label>Start Time:</label></div>
                     <div className="col-8">{moment.utc(schedulingUnit.start_time).format("DD-MMM-YYYY HH:mm:ss")}</div>
                     <div className="col-4"><label>Stop Time:</label></div>
@@ -172,10 +171,10 @@ export class SchedulingUnitSummary extends Component {
                         <label>Tasks:</label>
                         <ViewTable 
                             data={suTaskList} 
-                            defaultcolumns={[{id: "ID", name: "Name", typeValue:"Type", subTaskID: 'Control ID', start_time:"Start Time", stop_time:"End Time", status: "Status", 
+                            defaultcolumns={[{id: "ID", subTaskID: 'Control ID', start_time:"Start Time", stop_time:"End Time", status: "Status", 
                                                 antenna_set: "Antenna Set", band: 'Band'}]}
                             optionalcolumns={[{actionpath: "actionpath"}]}
-                            columnclassname={[{"ID": "filter-input-50","Name":"filter-input-75","Type":"filter-input-75","Control ID":"filter-input-75", "Start Time": "filter-input-75", "End Time": "filter-input-75",
+                            columnclassname={[{"ID": "filter-input-50","Control ID":"filter-input-75", "Start Time": "filter-input-75", "End Time": "filter-input-75",
                                                 "Status": "filter-input-75", "Antenna Set": "filter-input-75", "Band": "filter-input-75"}]}
                             defaultSortColumn= {[{id: "ID", desc: false}]}
                             showaction="false"

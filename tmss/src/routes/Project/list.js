@@ -25,8 +25,8 @@ export class ProjectList extends Component{
                     name:"LTA Storage Location",
                     filter:"select"
                 },
-                archive_subdirectory:"LTA Storage Path",
-             }],
+                archive_subdirectory:"LTA Storage Path"
+            }],
             optionalcolumns:  [{
                 priority_rank:{
                     name:"Project Priority", 
@@ -72,10 +72,6 @@ export class ProjectList extends Component{
                     name:"Number of Triggers",
                     filter:"range"
                 },
-                auto_pin:{
-                    name:"Prevent automatic deletion after ingest",
-                    filter:"switch"
-                },
                 actionpath:"actionpath"
                
             }],
@@ -92,7 +88,7 @@ export class ProjectList extends Component{
                 "Trigger Priority":"filter-input-50",
                 "Category of Period":"filter-input-50",
                 "Cycles":"filter-input-100",
-                "LTA Storage Location":"filter-input-100",
+               "LTA Storage Location":"filter-input-100",
                 "LTA Storage Path":"filter-input-100"
             }],
             defaultSortColumn: [{id: "Name / Project Code", desc: false}],
@@ -159,7 +155,8 @@ export class ProjectList extends Component{
                 <PageHeader location={this.props.location} title={'Project - List'} 
                 actions={[{icon: 'fa-plus-square',title:'Click to Add Project', props:{pathname: '/project/create' }}]}
                 />
-               }
+               
+              }
                 {this.state.isLoading? <AppLoader /> : (this.state.isprocessed && this.state.projectlist.length>0) ?
                     <ViewTable 
                         data={this.state.projectlist} 
