@@ -13,7 +13,6 @@ class QAreportingSDCO extends Component {
             showEditor: false,
             quality_within_policy: false,
             sos_accept_show_pi: false
-                        
         };
         this.Next = this.Next.bind(this);
         this.handleChange = this.handleChange.bind(this);
@@ -37,7 +36,7 @@ class QAreportingSDCO extends Component {
     }
 
      /**
-     * Method will trigger on click save buton
+     * Method will trigger on click Next buton
      * here onNext props coming from parent, where will handle redirection to other page
      */
     async Next() {
@@ -45,13 +44,12 @@ class QAreportingSDCO extends Component {
         if (!qaSchedulingUnitTasksId) {
             return
         }
-        const promise = [];
-        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId.id));
-        promise.push(WorkflowService.updateQA_Perform(qaSchedulingUnitTasksId.process, {"sos_report": this.state.content, "quality_within_policy": this.state.quality_within_policy,"sos_accept_show_pi": this.state.sos_accept_show_pi}));
+        const promise = []; 
+        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId.id),{ owner: this.state.assignTo });
+        promise.push(WorkflowService.updateQA_Perform(qaSchedulingUnitTasksId.process, {"sos_report": this.state.content,"quality_within_policy": this.state.quality_within_policy,"sos_accept_show_pi": this.state.sos_accept_show_pi}));
         Promise.all(promise).then(() => {
             this.props.onNext({ report: this.state.content });
         });
-       
     }
   
     //Not using at present
@@ -80,7 +78,7 @@ class QAreportingSDCO extends Component {
                             </div>
                         </div>
                         <div className="p-grid" style={{ padding: '10px' }}>
-                           <label htmlFor="operatorReport" >
+                        <label htmlFor="operatorReport" >
                                Operator Report {!this.state.showEditor && <span className="con-edit">(Click content to edit)</span>}
                                <span style={{color:'red'}}>*</span>
                             </label>
@@ -100,7 +98,7 @@ class QAreportingSDCO extends Component {
                     </div>
                     <div className="p-grid" style={{ marginTop: '20px' }}>
                         <div className="p-col-1">
-                            <Button label="Next" disabled= {!this.state.content || this.props.disableNextButton} className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
+                            <Button label="Next" disabled= {!this.state.content} className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
                         </div>
                         <div className="p-col-1">
                             <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }}  />
@@ -110,6 +108,5 @@ class QAreportingSDCO extends Component {
             </>
         )
     };
-
 }
 export default QAreportingSDCO;

@@ -11,7 +11,7 @@ class Scheduled extends Component {
     }
 
     /**
-     * Method will trigger on click save buton
+     * Method will trigger on click Next buton
      * here onNext props coming from parent, where will handle redirection to other page
      */
     Next() {

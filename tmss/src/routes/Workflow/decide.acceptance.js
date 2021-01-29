@@ -3,14 +3,15 @@ import { Button } from 'primereact/button';
 import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css'; // Import Sun Editor's CSS File
 import { Checkbox } from 'primereact/checkbox';
+import WorkflowService from '../../services/workflow.service';
 
 class DecideAcceptance extends Component {
     constructor(props) {
         super(props);
         this.state = {
             content: props.report,
-            picomment: props.picomment,  //PI Comment Field
-            showEditor: false,           //Sun Editor
+            comment: props.pireport,  
+            showEditor: false,           
             sos_accept_after_pi: false,              
 
         };
@@ -19,33 +20,44 @@ class DecideAcceptance extends Component {
         this.onChangePIComment = this.onChangePIComment.bind(this);
     }
 
-    
-    // Method will trigger on change of operator report sun-editor
+    async componentDidMount() {
+        WorkflowService.getSchedulingUnitTask().then(response => this.setState({ qaSchedulingTasks: response }));
+    }
+
+     // Method will trigger on change of operator report sun-editor
      handleChange(e) {
-        this.setState({
-            content: e
-        });
+        if (e === '<p><br></p>') {
+            localStorage.setItem('report_qa', '');
+            this.setState({ content: '' });
+            return;
+        }
         localStorage.setItem('report_qa', e);
+        this.setState({ content: e });
+    }
+
+    async Next() {
+        const qaSchedulingUnitTasksId = this.state.qaSchedulingTasks.find(task => task.flow_task.toLowerCase() === 'decide acceptance');
+        if (!qaSchedulingUnitTasksId) {
+            return
+        }
+        const promise = [];
+        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId.id, { owner: this.state.assignTo }));
+        promise.push(WorkflowService.updateQA_Perform(qaSchedulingUnitTasksId.process, {"sos_accept_after_pi":this.state.sos_accept_after_pi}));
+        Promise.all(promise).then(() => {
+            this.props.onNext({ report: this.state.content ,pireport: this.state.comment});
+        });
+       
     }
 
     //PI Comment Editor
-    onChangePIComment(e) {
-        this.setState({
-            picomment: e.target.value
-        });
-        localStorage.setItem('pi_comment', e.target.value);
-    }
-
-     /**
-     * Method will trigger on click save buton
-     * here onNext props coming from parent, where will handle redirection to other page
-     */
-    Next() {
-        this.props.onNext({
-            report: this.state.content,
-            picomment: this.state.picomment
-
-        });
+    onChangePIComment(a) {
+        if (a === '<p><br></p>') {
+            localStorage.setItem('comment_pi', '');
+            this.setState({ comment: '' });
+            return;
+        }
+        this.setState({comment: a});
+        localStorage.setItem('comment_pi', a);
     }
 
     // Not using at present
@@ -78,7 +90,7 @@ class DecideAcceptance extends Component {
                                 <div className="col-lg-12 col-md-12 col-sm-12">
                                     {this.state.showEditor && <SunEditor setDefaultStyle="min-height: 250px; height: auto;" enableToolbar={true}
                                         onChange={this.onChangePIComment}
-                                        setContents={this.state.picomment}
+                                        setContents={this.state.comment}
                                         setOptions={{
                                             buttonList: [
                                                 ['undo', 'redo', 'bold', 'underline', 'fontColor', 'table', 'link', 'image', 'video', 'italic', 'strike', 'subscript',
@@ -86,7 +98,7 @@ class DecideAcceptance extends Component {
                                             ]
                                         }}
                                     />}
-                                   <div className="operator-report" dangerouslySetInnerHTML={{ __html: this.state.picomment }}></div>
+                                   <div className="pi-report" dangerouslySetInnerHTML={{ __html: this.state.comment }}></div>
                                 </div>
                             </div>
                         <div className="p-field p-grid">
