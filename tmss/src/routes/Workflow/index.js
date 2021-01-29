@@ -71,11 +71,8 @@ export default (props) => {
         Promise.all(promises).then(responses => {
             const suQAProcess = responses[0].find(process => process.su === parseInt(props.match.params.id));
             const suQATask = responses[1].find(task => task.process === suQAProcess.id);
-            if (suQATask.status === 'NEW') {
-                setCurrentStep(RedirectionMap[suQATask.flow_task]);
-            } else {
-                setCurrentStep(3);
-            }
+            setCurrentStep(RedirectionMap[suQATask.flow_task]);
+            
             if (suQATask.status.toLowerCase() === 'done' || suQATask.status.toLowerCase() === 'finished') {
                 setDisableNextButton(true)
             }
