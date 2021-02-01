@@ -3,14 +3,15 @@ import 'primeflex/primeflex.css';
 import moment from 'moment';
 import AppLoader from "./../../layout/components/AppLoader";
 import ViewTable from './../../components/ViewTable';
+import UnitConverter from '../../utils/unit.converter';
 
 import ScheduleService from '../../services/schedule.service';
 
 class SchedulingUnitList extends Component{
      
     constructor(props){
-       super(props)
-       const defaultcolumns = {
+       super(props);
+       this.defaultcolumns = {
         type:{
             name:"Type",
             filter:"select"
@@ -36,7 +37,7 @@ class SchedulingUnitList extends Component{
         status:"Status"
         };
         if (props.hideProjectColumn) {
-            delete defaultcolumns['project'];
+            delete this.defaultcolumns['project'];
         }
         this.state = {
             scheduleunit: [],
@@ -44,7 +45,7 @@ class SchedulingUnitList extends Component{
                 "View": "/schedulingunit/view",
             }],
             isLoading: true,
-            defaultcolumns: [defaultcolumns],
+            defaultcolumns: [this.defaultcolumns],
             optionalcolumns:  [{
                 actionpath:"actionpath",
             }],
@@ -63,24 +64,26 @@ class SchedulingUnitList extends Component{
     async getSchedulingUnitList () {
         //Get SU Draft/Blueprints for the Project ID. This request is coming from view Project page. Otherwise it will show all SU
         let project = this.props.project;
-        if(project){
-           let scheduleunits = await ScheduleService.getSchedulingListByProject(project);
-        if(scheduleunits){
+        if(project) {
+            let scheduleunits = await ScheduleService.getSchedulingListByProject(project);
+            if(scheduleunits){
                 this.setState({
                     scheduleunit: scheduleunits, isLoading: false
                 });
             }
-        }else{ 
+        }   else{ 
             const schedulingSet = await ScheduleService.getSchedulingSets();
             const projects = await ScheduleService.getProjectList();
-            const bluePrint = await ScheduleService.getSchedulingUnitBlueprint();
-            ScheduleService.getSchedulingUnitDraft().then(scheduleunit =>{
+            const promises = [ScheduleService.getSchedulingUnitsExtended('blueprint'), 
+                                ScheduleService.getSchedulingUnitsExtended('draft')];
+            Promise.all(promises).then(responses => {
+                const blueprints = responses[0];
+                let scheduleunits = responses[1];
                 const output = [];
-                var scheduleunits = scheduleunit.data.results;
                 for( const scheduleunit  of scheduleunits){
                     const suSet = schedulingSet.find((suSet) => { return  scheduleunit.scheduling_set_id === suSet.id });
                     const project = projects.find((project) => { return suSet.project_id === project.name});
-                    const blueprintdata = bluePrint.data.results.filter(i => i.draft_id === scheduleunit.id);
+                    const blueprintdata = blueprints.filter(i => i.draft_id === scheduleunit.id);
                     blueprintdata.map(blueP => { 
                         blueP.duration = moment.utc((blueP.duration || 0)*1000).format('HH:mm:ss');
                         blueP.type="Blueprint"; 
@@ -89,6 +92,10 @@ class SchedulingUnitList extends Component{
                         blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                         blueP.project = project.name;
                         blueP.canSelect = false;
+                        // blueP.links = ['Project'];
+                        // blueP.linksURL = {
+                        //     'Project': `/project/view/${project.name}`
+                        // }
                         return blueP; 
                     });
                     output.push(...blueprintdata);
@@ -99,13 +106,40 @@ class SchedulingUnitList extends Component{
                     scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                     scheduleunit.project = project.name;
                     scheduleunit.canSelect = true;
+                    // scheduleunit.links = ['Project'];
+                    // scheduleunit.linksURL = {
+                    //     'Project': `/project/view/${project.name}`
+                    // }
                     output.push(scheduleunit);
                 }
+                const defaultColumns = this.defaultcolumns;
+                let columnclassname = this.state.columnclassname[0];
+                output.map(su => {
+                    su.taskDetails = su.type==="Draft"?su.task_drafts:su.task_blueprints;
+                    const targetObserv = su.taskDetails.find(task => task.specifications_template.type_value==='observation' && task.specifications_doc.station_groups);
+                    // Constructing targets in single string to make it clear display 
+                    targetObserv.specifications_doc.SAPs.map((target, index) => {
+                        su[`target${index}angle1`] = UnitConverter.getAngleInput(target.digital_pointing.angle1);
+                        su[`target${index}angle2`] = UnitConverter.getAngleInput(target.digital_pointing.angle2,true);
+                        su[`target${index}referenceframe`] = target.digital_pointing.direction_type;
+                        defaultColumns[`target${index}angle1`] = `Target ${index + 1} - Angle 1`;
+                        defaultColumns[`target${index}angle2`] = `Target ${index + 1} - Angle 2`;
+                        defaultColumns[`target${index}referenceframe`] = {
+                            name: `Target ${index + 1} - Reference Frame`,
+                            filter: "select"
+                        };
+                        columnclassname[`Target ${index + 1} - Angle 1`] = "filter-input-75";
+                        columnclassname[`Target ${index + 1} - Angle 2`] = "filter-input-75";
+                        return target;
+                    });
+                    return su;
+                });
                 this.setState({
-                    scheduleunit: output, isLoading: false
+                    scheduleunit: output, isLoading: false, defaultColumns: defaultColumns,
+                    columnclassname: [columnclassname]
                 });
                 this.selectedRows = [];
-            })
+            });
         }
     }
     

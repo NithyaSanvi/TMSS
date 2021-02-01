@@ -62,7 +62,10 @@ const TaskService = {
         return response.data;
       } catch (error) {
         console.error(error);
-        return null;
+        return {
+          error: true,
+          message: 'Unable to update task'
+        };
       }
     },
     getTaskRelation: async function(type, id) {
@@ -186,6 +189,14 @@ const TaskService = {
       }
       return statusLogs;
     },
+    getSubtaskTemplates: async function(templateId) {
+      try {
+        const response = await axios.get(`/api/subtask_template/`);
+        return response.data.results;
+      } catch(error) {
+        console.error(error);
+      }
+    },
     getSubtaskTemplate: async function(templateId) {
       try {
         const response = await axios.get(`/api/subtask_template/${templateId}`);
@@ -200,6 +211,23 @@ const TaskService = {
       } catch(error) {
         console.error(error);
       }
+    },
+    /**
+     * Function to get the task relation objects
+     * @param {Array} relationIds - Array of task_relation ids
+     * @param {String} type  - 'draft' or 'blueprint'
+     */
+    getTaskRelations: async function(relationIds, type) {
+      let taskRelations = [];
+      try {
+        for (const relationId of relationIds) {
+          const taskRelation = (await axios.get(`/api/task_relation_${type}/${relationId}`)).data;
+          taskRelations.push(taskRelation);
+        }
+      } catch(error) {
+
+      }
+      return taskRelations;
     }
 }
 

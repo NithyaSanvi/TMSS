@@ -3,11 +3,7 @@ import React, { Component } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import Stations from '../../routes/Scheduling/Stations';
-
-import moment from 'moment';
 import _ from 'lodash';
-
-const DATE_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 
 export default class StationEditor extends Component {
   constructor(props) {
@@ -161,7 +157,7 @@ render() {
     <>  
     
       <Dialog header={_.startCase(this.state.dialogTitle)} visible={this.state.showDialog} maximized={false}  
-      onHide={() => {this.updateStationGroup()}} inputId="confirm_dialog"
+      onHide={() => {this.updateStationGroup()}} inputId="confirm_dialog" className="stations_dialog"
       footer={<div>
         <Button key="back" label="Close" onClick={() => {this.updateStationGroup()}} />
         </div>
@@ -170,6 +166,7 @@ render() {
           <Stations
               stationGroup={this.state.stationGroup}
               onUpdateStations={this.onUpdateStations.bind(this)}
+              height={'30em'}
           />
         </div>
       </Dialog>

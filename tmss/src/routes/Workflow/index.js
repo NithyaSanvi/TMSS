@@ -10,16 +10,20 @@ import QAsos from './qa.sos';
 import PIverification from './pi.verification';
 import DecideAcceptance from './decide.acceptance';
 import IngestDone from './ingest.done';
+import _ from 'lodash';
+import DataProduct from './unpin.data';
+import UnitConverter from '../../utils/unit.converter';
+
 
 //
 const RedirectionMap = {
-    'Wait Scheduled': 1,
-    'Wait Processed': 2,
-    'Qa Reporting To': 3,
-    'QA Reporting Sos':4,
-    'Pi Verification':5,
-    'Decide Acceptance':6,
-    'Ingesting':7
+    'wait scheduled': 1,
+    'wait processed': 2,
+    'qa reporting to': 3,
+    'qa reporting sos':4,
+    'pi verification':5,
+    'decide acceptance':6,
+    'ingesting':7
  };
 
 //Workflow Page Title 
@@ -29,13 +33,44 @@ export default (props) => {
     let growl;
     const [disableNextButton, setDisableNextButton] = useState(false);
     const [state, setState] = useState({});
-    const [currentStep, setCurrentStep] = useState(1);
+    const [currentStep, setCurrentStep] = useState();
     const [schedulingUnit, setSchedulingUnit] = useState();
     const [ingestTask, setInjestTask] = useState({});
     useEffect(() => {
         // Clearing Localstorage on start of the page to load fresh
         clearLocalStorage();
         ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id)
+        .then(schedulingUnit => {
+            setSchedulingUnit(schedulingUnit);
+        })
+        const promises = [ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id), ScheduleService.getTaskType()]
+        Promise.all(promises).then(responses => {
+            setSchedulingUnit(responses[0]);
+            ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false, false, true).then(response => {
+                response.map(task => {
+                    task.actionpath = `/task/view/blueprint/${task.id}/dataproducts`;
+                    (task.dataProducts || []).map(product => {
+                        if (product.size) {
+                            if (!task.totalDataSize) {
+                                task.totalDataSize = 0;
+                            }
+                            task.totalDataSize += product.size;
+
+                            // For deleted since
+                            if (!product.deleted_since && product.size) {
+                                if (!task.dataSizeNotDeleted) {
+                                    task.dataSizeNotDeleted = 0;
+                                }
+                                task.dataSizeNotDeleted += product.size;
+                            }
+                        }
+                    });
+                    if (task.totalDataSize) {
+                        task.totalDataSize = UnitConverter.getUIResourceUnit('bytes', (task.totalDataSize));
+                    }
+                    if (task.dataSizeNotDeleted) {
+                        task.dataSizeNotDeleted = UnitConverter.getUIResourceUnit('bytes', (task.dataSizeNotDeleted));
+                    }
             .then(schedulingUnit => {
                 setSchedulingUnit(schedulingUnit);
             })
@@ -49,7 +84,7 @@ export default (props) => {
                 const suQAProcess = responses[2].find(process => process.su === parseInt(props.match.params.id));
                 const suQATask = responses[3].find(task => task.process === suQAProcess.id);
                 if (suQATask.status === 'NEW') {
-                    setCurrentStep(RedirectionMap[suQATask.flow_task]);
+                    setCurrentStep(RedirectionMap[suQATask.flow_task.toLowerCase()]);
                 } else {
                     setCurrentStep(3);
                 }
@@ -60,8 +95,11 @@ export default (props) => {
                 ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false).then(response => {
                     setInjestTask(response.find(task => task.template.type_value==='observation'));
                 });
+                setTasks(response);
+                setInjestTask(response.find(task => task.template.type_value==='observation'));
             });
-    }, []);
+        });
+}, []);
 
     const getStatusUpdate = () => {
         const promises = [
@@ -71,13 +109,13 @@ export default (props) => {
         Promise.all(promises).then(responses => {
             const suQAProcess = responses[0].find(process => process.su === parseInt(props.match.params.id));
             const suQATask = responses[1].find(task => task.process === suQAProcess.id);
-            setCurrentStep(RedirectionMap[suQATask.flow_task]);
-            
+            setCurrentStep(RedirectionMap[suQATask.flow_task.toLowerCase()]);
             if (suQATask.status.toLowerCase() === 'done' || suQATask.status.toLowerCase() === 'finished') {
                 setDisableNextButton(true)
             }
         });
     }
+
 
     const clearLocalStorage = () => {
         localStorage.removeItem('pi_comment');
@@ -88,7 +126,6 @@ export default (props) => {
     const onNext = (content) => {
         setState({...state, ...content});
         getStatusUpdate();
-        // setCurrentStep(currentStep + 1);  
     };
 
     return (
@@ -121,14 +158,14 @@ export default (props) => {
                                 </label>
                             </div>
                         </div>
-                        {currentStep === 1 && <Scheduled onNext={onNext} {...state} schedulingUnit={schedulingUnit} disableNextButton={disableNextButton} />}
-                        {currentStep === 2 && <ProcessingDone onNext={onNext} {...state} schedulingUnit={schedulingUnit} disableNextButton={disableNextButton} />}
-                        {currentStep === 3 && <QAreporting onNext={onNext} id={props.match.params.id} disableNextButton={disableNextButton} />}
-                        {currentStep === 4 && <QAsos onNext={onNext} {...state} disableNextButton={disableNextButton} />}
-                        {currentStep === 5 && <PIverification onNext={onNext} {...state} disableNextButton={disableNextButton} />}
-                        {currentStep === 6 && <DecideAcceptance onNext={onNext} {...state} disableNextButton={disableNextButton} />}
-                        {currentStep === 7 && <IngestDone onNext={onNext}{...state} task={ingestTask} disableNextButton={disableNextButton} />}
-                      
+                        {currentStep === 1 && <Scheduled onNext={onNext} {...state} schedulingUnit={schedulingUnit} /*disableNextButton={disableNextButton}*/ />}
+                        {currentStep === 2 && <ProcessingDone onNext={onNext} {...state} schedulingUnit={schedulingUnit}  />}
+                        {currentStep === 3 && <QAreporting onNext={onNext} id={props.match.params.id} />}
+                        {currentStep === 4 && <QAsos onNext={onNext} {...state} />}
+                        {currentStep === 5 && <PIverification onNext={onNext} {...state} />}
+                        {currentStep === 6 && <DecideAcceptance onNext={onNext} {...state} />}
+                        {currentStep === 7 && <IngestDone onNext={onNext}{...state} task={ingestTask} />}
+                        {currentStep === 8 && <DataProduct onNext={onNext} tasks={tasks} schedulingUnit={schedulingUnit} />}
                     </div>
                 </>
             }

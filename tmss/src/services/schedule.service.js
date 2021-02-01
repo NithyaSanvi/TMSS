@@ -2,6 +2,7 @@ import axios from 'axios'
 //import moment from 'moment';
 import TaskService from './task.service';
 import moment from 'moment';
+import DataProductService from './data.product.service';
 
 axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
 
@@ -49,6 +50,43 @@ const ScheduleService = {
             console.error('[schedule.services.getSchedulingUnitBlueprint]',error);
         }
         return res;
+    },
+    getSchedulingUnitsExtended: async function (type){
+        let blueprints = [];
+        try {
+            let initialResponse = await axios.get(`/api/scheduling_unit_${type}_extended`);
+            const totalCount = initialResponse.data.count;
+            const initialCount = initialResponse.data.results.length
+            blueprints = blueprints.concat(initialResponse.data.results);
+            if (totalCount > initialCount) {
+                let secondResponse = await axios.get(`/api/scheduling_unit_${type}_extended/?ordering=id&limit=${totalCount-initialCount}&offset=${initialCount}`);
+                blueprints = blueprints.concat(secondResponse.data.results);
+            }
+        }   catch(error) {
+            console.error('[schedule.services.getSchedulingUnitsExtended]',error);
+        }
+        return blueprints;
+    },
+    getSchedulingUnitExtended: async function (type, id){
+        let schedulingUnit = null;
+        try {
+            const response = await axios.get(`/api/scheduling_unit_${type}_extended/${id}/`);
+            schedulingUnit = response.data;
+            if (schedulingUnit) {
+                if (type === "blueprint") {
+                    const schedulingUnitDraft = (await axios.get(`/api/scheduling_unit_draft/${id}/`)).data;
+                    schedulingUnit.draft_object = schedulingUnitDraft;
+                    schedulingUnit.scheduling_set_id = schedulingUnitDraft.scheduling_set_id;
+                    schedulingUnit.scheduling_constraints_doc = schedulingUnitDraft.scheduling_constraints_doc;
+                }
+                const schedulingSet = (await axios.get(`/api/scheduling_set/${schedulingUnit.scheduling_set_id}`)).data;
+                schedulingUnit.scheduling_set_object = schedulingSet;
+                schedulingUnit.scheduling_set = schedulingSet.url;
+            }
+        }   catch(error) {
+            console.error('[schedule.services.getSchedulingUnitExtended]',error);
+        }
+        return schedulingUnit;
     },
     //>>>>>> TODO: Remove this method by using/modifying other functions with additional parameters
     getTaskBPWithSubtaskTemplate: async function(id) {
@@ -117,7 +155,7 @@ const ScheduleService = {
             return null;
         }
     },
-    getTaskBlueprintById: async function(id, loadTemplate, loadSubtasks){
+    getTaskBlueprintById: async function(id, loadTemplate, loadSubtasks, loadSubtaskTemplate){
         let result;
         try {
             result = await axios.get('/api/task_blueprint/'+id);
@@ -125,9 +163,21 @@ const ScheduleService = {
                 result.data.template = await TaskService.getTaskTemplate(result.data.specifications_template_id);
             }
             if (result.data && loadSubtasks) {
-                let subTasks = [];
+                let subTasks = [], subtaskemplates = {};
                 for (const subtaskId of result.data.subtasks_ids) {
-                    subTasks.push((await TaskService.getSubtaskDetails(subtaskId)));
+                    let subtask = await TaskService.getSubtaskDetails(subtaskId);
+                    if (loadSubtaskTemplate) {
+                        //To avoid repeated api call for template if it has already loaded
+                        if (subtaskemplates[subtask.specifications_template_id]) {
+                            subtask.template = subtaskemplates[subtask.specifications_template_id];
+                        } else {
+                            const subtaskTemplate = await TaskService.getSubtaskTemplate(subtask.specifications_template_id);
+                            subtask.template = subtaskTemplate;
+                            subtaskemplates[subtask.specifications_template_id] = subtaskTemplate;
+                        }
+                    }
+                    subTasks.push((subtask));
+                    // subTasks.push((await TaskService.getSubtaskDetails(subtaskId)));
                 }
                 result.data.subTasks = subTasks;
             }
@@ -136,12 +186,12 @@ const ScheduleService = {
         }
         return result;
     },
-    getTaskBlueprintsBySchedulingUnit: async function(scheduleunit, loadTemplate, loadSubtasks){
+    getTaskBlueprintsBySchedulingUnit: async function(scheduleunit, loadTemplate, loadSubtasks, loadSubtaskTemplate,loadDataProducts){
         // there no single api to fetch associated task_blueprint, so iteare the task_blueprint id to fetch associated task_blueprint
         let taskblueprintsList = [];
         if(scheduleunit.task_blueprints_ids){
             for(const id of scheduleunit.task_blueprints_ids){
-               await this.getTaskBlueprintById(id, loadTemplate, loadSubtasks).then(response =>{
+                await this.getTaskBlueprintById(id, loadTemplate, loadSubtasks, loadSubtaskTemplate).then(async response =>{
                     let taskblueprint = response.data;
                     taskblueprint['tasktype'] = 'Blueprint';
                     taskblueprint['actionpath'] = '/task/view/blueprint/'+taskblueprint['id'];
@@ -149,6 +199,14 @@ const ScheduleService = {
                     taskblueprint['relative_start_time'] = 0;
                     taskblueprint['relative_stop_time'] = 0;
                     taskblueprint.duration = moment.utc((taskblueprint.duration || 0)*1000).format('HH:mm:ss');
+                    taskblueprint['template_name'] = response.data.template.type_value;
+                    if (taskblueprint.template.name !== 'ingest') {
+                        const promises = [];
+                        taskblueprint.subtasks_ids.map(id => promises.push(DataProductService.getSubtaskOutputDataproduct(id)));
+                        const dataProducts = await Promise.all(promises);
+                        taskblueprint['dataProducts'] = dataProducts.filter(product => product.data.length).map(product => product.data).flat();
+                        
+                    }
                     taskblueprintsList.push(taskblueprint);
                 })
             }
@@ -201,10 +259,13 @@ const ScheduleService = {
                 scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                 scheduletask['specifications_doc'] = task['specifications_doc'];
                 scheduletask.duration = moment.utc((scheduletask.duration || 0)*1000).format('HH:mm:ss'); 
+                scheduletask.produced_by = task.produced_by;
+                scheduletask.produced_by_ids = task.produced_by_ids;
                 scheduletask.relative_start_time = moment.utc(scheduletask.relative_start_time*1000).format('HH:mm:ss'); 
                 scheduletask.relative_stop_time = moment.utc(scheduletask.relative_stop_time*1000).format('HH:mm:ss'); 
                 if (loadTemplate) {
                     scheduletask.template = await TaskService.getTaskTemplate(task.specifications_template_id);
+                    scheduletask.type_value = scheduletask.template.type_value;
                 }
                //Fetch blueprint details for Task Draft
 	            const draftBlueprints = await TaskService.getDraftsTaskBlueprints(task.id);
@@ -255,10 +316,59 @@ const ScheduleService = {
                 //Add Task Draft details to array
                 scheduletasklist.push(scheduletask);
             }
+            //Ingest Task Relation 
+            if (loadTemplate) {
+                const ingest = scheduletasklist.find(task => task.template.type_value === 'ingest' && task.tasktype.toLowerCase() === 'draft');
+                const promises = [];
+                ingest.produced_by_ids.map(id => promises.push(this.getTaskRelation(id)));
+                const response = await Promise.all(promises);
+                response.map(producer => {
+                    const tasks = scheduletasklist.filter(task => producer.producer_id  === task.id);
+                    tasks.map(task => {
+                       task.canIngest = true;
+                    });
+                });
+            }   
         }).catch(function(error) {
             console.error('[schedule.services.getScheduleTasksBySchedulingUnitId]',error);
         });
         return scheduletasklist;
+    },
+    getTaskDetailsByBluePrintSchUnitById: async function(scheduleunit) {
+        const response = await this.getTaskBPWithSubtaskTemplateOfSU(scheduleunit);
+        return {
+            id: scheduleunit.id,
+            tasks: response,
+            type: 'Blueprint'
+        }
+    },
+    getTaskDetailsByDraftSchUnitById: async function(id, loadTemplate, loadSubtasks, loadSubtaskTemplate) {
+        const response = await this.getTasksBySchedulingUnit(id, loadTemplate, loadSubtasks, loadSubtaskTemplate);
+        return {
+            id,
+            type: 'Draft',
+            tasks: response
+        }
+    },
+    getTaskRelation: async function(id) {
+        let res;
+        await axios.get(`/api/task_relation_draft/${id}`)
+        .then(response => {
+            res= response;
+        }).catch(function(error) {
+            console.error('[schedule.services.getTaskBlueprints]',error);
+        });
+        return res.data;
+    },
+    getTaskDraft: async function(id) {
+        let res;
+        await axios.get(`/api/task_draft/${id}`)
+        .then(response => {
+            res= response;
+        }).catch(function(error) {
+            console.error('[schedule.services.getTaskBlueprints]',error);
+        });
+        return res.data;
     },
     getTaskBlueprints: async function (){
         let res=[];
@@ -280,11 +390,16 @@ const ScheduleService = {
         });
         return res;
     },
-    getTasksDraftBySchedulingUnitId: async function (id){
+    getTasksDraftBySchedulingUnitId: async function (id, loadTemplate){
         let res=[];
         await axios.get('/api/scheduling_unit_draft/'+id+'/task_draft/?ordering=id')
-        .then(response => {
+        .then(async response => {
             res= response;
+            if (response && response.data.results && loadTemplate) {
+                for(const task of response.data.results){
+                    task.template = await TaskService.getTaskTemplate(task.specifications_template_id);
+                }
+            }
         }).catch(function(error) {
             console.error('[schedule.services.getTasksDraftBySchedulingUnitId]',error);
         });
@@ -351,7 +466,10 @@ const ScheduleService = {
                 delete schedulingUnit['duration'];
                 schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
                 if (!schedulingUnit || !schedulingUnit.id) {
-                    return null;
+                    return {
+                        error: true,
+                        messsage: 'Unable to Create Scheduling Unit'
+                    };
                 }
                 // Create task drafts with updated requirement_doc
                 schedulingUnit = await this.createSUTaskDrafts(schedulingUnit);
@@ -359,10 +477,16 @@ const ScheduleService = {
                     return schedulingUnit;
                 }
             }
-            return null;
+            return {
+                error: true,
+                message: 'Unable to Create Task Drafts'
+            };
         }   catch(error) {
             console.error(error);
-            return null;
+            return {
+                error: true,
+                message: 'Stations Required'
+            };
         };
     },
     
@@ -371,21 +495,30 @@ const ScheduleService = {
             delete schedulingUnit['duration'];
            
             schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
-            for (const taskToUpdate in tasksToUpdate) {
-                let task = tasks.find(task => { return task.name === taskToUpdate});
-                task.specifications_doc = observStrategy.template.tasks[taskToUpdate].specifications_doc;
-                if (task.specifications_doc.station_groups) {
-                    task.specifications_doc.station_groups = station_groups;
+            if (!schedulingUnit.error) {
+                for (const taskToUpdate in tasksToUpdate) {
+                    let task = tasks.find(task => { return task.name === taskToUpdate});
+                    task.specifications_doc = observStrategy.template.tasks[taskToUpdate].specifications_doc;
+                    if (task.specifications_doc.station_groups) {
+                        task.specifications_doc.station_groups = station_groups;
+                    }
+                    delete task['duration'];
+                    delete task['relative_start_time'];
+                    delete task['relative_stop_time'];
+                    task = await TaskService.updateTask('draft', task);
+                    if (task.error) {
+                        schedulingUnit = task;
+                    }
                 }
-                delete task['duration'];
-                delete task['relative_start_time'];
-                delete task['relative_stop_time'];
-                task = await TaskService.updateTask('draft', task);
+                
             }
             return schedulingUnit;
         }   catch(error) {
             console.error(error);
-            return null;
+            return {
+                error: true,
+                message: 'Unable to Update Task Drafts'
+            }
         };
     },
     updateSchedulingUnitDraft: async function(schedulingUnit) {
@@ -425,12 +558,14 @@ const ScheduleService = {
                         suDraft['actionpath']='/schedulingunit/view/draft/'+suDraft.id;
                         suDraft['type'] = 'Draft';
                         suDraft['duration'] = moment.utc((suDraft.duration || 0)*1000).format('HH:mm:ss');
+                        suDraft['canSelect'] = true;
                         schedulingunitlist = schedulingunitlist.concat(suDraft);
                         //Fetch SU Blue prints for the SU Draft
                         await this.getBlueprintsByschedulingUnitId(suDraft.id).then(suBlueprintList =>{
                             for(const suBlueprint of suBlueprintList.data.results){
                                 suBlueprint.duration = moment.utc((suBlueprint.duration || 0)*1000).format('HH:mm:ss'); 
-                                suBlueprint.type="Blueprint"; 
+                                suBlueprint.type = "Blueprint"; 
+                                suBlueprint.canSelect = false;
                                 suBlueprint['actionpath'] = '/schedulingunit/view/blueprint/'+suBlueprint.id;
                                 schedulingunitlist = schedulingunitlist.concat(suBlueprint);
                             }
@@ -480,15 +615,32 @@ const ScheduleService = {
             return [];
         };
     },
-    getStations: async function(e) {
+    getStations: async function(group) {
         try {
            // const response = await axios.get('/api/station_groups/stations/1/dutch');
-           const response = await axios.get(`/api/station_groups/stations/1/${e}`);
+           const response = await axios.get(`/api/station_groups/stations/1/${group}`);
             return response.data;
         }   catch(error) {
             console.error(error);
             return [];
         }
+    },
+    // To get stations of main groups
+    getMainGroupStations: async function() {
+        let stationGroups = {};
+        try {
+            const stationPromises = [this.getStations('Core'), 
+                                        this.getStations('Remote'), 
+                                        this.getStations('International')]
+            await Promise.all(stationPromises).then(async(results) => {
+                for (const result of results) {
+                    stationGroups[result.group] = result.stations;
+                }
+            });
+        }   catch(error) {
+            console.error(error);
+        }
+        return stationGroups;
     },
       getProjectList: async function() {
         try {

@@ -148,7 +148,9 @@ export class TaskEdit extends Component {
         .then((templates) => {
             this.setState({taskTemplates: templates});
         });
-        TaskService.getTaskDetails("draft", this.props.taskId?this.props.taskId:this.props.location.state.taskId)
+        let taskId = this.props.match.params?this.props.match.params.id:null;
+        taskId = taskId?taskId:(this.props.taskId?this.props.taskId:this.props.location.state.taskId);
+        TaskService.getTaskDetails("draft", taskId)
         .then((task) => {
             if (task) {
                 TaskService.getSchedulingUnit("draft", task.scheduling_unit_draft_id)

@@ -101,6 +101,7 @@ export class TaskView extends Component {
                 }
             });
         }
+        
     }
 
     render() {
@@ -120,10 +121,11 @@ export class TaskView extends Component {
 
         let actions = [ ];
         if (this.state.taskType === 'draft') {
+            const taskId = this.state.task?this.state.task.id:'';
             actions = [{   icon: 'fa-edit',
-                            title:'Click to Edit Task', 
-                            props : { pathname:'/task/edit',
-                                        state: {taskId: this.state.task?this.state.task.id:''} 
+                            title:'Click to Edit Task',
+                            props : { pathname:`/task/edit/draft/${taskId}`,
+                                        state: {taskId: taskId} 
                                     } 
                         }];
         }   else {

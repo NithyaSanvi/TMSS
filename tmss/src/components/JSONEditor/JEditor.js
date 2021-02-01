@@ -50,6 +50,11 @@ function Jeditor(props) {
                     let defKey = refUrl.substring(refUrl.lastIndexOf("/")+1);
                     schema.definitions[defKey] = (await $RefParser.resolve(refUrl)).get(newRef);
                     property["$ref"] = newRef;
+                    if(schema.definitions[defKey].type && schema.definitions[defKey].type === 'array'){
+                        let resolvedItems = await resolveSchema(schema.definitions[defKey].items);
+                        schema.definitions = {...schema.definitions, ...resolvedItems.definitions};
+                        delete resolvedItems['definitions'];
+                    }
                 }   else if(property["type"] === "array") {             // reference in array items definition
                     let resolvedItems = await resolveSchema(property["items"]);
                     schema.definitions = {...schema.definitions, ...resolvedItems.definitions};

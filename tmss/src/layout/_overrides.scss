@@ -180,3 +180,27 @@
     border: none;
 }
 
+.overlay-panel-header {
+    font-size: 14px;
+    font-weight: 600;
+    color: #004B93;
+    text-align: center;
+}
+.td_pre {
+    white-space: pre;
+}
+.p-ingest-grid{
+    position: absolute;
+    right: 80px;
+}
+.capitalize {
+    text-transform: capitalize;
+} 
+.p-growl {
+    z-index: 3000 !important;
+}
+.data-product {
+    label {
+        display: block;
+    }
+}
