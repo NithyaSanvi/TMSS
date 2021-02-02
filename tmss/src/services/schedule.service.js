@@ -311,11 +311,11 @@ const ScheduleService = {
             if (loadTemplate) {
                 const ingest = scheduletasklist.find(task => task.template.type_value === 'ingest' && task.tasktype.toLowerCase() === 'draft');
                 const promises = [];
-                ingest.produced_by_ids.map(id => promises.push(this.getTaskRelation(id)));
+                ingest.produced_by_ids.forEach(id => promises.push(this.getTaskRelation(id)));
                 const response = await Promise.all(promises);
-                response.map(producer => {
+                response.forEach(producer => {
                     const tasks = scheduletasklist.filter(task => producer.producer_id  === task.id);
-                    tasks.map(task => {
+                    tasks.forEach(task => {
                        task.canIngest = true;
                     });
                 });
@@ -436,6 +436,15 @@ const ScheduleService = {
     getSchedulingConstraintTemplate: async function(id){
         try {
             const response = await axios.get(`/api/scheduling_constraints_template/${id}`);
+            return response.data;
+        }   catch(error) {
+            console.error(error);
+            return null;
+        };
+    },
+    getSchedulingUnitTemplate: async function(id){
+        try {
+            const response = await axios.get(`/api/scheduling_unit_template/${id}`);
             return response.data;
         }   catch(error) {
             console.error(error);
@@ -592,15 +601,15 @@ const ScheduleService = {
           //  return response.data.results;
           return [{
             value: 'Dutch'
-        },{
-            value: 'International'
-        },{
-            value: 'Core'
-        },{
-            value: 'Remote'
-        },{
-            value: 'Superterp'
-        }]
+            },{
+                value: 'International'
+            },{
+                value: 'Core'
+            },{
+                value: 'Remote'
+            },{
+                value: 'Superterp'
+            }]
         }   catch(error) {
             console.error(error);
             return [];
