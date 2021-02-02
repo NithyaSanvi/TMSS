@@ -4,29 +4,7 @@ import TaskService from './task.service';
 import moment from 'moment';
 import DataProductService from './data.product.service';
 
-axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
-
 const ScheduleService = { 
-    getQASchedulingUnitProcess: async function (){
-        let res = [];
-        await axios.get('/workflow_api/scheduling_unit_flow/qa_scheduling_unit_process/')
-        .then(response => {
-            res= response.data.results; 
-        }).catch(function(error) {
-            console.error('[schedule.services.getQASchedulingUnitProcess]',error);
-        });
-        return res;
-    },
-    getQASchedulingUnitTask: async function (){
-        let res = [];
-        await axios.get('/workflow_api/scheduling_unit_flow/qa_scheduling_unit_task/')
-        .then(response => {
-            res= response.data.results; 
-        }).catch(function(error) {
-            console.error('[schedule.services.getQASchedulingUnitTask]',error);
-        });
-        return res;
-    },
     getSchedulingUnitDraft: async function (){
         let res = [];
         try {
@@ -74,14 +52,18 @@ const ScheduleService = {
             schedulingUnit = response.data;
             if (schedulingUnit) {
                 if (type === "blueprint") {
-                    const schedulingUnitDraft = (await axios.get(`/api/scheduling_unit_draft/${id}/`)).data;
+                    const schedulingUnitDraft = (await axios.get(`/api/scheduling_unit_draft/${schedulingUnit.draft_id}/`)).data;
                     schedulingUnit.draft_object = schedulingUnitDraft;
                     schedulingUnit.scheduling_set_id = schedulingUnitDraft.scheduling_set_id;
                     schedulingUnit.scheduling_constraints_doc = schedulingUnitDraft.scheduling_constraints_doc;
+                }   else {
+                    // Fetch all blueprints data associated with draft to display the name
+                    schedulingUnit.blueprintList = (await this.getBlueprintsByschedulingUnitId(schedulingUnit.id)).data.results;
                 }
                 const schedulingSet = (await axios.get(`/api/scheduling_set/${schedulingUnit.scheduling_set_id}`)).data;
                 schedulingUnit.scheduling_set_object = schedulingSet;
                 schedulingUnit.scheduling_set = schedulingSet.url;
+                
             }
         }   catch(error) {
             console.error('[schedule.services.getSchedulingUnitExtended]',error);
@@ -153,6 +135,15 @@ const ScheduleService = {
         }   catch(error){
             console.error('[schedule.services.getSchedulingUnitDraftById]',error);
             return null;
+        }
+    },
+    getSubtaskOutputDataproduct: async function(id){
+        try {
+          const url = `/api/subtask/${id}/output_dataproducts/`;
+          const response = await axios.get(url);
+          return response.data;
+        } catch (error) {
+          console.error('[data.product.getSubtaskOutputDataproduct]',error);
         }
     },
     getTaskBlueprintById: async function(id, loadTemplate, loadSubtasks, loadSubtaskTemplate){

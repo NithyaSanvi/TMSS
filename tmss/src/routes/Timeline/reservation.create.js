@@ -28,7 +28,6 @@ export class ReservationCreate extends Component {
             redirect: null, 
             paramsSchema: null,                     // JSON Schema to be generated from strategy template to pass to JSON editor 
             dialog: { header: '', detail: ''},      // Dialog properties
-             
             touched: {
                 name: '',
             },
@@ -66,6 +65,7 @@ export class ReservationCreate extends Component {
     async componentDidMount() {
         await this.initReservation();
     }
+    
     /**
      * Initialized the reservation template
      */
@@ -278,7 +278,7 @@ export class ReservationCreate extends Component {
             <React.Fragment>
                 <Growl ref={(el) => this.growl = el} />
                 <PageHeader location={this.props.location} title={'Reservation - Add'} 
-                           actions={[{icon: 'fa-window-close',link: this.props.history.goBack,title:'Click to close Reservation creation', props : { pathname: `/su/timelineview`}}]}/>
+                           actions={[{icon: 'fa-window-close' ,title:'Click to close Reservation creation', props : { pathname: `/su/timelineview/reservation/reservation/list`}}]}/>
                 { this.state.isLoading ? <AppLoader /> :
                 <> 
                     <div>
@@ -389,7 +389,7 @@ export class ReservationCreate extends Component {
                     <Dialog header={this.state.dialog.header} visible={this.state.dialogVisible} style={{width: '25vw'}} inputId="confirm_dialog"
                             modal={true}  onHide={() => {this.setState({dialogVisible: false})}} 
                             footer={<div>
-                                <Button key="back" onClick={() => {this.setState({dialogVisible: false, redirect: `/su/timelineview`});}} label="No" />
+                                <Button key="back" onClick={() => {this.setState({dialogVisible: false, redirect: `/su/timelineview/reservation/reservation/list`});}} label="No" />
                                 <Button key="submit" type="primary" onClick={this.reset} label="Yes" />
                                 </div>
                             } >

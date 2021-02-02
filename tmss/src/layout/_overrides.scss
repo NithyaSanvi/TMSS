@@ -30,6 +30,7 @@
 }
 .tmss-table {
  overflow:auto;
+ min-height: 400px;
   // since calendar getting inserted to table, because of above overflow, not getting visible
    // so its hacky one based on calendar height
   // padding-top: 350px;

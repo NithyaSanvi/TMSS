@@ -47,7 +47,7 @@ export default ({ tasks, schedulingUnit }) => {
                 </div>
             </div>
             <div className="p-grid" data-testid="confirm_dialog">
-                <Dialog header={'ConfirmationHeader'} visible={showConfirmDialog} style={{ width: '40vw' }} inputId="confirm_dialog"
+                <Dialog header={'Confirm'} visible={showConfirmDialog} style={{ width: '40vw' }} inputId="confirm_dialog"
                     modal={true} onHide={() => setShowConfirmDialog(false)}
                     footer={<div>
                         <Button key="back" onClick={() => setShowConfirmDialog(false)} label="Yes" />
@@ -56,7 +56,7 @@ export default ({ tasks, schedulingUnit }) => {
                     } >
                     <div className="p-grid">
                         <div className="col-lg-2 col-md-2 col-sm-2" style={{ margin: 'auto' }}>
-                            <i className="pi pi-check-circle pi-large pi-success"></i>
+                            <i className="pi pi-large pi-question-circle pi-warning"></i>
                         </div>
                         <div className="col-lg-10 col-md-10 col-sm-10">
                             Are you sure you want to delete dataproducts for scheduling unit {schedulingUnit.id} - {schedulingUnit.name} - {schedulingUnit.description} with status {schedulingUnit.status} 
@@ -67,4 +67,3 @@ export default ({ tasks, schedulingUnit }) => {
         </div>
     )
 }
-const ConfirmationHeader = <>Request confirmation for data deletion <i className="fa fa-question"></i></>;

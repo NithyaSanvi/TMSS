@@ -70,8 +70,9 @@ export class TimelineView extends Component {
         this.reservations = [];
         this.reservationReasons = [];
         this.optionsMenu = React.createRef();
-        this.menuOptions = [ {label:'Add Reservation', icon: "fa fa-", command: () => {this.selectOptionMenu('Add Reservation')}},
-                              ];
+        this.menuOptions = [ {label:'Add Reservation', icon: "fa fa-", command: () => {this.selectOptionMenu('Add Reservation')}}, 
+                            {label:'Reservation List', icon: "fa fa-", command: () => {this.selectOptionMenu('Reservation List')}},
+                           ];
         
         this.showOptionMenu = this.showOptionMenu.bind(this);
         this.selectOptionMenu = this.selectOptionMenu.bind(this);
@@ -633,7 +634,7 @@ export class TimelineView extends Component {
             items = this.addStationReservations(items, this.state.currentStartTime, this.state.currentEndTime);
         }
         if (this.timeline) {
-            this.timeline.updateTimeline({group: this.state.stationView?this.allStationsGroup:_.orderBy(group,["parent", "start"], ['asc', 'asc']), items: items});
+            this.timeline.updateTimeline({group: this.state.stationView?this.allStationsGroup:_.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']), items: items});
         }
     }
 
@@ -648,6 +649,10 @@ export class TimelineView extends Component {
 
     selectOptionMenu(menuName) {
         switch(menuName) {
+            case 'Reservation List': {
+                this.setState({redirect: `/su/timelineview/reservation/reservation/list`});
+                break;
+            }
             case 'Add Reservation': {
                 this.setState({redirect: `/su/timelineview/reservation/create`});
                 break;
@@ -675,11 +680,11 @@ export class TimelineView extends Component {
                 <TieredMenu className="app-header-menu" model={this.menuOptions} popup ref={el => this.optionsMenu = el} />
                 <PageHeader location={this.props.location} title={'Scheduling Units - Timeline View'} 
                     actions={[
-                        {icon:'fa-bars',title: '', type:'button',
-                                         actOn:'mouseOver', props : { callback: this.showOptionMenu},
-                                        },
-                        {icon: 'fa-calendar-alt',title:'Week View', props : { pathname: `/su/timelineview/week`}},
-                    ]}/>
+                        {icon:'fa-bars',title: '', type:'button', actOn:'mouseOver', props : { callback: this.showOptionMenu},},
+                        {icon: 'fa-calendar-alt',title:'Week View', props : { pathname: `/su/timelineview/week`}}
+                    ]}
+                />
+                                        
                 { this.state.isLoading ? <AppLoader /> :
                         <div className="p-grid">
                             {/* SU List Panel */}

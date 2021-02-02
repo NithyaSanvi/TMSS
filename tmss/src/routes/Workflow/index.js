@@ -15,26 +15,14 @@ import DataProduct from './unpin.data';
 import UnitConverter from '../../utils/unit.converter';
 
 
-//
-const RedirectionMap = {
-    'wait scheduled': 1,
-    'wait processed': 2,
-    'qa reporting to': 3,
-    'qa reporting sos':4,
-    'pi verification':5,
-    'decide acceptance':6,
-    'ingesting':7
- };
-
 //Workflow Page Title 
-const pageTitle = ['Scheduled','Processing Done','QA Reporting (TO)', 'QA Reporting (SDCO)', 'PI Verification', 'Decide Acceptance','Ingesting'];
+const pageTitle = ['Scheduled','Processing Done','QA Reporting (TO)', 'QA Reporting (SDCO)', 'PI Verification', 'Decide Acceptance','Ingest Done','Unpin Data'];
 
 export default (props) => {
     let growl;
-    const [disableNextButton, setDisableNextButton] = useState(false);
     const [state, setState] = useState({});
     const [tasks, setTasks] = useState([]);
-    const [currentStep, setCurrentStep] = useState();
+    const [currentStep, setCurrentStep] = useState(1);
     const [schedulingUnit, setSchedulingUnit] = useState();
     const [ingestTask, setInjestTask] = useState({});
     useEffect(() => {
@@ -44,12 +32,7 @@ export default (props) => {
         .then(schedulingUnit => {
             setSchedulingUnit(schedulingUnit);
         })
-        const promises = [
-            ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id),
-            ScheduleService.getTaskType(),
-            ScheduleService.getQASchedulingUnitProcess(),
-            ScheduleService.getQASchedulingUnitTask()
-        ]
+        const promises = [ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id), ScheduleService.getTaskType()]
         Promise.all(promises).then(responses => {
             setSchedulingUnit(responses[0]);
             ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false, false, true).then(response => {
@@ -77,45 +60,12 @@ export default (props) => {
                     if (task.dataSizeNotDeleted) {
                         task.dataSizeNotDeleted = UnitConverter.getUIResourceUnit('bytes', (task.dataSizeNotDeleted));
                     }
-            
-                    const suQAProcess = responses[2].find(process => process.su === parseInt(props.match.params.id));
-                    const suQATask = responses[3].find(task => task.process === suQAProcess.id);
-                    if (suQATask.status === 'NEW') {
-                        setCurrentStep(RedirectionMap[suQATask.flow_task.toLowerCase()]);
-                    } else {
-                        setCurrentStep(3);
-                    }
-                    if (suQATask.status.toLowerCase() === 'done' || suQATask.status.toLowerCase() === 'finished') {
-                        setDisableNextButton(true);
-                        setCurrentStep(8);
-                    }
-                    setSchedulingUnit(responses[0]);
-                    ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false).then(response => {
-                        setInjestTask(response.find(task => task.template.type_value==='observation'));
-                    });
-                    setTasks(response);
-                    setInjestTask(response.find(task => task.template.type_value==='observation'));
                 });
+                setTasks(response);
+                setInjestTask(response.find(task => task.template.type_value==='observation'));
             });
         });
 }, []);
-
-    const getStatusUpdate = () => {
-        const promises = [
-            ScheduleService.getQASchedulingUnitProcess(),
-            ScheduleService.getQASchedulingUnitTask()
-        ]
-        Promise.all(promises).then(responses => {
-            const suQAProcess = responses[0].find(process => process.su === parseInt(props.match.params.id));
-            const suQATask = responses[1].find(task => task.process === suQAProcess.id);
-            setCurrentStep(RedirectionMap[suQATask.flow_task.toLowerCase()]);
-            if (suQATask.status.toLowerCase() === 'done' || suQATask.status.toLowerCase() === 'finished') {
-                setDisableNextButton(true);
-                setCurrentStep(8);
-            }
-        });
-    }
-
 
     const clearLocalStorage = () => {
         localStorage.removeItem('pi_comment');
@@ -125,17 +75,17 @@ export default (props) => {
     //Pages changes step by step
     const onNext = (content) => {
         setState({...state, ...content});
-        getStatusUpdate();
+        setCurrentStep(currentStep + 1);  
     };
 
     return (
         <>
             <Growl ref={(el) => growl = el} />
-            {currentStep && <PageHeader location={props.location} title={`${pageTitle[currentStep - 1]}`} actions={[{ icon: 'fa-window-close', link: props.history.goBack, title: 'Click to Close Workflow', props: { pathname: '/schedulingunit/1/workflow' } }]} />}
+            <PageHeader location={props.location} title={`${pageTitle[currentStep - 1]}`} actions={[{ icon: 'fa-window-close', link: props.history.goBack, title: 'Click to Close Workflow', props: { pathname: '/schedulingunit/1/workflow' } }]} />
             {schedulingUnit &&
                 <>
                     <div className="p-fluid">
-                        {currentStep && <div className="p-field p-grid">
+                        <div className="p-field p-grid">
                             <label htmlFor="suName" className="col-lg-2 col-md-2 col-sm-12">Scheduling Unit</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
                                 <Link to={{ pathname: `/schedulingunit/view/blueprint/${schedulingUnit.id}` }}>{schedulingUnit.name}</Link>
@@ -157,10 +107,10 @@ export default (props) => {
                                     <a href=" https://proxy.lofar.eu/lofmonitor/" target="_blank">Station Monitor</a>
                                 </label>
                             </div>
-                        </div>}
-                        {currentStep === 1 && <Scheduled onNext={onNext} {...state} schedulingUnit={schedulingUnit} /*disableNextButton={disableNextButton}*/ />}
-                        {currentStep === 2 && <ProcessingDone onNext={onNext} {...state} schedulingUnit={schedulingUnit}  />}
-                        {currentStep === 3 && <QAreporting onNext={onNext} id={props.match.params.id} />}
+                        </div>
+                        {currentStep === 1 && <Scheduled onNext={onNext} {...state} schedulingUnit={schedulingUnit} />}
+                        {currentStep === 2 && <ProcessingDone onNext={onNext} {...state}/>}
+                        {currentStep === 3 && <QAreporting onNext={onNext}/>}
                         {currentStep === 4 && <QAsos onNext={onNext} {...state} />}
                         {currentStep === 5 && <PIverification onNext={onNext} {...state} />}
                         {currentStep === 6 && <DecideAcceptance onNext={onNext} {...state} />}

@@ -37,6 +37,7 @@ import _ from 'lodash';
 
 import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
+import { CustomPageSpinner } from '../../components/CustomPageSpinner';
 
 const DATE_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 const BG_COLOR= '#f878788f';
@@ -793,12 +794,12 @@ export class SchedulingSetCreate extends Component {
       }
 
       /**
-       * Update the Daily column value from external component
+       * Update the Daily/Station column value from external component
        * @param {*} rowIndex 
        * @param {*} field 
        * @param {*} value 
        */
-    async updateDailyCell(rowIndex, field, value) {
+    async updateCell(rowIndex, field, value) {
         let row = this.state.rowData[rowIndex];
         row[field] = value;
         let tmpRowData =this.state.rowData;
@@ -806,6 +807,12 @@ export class SchedulingSetCreate extends Component {
         await this.setState({
            rowData: tmpRowData
         });
+        if(field !== 'daily') {
+            this.state.gridApi.stopEditing();
+            var focusedCell = this.state.gridColumnApi.getColumn(field)
+            this.state.gridApi.ensureColumnVisible(focusedCell);
+            this.state.gridApi.setFocusedCell(rowIndex, focusedCell);
+        }
     }
  
     async getStationGrops(schedulingUnit){
@@ -1390,7 +1397,8 @@ export class SchedulingSetCreate extends Component {
         let existingSUCount = 0;
         try{
             this.setState({
-                saveDialogVisible: false
+                saveDialogVisible: false,
+                showSpinner: true
             })
          
             let newSU = this.state.schedulingUnit;
@@ -1592,7 +1600,7 @@ export class SchedulingSetCreate extends Component {
             
             if  ((newSUCount+existingSUCount)>0){
                 const dialog = {header: 'Success', detail: '['+newSUCount+'] Scheduling Units are created & ['+existingSUCount+'] Scheduling Units are updated successfully.'};
-                this.setState({  dialogVisible: true, dialog: dialog, isAGLoading: true, copyHeader: false, rowData: []});
+                this.setState({  showSpinner: false, dialogVisible: true, dialog: dialog, isAGLoading: true, copyHeader: false, rowData: []});
             }  else  {
                 this.growl.show({severity: 'error', summary: 'Warning', detail: 'No Scheduling Units create/update '});
             }
@@ -1918,6 +1926,11 @@ export class SchedulingSetCreate extends Component {
                                         components={this.state.components}
                                         modules={this.state.modules}        
                                         enableRangeSelection={true}
+                                        rowSelection={this.state.rowSelection}
+                                        stopEditingWhenGridLosesFocus={true}
+                                        undoRedoCellEditing={true}
+                                        undoRedoCellEditingLimit={20}
+                                        exportDataAsCsv={true}
                                     >
                                     </AgGridReact>
                                 </div>
@@ -1962,7 +1975,7 @@ export class SchedulingSetCreate extends Component {
                     header={'Save Scheduling Unit(s)'} message={' Some of the Scheduling Unit(s) has invalid data, Do you want to ignore and save valid Scheduling Unit(s) only?'} 
                     content={this.showDialogContent} onClose={this.close} onCancel={this.close} onSubmit={this.saveSU}>
                 </CustomDialog>
- 
+                <CustomPageSpinner visible={this.state.showSpinner} />
             </React.Fragment>
         );
     }

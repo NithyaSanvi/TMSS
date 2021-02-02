@@ -2,6 +2,7 @@ import { InputText } from 'primereact/inputtext';
 import React, {Component} from 'react';
 import { Redirect } from 'react-router-dom';
 import Auth from '../authenticate/auth';
+import { CustomPageSpinner } from '../components/CustomPageSpinner';
 
 /**
  * Component to authenticate users in the application.
@@ -49,12 +50,13 @@ export class Login extends Component {
      * If authenticated, callback parent component function.
      */
     async login() {
+        this.setState({showSpinner: true})
         const loggedIn = await Auth.login(this.state.username, this.state.password);
         if (loggedIn) {
-            this.setState({error: false});
+            this.setState({error: false, showSpinner: false});
             this.props.onLogin();
         }   else {
-            this.setState({error: true});
+            this.setState({error: true, showSpinner: false});
         }
     }
 
@@ -85,9 +87,9 @@ export class Login extends Component {
                                                 <h4>Login</h4>
                                                 <div className="form-field">
                                                     <span className="p-float-label">
-                                                        <InputText id="inputtext" className={`${this.state.errors.username?"input-error ":""} form-control`} 
+                                                        <InputText id="" className={`${this.state.errors.username?"input-error ":""} form-control`} 
                                                                     value={this.state.username} onChange={(e) => this.setCredentials('username', e.target.value)} />
-                                                        <label htmlFor="inputtext"><i className="fa fa-user"></i>Enter Username</label>
+                                                        <label htmlFor="username"><i className="fa fa-user"></i>Enter Username</label>
                                                     </span>
                                                     <label className={this.state.errors.username?"error":""}>
                                                         {this.state.errors.username?this.state.errors.username : ""}
@@ -95,9 +97,9 @@ export class Login extends Component {
                                                 </div>
                                                 <div className="form-field">
                                                     <span className="p-float-label">
-                                                        <InputText id="inputtext" className={`${this.state.errors.password?"input-error ":""} form-control`} 
+                                                        <InputText id="password" className={`${this.state.errors.password?"input-error ":""} form-control`} 
                                                                 type="password" value={this.state.password} onChange={(e) => this.setCredentials('password', e.target.value )} />
-                                                        <label htmlFor="inputtext"><i className="fa fa-key"></i>Enter Password</label>
+                                                        <label htmlFor="password"><i className="fa fa-key"></i>Enter Password</label>
                                                     </span>
                                                     <label className={this.state.errors.password?"error":""}>
                                                         {this.state.errors.password?this.state.errors.password : ""}
@@ -127,6 +129,7 @@ export class Login extends Component {
                     </div>
                 </div>
             </div>
+            <CustomPageSpinner visible={this.state.showSpinner} />
             </>
         );
     }

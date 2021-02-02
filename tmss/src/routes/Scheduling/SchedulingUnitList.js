@@ -12,30 +12,22 @@ class SchedulingUnitList extends Component{
     constructor(props){
        super(props);
        this.defaultcolumns = {
+        status:"Status",
         type:{
             name:"Type",
             filter:"select"
-        },
-        name:"Name",
-        description:"Description",
-        project:"Project",
-        created_at:{
-            name:"Created At",
-            filter: "date"
-        },
-        updated_at:{
-            name:"Updated At",
-            filter: "date"
         },
         requirements_template_id:{
             name: "Template",
             filter: "select"
         },
+        project:"Project",
+        name:"Name",
         start_time:"Start Time",
         stop_time:"End time",
         duration:"Duration (HH:mm:ss)",
-        status:"Status"
-        };
+       
+       };
         if (props.hideProjectColumn) {
             delete this.defaultcolumns['project'];
         }
@@ -48,12 +40,15 @@ class SchedulingUnitList extends Component{
             defaultcolumns: [this.defaultcolumns],
             optionalcolumns:  [{
                 actionpath:"actionpath",
+                id:"Scheduling unit ID",
+                suSet:"Scheduling set",
             }],
             columnclassname: [{
                 "Template":"filter-input-50",
                 "Duration (HH:mm:ss)":"filter-input-75",
                 "Type": "filter-input-75",
-                "Status":"filter-input-100"
+                "Status":"filter-input-100",
+                "Scheduling unit ID":"filter-input-50"
             }],
             defaultSortColumn: [{id: "Name", desc: false}],
         }
@@ -90,8 +85,10 @@ class SchedulingUnitList extends Component{
                         blueP['actionpath'] ='/schedulingunit/view/blueprint/'+blueP.id;
                         blueP['created_at'] = moment(blueP['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                         blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                        blueP.id = blueP.id;
                         blueP.project = project.name;
                         blueP.canSelect = false;
+                       // blueP.do_cancel = blueP.do_cancel;
                         // blueP.links = ['Project'];
                         // blueP.linksURL = {
                         //     'Project': `/project/view/${project.name}`
@@ -106,25 +103,28 @@ class SchedulingUnitList extends Component{
                     scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                     scheduleunit.project = project.name;
                     scheduleunit.canSelect = true;
+                    scheduleunit.id = scheduleunit.id;
+                    scheduleunit.suSet = suSet.name;
                     // scheduleunit.links = ['Project'];
                     // scheduleunit.linksURL = {
                     //     'Project': `/project/view/${project.name}`
                     // }
                     output.push(scheduleunit);
                 }
-                const defaultColumns = this.defaultcolumns;
+               // const defaultColumns = this.defaultcolumns;
+                let optionalColumns = this.state.optionalcolumns[0];
                 let columnclassname = this.state.columnclassname[0];
                 output.map(su => {
                     su.taskDetails = su.type==="Draft"?su.task_drafts:su.task_blueprints;
-                    const targetObserv = su.taskDetails.find(task => task.specifications_template.type_value==='observation' && task.specifications_doc.station_groups);
+                    const targetObserv = su.taskDetails.find(task => task.specifications_template.type_value==='observation' && task.specifications_doc.SAPs);
                     // Constructing targets in single string to make it clear display 
                     targetObserv.specifications_doc.SAPs.map((target, index) => {
                         su[`target${index}angle1`] = UnitConverter.getAngleInput(target.digital_pointing.angle1);
                         su[`target${index}angle2`] = UnitConverter.getAngleInput(target.digital_pointing.angle2,true);
                         su[`target${index}referenceframe`] = target.digital_pointing.direction_type;
-                        defaultColumns[`target${index}angle1`] = `Target ${index + 1} - Angle 1`;
-                        defaultColumns[`target${index}angle2`] = `Target ${index + 1} - Angle 2`;
-                        defaultColumns[`target${index}referenceframe`] = {
+                        optionalColumns[`target${index}angle1`] = `Target ${index + 1} - Angle 1`;
+                        optionalColumns[`target${index}angle2`] = `Target ${index + 1} - Angle 2`;
+                        optionalColumns[`target${index}referenceframe`] = {
                             name: `Target ${index + 1} - Reference Frame`,
                             filter: "select"
                         };
@@ -135,7 +135,7 @@ class SchedulingUnitList extends Component{
                     return su;
                 });
                 this.setState({
-                    scheduleunit: output, isLoading: false, defaultColumns: defaultColumns,
+                    scheduleunit: output, isLoading: false, optionalColumns: [optionalColumns],
                     columnclassname: [columnclassname]
                 });
                 this.selectedRows = [];

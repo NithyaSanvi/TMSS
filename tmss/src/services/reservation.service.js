@@ -1,7 +1,5 @@
 const axios = require('axios');
 
-axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
-
 const ReservationService = {
     getReservationTemplates: async function () {
         try {
@@ -20,7 +18,16 @@ const ReservationService = {
             console.error(error);
             return null;
           }
-    }  
+    },
+    getReservations: async function () {
+        try {
+            const url = `/api/reservation`;
+            const response = await axios.get(url);
+            return response.data.results;
+        } catch (error) {
+            console.error(error);
+        }
+    },
 }
 
 export default ReservationService;

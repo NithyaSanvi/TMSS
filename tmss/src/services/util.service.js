@@ -1,6 +1,5 @@
 const axios = require('axios');
 
-axios.defaults.headers.common['Authorization'] = 'Basic dGVzdDp0ZXN0';
 /**
  * Utility Service to fetch miscellaneous data from the server
  */
