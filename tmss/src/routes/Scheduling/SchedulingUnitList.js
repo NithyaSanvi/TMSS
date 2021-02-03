@@ -214,20 +214,22 @@ class SchedulingUnitList extends Component{
                         su['target_observation_sap'] = 0;
                     }
                     // Constructing targets in single string to make it clear display 
-                    targetObserv.specifications_doc.SAPs.map((target, index) => {
-                        su[`target${index}angle1`] = UnitConverter.getAngleInput(target.digital_pointing.angle1);
-                        su[`target${index}angle2`] = UnitConverter.getAngleInput(target.digital_pointing.angle2,true);
-                        su[`target${index}referenceframe`] = target.digital_pointing.direction_type;
-                        optionalColumns[`target${index}angle1`] = `Target ${index + 1} - Angle 1`;
-                        optionalColumns[`target${index}angle2`] = `Target ${index + 1} - Angle 2`;
-                        optionalColumns[`target${index}referenceframe`] = {
-                            name: `Target ${index + 1} - Reference Frame`,
-                            filter: "select"
-                        };
-                        columnclassname[`Target ${index + 1} - Angle 1`] = "filter-input-75";
-                        columnclassname[`Target ${index + 1} - Angle 2`] = "filter-input-75";
-                        return target;
-                    });
+                    if (targetObserv && targetObserv.specifications_doc) {
+                        targetObserv.specifications_doc.SAPs.map((target, index) => {
+                            su[`target${index}angle1`] = UnitConverter.getAngleInput(target.digital_pointing.angle1);
+                            su[`target${index}angle2`] = UnitConverter.getAngleInput(target.digital_pointing.angle2,true);
+                            su[`target${index}referenceframe`] = target.digital_pointing.direction_type;
+                            optionalColumns[`target${index}angle1`] = `Target ${index + 1} - Angle 1`;
+                            optionalColumns[`target${index}angle2`] = `Target ${index + 1} - Angle 2`;
+                            optionalColumns[`target${index}referenceframe`] = {
+                                name: `Target ${index + 1} - Reference Frame`,
+                                filter: "select"
+                            };
+                            columnclassname[`Target ${index + 1} - Angle 1`] = "filter-input-75";
+                            columnclassname[`Target ${index + 1} - Angle 2`] = "filter-input-75";
+                            return target;
+                        });
+                    }
                     return su;
                 });
                 this.setState({
