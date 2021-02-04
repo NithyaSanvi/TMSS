@@ -18,7 +18,6 @@ import { CustomDialog } from '../../layout/components/CustomDialog';
 import { CustomPageSpinner } from '../../components/CustomPageSpinner';
 import { Growl } from 'primereact/components/growl/Growl';
 import Schedulingtaskrelation from './Scheduling.task.relation';
-import UnitConverter from '../../utils/unit.converter';
 import TaskService from '../../services/task.service';
 
 
@@ -38,7 +37,6 @@ class ViewSchedulingUnit extends Component{
             missingStationFieldsErrors: [],
             defaultcolumns: [ {
                 status_logs: "Status Logs",
-                status:"Status",
                 tasktype:{
                     name:"Type",
                     filter:"select"
@@ -47,23 +45,6 @@ class ViewSchedulingUnit extends Component{
                 subTaskID: 'Control ID',
                 name:"Name",
                 description:"Description",
-                start_time:"Start Time",
-                stop_time:"End Time",
-                duration:"Duration (HH:mm:ss)",
-                relative_start_time:"Relative Start Time (HH:mm:ss)",
-                relative_stop_time:"Relative End Time (HH:mm:ss)",
-                noOfOutputProducts: "#Dataproducts",
-                do_cancel:{
-                    name: "Cancelled",
-                    filter: "switch"
-                },
-            }],
-            optionalcolumns:  [{
-                size: "Data size",
-                dataSizeOnDisk: "Data Size on Disk",
-                tags:"Tags",
-                blueprint_draft:"BluePrint / Task Draft link",
-                url:"API URL",
                 created_at:{
                     name: "Created at",
                     filter: "date"
@@ -72,6 +53,21 @@ class ViewSchedulingUnit extends Component{
                     name: "Updated at",
                     filter: "date"
                 },
+                do_cancel:{
+                    name: "Cancelled",
+                    filter: "switch"
+                },
+                start_time:"Start Time",
+                stop_time:"End Time",
+                duration:"Duration (HH:mm:ss)",
+                status:"Status"
+            }],
+            optionalcolumns:  [{
+                relative_start_time:"Relative Start Time (HH:mm:ss)",
+                relative_stop_time:"Relative End Time (HH:mm:ss)",
+                tags:"Tags",
+                blueprint_draft:"BluePrint / Task Draft link",
+                url:"URL",
                 actionpath:"actionpath"
             }],
             columnclassname: [{
@@ -132,10 +128,6 @@ class ViewSchedulingUnit extends Component{
             </button>
         );
     };
-
-    constructTaskForDataProducts = async (tasks) => {
-
-    }
     
     getSchedulingUnitDetails(schedule_type, schedule_id) {
         ScheduleService.getSchedulingUnitExtended(schedule_type, schedule_id)
@@ -148,37 +140,13 @@ class ViewSchedulingUnit extends Component{
                     let tasks = schedulingUnit.task_drafts?(await this.getFormattedTaskDrafts(schedulingUnit)):this.getFormattedTaskBlueprints(schedulingUnit);
                     let ingestGroup = tasks.map(task => ({name: task.name, canIngest: task.canIngest, type_value: task.type_value, id: task.id }));
                     ingestGroup = _.groupBy(_.filter(ingestGroup, 'type_value'), 'type_value');
-                    await Promise.all(tasks.map(async task => {
+                    tasks.map(task => {
                         task.status_logs = task.tasktype === "Blueprint"?this.subtaskComponent(task):"";
                         //Displaying SubTask ID of the 'control' Task
                         const subTaskIds = task.subTasks?task.subTasks.filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1):[];
-                        const promise = [];
-                        subTaskIds.map(subTask => promise.push(ScheduleService.getSubtaskOutputDataproduct(subTask.id)));
-                        const dataProducts = await Promise.all(promise);
-                        task.dataProducts = dataProducts;
-                        task.dataProducts = [];
-                        task.size = 0;
-                        task.dataSizeOnDisk = 0;
-                        task.noOfOutputProducts = 0;
-                        if (dataProducts.length && dataProducts[0].length) {
-                            task.dataProducts = dataProducts[0];
-                            task.noOfOutputProducts = dataProducts[0].length;
-                            dataProducts[0].map(product => {
-                                task.size += product.size;
-                                if (!task.deleted_since) {
-                                    task.dataSizeOnDisk += product.size;
-                                }
-                            });
-                            if (task.size) {
-                                task.size = UnitConverter.getUIResourceUnit('bytes', (task.size));
-                            }
-                            if (task.dataSizeOnDisk) {
-                                task.dataSizeOnDisk = UnitConverter.getUIResourceUnit('bytes', (task.dataSizeOnDisk));
-                            }
-                        }
                         task.subTaskID = subTaskIds.length ? subTaskIds[0].id : ''; 
                         return task;
-                    }));
+                    });
                     const targetObservation = _.find(tasks, (task)=> {return task.template.type_value==='observation' && task.tasktype.toLowerCase()===schedule_type && task.specifications_doc.station_groups});
                     this.setState({
                         scheduleunitId: schedule_id,

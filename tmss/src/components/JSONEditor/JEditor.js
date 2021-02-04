@@ -254,19 +254,18 @@ function Jeditor(props) {
         let newProperty = {
             type: "string",
             title: defProperty.title,
-            description: (defProperty.description + (isDegree?'(Degrees:Minutes:Seconds.MilliSeconds)':'(Hours:Minutes:Seconds.MilliSeconds)')),
-            default: "00:00:00.0000",
+            description: (defProperty.description + (isDegree?'(Degrees:Minutes:Seconds)':'(Hours:Minutes:Seconds)')),
+            default: "00:00:00",
             validationType: isDegree?'angle':'time',
             options: {
                 "grid_columns": 4,
                 "inputAttributes": {
-                    "placeholder": isDegree?"DD:mm:ss.ms":"HH:mm:ss.ms"
+                    "placeholder": isDegree?"DD:mm:ss":"HH:mm:ss"
                 },
                 "cleave": {
-                    numericOnly: true,
-                    blocks: [2, 2, 2, 4],
-                    delimiters: [':', ':', '.'],
-                    delimiterLazyShow: true
+                    date: true,
+                    datePattern: ['HH','mm','ss'],
+                    delimiter: ':'
                 }
             }
         }
@@ -479,9 +478,7 @@ function Jeditor(props) {
      */
     function validateTime(prpOutput) {
         const splitOutput = prpOutput.split(':');
-        const isMilliSecondsPresent = prpOutput.split('.');
-        if (splitOutput.length < 3 || isMilliSecondsPresent.length == 1 || isMilliSecondsPresent[1].length !== 4) {
-        // if (splitOutput.length < 3) {
+        if (splitOutput.length < 3) {
             return false;
         }   else {
             if (parseInt(splitOutput[0]) > 23 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59) {
@@ -501,9 +498,7 @@ function Jeditor(props) {
      */
     function validateAngle(prpOutput) {
         const splitOutput = prpOutput.split(':');
-        const isMilliSecondsPresent = prpOutput.split('.');
-        if (splitOutput.length < 3 || isMilliSecondsPresent.length == 1 || isMilliSecondsPresent[1].length !== 4) {
-        //if (splitOutput.length < 3) {
+        if (splitOutput.length < 3) {
             return false;
         }   else {
             if (parseInt(splitOutput[0]) > 90 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59) {

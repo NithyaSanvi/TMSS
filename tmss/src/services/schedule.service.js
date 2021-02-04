@@ -5,6 +5,26 @@ import moment from 'moment';
 import DataProductService from './data.product.service';
 
 const ScheduleService = { 
+    getQASchedulingUnitProcess: async function (){
+        let res = [];
+        await axios.get('/workflow_api/scheduling_unit_flow/qa_scheduling_unit_process/')
+        .then(response => {
+            res= response.data.results; 
+        }).catch(function(error) {
+            console.error('[schedule.services.getQASchedulingUnitProcess]',error);
+        });
+        return res;
+    },
+    getQASchedulingUnitTask: async function (){
+        let res = [];
+        await axios.get('/workflow_api/scheduling_unit_flow/qa_scheduling_unit_task/')
+        .then(response => {
+            res= response.data.results; 
+        }).catch(function(error) {
+            console.error('[schedule.services.getQASchedulingUnitTask]',error);
+        });
+        return res;
+    },
     getSchedulingUnitDraft: async function (){
         let res = [];
         try {
@@ -135,15 +155,6 @@ const ScheduleService = {
         }   catch(error){
             console.error('[schedule.services.getSchedulingUnitDraftById]',error);
             return null;
-        }
-    },
-    getSubtaskOutputDataproduct: async function(id){
-        try {
-          const url = `/api/subtask/${id}/output_dataproducts/`;
-          const response = await axios.get(url);
-          return response.data;
-        } catch (error) {
-          console.error('[data.product.getSubtaskOutputDataproduct]',error);
         }
     },
     getTaskBlueprintById: async function(id, loadTemplate, loadSubtasks, loadSubtaskTemplate){
@@ -311,11 +322,11 @@ const ScheduleService = {
             if (loadTemplate) {
                 const ingest = scheduletasklist.find(task => task.template.type_value === 'ingest' && task.tasktype.toLowerCase() === 'draft');
                 const promises = [];
-                ingest.produced_by_ids.forEach(id => promises.push(this.getTaskRelation(id)));
+                ingest.produced_by_ids.map(id => promises.push(this.getTaskRelation(id)));
                 const response = await Promise.all(promises);
-                response.forEach(producer => {
+                response.map(producer => {
                     const tasks = scheduletasklist.filter(task => producer.producer_id  === task.id);
-                    tasks.forEach(task => {
+                    tasks.map(task => {
                        task.canIngest = true;
                     });
                 });
@@ -436,15 +447,6 @@ const ScheduleService = {
     getSchedulingConstraintTemplate: async function(id){
         try {
             const response = await axios.get(`/api/scheduling_constraints_template/${id}`);
-            return response.data;
-        }   catch(error) {
-            console.error(error);
-            return null;
-        };
-    },
-    getSchedulingUnitTemplate: async function(id){
-        try {
-            const response = await axios.get(`/api/scheduling_unit_template/${id}`);
             return response.data;
         }   catch(error) {
             console.error(error);
@@ -601,15 +603,15 @@ const ScheduleService = {
           //  return response.data.results;
           return [{
             value: 'Dutch'
-            },{
-                value: 'International'
-            },{
-                value: 'Core'
-            },{
-                value: 'Remote'
-            },{
-                value: 'Superterp'
-            }]
+        },{
+            value: 'International'
+        },{
+            value: 'Core'
+        },{
+            value: 'Remote'
+        },{
+            value: 'Superterp'
+        }]
         }   catch(error) {
             console.error(error);
             return [];

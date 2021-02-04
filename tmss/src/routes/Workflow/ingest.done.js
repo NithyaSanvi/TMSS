@@ -34,10 +34,6 @@ class IngestDone extends Component {
                             <label className="col-sm-10 " >
                                 <a href="http://lexar003.control.lofar:9632/" target="_blank">View Ingest Monitoring &nbsp;<span class="fas fa-desktop"></span></a>
                             </label>
-                                
-                            {/* <div className="col-lg-3 col-md-3 col-sm-12">
-                                <Link to={{ pathname: `http://lexar003.control.lofar:9632/` }}> View Ingest Monitoring &nbsp;<span class="fas fa-desktop"></span></Link>
-                            </div> */}
                         </div>
                         <div className="p-grid p-justify-start">
                         <div className="p-col-1">
