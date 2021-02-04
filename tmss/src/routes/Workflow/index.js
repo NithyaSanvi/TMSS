@@ -12,6 +12,7 @@ import DecideAcceptance from './decide.acceptance';
 import IngestDone from './ingest.done';
 import _ from 'lodash';
 import DataProduct from './unpin.data';
+import AppLoader from '../../layout/components/AppLoader';
 import UnitConverter from '../../utils/unit.converter';
 
 const RedirectionMap = {
@@ -31,6 +32,7 @@ const pageTitle = ['Scheduled','Processing Done','QA Reporting (TO)', 'QA Report
 export default (props) => {
     let growl;
     const [disableNextButton, setDisableNextButton] = useState(false);
+    const [loader, setLoader] = useState(false);
     const [state, setState] = useState({});
     const [tasks, setTasks] = useState([]);
     const [currentStep, setCurrentStep] = useState();
@@ -38,6 +40,7 @@ export default (props) => {
     const [ingestTask, setInjestTask] = useState({});
     useEffect(() => {
         // Clearing Localstorage on start of the page to load fresh
+        setLoader(true);
         clearLocalStorage();
         ScheduleService.getSchedulingUnitBlueprintById(props.match.params.id)
         .then(schedulingUnit => {
@@ -92,10 +95,11 @@ export default (props) => {
                     });
                     setTasks(response);
                     setInjestTask(response.find(task => task.template.type_value==='observation'));
+                    setLoader(false);   
                 });
             });
         });
-}, []);
+    }, []);
 
     const getStatusUpdate = () => {
         const promises = [
@@ -129,7 +133,8 @@ export default (props) => {
         <>
             <Growl ref={(el) => growl = el} />
             {currentStep && <PageHeader location={props.location} title={`${pageTitle[currentStep - 1]}`} actions={[{ icon: 'fa-window-close', link: props.history.goBack, title: 'Click to Close Workflow', props: { pathname: '/schedulingunit/1/workflow' } }]} />}
-            {schedulingUnit &&
+            {loader && <AppLoader />}
+            {!loader && schedulingUnit &&
                 <>
                     <div className="p-fluid">
                         {currentStep && <div className="p-field p-grid">
