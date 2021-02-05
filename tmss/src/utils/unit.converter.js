@@ -70,7 +70,7 @@ const UnitConverter = {
                 const dd = Math.floor(prpInput * 180 / Math.PI);
                 const mm = Math.floor((degrees-dd) * 60);
                 const ss = +((degrees-dd-(mm/60)) * 3600).toFixed(0);
-                const ssss = round(((degrees - dd - (mm/60) - (ss/3600)) * 3600000), 4)
+                const ssss = round(((degrees - dd - (mm/60) - (ss/3600)) * 3600000), 4);
                 return (dd<10?`0${dd}`:`${dd}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`) + '.' + (ssss<10?`0${ssss}`:`${ssss}`);
             }   else {
                 const hh = Math.floor(degrees/15);
