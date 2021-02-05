@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _, { round } from 'lodash';
 
 const UnitConverter = {
     resourceUnitMap: {'time':{display: 'Hours', conversionFactor: 3600, mode:'decimal', minFractionDigits:0, maxFractionDigits: 2 }, 
@@ -70,12 +70,14 @@ const UnitConverter = {
                 const dd = Math.floor(prpInput * 180 / Math.PI);
                 const mm = Math.floor((degrees-dd) * 60);
                 const ss = +((degrees-dd-(mm/60)) * 3600).toFixed(0);
-                return (dd<10?`0${dd}`:`${dd}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`);
+                const ssss = round(((degrees - dd - (mm/60) - (ss/3600)) * 3600000), 4)
+                return (dd<10?`0${dd}`:`${dd}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`) + '.' + (ssss<10?`0${ssss}`:`${ssss}`);
             }   else {
                 const hh = Math.floor(degrees/15);
                 const mm = Math.floor((degrees - (hh*15))/15 * 60 );
                 const ss = +((degrees -(hh*15)-(mm*15/60))/15 * 3600).toFixed(0);
-                return (hh<10?`0${hh}`:`${hh}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`);
+                const ssss = round(((degrees - (hh*15) - (mm/4) - (ss/240)) *240000),4);
+                return (hh<10?`0${hh}`:`${hh}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`) + ':' + (ssss<10?`0${ssss}`:`${ssss}`);
             }
         }else{
             return "00:00:00";
@@ -89,12 +91,12 @@ const UnitConverter = {
         if(prpOutput){
             const splitOutput = prpOutput.split(':');
             if (isDegree) {
-                return ((splitOutput[0]*1 + splitOutput[1]/60 + splitOutput[2]/3600)*Math.PI/180);
+                return ((splitOutput[0]*1 + splitOutput[1]/60 + splitOutput[2]/3600 + splitOutput[3]/3600000)*Math.PI/180);
             }   else {
-                return ((splitOutput[0]*15 + splitOutput[1]/4  + splitOutput[2]/240)*Math.PI/180);
+                return ((splitOutput[0]*15 + splitOutput[1]/4  + splitOutput[2]/240 + splitOutput[3]/240000)*Math.PI/180);
             }
         }else{
-            return "00:00:00";
+            return "00:00:00.0000";
         }
         
     }
