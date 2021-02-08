@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import { Button } from 'primereact/button';
+import { Link } from 'react-router-dom';
 
-class IngestDone extends Component {
+class Ingesting extends Component {
     constructor(props) {
         super(props);
         this.state = { };
@@ -31,12 +32,8 @@ class IngestDone extends Component {
                             </div>
                             <label htmlFor="ingestMonitoring" className="col-lg-2 col-md-2 col-sm-12">Ingest Monitoring</label>
                             <label className="col-sm-10 " >
-                                <a href="http://lexar003.control.lofar:9632/" target="_blank" rel="noopener noreferrer">View Ingest Monitoring &nbsp;<span class="fas fa-desktop"></span></a>
+                                <a href="http://lexar003.control.lofar:9632/" target="_blank">View Ingest Monitoring &nbsp;<span class="fas fa-desktop"></span></a>
                             </label>
-                                
-                            {/* <div className="col-lg-3 col-md-3 col-sm-12">
-                                <Link to={{ pathname: `http://lexar003.control.lofar:9632/` }}> View Ingest Monitoring &nbsp;<span class="fas fa-desktop"></span></Link>
-                            </div> */}
                         </div>
                         <div className="p-grid p-justify-start">
                         <div className="p-col-1">
@@ -52,4 +49,4 @@ class IngestDone extends Component {
     };
     
 }
-export default IngestDone;
+export default Ingesting

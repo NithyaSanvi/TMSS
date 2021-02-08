@@ -11,7 +11,7 @@ class Scheduled extends Component {
     }
 
     /**
-     * Method will trigger on click save buton
+     * Method will trigger on click Next buton
      * here onNext props coming from parent, where will handle redirection to other page
      */
     Next() {
@@ -48,9 +48,6 @@ class Scheduled extends Component {
                     </div>
 
                     <div className="p-grid p-justify-start">
-                        <div className="p-col-1">
-                            <Button label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
-                        </div>
                         <div className="p-col-1">
                             <Button label="Cancel" className="p-button-danger" icon="pi pi-times" style={{ width: '90px' }} />
                         </div>
