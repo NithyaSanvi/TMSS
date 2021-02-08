@@ -34,6 +34,7 @@ class SchedulingUnitList extends Component{
         this.STATUS_BEFORE_SCHEDULED = ['defining', 'defined', 'schedulable'];  // Statuses before scheduled to get station_group
         this.mainStationGroups = {};
         this.state = {
+            columnOrders: [ "Status", "Type", "id", "Name", "Template ID", "Project", "Start Time", "End time", "Duration (HH:mm:ss)", "actionpath",  "template_description", "priority", "suSet", "description", "station_group", "task_content", "target_observation_sap", "created_at", "updated_at", "target0angle1", "target0angle2", "Target 1 - Reference Frame", "target1angle1", "target1angle2", "Target 2 - Reference Frame"],
             scheduleunit: [],
             paths: [{
                 "View": "/schedulingunit/view",
@@ -214,10 +215,11 @@ class SchedulingUnitList extends Component{
                         blueP['station_group'] = this.getStationGroup(blueP).counts;
                         blueP.project = project.name;
                         blueP.canSelect = false;
-                        // blueP.links = ['Project'];
-                        // blueP.linksURL = {
-                        //     'Project': `/project/view/${project.name}`
-                        // }
+                        blueP.links = ['Project', 'id'];
+                        blueP.linksURL = {
+                            'Project': `/project/view/${project.name}`,
+                            'id': `/schedulingunit/view/blueprint/${blueP.id}`
+                        }
                         return blueP; 
                     });
                     output.push(...blueprintdata);
@@ -229,10 +231,11 @@ class SchedulingUnitList extends Component{
                     scheduleunit.project = project.name;
                     scheduleunit.canSelect = true;
                     scheduleunit.suSet = suSet.name;
-                    // scheduleunit.links = ['Project'];
-                    // scheduleunit.linksURL = {
-                    //     'Project': `/project/view/${project.name}`
-                    // }
+                    scheduleunit.links = ['Project', 'id'];
+                    scheduleunit.linksURL = {
+                        'Project': `/project/view/${project.name}`,
+                        'id': `/schedulingunit/view/draft/${scheduleunit.id}`
+                    }
                     output.push(scheduleunit);
                 }
                // const defaultColumns = this.defaultcolumns;
@@ -327,6 +330,7 @@ class SchedulingUnitList extends Component{
                         tablename="scheduleunit_list"
                         allowRowSelection={this.props.allowRowSelection}
                         onRowSelection = {this.onRowSelection}
+                        columnOrders={this.state.columnOrders}
                     />
                     :<div>No scheduling unit found </div>
                  }  
