@@ -21,16 +21,12 @@ class QAreporting extends Component{
         this.handleChange = this.handleChange.bind(this);
     }
 
-    async componentDidMount() {
-        WorkflowService.getSchedulingUnitTask().then(response => this.setState({ qaSchedulingTasks: response }));
-    }
-
     /**
      * Method will trigger on click next buton
      * here onNext props coming from parent, where will handle redirection to other page
      */
      async Next() {
-        const qaSchedulingUnitTasksId = this.state.qaSchedulingTasks.find(task => task.flow_task.toLowerCase() === 'qa reporting to');
+        const qaSchedulingUnitTasksId = this.props.QASchedulingTask.find(task => task.flow_task.toLowerCase() === 'qa reporting to');
         if (!qaSchedulingUnitTasksId) {
             return
         }
