@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { Button } from 'primereact/button';
-import { Link } from 'react-router-dom';
 
 class IngestDone extends Component {
     constructor(props) {
@@ -32,7 +31,7 @@ class IngestDone extends Component {
                             </div>
                             <label htmlFor="ingestMonitoring" className="col-lg-2 col-md-2 col-sm-12">Ingest Monitoring</label>
                             <label className="col-sm-10 " >
-                                <a href="http://lexar003.control.lofar:9632/" target="_blank">View Ingest Monitoring &nbsp;<span class="fas fa-desktop"></span></a>
+                                <a href="http://lexar003.control.lofar:9632/" target="_blank" rel="noopener noreferrer">View Ingest Monitoring &nbsp;<span class="fas fa-desktop"></span></a>
                             </label>
                                 
                             {/* <div className="col-lg-3 col-md-3 col-sm-12">
