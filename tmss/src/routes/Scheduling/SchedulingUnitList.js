@@ -8,7 +8,6 @@ import _ from 'lodash';
 import ScheduleService from '../../services/schedule.service';
 
 class SchedulingUnitList extends Component{
-     
     constructor(props){
        super(props);
        this.defaultcolumns = {
@@ -34,7 +33,32 @@ class SchedulingUnitList extends Component{
         this.STATUS_BEFORE_SCHEDULED = ['defining', 'defined', 'schedulable'];  // Statuses before scheduled to get station_group
         this.mainStationGroups = {};
         this.state = {
-            columnOrders: [ "Status", "Type", "id", "Name", "Template ID", "Project", "Start Time", "End time", "Duration (HH:mm:ss)", "actionpath",  "template_description", "priority", "suSet", "description", "station_group", "task_content", "target_observation_sap", "created_at", "updated_at", "target0angle1", "target0angle2", "Target 1 - Reference Frame", "target1angle1", "target1angle2", "Target 2 - Reference Frame"],
+            columnOrders: [ 
+                "Status", 
+                "Type",
+                 "id",
+                 "requirements_template_id",
+                 "template_description",
+                  "priority",
+                  "Project",
+                  "suSet",
+                  "Name",
+                  "description",
+                  "Start Time",
+                  "End time", 
+                  "Duration (HH:mm:ss)",  
+                  "station_group", 
+                  "task_content", 
+                  "target_observation_sap", 
+                  "target0angle1", 
+                  "target0angle2", 
+                  "Target 1 - Reference Frame", 
+                  "target1angle1", 
+                  "target1angle2", 
+                  "Target 2 - Reference Frame",
+                  "created_at", 
+                  "updated_at", 
+                  ],
             scheduleunit: [],
             paths: [{
                 "View": "/schedulingunit/view",
@@ -43,7 +67,7 @@ class SchedulingUnitList extends Component{
             defaultcolumns: [this.defaultcolumns],
             optionalcolumns:  [{
                 actionpath:"actionpath",
-                id:"Scheduling unit ID",
+                id:"Linked Blueprint/Draft ID",
                 template_description: "Template Description",
                 priority:"Priority",
                 suSet:"Scheduling set",
@@ -67,33 +91,6 @@ class SchedulingUnitList extends Component{
                 "Number of SAPs in the target observation":"filter-input-50"
             }],
             defaultSortColumn: [{id: "Name", desc: false}],
-            // // columns: [{
-            //     status:"Status",
-            //     type:{
-            //         name:"Type",
-            //         filter:"select"
-            //     },
-            //     id:"Scheduling unit ID",
-            //     requirements_template_id:{
-            //         name: "Template ID",
-            //         filter: "select"
-            //     },
-            //     template_description: "Template Description",
-            //     priority:"Priority",
-            //     project:"Project",
-            //     suSet:"Scheduling set",
-            //     project:"Project",
-            //     name:"Name",
-            //     description:"Description", 
-            //     start_time:"Start Time",
-            //     stop_time:"End time",
-            //     duration:"Duration (HH:mm:ss)",
-            //     station_group: 'Stations (CS/RS/IS)',
-            //     task_content: 'Tasks content (O/P/I)',
-            //     target_observation_sap: "Number of SAPs in the target observation",
-            //     created_at:"Created_At",
-            //     updated_at:"Updated_At"
-            // }]
         }
        
         this.onRowSelection = this.onRowSelection.bind(this);
@@ -215,6 +212,10 @@ class SchedulingUnitList extends Component{
                         blueP['station_group'] = this.getStationGroup(blueP).counts;
                         blueP.project = project.name;
                         blueP.canSelect = false;
+                        // blueP.links = ['Project'];
+                        // blueP.linksURL = {
+                        //     'Project': `/project/view/${project.name}`
+                        // }
                         blueP.links = ['Project', 'id'];
                         blueP.linksURL = {
                             'Project': `/project/view/${project.name}`,
@@ -231,6 +232,10 @@ class SchedulingUnitList extends Component{
                     scheduleunit.project = project.name;
                     scheduleunit.canSelect = true;
                     scheduleunit.suSet = suSet.name;
+                    // scheduleunit.links = ['Project'];
+                    // scheduleunit.linksURL = {
+                    //     'Project': `/project/view/${project.name}`
+                    // }
                     scheduleunit.links = ['Project', 'id'];
                     scheduleunit.linksURL = {
                         'Project': `/project/view/${project.name}`,
@@ -321,7 +326,6 @@ class SchedulingUnitList extends Component{
                         defaultcolumns={this.state.defaultcolumns} 
                         optionalcolumns={this.state.optionalcolumns}
                         columnclassname={this.state.columnclassname}
-                     //   columns = {this.state.columns}
                         defaultSortColumn={this.state.defaultSortColumn}
                         showaction="true"
                         keyaccessor="id"

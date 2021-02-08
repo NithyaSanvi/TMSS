@@ -632,7 +632,6 @@ function Table({ columns, data, defaultheader, optionalheader, tablename, defaul
     setAllFilters,
     allColumns,
     getToggleHideAllColumnsProps,
-    visibleColumns,
     state,
     page,
     preGlobalFilteredRows,
