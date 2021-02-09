@@ -9,8 +9,8 @@ class DecideAcceptance extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            content: props.report,
-            comment: props.pireport,  
+            content: '',
+            comment: '',  
             showEditor: false,           
             sos_accept_after_pi: false,              
 

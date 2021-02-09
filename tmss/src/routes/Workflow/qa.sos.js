@@ -9,7 +9,7 @@ class QAreportingSDCO extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            content: props.report,
+            content: '',
             showEditor: false,
             quality_within_policy: false,
             sos_accept_show_pi: false

@@ -13,7 +13,7 @@ class QAreporting extends Component{
     constructor(props) {
         super(props);
         this.state={
-            content: props.report,
+            content: '',
             assignTo: '',
             operator_accept: false,
         };
