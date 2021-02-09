@@ -18,16 +18,21 @@ class QAreportingSDCO extends Component {
         this.handleChange = this.handleChange.bind(this);
     }
 
+    async componentDidMount() {
+        const response = await WorkflowService.getQAReportingTo(this.props.process.qa_reporting_to);
+        this.setState({
+            content: response.operator_report
+        });
+    }
+
     /**
      * Method will trigger on change of sun-editor
      */
     handleChange(e) {
         if (e === '<p><br></p>') {
-            localStorage.setItem('report_qa', '');
             this.setState({ content: '' });
             return;
         }
-        localStorage.setItem('report_qa', e);
         this.setState({ content: e });
     }
 
@@ -37,9 +42,10 @@ class QAreportingSDCO extends Component {
      */
     async Next() {
         const qaSchedulingUnitTasksId = await this.props.getCurrentTaskDetails();
+        debugger
         const promise = [];
-        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId.pk, { owner: this.state.assignTo }));
-        promise.push(WorkflowService.updateQA_Perform(this.props.id, {"operator_report": this.state.content, "operator_accept": this.state.operator_accept}));
+        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId[0].pk, { owner: this.state.assignTo }));
+        promise.push(WorkflowService.updateQA_Perform(this.props.id, {"sos_report": this.state.content, "sos_accept_show_pi": this.state.sos_accept_show_pi, "quality_within_policy": this.state.quality_within_policy}));
         Promise.all(promise).then(() => {
             this.props.onNext({ report: this.state.content });
         });

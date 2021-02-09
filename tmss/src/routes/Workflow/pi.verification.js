@@ -10,8 +10,8 @@ class PIverification extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            content: props.report,
-            comment: props.pireport,
+            content: '',
+            comment: '',
             showEditor: false,
             pi_accept: false
         };
@@ -21,7 +21,10 @@ class PIverification extends Component {
     }
 
     async componentDidMount() {
-        WorkflowService.getSchedulingUnitTask().then(response => this.setState({ qaSchedulingTasks: response }));
+        const response = await WorkflowService.getQAReportingSOS(this.props.process.qa_reporting_sos);
+        this.setState({
+            content: response.sos_report
+        });
     }
     
      /**
@@ -29,13 +32,10 @@ class PIverification extends Component {
      */
     handleChange(e) {
         if (e === '<p><br></p>') {
-            localStorage.setItem('report_qa', '');
             this.setState({ content: '' });
             return;
         }
-        localStorage.setItem('report_qa', e);
         this.setState({ content: e });
-       
     }
 
     /**
@@ -43,15 +43,12 @@ class PIverification extends Component {
      * here onNext props coming from parent, where will handle redirection to other page
      */
     async Next() {
-        const qaSchedulingUnitTasksId = this.state.qaSchedulingTasks.find(task => task.flow_task.toLowerCase() === 'pi verification');
-        if (!qaSchedulingUnitTasksId) {
-            return
-        }
+        const qaSchedulingUnitTasksId = await this.props.getCurrentTaskDetails();
         const promise = [];
-        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId.id),{ owner: this.state.assignTo });
-        promise.push(WorkflowService.updateQA_Perform(qaSchedulingUnitTasksId.process,{"pi_report": this.state.comment, "pi_accept": this.state.pi_accept}));
+        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId[0].pk),{ owner: this.state.assignTo });
+        promise.push(WorkflowService.updateQA_Perform(this.props.id,{"pi_report": this.state.comment, "pi_accept": this.state.pi_accept}));
         Promise.all(promise).then(() => {
-            this.props.onNext({ report:this.state.content,pireport: this.state.comment});
+            this.props.onNext({ report:this.state.content, pireport: this.state.comment});
         });
     }
 
@@ -60,12 +57,10 @@ class PIverification extends Component {
      */
     onChangePIComment(a) {
         if (a === '<p><br></p>') {
-            localStorage.setItem('comment_pi', '');
             this.setState({ comment: '' });
             return;
         }
         this.setState({comment: a  });
-        localStorage.setItem('comment_pi', a);
     }
 
     // Not using at present

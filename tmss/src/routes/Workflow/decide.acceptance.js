@@ -21,30 +21,30 @@ class DecideAcceptance extends Component {
     }
 
     async componentDidMount() {
-        WorkflowService.getSchedulingUnitTask().then(response => this.setState({ qaSchedulingTasks: response }));
+        const qaSOSResponse = await WorkflowService.getQAReportingSOS(this.props.process.pi_verification);
+        const piVerificationResponse = await WorkflowService.getQAPIverification(this.props.process.pi_verification);
+        this.setState({
+            content: qaSOSResponse.sos_report,
+            comment: piVerificationResponse.pi_report
+        });
     }
 
      // Method will trigger on change of operator report sun-editor
      handleChange(e) {
         if (e === '<p><br></p>') {
-            localStorage.setItem('report_qa', '');
             this.setState({ content: '' });
             return;
         }
-        localStorage.setItem('report_qa', e);
         this.setState({ content: e });
     }
 
     async Next() {
-        const qaSchedulingUnitTasksId = this.state.qaSchedulingTasks.find(task => task.flow_task.toLowerCase() === 'decide acceptance');
-        if (!qaSchedulingUnitTasksId) {
-            return
-        }
+        const qaSchedulingUnitTasksId = await this.props.getCurrentTaskDetails();
         const promise = [];
-        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId.id, { owner: this.state.assignTo }));
-        promise.push(WorkflowService.updateQA_Perform(qaSchedulingUnitTasksId.process, {"sos_accept_after_pi":this.state.sos_accept_after_pi}));
+        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId[0].pk, { owner: this.state.assignTo }));
+        promise.push(WorkflowService.updateQA_Perform(this.props.id, {"sos_accept_after_pi":this.state.sos_accept_after_pi}));
         Promise.all(promise).then(() => {
-            this.props.onNext({ report: this.state.content ,pireport: this.state.comment});
+            this.props.onNext({ report: this.state.content , pireport: this.state.comment});
         });
        
     }

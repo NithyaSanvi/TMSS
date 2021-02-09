@@ -36,6 +36,30 @@ const WorkflowService = {
         }   catch(error) {
             console.error('[workflow.services.current_task]',error);
         }
+    },
+    getQAReportingTo: async (id) => {
+        try {
+            const response = await axios.get(`/workflow_api/scheduling_unit_flow/qa_reporting_to/${id}`);
+            return response.data;
+        }   catch(error) {
+            console.error('[workflow.services.qa_reporting_to]',error);
+        }
+    },
+    getQAReportingSOS: async (id) => {
+        try {
+            const response = await axios.get(`/workflow_api/scheduling_unit_flow/qa_reporting_sos/${id}`);
+            return response.data;
+        }   catch(error) {
+            console.error('[workflow.services.qa_reporting_sos]',error);
+        }
+    },
+    getQAPIverification: async (id) => {
+        try {
+            const response = await axios.get(`/workflow_api/scheduling_unit_flow/qa_pi_verification/${id}`);
+            return response.data;
+        }   catch(error) {
+            console.error('[workflow.services.qa_pi_verification]',error);
+        }
     }
 }
 

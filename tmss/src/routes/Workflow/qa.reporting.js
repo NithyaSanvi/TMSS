@@ -28,7 +28,7 @@ class QAreporting extends Component{
      async Next() {
         const qaSchedulingUnitTasksId = await this.props.getCurrentTaskDetails();
         const promise = [];
-        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId.pk, { owner: this.state.assignTo }));
+        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId[0].pk, { owner: this.state.assignTo }));
         promise.push(WorkflowService.updateQA_Perform(this.props.id, {"operator_report": this.state.content, "operator_accept": this.state.operator_accept}));
         Promise.all(promise).then(() => {
             this.props.onNext({ report: this.state.content });

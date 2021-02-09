@@ -36,6 +36,7 @@ export default (props) => {
     const [loader, setLoader] = useState(false);
     const [state, setState] = useState({});
     const [tasks, setTasks] = useState([]);
+    const [QASchProcess, setQASchProcess] = useState();
     const [currentStep, setCurrentStep] = useState();
     const [schedulingUnit, setSchedulingUnit] = useState();
     const [ingestTask, setInjestTask] = useState({});
@@ -75,11 +76,8 @@ export default (props) => {
                         task.dataSizeNotDeleted = UnitConverter.getUIResourceUnit('bytes', (task.dataSizeNotDeleted));
                     }
                     setSchedulingUnit(responses[0]);
-                    ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false).then(response => {
-                        setInjestTask(response.find(task => task.template.type_value==='observation'));
-                    });
                     setTasks(response);
-                    setInjestTask(response.find(task => task.template.type_value==='observation'));
+                    setInjestTask(response.find(task => task.template.type_value==='ingest'));
                     setLoader(false); 
                 });
             });
@@ -93,9 +91,11 @@ export default (props) => {
         ]
         Promise.all(promises).then(responses => {
             const suQAProcess = responses[0].find(process => process.su === parseInt(props.match.params.id));
+            setQASchProcess(suQAProcess);
             const suQATask = responses[1].find(task => task.process === suQAProcess.id);
             setCurrentStep(RedirectionMap[suQATask.flow_task.toLowerCase()]);
             setQASchdulingTask(responses[1].filter(item => item.process === suQAProcess.id));
+            debugger
             // Need to cross check below if condition if it fails in next click
             if (suQATask.status === 'NEW') {
                 setCurrentStep(RedirectionMap[suQATask.flow_task.toLowerCase()]);
@@ -153,12 +153,12 @@ export default (props) => {
                         </div>}
                         {currentStep === 1 && <Scheduled onNext={onNext} {...state} schedulingUnit={schedulingUnit} /*disableNextButton={disableNextButton}*/ />}
                         {currentStep === 2 && <ProcessingDone onNext={onNext} {...state} schedulingUnit={schedulingUnit}  />}
-                        {currentStep === 3 && <QAreporting onNext={onNext} id={props.match.params.id} QASchedulingTask={QASchedulingTask} getCurrentTaskDetails={getCurrentTaskDetails} />}
-                        {currentStep === 4 && <QAsos onNext={onNext} id={props.match.params.id} {...state} />}
-                        {currentStep === 5 && <PIverification onNext={onNext} id={props.match.params.id} {...state} />}
-                        {currentStep === 6 && <DecideAcceptance onNext={onNext} id={props.match.params.id} {...state} />}
-                        {currentStep === 7 && <Ingesting onNext={onNext} id={props.match.params.id} {...state} task={ingestTask} />}
-                        {currentStep === 8 && <DataProduct onNext={onNext} id={props.match.params.id} tasks={tasks} schedulingUnit={schedulingUnit} />}
+                        {currentStep === 3 && <QAreporting onNext={onNext} id={props.match.params.id} process={QASchProcess} QASchedulingTask={QASchedulingTask} getCurrentTaskDetails={getCurrentTaskDetails} />}
+                        {currentStep === 4 && <QAsos onNext={onNext} id={props.match.params.id} process={QASchProcess} QASchedulingTask={QASchedulingTask} getCurrentTaskDetails={getCurrentTaskDetails} {...state} />}
+                        {currentStep === 5 && <PIverification onNext={onNext} id={props.match.params.id} process={QASchProcess} QASchedulingTask={QASchedulingTask} getCurrentTaskDetails={getCurrentTaskDetails} {...state} />}
+                        {currentStep === 6 && <DecideAcceptance onNext={onNext} id={props.match.params.id} process={QASchProcess} QASchedulingTask={QASchedulingTask} getCurrentTaskDetails={getCurrentTaskDetails} {...state} />}
+                        {currentStep === 7 && <Ingesting onNext={onNext} id={props.match.params.id} process={QASchProcess} QASchedulingTask={QASchedulingTask} getCurrentTaskDetails={getCurrentTaskDetails} {...state} task={ingestTask} />}
+                        {currentStep === 8 && <DataProduct onNext={onNext} id={props.match.params.id} process={QASchProcess} QASchedulingTask={QASchedulingTask} getCurrentTaskDetails={getCurrentTaskDetails} tasks={tasks} schedulingUnit={schedulingUnit} />}
                     </div>
                 </>
             }
