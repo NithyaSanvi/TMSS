@@ -18,10 +18,6 @@ class QAreportingSDCO extends Component {
         this.handleChange = this.handleChange.bind(this);
     }
 
-    async componentDidMount() {
-        WorkflowService.getSchedulingUnitTask().then(response => this.setState({ qaSchedulingTasks: response }));
-    }
-
     /**
      * Method will trigger on change of sun-editor
      */
@@ -40,13 +36,10 @@ class QAreportingSDCO extends Component {
      * here onNext props coming from parent, where will handle redirection to other page
      */
     async Next() {
-        const qaSchedulingUnitTasksId = this.state.qaSchedulingTasks.find(task => task.flow_task.toLowerCase() === 'qa reporting sos');
-        if (!qaSchedulingUnitTasksId) {
-            return
-        }
-        const promise = []; 
-        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId.id),{ owner: this.state.assignTo });
-        promise.push(WorkflowService.updateQA_Perform(qaSchedulingUnitTasksId.process, {"sos_report": this.state.content,"quality_within_policy": this.state.quality_within_policy,"sos_accept_show_pi": this.state.sos_accept_show_pi}));
+        const qaSchedulingUnitTasksId = await this.props.getCurrentTaskDetails();
+        const promise = [];
+        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId.pk, { owner: this.state.assignTo }));
+        promise.push(WorkflowService.updateQA_Perform(this.props.id, {"operator_report": this.state.content, "operator_accept": this.state.operator_accept}));
         Promise.all(promise).then(() => {
             this.props.onNext({ report: this.state.content });
         });

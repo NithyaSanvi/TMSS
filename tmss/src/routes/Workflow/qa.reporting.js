@@ -26,13 +26,10 @@ class QAreporting extends Component{
      * here onNext props coming from parent, where will handle redirection to other page
      */
      async Next() {
-        const qaSchedulingUnitTasksId = this.props.QASchedulingTask.find(task => task.flow_task.toLowerCase() === 'qa reporting to');
-        if (!qaSchedulingUnitTasksId) {
-            return
-        }
+        const qaSchedulingUnitTasksId = await this.props.getCurrentTaskDetails();
         const promise = [];
-        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId.id, { owner: this.state.assignTo }));
-        promise.push(WorkflowService.updateQA_Perform(qaSchedulingUnitTasksId.process, {"operator_report": this.state.content, "operator_accept": this.state.operator_accept}));
+        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId.pk, { owner: this.state.assignTo }));
+        promise.push(WorkflowService.updateQA_Perform(this.props.id, {"operator_report": this.state.content, "operator_accept": this.state.operator_accept}));
         Promise.all(promise).then(() => {
             this.props.onNext({ report: this.state.content });
         });

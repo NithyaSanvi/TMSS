@@ -28,6 +28,14 @@ const WorkflowService = {
         }   catch(error) {
             console.error('[workflow.services.getSchedulingUnitTask]',error);
         }
+    },
+    getCurrentTask: async (id) => {
+        try {
+            const response = await axios.post(`/workflow_api/scheduling_unit_flow/qa_scheduling_unit_process/${id}/current_task/`);
+            return response.data;
+        }   catch(error) {
+            console.error('[workflow.services.current_task]',error);
+        }
     }
 }
 
