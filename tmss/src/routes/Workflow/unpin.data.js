@@ -25,7 +25,7 @@ export default ({ tasks, schedulingUnit }) => {
         <div className="p-fluid mt-2">
         <label><h6>Details of data products of Tasks</h6></label>
          <ViewTable 
-                 data={tasks.filter(task => task.specifications_template.name !== 'ingest' && (task.totalDataSize || task.dataSizeNotDeleted))} 
+                 data={tasks.filter(task => task.template.name !== 'ingest' && (task.totalDataSize || task.dataSizeNotDeleted))} 
                 optionalcolumns={optionalcolumns}
                 defaultcolumns={defaultcolumns} 
                 defaultSortColumn={defaultSortColumn}

@@ -3,52 +3,38 @@ import { Button } from 'primereact/button';
 import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css'; // Import Sun Editor's CSS File
 import { Checkbox } from 'primereact/checkbox';
-import WorkflowService from '../../services/workflow.service';
 //import {InputTextarea} from 'primereact/inputtextarea';
 
 class PIverification extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            content: '',
-            comment: '',
+            content: props.report,
             showEditor: false,
-            pi_accept: false
         };
         this.Next = this.Next.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.onChangePIComment = this.onChangePIComment.bind(this);
     }
-
-    async componentDidMount() {
-        const response = await WorkflowService.getQAReportingSOS(this.props.process.qa_reporting_sos);
-        this.setState({
-            content: response.sos_report
-        });
-    }
     
      /**
-     * Method will trigger on change of operator report sun-editor
+     * Method wiill trigger on change of operator report sun-editor
      */
     handleChange(e) {
-        if (e === '<p><br></p>') {
-            this.setState({ content: '' });
-            return;
-        }
-        this.setState({ content: e });
+        this.setState({
+            comment: e
+        });
+        localStorage.setItem('report_pi', e);
     }
 
-    /**
-     * Method will trigger on click save button
+     /**
+     * Method will trigger on click save buton
      * here onNext props coming from parent, where will handle redirection to other page
      */
-    async Next() {
-        const qaSchedulingUnitTasksId = await this.props.getCurrentTaskDetails();
-        const promise = [];
-        promise.push(WorkflowService.updateAssignTo(qaSchedulingUnitTasksId[0].pk),{ owner: this.state.assignTo });
-        promise.push(WorkflowService.updateQA_Perform(this.props.id,{"pi_report": this.state.comment, "pi_accept": this.state.pi_accept}));
-        Promise.all(promise).then(() => {
-            this.props.onNext({ report:this.state.content, pireport: this.state.comment});
+    Next(){
+        this.props.onNext({
+            report: this.state.content,
+            picomment: this.state.comment
         });
     }
 
@@ -56,11 +42,10 @@ class PIverification extends Component {
      * Method wiill triigger on change of pi report sun-editor
      */
     onChangePIComment(a) {
-        if (a === '<p><br></p>') {
-            this.setState({ comment: '' });
-            return;
-        }
-        this.setState({comment: a  });
+        this.setState({
+            comment: a
+        });
+        localStorage.setItem('comment_pi', a);
     }
 
     // Not using at present
@@ -89,7 +74,7 @@ class PIverification extends Component {
                              <div className="operator-report" dangerouslySetInnerHTML={{ __html: this.state.content }}></div>
                         </div>
                         <div className="p-grid" style={{ padding: '10px' }}>
-                            <label htmlFor="piReport" >PI Report<span style={{color:'red'}}>*</span></label>
+                            <label htmlFor="piReport" >PI Report</label>
                             <div className="col-lg-12 col-md-12 col-sm-12"></div>
                             <SunEditor setDefaultStyle="min-height: 150px; height: auto;" enableToolbar={true}
                                 setContents={this.state.comment}
@@ -100,16 +85,22 @@ class PIverification extends Component {
                                             'superscript', 'outdent', 'indent', 'fullScreen', 'showBlocks', 'codeView', 'preview', 'print', 'removeFormat']
                                     ]
                                 }} />
-                            </div>      
+                                   {/* <InputTextarea rows={3} cols={30}
+                                    tooltip="PIReport" tooltipOptions={this.tooltipOptions} maxLength="128"
+                                    data-testid="PIReport"
+                                    value={this.state.piComment}
+                                    onChange={this.onChangePIComment}
+                            /> */}
+                        </div>      
                         <div className="p-field p-grid">
                             <label htmlFor="piAccept" className="col-lg-2 col-md-2 col-sm-12">PI Accept</label>
                             <div className="p-field-checkbox">
-                                    <Checkbox inputId="binary" checked={this.state.pi_accept} onChange={e => this.setState({ pi_accept: e.checked })} />
+                                    <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
                             </div>
                         </div>
                         <div className="p-grid" style={{ marginTop: '20px' }}>
                             <div className="p-col-1">
-                                <Button disabled= {!this.state.comment} label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
+                                <Button label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
                             </div>
                             <div className="p-col-1">
                                 <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} />

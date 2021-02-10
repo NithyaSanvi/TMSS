@@ -113,20 +113,24 @@ export default (props) => {
     //Disable 'AT' field when schedular -> online
     const onEditForm = (jsonOutput, errors, ref) => {
         if (ref.editors['root.scheduler'] && ref.editors['root.scheduler'].value.toLowerCase()!== 'manual') {
-            const list = ref.editors['root.time.at'].container.className.split(' ');
-            if (!list.includes('disable-field')) {
-                list.push('disable-field');
-            }
-            ref.editors['root.time.at'].container.className = list.join(' ');
-            if (ref.editors['root.time.at'].control) {
-                Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = true);
-                Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = true);
+            if (ref.editors['root.time.at']) {
+                const list = ref.editors['root.time.at'].container.className.split(' ');
+                if (!list.includes('disable-field')) {
+                    list.push('disable-field');
+                }
+                ref.editors['root.time.at'].container.className = list.join(' ');
+                if (ref.editors['root.time.at'].control) {
+                    Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = true);
+                    Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = true);
+                }
             }
         } else {
-            ref.editors['root.time.at'].container.className = ref.editors['root.time.at'].container.className.replace('disable-field', '');
-            if (ref.editors['root.time.at'].control) {
-                Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = false);
-                Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = false);
+            if (ref.editors['root.time.at']) {
+                ref.editors['root.time.at'].container.className = ref.editors['root.time.at'].container.className.replace('disable-field', '');
+                if (ref.editors['root.time.at'].control) {
+                    Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = false);
+                    Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = false);
+                }
             }
         }
         if (props.callback) {
