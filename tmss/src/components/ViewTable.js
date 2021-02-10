@@ -632,7 +632,6 @@ function Table({ columns, data, defaultheader, optionalheader, tablename, defaul
     setAllFilters,
     allColumns,
     getToggleHideAllColumnsProps,
-    visibleColumns,
     state,
     page,
     preGlobalFilteredRows,
@@ -666,7 +665,7 @@ function Table({ columns, data, defaultheader, optionalheader, tablename, defaul
   );
   React.useEffect(() => {
     setHiddenColumns(
-      columns.filter(column => !column.isVisible).map(column => column.accessor)
+      columns.filter(column => !column.isVisible).map(column => column.id)
     );
     // console.log('columns List', visibleColumns.map((d) => d.id));
     if (columnOrders && columnOrders.length) {
@@ -1006,11 +1005,11 @@ function ViewTable(props) {
   optionaldataheader.forEach(header => {
     const isString = typeof optionalheader[0][header] === 'string';
     const filterFn = (showColumnFilter ? (isString ? DefaultColumnFilter : (filterTypes[optionalheader[0][header].filter].fn ? filterTypes[optionalheader[0][header].filter].fn : DefaultColumnFilter)) : "");
-    const filtertype = (showColumnFilter ? (!isString && filterTypes[optionalheader[0][header].filter].type) ? filterTypes[optionalheader[0][header].filter].type : 'fuzzyText' : "");
+    const filtertype = (showColumnFilter ? (!isString && filterTypes[optionalheader[0][header].filter]) ? (filterTypes[optionalheader[0][header].filter].type || filterTypes[optionalheader[0][header].filter]) : 'fuzzyText' : "");
     columns.push({
       Header: isString ? optionalheader[0][header] : optionalheader[0][header].name,
       id: isString ? header : optionalheader[0][header].name,
-      accessor: isString ? header : optionalheader[0][header].name,
+      accessor: header,
       filter: filtertype,
       Filter: filterFn,
       isVisible: false,

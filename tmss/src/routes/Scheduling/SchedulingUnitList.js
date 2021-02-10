@@ -28,8 +28,7 @@ class SchedulingUnitList extends Component{
         name:"Name",
         start_time:"Start Time",
         stop_time:"End time",
-        duration:"Duration (HH:mm:ss)",
-       
+        duration:"Duration (HH:mm:ss)"
        };
         if (props.hideProjectColumn) {
             delete this.defaultcolumns['project'];
@@ -40,8 +39,7 @@ class SchedulingUnitList extends Component{
             columnOrders: [ 
                 "Status", 
                 "Type",
-                // "Workflow Status",
-                "workflowStatus",
+                "Workflow Status",
                  "id",
                  "linked_bp_draft",
                  "Template ID",
@@ -77,11 +75,11 @@ class SchedulingUnitList extends Component{
             defaultcolumns: [this.defaultcolumns],
             optionalcolumns:  [{
                 actionpath:"actionpath",
-                // workflowStatus: {
-                //     name: "Workflow Status",
-                //     filter: 'select'
-                // },
-                workflowStatus: 'Workflow Status',
+                workflowStatus: {
+                    name: "Workflow Status",
+                    filter: 'select'
+                },
+                // workflowStatus: 'Workflow Status',
                 id: "Scheduling Unit ID",
                 linked_bp_draft:"Linked Blueprint/ Draft ID",
                 template_description: "Template Description",
@@ -320,11 +318,11 @@ class SchedulingUnitList extends Component{
                     su[`target${index}referenceframe`] = target.digital_pointing.direction_type;
                     optionalColumns[`target${index}angle1`] = `Target ${index + 1} - Angle 1`;
                     optionalColumns[`target${index}angle2`] = `Target ${index + 1} - Angle 2`;
-                    /*optionalColumns[`target${index}referenceframe`] = {
+                    optionalColumns[`target${index}referenceframe`] = {
                         name: `Target ${index + 1} - Reference Frame`,
                         filter: "select"
-                    };*/ //TODO: Need to check why this code is not working
-                    optionalColumns[`target${index}referenceframe`] = `Target ${index + 1} - Reference Frame`;
+                    }; //TODO: Need to check why this code is not working
+                    // optionalColumns[`target${index}referenceframe`] = `Target ${index + 1} - Reference Frame`;
                     columnclassname[`Target ${index + 1} - Angle 1`] = "filter-input-75";
                     columnclassname[`Target ${index + 1} - Angle 2`] = "filter-input-75";
                     columnclassname[`Target ${index + 1} - Reference Frame`] = "filter-input-75";
