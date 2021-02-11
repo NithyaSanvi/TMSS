@@ -137,15 +137,6 @@ const ScheduleService = {
             return null;
         }
     },
-    getSubtaskOutputDataproduct: async function(id){
-        try {
-          const url = `/api/subtask/${id}/output_dataproducts/`;
-          const response = await axios.get(url);
-          return response.data;
-        } catch (error) {
-          console.error('[data.product.getSubtaskOutputDataproduct]',error);
-        }
-    },
     getTaskBlueprintById: async function(id, loadTemplate, loadSubtasks, loadSubtaskTemplate){
         let result;
         try {
@@ -311,11 +302,11 @@ const ScheduleService = {
             if (loadTemplate) {
                 const ingest = scheduletasklist.find(task => task.template.type_value === 'ingest' && task.tasktype.toLowerCase() === 'draft');
                 const promises = [];
-                ingest.produced_by_ids.forEach(id => promises.push(this.getTaskRelation(id)));
+                ingest.produced_by_ids.map(id => promises.push(this.getTaskRelation(id)));
                 const response = await Promise.all(promises);
-                response.forEach(producer => {
+                response.map(producer => {
                     const tasks = scheduletasklist.filter(task => producer.producer_id  === task.id);
-                    tasks.forEach(task => {
+                    tasks.map(task => {
                        task.canIngest = true;
                     });
                 });
@@ -405,15 +396,6 @@ const ScheduleService = {
             console.error('[schedule.services.getBlueprintsByschedulingUnitId]',error);
         });
         return res;
-    },
-    getSchedulingUnitTemplate: async function(id){
-        try {
-            const response = await axios.get(`/api/scheduling_unit_template/${id}`);
-            return response.data;
-        }   catch(error) {
-            console.error(error);
-            return null;
-        };
     },
     getSchedulingSets: async function() {
         try {
@@ -649,18 +631,6 @@ const ScheduleService = {
         } catch (error) {
           console.error('[project.services.getProjectList]',error);
         }
-      },
-      //TODO: This function should be removed and 
-      //all its implementations should use the function from WorkflowService after merging workflow ticket branches
-      getWorkflowProcesses: async function() {
-          let processes = [];
-          try {
-              const response = await axios.get('/workflow_api/scheduling_unit_flow/qa_scheduling_unit_process/');
-              processes = response.data.results;
-          } catch (error) {
-              console.error(error);
-          }
-          return processes;
       }
 }
 

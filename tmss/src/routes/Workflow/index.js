@@ -10,6 +10,7 @@ import QAsos from './qa.sos';
 import PIverification from './pi.verification';
 import DecideAcceptance from './decide.acceptance';
 import IngestDone from './ingest.done';
+import _ from 'lodash';
 import DataProduct from './unpin.data';
 import UnitConverter from '../../utils/unit.converter';
 
@@ -35,9 +36,9 @@ export default (props) => {
         Promise.all(promises).then(responses => {
             setSchedulingUnit(responses[0]);
             ScheduleService.getTaskBlueprintsBySchedulingUnit(responses[0], true, false, false, true).then(response => {
-                response.forEach(task => {
+                response.map(task => {
                     task.actionpath = `/task/view/blueprint/${task.id}/dataproducts`;
-                    (task.dataProducts || []).forEach(product => {
+                    (task.dataProducts || []).map(product => {
                         if (product.size) {
                             if (!task.totalDataSize) {
                                 task.totalDataSize = 0;
@@ -97,10 +98,10 @@ export default (props) => {
                             <label htmlFor="viewPlots" className="col-lg-2 col-md-2 col-sm-12">View Plots</label>
                             <div className="col-lg-3 col-md-3 col-sm-12" style={{ paddingLeft: '2px' }}>
                                 <label className="col-sm-10 " >
-                                    <a href="https://proxy.lofar.eu/inspect/HTML/" target="_blank" rel="noopener noreferrer">Inspection plots</a>
+                                    <a href="https://proxy.lofar.eu/inspect/HTML/" target="_blank">Inspection plots</a>
                                 </label>
                                 <label className="col-sm-10 ">
-                                    <a href="https://proxy.lofar.eu/qa" target="_blank" rel="noopener noreferrer">Adder plots</a>
+                                    <a href="https://proxy.lofar.eu/qa" target="_blank">Adder plots</a>
                                 </label>
                                 <label className="col-sm-10 ">
                                     <a href=" https://proxy.lofar.eu/lofmonitor/" target="_blank">Station Monitor</a>
