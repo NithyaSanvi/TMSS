@@ -267,7 +267,7 @@ function Jeditor(props) {
                 "cleave": {
                     numericOnly: true,
                     blocks: [2, 2, 2, 4],
-                    delimiters: [':', ':','.'],
+                    delimiters: isDegree ? [':', ':','.'] : [':', ':', ':'],
                     delimiterLazyShow: true
                 }
             }
@@ -442,15 +442,15 @@ function Jeditor(props) {
      */
     function validateTime(prpOutput) {
         const splitOutput = prpOutput.split(':');
-        const isMilliSecondsPresent = prpOutput.split('.');
-        if (splitOutput.length < 3 || isMilliSecondsPresent.length === 1 || isMilliSecondsPresent[1].length !== 4) {
+        const isMilliSecondsPresent = splitOutput[3];
+        if (splitOutput.length < 3 || (isMilliSecondsPresent[1] && isMilliSecondsPresent[1].length > 4)) {
         // if (splitOutput.length < 3) {
             return false;
         }   else {
-            if (parseInt(splitOutput[0]) > 23 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59 || parseInt(splitOutput[3])>999) {
+            if (parseInt(splitOutput[0]) > 23 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59) {
                 return false;
             }
-            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(splitOutput[2]*1000 + parseInt(splitOutput[3]));
+            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(splitOutput[2]*1000);
             if (timeValue >= 86400) {
                 return false;
             }
@@ -465,7 +465,7 @@ function Jeditor(props) {
     function validateAngle(prpOutput) {
         const splitOutput = prpOutput.split(':');
         const isMilliSecondsPresent = prpOutput.split('.');
-        if (splitOutput.length < 3 || isMilliSecondsPresent.length === 1 || isMilliSecondsPresent[1].length !== 4) {
+        if (splitOutput.length < 3 || isMilliSecondsPresent[1].length > 4) {
         //if (splitOutput.length < 3) {
             return false;
         }   else {
