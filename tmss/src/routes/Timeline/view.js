@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import { Redirect } from 'react-router-dom/cjs/react-router-dom.min';
 import moment from 'moment';
+import {MultiSelect} from 'primereact/multiselect';
 import _ from 'lodash';
 import Websocket from 'react-websocket';
 
@@ -64,7 +65,8 @@ export class TimelineView extends Component {
             stationGroup: [],
             reservationFilter: null,
             showSUs: true,
-            showTasks: false
+            showTasks: false,
+            selectedStationGroup: []
         }
         this.STATUS_BEFORE_SCHEDULED = ['defining', 'defined', 'schedulable'];  // Statuses before scheduled to get station_group
         this.allStationsGroup = [];
@@ -92,6 +94,8 @@ export class TimelineView extends Component {
         this.addNewData = this.addNewData.bind(this);
         this.updateExistingData = this.updateExistingData.bind(this);
         this.updateSchedulingUnit = this.updateSchedulingUnit.bind(this);
+        this.setSelectedStationGroup = this.setSelectedStationGroup.bind(this);
+        this.getStationsByGroupName = this.getStationsByGroupName.bind(this);
     }
 
     async componentDidMount() {
@@ -102,7 +106,8 @@ export class TimelineView extends Component {
                             ScheduleService.getSchedulingSets(),
                             UtilService.getUTC(),
                             ScheduleService.getStations('All'),
-                            TaskService.getSubtaskTemplates()] ;
+                            TaskService.getSubtaskTemplates(),
+                            ScheduleService.getMainGroupStations()];
         Promise.all(promises).then(async(responses) => {
             this.subtaskTemplates = responses[6];
             const projects = responses[0];
@@ -174,14 +179,18 @@ export class TimelineView extends Component {
                 .then(suConstraintTemplates => {
                     this.suConstraintTemplates = suConstraintTemplates;
             });
+            
             this.setState({suBlueprints: suBlueprints, suDrafts: suDrafts, group: group, suSets: suSets,
                             projects: projects, suBlueprintList: suList,
                             items: items, currentUTC: currentUTC, isLoading: false,
                             currentStartTime: defaultStartTime, currentEndTime: defaultEndTime});
+                            this.mainStationGroups = responses[7];
+                            this.mainStationGroupOptions = Object.keys(responses[7]).map(value => ({ value }));
         });
-        // Get maingroup and its stations
-        ScheduleService.getMainGroupStations()
-            .then(stationGroups => {this.mainStationGroups = stationGroups});
+    }
+
+    setSelectedStationGroup(value) {
+        this.setState({ selectedStationGroup: value });
     }
 
     /**
@@ -449,7 +458,7 @@ export class TimelineView extends Component {
         // On range change close the Details pane
         // this.closeSUDets();
         // console.log(_.orderBy(group, ["parent", "id"], ['asc', 'desc']));
-        return {group: this.stationView?this.allStationsGroup:_.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']), items: items};
+        return {group: this.stationView? this.getStationsByGroupName() : _.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']), items: items};
     }
 
     /**
@@ -642,8 +651,17 @@ export class TimelineView extends Component {
             items = this.addStationReservations(items, this.state.currentStartTime, this.state.currentEndTime);
         }
         if (this.timeline) {
-            this.timeline.updateTimeline({group: this.state.stationView?this.allStationsGroup:_.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']), items: items});
+            this.timeline.updateTimeline({group: this.state.stationView ? this.getStationsByGroupName() : _.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']), items: items});
         }
+    }
+
+    getStationsByGroupName() {
+        let stations = [];
+        this.state.selectedStationGroup.forEach((i) => {
+            stations = [...stations, ...this.mainStationGroups[i]];
+        });
+        stations = stations.map(i => ({id: i, title: i}));
+        return stations;
     }
 
     setStationView(e) {
@@ -874,11 +892,25 @@ export class TimelineView extends Component {
                                         <i className="pi pi-step-forward"></i>
                                     </button>
                                 </div> 
-                                <div className="timeline-view-toolbar">
-                                    <label>Station View</label>
-                                    <InputSwitch checked={this.state.stationView} onChange={(e) => {this.setStationView(e)}} />
+                                <div className={`timeline-view-toolbar ${this.state.stationView && 'alignTimeLineHeader'}`}>
+                                    <div  className="sub-header">
+                                        <label>Station View</label>
+                                        <InputSwitch checked={this.state.stationView} onChange={(e) => {this.setStationView(e)}} />
+                                        {this.state.stationView && 
+                                            <>
+                                            <label style={{marginLeft: '15px'}}>Stations Group</label>
+                                             <MultiSelect data-testid="stations" id="stations" optionLabel="value" optionValue="value" filter={true}
+                                                tooltip="Select Stations"
+                                                value={this.state.selectedStationGroup} 
+                                                options={this.mainStationGroupOptions} 
+                                                placeholder="Select Stations"
+                                                onChange={(e) => this.setSelectedStationGroup(e.value)}
+                                            />
+                                            </>
+                                        }
+                                    </div>
                                     {this.state.stationView &&
-                                    <>
+                                    <div className="sub-header">
                                         <label style={{marginLeft: '15px'}}>Reservation</label>
                                         <Dropdown optionLabel="name" optionValue="name" 
                                                     style={{fontSize: '10px', top: '-5px'}}
@@ -887,10 +919,10 @@ export class TimelineView extends Component {
                                                     filter showClear={true} filterBy="name"
                                                     onChange={(e) => {this.setReservationFilter(e.value)}} 
                                                     placeholder="Reason"/>
-                                    </>
+                                    </div>
                                     }
                                     {!this.state.stationView &&
-                                    <>
+                                    <div className="sub-header">
                                         <label style={{marginLeft: '15px'}}>Show :</label>
                                         <RadioButton value="su" name="Only SUs" inputId="suOnly" onChange={(e) => this.showTimelineItems(e.value)} checked={this.state.showSUs && !this.state.showTasks} />
                                         <label htmlFor="suOnly">Only SU</label>
@@ -898,7 +930,7 @@ export class TimelineView extends Component {
                                         <label htmlFor="suOnly">Only Task</label>
                                         <RadioButton value="suTask" name="Both" inputId="bothSuTask" onChange={(e) => this.showTimelineItems(e.value)} checked={this.state.showSUs && this.state.showTasks} />
                                         <label htmlFor="suOnly">Both</label>
-                                    </>
+                                    </div>
                                     }
                                 </div>
                                 <Timeline ref={(tl)=>{this.timeline=tl}} 
