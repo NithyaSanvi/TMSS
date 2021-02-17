@@ -103,12 +103,9 @@ export default class CustomDateComponent extends Component {
   //          LINKING THE UI, THE STATE AND AG-GRID
   //*********************************************************************************
   onDateChanged = (selectedDates) => {
-    //console.log('>>',  selectedDates[0])
     this.props.context.componentParent.updateTime(
       this.props.node.rowIndex,this.props.colDef.field,selectedDates[0]
     );
-
-      
    // this.updateAndNotifyAgGrid(selectedDates[0]);
   };
 }

@@ -6,11 +6,9 @@
 import React, {useEffect, useRef} from 'react';
 import _ from 'lodash';
 import flatpickr from 'flatpickr';
-import UnitConverter from '../../utils/unit.converter'
 import $RefParser from "@apidevtools/json-schema-ref-parser";
 import "@fortawesome/fontawesome-free/css/all.css";
 import "flatpickr/dist/flatpickr.css";
-import UtilService from '../../services/util.service';
 const JSONEditor = require("@json-editor/json-editor").JSONEditor;
 
 function Jeditor(props) {
@@ -150,7 +148,7 @@ function Jeditor(props) {
                     errors.push({
                         path: path,
                         property: 'validationType',
-                        message: 'Not a valid input. Mimimum: 00:00:00.0000, Maximum:23:59:59.0000'
+                        message: 'Not a valid input. Mimimum: 00:00:00, Maximum:23:59:59'
                     });
                 }
             }   else if (schema.validationType === "angle") {
@@ -158,7 +156,7 @@ function Jeditor(props) {
                     errors.push({
                         path: path,
                         property: 'validationType',
-                        message: 'Not a valid input. Mimimum: 00:00:00.0000, Maximum:90:00:00.0000'
+                        message: 'Not a valid input. Mimimum: 00:00:00, Maximum:90:00:00'
                     });
                 }
             } else if (schema.validationType === "distanceOnSky") {
@@ -256,19 +254,18 @@ function Jeditor(props) {
         let newProperty = {
             type: "string",
             title: defProperty.title,
-            description: (defProperty.description + (isDegree?'(Degrees:Minutes:Seconds.MilliSeconds)':'(Hours:Minutes:Seconds.MilliSeconds)')),
-            default: "00:00:00.0000",
+            description: (defProperty.description + (isDegree?'(Degrees:Minutes:Seconds)':'(Hours:Minutes:Seconds)')),
+            default: "00:00:00",
             validationType: isDegree?'angle':'time',
             options: {
                 "grid_columns": 4,
                 "inputAttributes": {
-                    "placeholder": isDegree?"DD:mm:ss.ms":"HH:mm:ss:ms"
+                    "placeholder": isDegree?"DD:mm:ss":"HH:mm:ss"
                 },
                 "cleave": {
-                    numericOnly: true,
-                    blocks: [2, 2, 2, 4],
-                    delimiters: isDegree ? [':', ':','.'] : [':', ':', ':'],
-                    delimiterLazyShow: true
+                    date: true,
+                    datePattern: ['HH','mm','ss'],
+                    delimiter: ':'
                 }
             }
         }
@@ -359,8 +356,8 @@ function Jeditor(props) {
             const inputValue = editorInput[inputKey];
             if (inputValue instanceof Object) {
                 if (_.indexOf(pointingProps, inputKey) >= 0) {
-                    inputValue.angle1 = UnitConverter.getAngleInput(inputValue.angle1);
-                    inputValue.angle2 = UnitConverter.getAngleInput(inputValue.angle2, true);
+                    inputValue.angle1 = getAngleInput(inputValue.angle1);
+                    inputValue.angle2 = getAngleInput(inputValue.angle2, true);
                 }  else if (inputKey === 'subbands') {
                     editorInput[inputKey] = getSubbandInput(inputValue);
                 }  else {
@@ -383,8 +380,8 @@ function Jeditor(props) {
             let outputValue = editorOutput[outputKey];
             if (outputValue instanceof Object) {
                 if (_.indexOf(pointingProps, outputKey) >= 0) {
-                    outputValue.angle1 = UnitConverter.getAngleOutput(outputValue.angle1, false);
-                    outputValue.angle2 = UnitConverter.getAngleOutput(outputValue.angle2, true);
+                    outputValue.angle1 = getAngleOutput(outputValue.angle1, false);
+                    outputValue.angle2 = getAngleOutput(outputValue.angle2, true);
                 } else {
                     updateOutput(outputValue);
                 }
@@ -393,10 +390,30 @@ function Jeditor(props) {
             } else if (outputKey.toLowerCase() === 'duration') {
                 // editorOutput[outputKey] = outputValue * 60;
                 const splitOutput = outputValue.split(':');
-                editorOutput[outputKey] = (splitOutput[0] * 3600000 + splitOutput[1] * 60000  + splitOutput[2] * 1000 + splitOutput[3]);
+                editorOutput[outputKey] = (splitOutput[0] * 3600 + splitOutput[1] * 60  + splitOutput[2]*1);
             }
         }
         return editorOutput;
+    }
+
+    /**
+     * Function to format angle values in the input of inital values
+     * @param {*} prpInput 
+     * @param {Boolean} isDegree 
+     */
+    function getAngleInput(prpInput, isDegree) {
+        const degrees = prpInput * 180 / Math.PI;
+        if (isDegree) {
+            const dd = Math.floor(prpInput * 180 / Math.PI);
+            const mm = Math.floor((degrees-dd) * 60);
+            const ss = +((degrees-dd-(mm/60)) * 3600).toFixed(0);
+            return (dd<10?`0${dd}`:`${dd}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`);
+        }   else {
+            const hh = Math.floor(degrees/15);
+            const mm = Math.floor((degrees - (hh*15))/15 * 60 );
+            const ss = +((degrees -(hh*15)-(mm*15/60))/15 * 3600).toFixed(0);
+            return (hh<10?`0${hh}`:`${hh}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`);
+        }
     }
 
     /**
@@ -437,20 +454,37 @@ function Jeditor(props) {
     }
 
     /**
+     * Converts the angle input to radians
+     * @param {String} prpOutput 
+     * @param {Boolean} isDegree 
+     */
+    function getAngleOutput(prpOutput, isDegree) {
+        /*if ('dd' in prpOutput) {
+            return ((prpOutput.dd + prpOutput.mm/60 + prpOutput.ss/3600)*Math.PI/180);
+        }   else {
+            return ((prpOutput.hh*15 + prpOutput.mm/4  + prpOutput.ss/240)*Math.PI/180);
+        }*/
+        const splitOutput = prpOutput.split(':');
+        if (isDegree) {
+            return ((splitOutput[0]*1 + splitOutput[1]/60 + splitOutput[2]/3600)*Math.PI/180);
+        }   else {
+            return ((splitOutput[0]*15 + splitOutput[1]/4  + splitOutput[2]/240)*Math.PI/180);
+        }
+    }
+
+    /**
      * Validate time entered as string in HH:mm:ss format
      * @param {String} prpOutput 
      */
     function validateTime(prpOutput) {
         const splitOutput = prpOutput.split(':');
-        const isMilliSecondsPresent = splitOutput[3];
-        if (splitOutput.length < 3 || (isMilliSecondsPresent[1] && isMilliSecondsPresent[1].length > 4)) {
-        // if (splitOutput.length < 3) {
+        if (splitOutput.length < 3) {
             return false;
         }   else {
             if (parseInt(splitOutput[0]) > 23 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59) {
                 return false;
             }
-            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(splitOutput[2]*1000);
+            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(splitOutput[2]);
             if (timeValue >= 86400) {
                 return false;
             }
@@ -464,15 +498,13 @@ function Jeditor(props) {
      */
     function validateAngle(prpOutput) {
         const splitOutput = prpOutput.split(':');
-        const isMilliSecondsPresent = prpOutput.split('.');
-        if (splitOutput.length < 3 || isMilliSecondsPresent[1].length > 4) {
-        //if (splitOutput.length < 3) {
+        if (splitOutput.length < 3) {
             return false;
         }   else {
-            if (parseInt(splitOutput[0]) > 90 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59 || parseInt(splitOutput[3])>999) {
+            if (parseInt(splitOutput[0]) > 90 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59) {
                 return false;
             }
-            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(splitOutput[2]*1000 + parseInt(splitOutput[3]));
+            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(splitOutput[2]);
             if (timeValue > 324000) {
                 return false;
             }

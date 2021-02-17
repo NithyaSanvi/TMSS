@@ -1,17 +1,17 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import { Redirect } from 'react-router-dom';
 import _ from 'lodash';
-import {InputText} from 'primereact/inputtext';
-import {InputNumber} from 'primereact/inputnumber';
-import {InputTextarea} from 'primereact/inputtextarea';
-import {Checkbox} from 'primereact/checkbox';
-import {Dropdown} from 'primereact/dropdown';
-import {MultiSelect} from 'primereact/multiselect';
+import { InputText } from 'primereact/inputtext';
+import { InputNumber } from 'primereact/inputnumber';
+import { InputTextarea } from 'primereact/inputtextarea';
+import { Checkbox } from 'primereact/checkbox';
+import { Dropdown } from 'primereact/dropdown';
+import { MultiSelect } from 'primereact/multiselect';
 import { Button } from 'primereact/button';
-import {Dialog} from 'primereact/components/dialog/Dialog';
-import {Growl} from 'primereact/components/growl/Growl';
-
-import {ResourceInputList} from './ResourceInputList';
+import { Dialog } from 'primereact/components/dialog/Dialog';
+import { Growl } from 'primereact/components/growl/Growl';
+import { CustomDialog } from '../../layout/components/CustomDialog';
+import { ResourceInputList } from './ResourceInputList';
 
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
@@ -28,10 +28,15 @@ export class ProjectCreate extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            showDialog: false,
+            isDirty: false,
             ltaStorage: [],
             isLoading: true,
             dialog: { header: '', detail: ''},      
             project: {
+                archive_subdirectory: '',
+                name: '',
+                description: '',
                 trigger_priority: 1000,
                 priority_rank: null,
                 quota: [],                          // Mandatory Field in the back end, so an empty array is passed
@@ -78,6 +83,8 @@ export class ProjectCreate extends Component {
         this.saveProject = this.saveProject.bind(this);
         this.cancelCreate = this.cancelCreate.bind(this);
         this.reset = this.reset.bind(this);
+        this.checkIsDirty = this.checkIsDirty.bind(this);
+        this.close = this.close.bind(this);
     }
 
     componentDidMount() {
@@ -151,11 +158,15 @@ export class ProjectCreate extends Component {
      */
     addNewResource(){
         if (this.state.newResource) {
-            let resourceList = this.state.resourceList;
+            let resourceList = _.cloneDeep(this.state.resourceList);
             const newResource = _.remove(resourceList, {'name': this.state.newResource});
             let resources = this.state.resources;
             resources.push(newResource[0]);
-            this.setState({resources: resources, resourceList: resourceList, newResource: null});
+            if  ( !this.state.isDirty && !_.isEqual(this.state.resourceList, resourceList) ) {
+                this.setState({resources: resources, resourceList: resourceList, newResource: null, isDirty: true});
+            }   else {
+                this.setState({resources: resources, resourceList: resourceList, newResource: null});
+            }
         }
     }
 
@@ -166,12 +177,17 @@ export class ProjectCreate extends Component {
     removeResource(name) {
         let resources = this.state.resources;
         let resourceList = this.state.resourceList;
-        let projectQuota = this.state.projectQuota;
+        let projectQuota =  _.cloneDeep(this.state.projectQuota);
         const removedResource = _.remove(resources, (resource) => { return resource.name === name });
         resourceList.push(removedResource[0]);
         resourceList = _.sortBy(resourceList, 'name');
         delete projectQuota[name];
-        this.setState({resourceList: resourceList, resources: resources, projectQuota: projectQuota});
+        if  ( !this.state.isDirty && !_.isEqual(this.state.projectQuota, projectQuota) ) {
+            this.setState({resourceList: resourceList, resources: resources, projectQuota: projectQuota, isDirty: true});
+        }   else {
+            this.setState({resourceList: resourceList, resources: resources, projectQuota: projectQuota});
+        }
+        
     }
 
     /**
@@ -180,7 +196,7 @@ export class ProjectCreate extends Component {
      * @param {any} value 
      */
     setProjectParams(key, value, type) {
-        let project = this.state.project;
+        let project = _.cloneDeep(this.state.project);
         switch(type) {
             case 'NUMBER': {
                 console.log("Parsing Number");
@@ -211,7 +227,11 @@ export class ProjectCreate extends Component {
         if (type==='PROJECT_NAME' & value!=="") {
             validForm = this.validateForm('archive_subdirectory');
         }
-        this.setState({project: project, validForm: validForm});
+        if  ( !this.state.isDirty && !_.isEqual(this.state.project, project) ) {
+            this.setState({project: project, validForm: validForm, isDirty: true});
+        }   else {
+            this.setState({project: project, validForm: validForm});
+        }
     }
 
     /**
@@ -221,22 +241,26 @@ export class ProjectCreate extends Component {
      */
     setProjectQuotaParams(key, event) {
         let projectQuota = this.state.projectQuota;
+        const previousValue = projectQuota[key];
         if (event.target.value) {
             let resource = _.find(this.state.resources, {'name': key});
-            
             let newValue = 0;
             if (this.resourceUnitMap[resource.quantity_value] && 
                 event.target.value.toString().indexOf(this.resourceUnitMap[resource.quantity_value].display)>=0) {
-                newValue = event.target.value.replace(this.resourceUnitMap[resource.quantity_value].display,'');
+                newValue = _.trim(event.target.value.replace(this.resourceUnitMap[resource.quantity_value].display,''));
             }   else {
-                newValue = event.target.value;
+                newValue = _.trim(event.target.value);
             }
-            projectQuota[key] = (newValue==="NaN" || isNaN(newValue))?0:newValue;
+            projectQuota[key] = (newValue==="NaN" || isNaN(newValue))?0:Number(newValue);
         }   else {
-            let projectQuota = this.state.projectQuota;
+           // let projectQuota = this.state.projectQuota;
             projectQuota[key] = 0;
         }
-        this.setState({projectQuota: projectQuota});
+        if  ( !this.state.isDirty && !_.isEqual(previousValue, projectQuota[key]) ) {
+            this.setState({projectQuota: projectQuota, isDirty: true});
+        }   else {
+            this.setState({projectQuota: projectQuota});
+        }
     }
 
     /**
@@ -308,13 +332,28 @@ export class ProjectCreate extends Component {
                         }   else {
                             dialog = {header: 'Success', detail: 'Project saved successfully with default Resource allocations. Do you want to view and edit them?'};
                         }
-                        this.setState({project:project, dialogVisible: true, dialog: dialog})
+                        this.setState({project:project, dialogVisible: true, dialog: dialog, isDirty: false});
                     }   else {
                         this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to save Project'});
-                        this.setState({errors: project});
+                        this.setState({errors: project, isDirty: false});
                     }
                 });
         }
+    }
+
+     /**
+     * warn before cancel the page if any changes detected 
+     */
+    checkIsDirty() {
+        if( this.state.isDirty ){
+            this.setState({showDialog: true});
+        } else {
+            this.cancelCreate();
+        }
+    }
+    
+    close() {
+        this.setState({showDialog: false});
     }
 
     /**
@@ -374,7 +413,8 @@ export class ProjectCreate extends Component {
         return (
             <React.Fragment>
                 <Growl ref={(el) => this.growl = el} />
-                 <PageHeader location={this.props.location} title={'Project - Add'} actions={[{icon:'fa-window-close',link:this.props.history.goBack, title:'Click to Close Project', props:{ pathname: '/project'}}]}/>
+                 <PageHeader location={this.props.location} title={'Project - Add'} actions={[{icon:'fa-window-close', title:'Click to Close Project',
+                   type: 'button',  actOn: 'click', props:{ callback: this.checkIsDirty }}]}/>
                 { this.state.isLoading ? <AppLoader /> :
                 <>
                 <div>
@@ -543,7 +583,7 @@ export class ProjectCreate extends Component {
                         <Button label="Save" className="p-button-primary" id="save-btn" data-testid="save-btn" icon="pi pi-check" onClick={this.saveProject} disabled={!this.state.validForm} />
                     </div>
                     <div className="col-lg-1 col-md-2 col-sm-6">
-                        <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.cancelCreate}  />
+                        <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.checkIsDirty}  />
                     </div>
                 </div>
                 </>
@@ -567,6 +607,11 @@ export class ProjectCreate extends Component {
                                 </div>
                             </div>
                     </Dialog>
+
+                    <CustomDialog type="confirmation" visible={this.state.showDialog} width="40vw"
+                        header={'Add Project'} message={'Do you want to leave this page? Your changes may not be saved.'} 
+                        content={''} onClose={this.close} onCancel={this.close} onSubmit={this.cancelCreate}>
+                    </CustomDialog>
                 </div>
             </React.Fragment>
         );

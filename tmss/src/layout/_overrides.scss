@@ -200,8 +200,38 @@
 .p-growl {
     z-index: 3000 !important;
 }
+.viewtable .p-hidden-accessible {
+    position: relative;
+}
+
 .data-product {
     label {
         display: block;
     }
+}
+
+/**
+In Excel View the for Accordion  background color override
+*/
+.p-accordion .p-accordion-header:not(.p-disabled).p-highlight a {
+    background-color: lightgray !important;
+    border: 1px solid gray !important;
+}
+.p-accordion .p-accordion-header:not(.p-disabled).p-highlight span {
+    color: black;
+}
+.p-accordion .p-accordion-header:not(.p-disabled).p-highlight a .p-accordion-toggle-icon {
+    color: black;
+}
+
+/**
+ In Custom Dialog - to the message section
+ */
+.p-dialog-content {
+    min-height: 7em;
+    align-items: center;
+    display: flex !important;
+}
+.p-grid {
+    width: -webkit-fill-available;
 }
