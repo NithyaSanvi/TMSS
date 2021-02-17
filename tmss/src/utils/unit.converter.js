@@ -102,9 +102,10 @@ const UnitConverter = {
     getAngleOutput(prpOutput, isDegree) {
         if(prpOutput){
             const splitOutput = prpOutput.split(':');
-            const milliSeconds = prpOutput.split('.')[0] || '0000';
+            const milliSeconds = prpOutput.split('.')[1] || '0000';
             if (isDegree) {
-                return ((splitOutput[0]*1 + splitOutput[1]/60 + splitOutput[2].split('.')[0]/3600 + milliSeconds[0]/36000000)*Math.PI/180);
+                console.log('>>>>>>>>>', splitOutput[0],splitOutput[1], splitOutput[2].split('.')[0], milliSeconds );
+                return ((splitOutput[0]*1 + splitOutput[1]/60 + splitOutput[2].split('.')[0]/3600 + milliSeconds/36000000)*Math.PI/180);
             }   else {
                 return ((splitOutput[0]*15 + splitOutput[1]/4  + splitOutput[2]/240 + splitOutput[3]/2400000)*Math.PI/180);
             }
