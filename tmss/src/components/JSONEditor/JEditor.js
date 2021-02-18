@@ -160,7 +160,7 @@ function Jeditor(props) {
                     });
                 }
             } else if (schema.validationType === "distanceOnSky") {
-                if (!value || isNaN(value) || value < 0 || value > 180) {
+                if (value === '' || value === undefined || value === null || isNaN(value) || value < 0 || value > 180) {
                     errors.push({
                         path: path,
                         property: 'validationType',
