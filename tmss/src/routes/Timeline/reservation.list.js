@@ -326,11 +326,11 @@ export class ReservationList extends Component{
                                 <span className="p-float-label">
                                     <Calendar
                                         id="fstartdate"
-                                        d dateFormat="dd-M-yy"
+                                        d dateFormat="dd-mm-yy"
                                         value= {this.state.fStartTime}
                                        // placeholder="Select Start Date Time"
                                         onChange= {e => this.setDateRange('fStartTime', e.value)}
-                                        onBlur= {e => this.setDateRange('fStartTime',e.value)}
+                                        onBlur= {e => this.setDateRange('fStartTime',e.value || new Date())}
                                         tooltip="Select Reserved Between - From"  tooltipOptions={this.tooltipOptions}
                                         showIcon={true}
                                         showTime={true} 
@@ -349,11 +349,11 @@ export class ReservationList extends Component{
                                 <span className="p-float-label">
                                     <Calendar
                                         id="fenddate"
-                                        d dateFormat="dd-M-yy"
+                                        d dateFormat="dd-mm-yy"
                                         value= {this.state.fEndTime}
                                     // placeholder="Select End Date Time"
                                         onChange= {e => this.setDateRange('fEndTime', e.value)}
-                                        onBlur= {e => this.setDateRange('fEndTime', e.value)}
+                                        onBlur= {e => this.setDateRange('fEndTime', e.value || new Date())}
                                         tooltip="Select Reserved Between-To" tooltipOptions={this.tooltipOptions}
                                         showIcon={true}
                                         showTime={true} 

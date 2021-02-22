@@ -358,7 +358,7 @@ export class ReservationCreate extends Component {
                                             d dateFormat="yy-mm-dd"
                                             value= {this.state.reservation.start_time}
                                             onChange= {e => this.setParams('start_time',e.value)}
-                                            onBlur= {e => this.setParams('start_time',e.value)}
+                                            onBlur= {e => this.setParams('start_time', e.value || new Date())}
                                             data-testid="start_time"
                                             tooltip="Moment at which the reservation starts from, that is, when its reservation can run." tooltipOptions={this.tooltipOptions}
                                             showIcon={true}
