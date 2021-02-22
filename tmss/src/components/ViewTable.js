@@ -1048,7 +1048,7 @@ function ViewTable(props) {
       } else if (typeof value == "boolean") {
         return value.toString();
       } else if (typeof value == "string") {
-        const dateval = moment(value, moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+        const dateval = moment(value, moment.ISO_8601).format("YYYY-MM-DD HH:mm:ss");
         if (dateval !== 'Invalid date') {
           return dateval;
         }

@@ -17,7 +17,7 @@ import {ProjectList} from './../Project/list';
  * Component to view the details of a cycle
  */
 export class CycleView extends Component {
-    DATE_FORMAT = 'YYYY-MMM-DD HH:mm:ss';
+    DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss';
     constructor(props) {
         super(props);
         this.state = {

@@ -110,8 +110,8 @@ class CycleList extends Component{
                 cycle.id = cycle.name ;
                 cycle.regularProjects = regularProjects.length;
                 cycle.longterm = longterm.length;
-                cycle.start = moment(cycle['start'], moment.ISO_8601).format("YYYY-MMM-DD");
-                cycle.stop = moment(cycle['stop'], moment.ISO_8601).format("YYYY-MMM-DD");
+                cycle.start = moment(cycle['start'], moment.ISO_8601).format("YYYY-MM-DD");
+                cycle.stop = moment(cycle['stop'], moment.ISO_8601).format("YYYY-MM-DD");
                 // cycle.observingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'observing_time');
                 // cycle.processingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'cep_processing_time');
                 // cycle.ltaResources = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'lta_storage');

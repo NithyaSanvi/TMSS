@@ -18,7 +18,7 @@ import SUBCreator from '../Scheduling/sub.create';
  * Component to view the details of a project
  */
 export class ProjectView extends Component {
-    DATE_FORMAT = 'YYYY-MMM-DD HH:mm:ss';
+    DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss';
     constructor(props) {
         super(props);
         this.state = {
