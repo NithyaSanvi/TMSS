@@ -355,7 +355,7 @@ export class ReservationCreate extends Component {
                                     <label htmlFor="reservationName" className="col-lg-2 col-md-2 col-sm-12">From Date <span style={{color:'red'}}>*</span></label>
                                     <div className="col-lg-3 col-md-3 col-sm-12">
                                         <Calendar 
-                                            d dateFormat="yy-mm-dd"
+                                            d dateFormat={UIConstants.CALENDAR_DATE_FORMAT}
                                             value= {this.state.reservation.start_time}
                                             onChange= {e => this.setParams('start_time',e.value)}
                                             onBlur= {e => this.setParams('start_time', e.value || new Date())}
