@@ -100,6 +100,7 @@ export class TimelineView extends Component {
     }
 
     async componentDidMount() {
+        this.setState({ loader: true });
         // Fetch all details from server and prepare data to pass to timeline and table components
         const promises = [  ProjectService.getProjectList(), 
                             ScheduleService.getSchedulingUnitsExtended('blueprint'),
@@ -181,6 +182,7 @@ export class TimelineView extends Component {
                     this.suConstraintTemplates = suConstraintTemplates;
             });
             this.setState({suBlueprints: suBlueprints, suDrafts: suDrafts, group: group, suSets: suSets,
+                            loader: false,
                             projects: projects, suBlueprintList: suList,
                             items: items, currentUTC: currentUTC, isLoading: false,
                             currentStartTime: defaultStartTime, currentEndTime: defaultEndTime});
@@ -838,6 +840,9 @@ export class TimelineView extends Component {
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
+        }
+        if (this.state.loader) {
+            return <AppLoader />
         }
         const isSUDetsVisible = this.state.isSUDetsVisible;
         const isTaskDetsVisible = this.state.isTaskDetsVisible;
