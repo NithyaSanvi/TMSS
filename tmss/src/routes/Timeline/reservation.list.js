@@ -124,9 +124,9 @@ export class ReservationList extends Component{
                     reservation.duration = UnitService.getSecsToHHmmss(reservation.duration);
                     let endDate = moment(reservation.start_time);
                     endDate = moment(endDate).add(duration, 's');
-                    reservation['end_time']= moment( reservation['end_time'], moment.ISO_8601).format('YYYY-MM-DD HH:mm:ss');
+                    reservation['end_time']= moment(endDate).format('YYYY-MM-DD HH:mm:ss');
                 }
-                reservation['start_time']= moment(reservation['start_time'], moment.ISO_8601).format('YYYY-MM-DD HH:mm:ss');
+                reservation['start_time']= moment(reservation.start_time).format('YYYY-MM-DD HH:mm:ss');
                 this.reservations.push(reservation);
             };
             this.cycleList.map(cycle => {
@@ -206,8 +206,6 @@ export class ReservationList extends Component{
         }
         if(this.state.fStartTime !== null && this.state.fEndTime !== null) {
             fStartTime = moment.utc(moment(this.state.fStartTime)).valueOf();
-            debugger
-            console.log( fStartTime);
             fEndTime = moment.utc(moment(this.state.fEndTime)).valueOf();
             await this.state.reservationsList.forEach( reservation => {
                 let res_Start_time =  moment.utc(moment(reservation['start_time'])).valueOf();
@@ -326,11 +324,11 @@ export class ReservationList extends Component{
                                 <span className="p-float-label">
                                     <Calendar
                                         id="fstartdate"
-                                        d dateFormat="dd-mm-yy"
+                                        d dateFormat="dd-M-yy"
                                         value= {this.state.fStartTime}
                                        // placeholder="Select Start Date Time"
                                         onChange= {e => this.setDateRange('fStartTime', e.value)}
-                                        onBlur= {e => this.setDateRange('fStartTime',e.value || new Date())}
+                                        onBlur= {e => this.setDateRange('fStartTime',e.value)}
                                         tooltip="Select Reserved Between - From"  tooltipOptions={this.tooltipOptions}
                                         showIcon={true}
                                         showTime={true} 
@@ -349,11 +347,11 @@ export class ReservationList extends Component{
                                 <span className="p-float-label">
                                     <Calendar
                                         id="fenddate"
-                                        d dateFormat="dd-mm-yy"
+                                        d dateFormat="dd-M-yy"
                                         value= {this.state.fEndTime}
                                     // placeholder="Select End Date Time"
                                         onChange= {e => this.setDateRange('fEndTime', e.value)}
-                                        onBlur= {e => this.setDateRange('fEndTime', e.value || new Date())}
+                                        onBlur= {e => this.setDateRange('fEndTime', e.value)}
                                         tooltip="Select Reserved Between-To" tooltipOptions={this.tooltipOptions}
                                         showIcon={true}
                                         showTime={true} 

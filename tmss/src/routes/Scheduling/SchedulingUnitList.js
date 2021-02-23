@@ -258,8 +258,8 @@ class SchedulingUnitList extends Component{
                             blueP.duration = moment.utc((blueP.duration || 0)*1000).format('HH:mm:ss');
                             blueP.type="Blueprint"; 
                             blueP['actionpath'] ='/schedulingunit/view/blueprint/'+blueP.id;
-                            blueP['created_at'] = moment(blueP['created_at'],  moment.ISO_8601).format("YYYY-MM-DD HH:mm:ss");
-                            blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format("YYYY-MM-DD HH:mm:ss");
+                            blueP['created_at'] = moment(blueP['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                            blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                             blueP['task_content'] = this.getTaskTypeGroupCounts(blueP['task_blueprints']);
                             blueP['linked_bp_draft'] = this.getLinksList([blueP.draft_id], 'draft');
                             blueP['template_description'] = suTemplate[blueP.requirements_template_id].description;
@@ -282,8 +282,8 @@ class SchedulingUnitList extends Component{
                         scheduleunit['actionpath']='/schedulingunit/view/draft/'+scheduleunit.id;
                         scheduleunit['type'] = 'Draft';
                         scheduleunit['duration'] = moment.utc((scheduleunit.duration || 0)*1000).format('HH:mm:ss');
-                        scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format("YYYY-MM-DD HH:mm:ss");
-                        scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format("YYYY-MM-DD HH:mm:ss");
+                        scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                        scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                         scheduleunit.project = project.name;
                         scheduleunit.canSelect = true;
                         scheduleunit.suSet = suSet.name;

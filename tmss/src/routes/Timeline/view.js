@@ -24,6 +24,8 @@ import { Dropdown } from 'primereact/dropdown';
 import { OverlayPanel } from 'primereact/overlaypanel';
 import { RadioButton } from 'primereact/radiobutton';
 import { TieredMenu } from 'primereact/tieredmenu';
+import {MultiSelect} from 'primereact/multiselect';
+
 
 // Color constant for SU status
 const SU_STATUS_COLORS = { "ERROR": "FF0000", "CANCELLED": "#00FF00", "DEFINED": "#00BCD4", 
@@ -62,6 +64,7 @@ export class TimelineView extends Component {
             suTaskList:[],
             isSummaryLoading: false,
             stationGroup: [],
+            selectedStationGroup: [], //Station Group(core,international,remote)
             reservationFilter: null,
             showSUs: true,
             showTasks: false
@@ -92,6 +95,8 @@ export class TimelineView extends Component {
         this.addNewData = this.addNewData.bind(this);
         this.updateExistingData = this.updateExistingData.bind(this);
         this.updateSchedulingUnit = this.updateSchedulingUnit.bind(this);
+         this.setSelectedStationGroup = this.setSelectedStationGroup.bind(this);
+        this.getStationsByGroupName = this.getStationsByGroupName.bind(this);
     }
 
     async componentDidMount() {
@@ -102,7 +107,8 @@ export class TimelineView extends Component {
                             ScheduleService.getSchedulingSets(),
                             UtilService.getUTC(),
                             ScheduleService.getStations('All'),
-                            TaskService.getSubtaskTemplates()] ;
+                            TaskService.getSubtaskTemplates(),
+                            ScheduleService.getMainGroupStations()];
         Promise.all(promises).then(async(responses) => {
             this.subtaskTemplates = responses[6];
             const projects = responses[0];
@@ -178,10 +184,13 @@ export class TimelineView extends Component {
                             projects: projects, suBlueprintList: suList,
                             items: items, currentUTC: currentUTC, isLoading: false,
                             currentStartTime: defaultStartTime, currentEndTime: defaultEndTime});
+                            this.mainStationGroups = responses[7];
+                            this.mainStationGroupOptions = Object.keys(responses[7]).map(value => ({ value }));
         });
-        // Get maingroup and its stations
-        ScheduleService.getMainGroupStations()
-            .then(stationGroups => {this.mainStationGroups = stationGroups});
+    }
+
+    setSelectedStationGroup(value) {
+        this.setState({ selectedStationGroup: value });
     }
 
     /**
@@ -449,7 +458,7 @@ export class TimelineView extends Component {
         // On range change close the Details pane
         // this.closeSUDets();
         // console.log(_.orderBy(group, ["parent", "id"], ['asc', 'desc']));
-        return {group: this.stationView?this.allStationsGroup:_.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']), items: items};
+        return {group: this.stationView? this.getStationsByGroupName() : _.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']), items: items};
     }
 
     /**
@@ -642,8 +651,17 @@ export class TimelineView extends Component {
             items = this.addStationReservations(items, this.state.currentStartTime, this.state.currentEndTime);
         }
         if (this.timeline) {
-            this.timeline.updateTimeline({group: this.state.stationView?this.allStationsGroup:_.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']), items: items});
+            this.timeline.updateTimeline({group: this.state.stationView ? this.getStationsByGroupName() : _.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']), items: items});
         }
+    }
+
+    getStationsByGroupName() {
+        let stations = [];
+        this.state.selectedStationGroup.forEach((i) => {
+            stations = [...stations, ...this.mainStationGroups[i]];
+        });
+        stations = stations.map(i => ({id: i, title: i}));
+        return stations;
     }
 
     setStationView(e) {
@@ -874,12 +892,27 @@ export class TimelineView extends Component {
                                         <i className="pi pi-step-forward"></i>
                                     </button>
                                 </div> 
-                                <div className="timeline-view-toolbar">
-                                    <label>Station View</label>
-                                    <InputSwitch checked={this.state.stationView} onChange={(e) => {this.setStationView(e)}} />
+                                <div className={`timeline-view-toolbar ${this.state.stationView && 'alignTimeLineHeader'}`}>
+                                    <div  className="sub-header">
+                                        <label>Station View</label>
+                                        <InputSwitch checked={this.state.stationView} onChange={(e) => {this.setStationView(e)}} />
+                                        {this.state.stationView && 
+                                            <>
+                                            <label style={{marginLeft: '15px'}}>Stations Group</label>
+                                             <MultiSelect data-testid="stations" id="stations" optionLabel="value" optionValue="value" filter={true}
+                                                style={{fontSize: '10px', top: '-5px' }}
+                                                tooltip="Select Stations"
+                                                value={this.state.selectedStationGroup} 
+                                                options={this.mainStationGroupOptions} 
+                                                placeholder="Select Stations"
+                                                onChange={(e) => this.setSelectedStationGroup(e.value)}
+                                            />
+                                            </>
+                                        }
+                                    </div>
                                     {this.state.stationView &&
-                                    <>
-                                        <label style={{marginLeft: '15px'}}>Reservation</label>
+                                    <div className="sub-header">
+                                        <label style={{marginLeft: '20px'}}>Reservation</label>
                                         <Dropdown optionLabel="name" optionValue="name" 
                                                     style={{fontSize: '10px', top: '-5px'}}
                                                     value={this.state.reservationFilter} 
@@ -887,7 +920,8 @@ export class TimelineView extends Component {
                                                     filter showClear={true} filterBy="name"
                                                     onChange={(e) => {this.setReservationFilter(e.value)}} 
                                                     placeholder="Reason"/>
-                                    </>
+                                    
+                                    </div>
                                     }
                                     {!this.state.stationView &&
                                     <>

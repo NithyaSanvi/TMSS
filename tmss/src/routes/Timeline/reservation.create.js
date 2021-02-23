@@ -355,10 +355,10 @@ export class ReservationCreate extends Component {
                                     <label htmlFor="reservationName" className="col-lg-2 col-md-2 col-sm-12">From Date <span style={{color:'red'}}>*</span></label>
                                     <div className="col-lg-3 col-md-3 col-sm-12">
                                         <Calendar 
-                                            d dateFormat={UIConstants.CALENDAR_DATE_FORMAT}
+                                            d dateFormat="dd-M-yy"
                                             value= {this.state.reservation.start_time}
                                             onChange= {e => this.setParams('start_time',e.value)}
-                                            onBlur= {e => this.setParams('start_time', e.value || new Date())}
+                                            onBlur= {e => this.setParams('start_time',e.value)}
                                             data-testid="start_time"
                                             tooltip="Moment at which the reservation starts from, that is, when its reservation can run." tooltipOptions={this.tooltipOptions}
                                             showIcon={true}
