@@ -1,13 +1,13 @@
-import React, {Component} from 'react';
+import React, { Component} from 'react';
 import { Link, Redirect } from 'react-router-dom';
 import _ from 'lodash';
 
-import {InputText} from 'primereact/inputtext';
-import {InputTextarea} from 'primereact/inputtextarea';
-import {Chips} from 'primereact/chips';
-import {Dropdown} from 'primereact/dropdown';
+import { InputText } from 'primereact/inputtext';
+import { InputTextarea } from 'primereact/inputtextarea';
+import { Chips } from 'primereact/chips';
+import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
-
+import { CustomDialog } from '../../layout/components/CustomDialog';
 import Jeditor from '../../components/JSONEditor/JEditor';
 
 import TaskService from '../../services/task.service';
@@ -21,6 +21,8 @@ export class TaskEdit extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            showDialog: false,
+            isDirty: false,
             task: {
                 name: "",
                 created_at: null,
@@ -47,6 +49,8 @@ export class TaskEdit extends Component {
         this.validateForm = this.validateForm.bind(this);
         this.saveTask = this.saveTask.bind(this);
         this.cancelEdit = this.cancelEdit.bind(this);
+        this.checkIsDirty = this.checkIsDirty.bind(this);
+        this.close = this.close.bind(this);
     }
 
     /**
@@ -71,8 +75,14 @@ export class TaskEdit extends Component {
      */
     setTaskParams(key, value) {
         let task = this.state.task;
+        const taskValue = this.state.task[key];
         task[key] = value;
-        this.setState({task: task, validForm: this.validateForm()});
+        if  ( !this.state.isDirty && taskValue && !_.isEqual(taskValue, value) ) {
+            this.setState({task: task, validForm: this.validateForm(), isDirty: true});
+        }   else {
+            this.setState({task: task, validForm: this.validateForm()});
+        }
+       
     }
 
     /**
@@ -95,7 +105,7 @@ export class TaskEdit extends Component {
 		
         task.specifications_template = template.url;
         this.setState({taskSchema: null});
-        this.setState({task: task, taskSchema: template.schema});
+        this.setState({task: task, taskSchema: template.schema, isDirty: true});
 		 
         this.state.editorFunction();
     }
@@ -126,6 +136,7 @@ export class TaskEdit extends Component {
      * Function to call the servie and pass the values to save
      */
     saveTask() {
+        this.setState({isDirty: false});
         let task = this.state.task;
         task.specifications_doc = this.templateOutput[task.specifications_template_id];
         // Remove read only properties from the object before sending to API
@@ -136,6 +147,21 @@ export class TaskEdit extends Component {
                 this.setState({redirect: '/task/view/draft/' + task.id});
             }
         });
+    }
+
+    /**
+     * warn before cancel the page if any changes detected 
+     */
+    checkIsDirty() {
+        if( this.state.isDirty ){
+            this.setState({showDialog: true});
+        } else {
+            this.cancelEdit();
+        }
+    }
+    
+    close() {
+        this.setState({showDialog: false});
     }
 
     cancelEdit() {
@@ -204,14 +230,16 @@ export class TaskEdit extends Component {
                         </Link>
                     </div>
                     </div> */}
-				<PageHeader location={this.props.location} title={'Task - Edit'} actions={[{icon: 'fa-window-close',link: this.props.history.goBack,title:'Click to Close Task Edit Page' ,props : { pathname:  `/task/view/draft/${this.state.task?this.state.task.id:''}`}}]}/>
+                <PageHeader location={this.props.location} title={'Task - Edit'} actions={[{icon: 'fa-window-close',
+                 title:'Click to Close Task Edit Page', props : { pathname:  `/task/view/draft/${this.state.task?this.state.task.id:''}`}}]}/>
 				{isLoading ? <AppLoader/> :
                 <div>
 			        <div className="p-fluid">
                     <div className="p-field p-grid">
                     <label htmlFor="taskName" className="col-lg-2 col-md-2 col-sm-12">Name <span style={{color:'red'}}>*</span></label>
                     <div className="col-lg-4 col-md-4 col-sm-12">
-                        <InputText className={this.state.errors.name ?'input-error':''} id="taskName" type="text" value={this.state.task.name} onChange={(e) => this.setTaskParams('name', e.target.value)}/>
+                        <InputText className={this.state.errors.name ?'input-error':''} id="taskName" type="text" value={this.state.task.name} 
+                        onChange={(e) => this.setTaskParams('name', e.target.value)}/>
                         <label className="error">
                             {this.state.errors.name ? this.state.errors.name : ""}
                         </label>
@@ -276,8 +304,14 @@ export class TaskEdit extends Component {
                     <Button label="Save" className="p-button-primary" icon="pi pi-check" onClick={this.saveTask} disabled={!this.state.validEditor || !this.state.validForm} />
                 </div>
                 <div className="p-col-1">
-                    <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.cancelEdit}  />
+                    <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.checkIsDirty}  />
                 </div>
+                </div>
+                <div className="p-grid" data-testid="confirm_dialog">
+                    <CustomDialog type="confirmation" visible={this.state.showDialog} width="40vw"
+                        header={'Edit Task'} message={'Do you want to leave this page? Your changes may not be saved.'} 
+                        content={''} onClose={this.close} onCancel={this.close} onSubmit={this.cancelEdit}>
+                    </CustomDialog>
                 </div>
             </React.Fragment>
         );

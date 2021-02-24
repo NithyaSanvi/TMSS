@@ -42,6 +42,7 @@ export default (props) => {
                 propertyValue.propertyOrder=7;
             }
             if(propertyKey === 'min_calibrator_elevation' || propertyKey === 'min_target_elevation'){
+                propertyValue.default = (propertyValue.default * 180) / Math.PI;
                 propertyValue.propertyOrder=8;
                 propertyValue.validationType= 'elevation';
             }
@@ -55,7 +56,8 @@ export default (props) => {
                 propertyValue.propertyOrder=11;
             }
             if(propertyKey === 'sun' || propertyKey === 'moon' || propertyKey === 'jupiter'){
-               propertyValue.propertyOrder=12;
+                propertyValue.default = (propertyValue.default * 180) / Math.PI;
+                propertyValue.propertyOrder=12;
                 propertyValue.validationType= 'distanceOnSky';
             } 
             if(propertyKey === 'avoid_twilight' || propertyKey === 'require_day' || propertyKey === 'require_night'){
@@ -71,7 +73,7 @@ export default (props) => {
         propertyValue.skipFormat = true;
         propertyValue.options = {
             "inputAttributes": {
-                "placeholder": "yyyy-mm-dd,--:--:--"
+                "placeholder": "mm/dd/yyyy,--:--:--"
               },
             "flatpickr": {
                 "inlineHideInput": true,
@@ -113,20 +115,24 @@ export default (props) => {
     //Disable 'AT' field when schedular -> online
     const onEditForm = (jsonOutput, errors, ref) => {
         if (ref.editors['root.scheduler'] && ref.editors['root.scheduler'].value.toLowerCase()!== 'manual') {
-            const list = ref.editors['root.time.at'].container.className.split(' ');
-            if (!list.includes('disable-field')) {
-                list.push('disable-field');
-            }
-            ref.editors['root.time.at'].container.className = list.join(' ');
-            if (ref.editors['root.time.at'].control) {
-                Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = true);
-                Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = true);
+            if (ref.editors['root.time.at']) {
+                const list = ref.editors['root.time.at'].container.className.split(' ');
+                if (!list.includes('disable-field')) {
+                    list.push('disable-field');
+                }
+                ref.editors['root.time.at'].container.className = list.join(' ');
+                if (ref.editors['root.time.at'].control) {
+                    Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = true);
+                    Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = true);
+                }
             }
         } else {
-            ref.editors['root.time.at'].container.className = ref.editors['root.time.at'].container.className.replace('disable-field', '');
-            if (ref.editors['root.time.at'].control) {
-                Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = false);
-                Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = false);
+            if (ref.editors['root.time.at']) {
+                ref.editors['root.time.at'].container.className = ref.editors['root.time.at'].container.className.replace('disable-field', '');
+                if (ref.editors['root.time.at'].control) {
+                    Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('input')).forEach(input => input.disabled = false);
+                    Array.prototype.slice.call(ref.editors['root.time.at'].control.getElementsByTagName('button')).forEach(button => button.disabled = false);
+                }
             }
         }
         if (props.callback) {

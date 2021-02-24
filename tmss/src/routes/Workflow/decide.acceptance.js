@@ -3,54 +3,67 @@ import { Button } from 'primereact/button';
 import SunEditor from 'suneditor-react';
 import 'suneditor/dist/css/suneditor.min.css'; // Import Sun Editor's CSS File
 import { Checkbox } from 'primereact/checkbox';
+import WorkflowService from '../../services/workflow.service';
 
 class DecideAcceptance extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            content: props.report,
-            picomment: props.picomment,  //PI Comment Field
-            showEditor: false,           //Sun Editor
-            checked: false,              //Checkbox
-
+            content: '',
+            comment: '',  
+            showEditor: false,           
+            sos_accept_after_pi: false
         };
         this.Next = this.Next.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.onChangePIComment = this.onChangePIComment.bind(this);
     }
 
-    
-    // Method will trigger on change of operator report sun-editor
-     handleChange(e) {
+    async componentDidMount() {
+        const qaSOSResponse = await WorkflowService.getQAReportingSOS(this.props.process.qa_reporting_sos);
+        const piVerificationResponse = await WorkflowService.getQAPIverification(this.props.process.pi_verification);
         this.setState({
-            content: e
+            content: qaSOSResponse.sos_report,
+            comment: piVerificationResponse.pi_report
         });
-        localStorage.setItem('report_qa', e);
     }
+
+     // Method will trigger on change of operator report sun-editor
+     handleChange(e) {
+        if (e === '<p><br></p>') {
+            this.setState({ content: '' });
+            return;
+        }
+        this.setState({ content: e });
+    }
+
+    async Next() {
+        const currentWorkflowTask = await this.props.getCurrentTaskDetails();
+        const promise = [];
+        if (currentWorkflowTask && !currentWorkflowTask.fields.owner) {
+            promise.push(WorkflowService.updateAssignTo(currentWorkflowTask.pk, { owner: this.state.assignTo }));
+        }
+        promise.push(WorkflowService.updateQA_Perform(this.props.id, {"sos_accept_after_pi":this.state.sos_accept_after_pi}));
+        Promise.all(promise).then((responses) => {
+            if (responses.indexOf(null)<0) {
+                this.props.onNext({ report: this.state.content , pireport: this.state.comment});
+            }   else {
+                this.props.onError();
+            } 
+        });
+       
+    }
+    
 
     //PI Comment Editor
-    onChangePIComment(e) {
-        this.setState({
-            picomment: e.target.value
-        });
-        localStorage.setItem('pi_comment', e.target.value);
-    }
-
-     /**
-     * Method will trigger on click save buton
-     * here onNext props coming from parent, where will handle redirection to other page
-     */
-    Next() {
-        this.props.onNext({
-            report: this.state.content,
-            picomment: this.state.picomment
-
-        });
-    }
-
-    // Not using at present
-    cancelCreate() {
-        this.props.history.goBack();
+    onChangePIComment(a) {
+        if (a === '<p><br></p>') {
+            localStorage.setItem('comment_pi', '');
+            this.setState({ comment: '' });
+            return;
+        }
+        this.setState({comment: a});
+        localStorage.setItem('comment_pi', a);
     }
 
     render() {
@@ -78,7 +91,7 @@ class DecideAcceptance extends Component {
                                 <div className="col-lg-12 col-md-12 col-sm-12">
                                     {this.state.showEditor && <SunEditor setDefaultStyle="min-height: 250px; height: auto;" enableToolbar={true}
                                         onChange={this.onChangePIComment}
-                                        setContents={this.state.picomment}
+                                        setContents={this.state.comment}
                                         setOptions={{
                                             buttonList: [
                                                 ['undo', 'redo', 'bold', 'underline', 'fontColor', 'table', 'link', 'image', 'video', 'italic', 'strike', 'subscript',
@@ -86,24 +99,25 @@ class DecideAcceptance extends Component {
                                             ]
                                         }}
                                     />}
-                                   <div className="operator-report" dangerouslySetInnerHTML={{ __html: this.state.picomment }}></div>
+                                   <div className="pi-report" dangerouslySetInnerHTML={{ __html: this.state.comment }}></div>
                                 </div>
                             </div>
                         <div className="p-field p-grid">
                             <label htmlFor="piAccept" className="col-lg-2 col-md-2 col-sm-12">SDCO accepts after PI</label>
                             <div className="col-lg-3 col-md-3 col-sm-6">
                                 <div className="p-field-checkbox">
-                                    <Checkbox inputId="binary" checked={this.state.checked} onChange={e => this.setState({ checked: e.checked })} />
+                                    <Checkbox inputId="binary" checked={this.state.sos_accept_after_pi} onChange={e => this.setState({ sos_accept_after_pi: e.checked })} />
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div className="p-grid" style={{ marginTop: '20px' }}>
                         <div className="p-col-1">
-                            <Button label="Next" className="p-button-primary" icon="pi pi-check" onClick = { this.Next } />
+                            <Button label="Next" className="p-button-primary" icon="pi pi-check" onClick = { this.Next } disabled={this.props.disableNextButton} />
                         </div>
                         <div className="p-col-1">
-                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }}  />
+                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }}
+                                onClick={(e) => { this.props.onCancel()}} />
                         </div>
                     </div>
 

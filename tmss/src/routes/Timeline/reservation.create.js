@@ -1,17 +1,18 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import { Redirect } from 'react-router-dom';
-
-import {Growl} from 'primereact/components/growl/Growl';
+import _ from 'lodash';
+import { Growl } from 'primereact/components/growl/Growl';
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
 import UIConstants from '../../utils/ui.constants';
-import {Calendar} from 'primereact/calendar';
+import { Calendar } from 'primereact/calendar';
 import { InputMask } from 'primereact/inputmask';
-import {Dropdown} from 'primereact/dropdown';
-import {InputText} from 'primereact/inputtext';
-import {InputTextarea} from 'primereact/inputtextarea';
+import { Dropdown } from 'primereact/dropdown';
+import {InputText } from 'primereact/inputtext';
+import { InputTextarea } from 'primereact/inputtextarea';
 import { Button } from 'primereact/button';
-import {Dialog} from 'primereact/components/dialog/Dialog';
+import { Dialog } from 'primereact/components/dialog/Dialog';
+import { CustomDialog } from '../../layout/components/CustomDialog';
 import ProjectService from '../../services/project.service';
 import ReservationService from '../../services/reservation.service';
 import UnitService from '../../utils/unit.converter';
@@ -24,6 +25,8 @@ export class ReservationCreate extends Component {
     constructor(props) {
         super(props);
         this.state= {
+            showDialog: false,
+            isDirty: false,
             isLoading: true,
             redirect: null, 
             paramsSchema: null,                     // JSON Schema to be generated from strategy template to pass to JSON editor 
@@ -59,6 +62,8 @@ export class ReservationCreate extends Component {
         this.saveReservation = this.saveReservation.bind(this);
         this.reset = this.reset.bind(this);
         this.cancelCreate = this.cancelCreate.bind(this);
+        this.checkIsDirty = this.checkIsDirty.bind(this);
+        this.close = this.close.bind(this);
         this.initReservation = this.initReservation.bind(this);
     }
 
@@ -100,13 +105,21 @@ export class ReservationCreate extends Component {
      * @param {object} value 
      */
     setReservationParams(key, value) {
-         
-        let reservation = this.state.reservation;
+        let reservation = _.cloneDeep(this.state.reservation);
         reservation[key] = value;
-        this.setState({reservation: reservation, validForm: this.validateForm(key), validEditor: this.validateEditor(),touched: { 
-            ...this.state.touched,
-            [key]: true
-        }});
+        if  ( !this.state.isDirty && !_.isEqual(this.state.reservation, reservation) ) {
+            this.setState({reservation: reservation, validForm: this.validateForm(key), validEditor: this.validateEditor(), touched: { 
+                ...this.state.touched,
+                [key]: true
+            }, isDirty: true});
+        }   else {
+            this.setState({reservation: reservation, validForm: this.validateForm(key), validEditor: this.validateEditor(),touched: { 
+                ...this.state.touched,
+                [key]: true
+            }});
+        }
+
+        
     }
 
      /**
@@ -124,7 +137,8 @@ export class ReservationCreate extends Component {
     setParams(key, value, type) {
         if(key === 'duration' && !this.validateDuration( value)) {
             this.setState({
-                durationError: true
+                durationError: true,
+                isDirty: true
             })
             return;
         }
@@ -139,7 +153,7 @@ export class ReservationCreate extends Component {
                 break;
             }
         }
-        this.setState({reservation: reservation, validForm: this.validateForm(key), durationError: false});
+        this.setState({reservation: reservation, validForm: this.validateForm(key), durationError: false, isDirty: true});
     }
      
     /**
@@ -205,9 +219,16 @@ export class ReservationCreate extends Component {
     setEditorOutput(jsonOutput, errors) {
         this.paramsOutput = jsonOutput;
         this.validEditor = errors.length === 0;
-        this.setState({ paramsOutput: jsonOutput, 
-                        validEditor: errors.length === 0,
-                        validForm: this.validateForm()});
+        if  ( !this.state.isDirty && this.state.paramsOutput && !_.isEqual(this.state.paramsOutput, jsonOutput) ) {
+            this.setState({ paramsOutput: jsonOutput, 
+                validEditor: errors.length === 0,
+                validForm: this.validateForm(),
+                isDirty: true});
+        }   else {
+            this.setState({ paramsOutput: jsonOutput, 
+                validEditor: errors.length === 0,
+                validForm: this.validateForm()});
+        }
     }
 
     saveReservation(){
@@ -220,9 +241,9 @@ export class ReservationCreate extends Component {
         reservation = ReservationService.saveReservation(reservation); 
         if (reservation && reservation !== null){
             const dialog = {header: 'Success', detail: 'Reservation is created successfully. Do you want to create another Reservation?'};
-            this.setState({ dialogVisible: true, dialog: dialog,  paramsOutput: {}})
+            this.setState({ dialogVisible: true, dialog: dialog,  paramsOutput: {}, showDialog: false, isDirty: false})
         }  else {
-            this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to save Reservation'});
+            this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to save Reservation', showDialog: false, isDirty: false});
         }
     }
 
@@ -248,6 +269,8 @@ export class ReservationCreate extends Component {
             validFields: {},
             touched:false,
             stationGroup: [],
+            showDialog: false, 
+            isDirty: false
         });
         this.initReservation();
     }
@@ -257,6 +280,21 @@ export class ReservationCreate extends Component {
      */
     cancelCreate() {
         this.props.history.goBack();
+    }
+
+    /**
+     * warn before cancel the page if any changes detected 
+     */
+    checkIsDirty() {
+        if( this.state.isDirty ){
+            this.setState({showDialog: true});
+        } else {
+            this.cancelCreate();
+        }
+    }
+    
+    close() {
+        this.setState({showDialog: false});
     }
 
     render() {
@@ -278,7 +316,8 @@ export class ReservationCreate extends Component {
             <React.Fragment>
                 <Growl ref={(el) => this.growl = el} />
                 <PageHeader location={this.props.location} title={'Reservation - Add'} 
-                           actions={[{icon: 'fa-window-close' ,title:'Click to close Reservation creation', props : { pathname: `/su/timelineview/reservation/reservation/list`}}]}/>
+                           actions={[{icon: 'fa-window-close' ,title:'Click to close Reservation creation', 
+                           type: 'button',  actOn: 'click', props:{ callback: this.checkIsDirty }}]}/>
                 { this.state.isLoading ? <AppLoader /> :
                 <> 
                     <div>
@@ -377,7 +416,7 @@ export class ReservationCreate extends Component {
                                         disabled={!this.state.validEditor || !this.state.validForm} data-testid="save-btn" />
                             </div>
                             <div className="p-col-1">
-                                <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.cancelCreate}  />
+                                <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.checkIsDirty}  />
                             </div>
                         </div>
                     </div>
@@ -402,6 +441,11 @@ export class ReservationCreate extends Component {
                                 </div>
                             </div>
                     </Dialog>
+
+                    <CustomDialog type="confirmation" visible={this.state.showDialog} width="40vw"
+                            header={'Add Reservation'} message={'Do you want to leave this page? Your changes may not be saved.'} 
+                            content={''} onClose={this.close} onCancel={this.close} onSubmit={this.cancelCreate}>
+                        </CustomDialog>
                 </div>
             </React.Fragment>
         );
