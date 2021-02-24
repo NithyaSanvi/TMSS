@@ -94,7 +94,7 @@ export default (props) => {
                 ...stationState,
                 [StationName]: {
                     stations: response.stations,
-                    missing_StationFields: missing_StationFields ? isNaN(missing_StationFields.max_nr_missing)? 0: missing_StationFields.max_nr_missing : ''
+                    missing_StationFields: missing_StationFields ? missing_StationFields.max_nr_missing : ''
                 },
                 Custom: {
                     stations: [...stationState['Custom'].stations, ...response.stations], 
@@ -163,7 +163,7 @@ export default (props) => {
      */
     const setNoOfmissing_StationFields = (key, value) => {
         let cpmissing_StationFieldsErrors = [...missing_StationFieldsErrors];
-        if (isNaN(value) || value > state[key].stations.length || value.trim() === '') {
+        if (value > state[key].stations.length || value === '') {
             if (!cpmissing_StationFieldsErrors.includes(key)) {
                 cpmissing_StationFieldsErrors.push(key);
             }
@@ -176,7 +176,7 @@ export default (props) => {
             [key]: {
                 ...state[key],
                 missing_StationFields: value,
-                error: isNaN(value) || value > state[key].stations.length || value.trim() === ''
+                error: value > state[key].stations.length || value === ''
             },
         };
         setState(stationState);
@@ -192,7 +192,7 @@ export default (props) => {
      */
     const setMissingFieldsForCustom = (value, index) => {
         const custom_selected_options = [...customStations];
-        if (isNaN(value) || value > custom_selected_options[index].stations.length || value.trim() === '' || !custom_selected_options[index].stations.length) {
+        if (value > custom_selected_options[index].stations.length || value === '' || !custom_selected_options[index].stations.length) {
             custom_selected_options[index].error = true;
         } else {
             custom_selected_options[index].error = false;

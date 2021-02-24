@@ -19,7 +19,6 @@ export class CustomDialog extends Component {
         const isConfirm = this.props.type.toLowerCase()==='confirmation';
         const isWarning = this.props.type.toLowerCase()==='warning';
         const isSuccess = this.props.type.toLowerCase()==='success';
-        const showIcon = (typeof this.props.showIcon === "undefined") ? true : this.props.showIcon;
         // const isError = this.props.type.toLowerCase()==='error';
         let iconClass = isConfirm?"pi-question-circle pi-warning":(isWarning?"pi-info-circle pi-warning": (isSuccess?"pi-check-circle pi-success":"pi-times-circle pi-danger"));
         return (
@@ -31,29 +30,25 @@ export class CustomDialog extends Component {
                                 {/* Action buttons based on 'type' props. If 'actions' passed as props, then type is ignored */}
                                 {!this.props.actions && 
                                 <>
-                                    <Button key="submit" type="primary" onClick={this.props.onSubmit?this.props.onSubmit:this.props.onClose} label={isConfirm?'Yes':'Ok'} />
                                     {isConfirm &&
                                         <Button key="back" onClick={this.props.onCancel} label="No" />
                                     }
-                                    
+                                    <Button key="submit" type="primary" onClick={this.props.onSubmit?this.props.onSubmit:this.props.onClose} label={isConfirm?'Yes':'Ok'} />
                                 </>
                                 }
                                 {/* Action button based on the 'actions' props */}
                                 {this.props.actions && this.props.actions.map((action, index) => {
                                     return (
-                                        <Button key={action.id} label={action.title} onClick={action.callback} />
-                                    );
+                                    <Button key={action.id} label={action.title} onClick={action.callback} />);
                                 })}
                                 </div>
                             } >
                             <div className="p-grid">
-                                {showIcon &&
-                                    <div className="col-lg-2 col-md-2 col-sm-2">
-                                        <span style={{position: 'absolute', top: '50%', '-ms-transform': 'translateY(-50%)', transform: 'translateY(-50%)'}}>
-                                            <i className={`pi pi-large ${iconClass}`}></i>
-                                        </span>
-                                    </div>
-                                }
+                                <div className="col-lg-2 col-md-2 col-sm-2">
+                                    <span style={{position: 'absolute', top: '50%', '-ms-transform': 'translateY(-50%)', transform: 'translateY(-50%)'}}>
+                                        <i className={`pi pi-large ${iconClass}`}></i>
+                                    </span>
+                                </div>
                                 <div className="col-lg-10 col-md-10 col-sm-10">
                                     {/* Display message passed */}
                                     {this.props.message?this.props.message:""}

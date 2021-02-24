@@ -32,12 +32,12 @@ export default class TimeInputMask extends Component {
   render() {
     return (
         <InputMask 
-          value={this.props.value}
-          mask="99:99:99" 
-          placeholder="HH:mm:ss" 
-          className="inputmask" 
-          onComplete={this.callbackUpdateAngle}
-          ref={input =>{this.input = input}}
+        value={this.props.value}
+        mask="99:99:99" 
+        placeholder="HH:mm:ss" 
+        className="inputmask" 
+        onComplete={this.callbackUpdateAngle}
+        ref={input =>{this.input = input}}
          />
     );
   }

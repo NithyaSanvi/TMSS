@@ -1,18 +1,18 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import { Redirect } from 'react-router-dom';
 import _ from 'lodash';
 
-import { InputText } from 'primereact/inputtext';
-import { InputNumber } from 'primereact/inputnumber';
-import { InputTextarea } from 'primereact/inputtextarea';
-import { Checkbox } from 'primereact/checkbox';
-import { Dropdown } from 'primereact/dropdown';
-import { MultiSelect } from 'primereact/multiselect';
+import {InputText} from 'primereact/inputtext';
+import {InputNumber} from 'primereact/inputnumber';
+import {InputTextarea} from 'primereact/inputtextarea';
+import {Checkbox} from 'primereact/checkbox';
+import {Dropdown} from 'primereact/dropdown';
+import {MultiSelect} from 'primereact/multiselect';
 import { Button } from 'primereact/button';
-import { Dialog } from 'primereact/components/dialog/Dialog';
-import { Growl } from 'primereact/components/growl/Growl';
-import { CustomDialog } from '../../layout/components/CustomDialog';
-import { ResourceInputList } from './ResourceInputList';
+import {Dialog} from 'primereact/components/dialog/Dialog';
+import {Growl} from 'primereact/components/growl/Growl';
+
+import {ResourceInputList} from './ResourceInputList';
 
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
@@ -25,8 +25,6 @@ export class ProjectEdit extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            showDialog: false,
-            isDirty: false,
             isLoading: true,
             ltaStorage: [],
             dialog: { header: '', detail: ''},
@@ -75,8 +73,6 @@ export class ProjectEdit extends Component {
         this.saveProject = this.saveProject.bind(this);
         this.saveProjectQuota = this.saveProjectQuota.bind(this);
         this.cancelEdit = this.cancelEdit.bind(this);
-        this.checkIsDirty = this.checkIsDirty.bind(this);
-        this.close = this.close.bind(this);
     }
 
     componentDidMount() {
@@ -175,16 +171,12 @@ export class ProjectEdit extends Component {
      */
     addNewResource(){
         if (this.state.newResource) {
-            let resourceList = _.cloneDeep(this.state.resourceList);
+            let resourceList = this.state.resourceList;
             const newResource = _.remove(resourceList, {'name': this.state.newResource});
             let resources = this.state.resources?this.state.resources:[];
             resources.push(newResource[0]);
             console.log(resources);
-            if  ( !this.state.isDirty && !_.isEqual(this.state.resourceList, resourceList) ) {
-                this.setState({resources: resources, resourceList: resourceList, newResource: null, isDirty: true});
-            }   else {
-                this.setState({resources: resources, resourceList: resourceList, newResource: null});
-            }
+            this.setState({resources: resources, resourceList: resourceList, newResource: null});
         }
     }
 
@@ -195,15 +187,11 @@ export class ProjectEdit extends Component {
     removeResource(name) {
         let resources = this.state.resources;
         let resourceList = this.state.resourceList;
-        let projectQuota =  _.cloneDeep(this.state.projectQuota);
+        let projectQuota = this.state.projectQuota;
         const removedResource = _.remove(resources, (resource) => { return resource.name === name });
         resourceList.push(removedResource[0]);
         delete projectQuota[name];
-        if  ( !this.state.isDirty && !_.isEqual(this.state.projectQuota, projectQuota) ) {
-            this.setState({resourceList: resourceList, resources: resources, projectQuota: projectQuota, isDirty: true});
-        }   else {
-            this.setState({resourceList: resourceList, resources: resources, projectQuota: projectQuota});
-        }
+        this.setState({resourceList: resourceList, resources: resources, projectQuota: projectQuota});
     }
 
     /**
@@ -212,7 +200,7 @@ export class ProjectEdit extends Component {
      * @param {any} value 
      */
     setProjectParams(key, value, type) {
-        let project = _.cloneDeep(this.state.project);
+        let project = this.state.project;
         switch(type) {
             case 'NUMBER': {
                 console.log("Parsing Number");
@@ -243,11 +231,7 @@ export class ProjectEdit extends Component {
         if (type==='PROJECT_NAME' & value!=="") {
             validForm = this.validateForm('archive_subdirectory');
         }
-        if  ( !this.state.isDirty && !_.isEqual(this.state.project, project) ) {
-            this.setState({project: project, validForm: validForm, isDirty: true});
-        }   else {
-            this.setState({project: project, validForm: validForm});
-        }
+        this.setState({project: project, validForm: validForm});
     }
 
     /**
@@ -257,27 +241,22 @@ export class ProjectEdit extends Component {
      */
     setProjectQuotaParams(key, event) {
         let projectQuota = this.state.projectQuota;
-        const previousValue = projectQuota[key];
         if (event.target.value) {
             let resource = _.find(this.state.resources, {'name': key});
             
             let newValue = 0;
             if (this.resourceUnitMap[resource.quantity_value] && 
                 event.target.value.toString().indexOf(this.resourceUnitMap[resource.quantity_value].display)>=0) {
-                newValue = _.trim(event.target.value.replace(this.resourceUnitMap[resource.quantity_value].display,''));
+                newValue = event.target.value.replace(this.resourceUnitMap[resource.quantity_value].display,'');
             }   else {
-                newValue = _.trim(event.target.value);
+                newValue = event.target.value;
             }
-            projectQuota[key] = (newValue==="NaN" || isNaN(newValue))?0:Number(newValue);
+            projectQuota[key] = (newValue==="NaN" || isNaN(newValue))?0:newValue;
         }   else {
-           // let projectQuota = this.state.projectQuota;
+            let projectQuota = this.state.projectQuota;
             projectQuota[key] = 0;
         }
-        if  ( !this.state.isDirty && !_.isEqual(previousValue, projectQuota[key]) ) {
-            this.setState({projectQuota: projectQuota, isDirty: true});
-        }   else {
-            this.setState({projectQuota: projectQuota});
-        }
+        this.setState({projectQuota: projectQuota});
     }
 
     /**
@@ -396,22 +375,7 @@ export class ProjectEdit extends Component {
         }   else {
             dialog = {header: 'Error', detail: 'Project updated successfully but resource allocation not updated properly. Try again!'};
         }
-        this.setState({dialogVisible: true, dialog: dialog, isDirty: false});
-    }
-
-    /**
-     * warn before cancel the page if any changes detected 
-     */
-    checkIsDirty() {
-        if( this.state.isDirty ){
-            this.setState({showDialog: true});
-        } else {
-            this.cancelEdit();
-        }
-    }
-    
-    close() {
-        this.setState({showDialog: false});
+        this.setState({dialogVisible: true, dialog: dialog});
     }
 
     /**
@@ -429,8 +393,7 @@ export class ProjectEdit extends Component {
         return (
             <React.Fragment>
                <Growl ref={(el) => this.growl = el} />
-                 <PageHeader location={this.props.location} title={'Project - Edit'} actions={[{icon:'fa-window-close',
-                 title:'Click to Close Project Edit Page', type: 'button',  actOn: 'click', props:{ callback: this.checkIsDirty }}]}/>
+                 <PageHeader location={this.props.location} title={'Project - Edit'} actions={[{icon:'fa-window-close',link: this.props.history.goBack,title:'Click to Close Project Edit Page', props : { pathname: `/project/view/${this.state.project.name}`}}]}/>
 
                 { this.state.isLoading ? <AppLoader/> :
                 <>
@@ -596,7 +559,7 @@ export class ProjectEdit extends Component {
                         <Button label="Save" className="p-button-primary" id="save-btn" data-testid="save-btn" icon="pi pi-check" onClick={this.saveProject} disabled={!this.state.validForm} />
                     </div>
                     <div className="p-col-1">
-                        <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.checkIsDirty}  />
+                        <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.cancelEdit}  />
                     </div>
                 </div>
 
@@ -620,11 +583,6 @@ export class ProjectEdit extends Component {
                                 </div>
                             </div>
                     </Dialog>
-
-                    <CustomDialog type="confirmation" visible={this.state.showDialog} width="40vw"
-                        header={'Edit Project'} message={'Do you want to leave this page? Your changes may not be saved.'} 
-                        content={''} onClose={this.close} onCancel={this.close} onSubmit={this.cancelEdit}>
-                    </CustomDialog>
                 </div>
             </React.Fragment>
         );

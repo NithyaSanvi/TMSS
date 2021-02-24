@@ -22,7 +22,6 @@ import { Calendar } from 'primereact/calendar';
 import { Checkbox } from 'primereact/checkbox';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import UIConstants from '../../utils/ui.constants';
-import { CustomPageSpinner } from '../CustomPageSpinner';
 
 // Label formats for day headers based on the interval label width
 const DAY_HEADER_FORMATS = [{ name: "longer", minWidth: 300, maxWidth: 50000, format: "DD dddd, MMMM YYYY"},
@@ -676,13 +675,13 @@ export class CalendarTimeline extends Component {
             itemContext.dimensions.height -= 3;
             if (!this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL) {
                 if (item.type === "RESERVATION") {
-                    // itemContext.dimensions.top -= 20;
-                    // itemContext.dimensions.height += 20;
+                    itemContext.dimensions.top -= 20;
+                    itemContext.dimensions.height += 20;
                 }   else {
-                    // itemContext.dimensions.top -= 20;
+                    itemContext.dimensions.top -= 20;
                 }
             }   else if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW) {
-                // itemContext.dimensions.top -= (this.props.rowHeight-5);
+                itemContext.dimensions.top -= (this.props.rowHeight-5);
             }   else {
                 if (item.type === "TASK") {
                     itemContext.dimensions.top += 6;
@@ -1249,22 +1248,17 @@ export class CalendarTimeline extends Component {
      * @param {Object} props 
      */
     async updateTimeline(props) {
-        this.setState({ showSpinner: true });
-        let group =  DEFAULT_GROUP.concat(props.group);
         if (!this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL) {
             props.items = await this.addStationSunTimes(this.state.defaultStartTime, this.state.defaultEndTime, props.group, props.items);
         }   else if(this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL) {
             this.setNormalSuntimings(this.state.defaultStartTime, this.state.defaultEndTime);
-        }   else if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW) {
-            props.items = await this.addWeekSunTimes(this.state.defaultStartTime, this.state.defaultEndTime, group, props.items);
         }
-        this.setState({group: group, showSpinner: false, items: _.orderBy(props.items, ['type'], ['desc'])});
+        this.setState({group: DEFAULT_GROUP.concat(props.group), items: _.orderBy(props.items, ['type'], ['desc'])});
     }
 
     render() {
         return (
             <React.Fragment>
-                <CustomPageSpinner visible={this.state.showSpinner} />
                 {/* Toolbar for the timeline */}
                 <div className={`p-fluid p-grid timeline-toolbar ${this.props.className}`}>
                     {/* Clock Display */}
