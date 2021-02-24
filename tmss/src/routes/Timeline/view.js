@@ -6,7 +6,6 @@ import Websocket from 'react-websocket';
 
 // import SplitPane, { Pane }  from 'react-split-pane';
 import { InputSwitch } from 'primereact/inputswitch';
-import { CustomPageSpinner } from '../../components/CustomPageSpinner';
 
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
@@ -196,7 +195,7 @@ export class TimelineView extends Component {
     }
 
     setSelectedStationGroup(value) {
-        this.setState({ selectedStationGroup: value, showSpinner:true });
+        this.setState({ selectedStationGroup: value });
     }
 
     /**
@@ -1025,7 +1024,6 @@ export class TimelineView extends Component {
                 </OverlayPanel>
                 {!this.state.isLoading &&
                     <Websocket url={process.env.REACT_APP_WEBSOCKET_URL} onOpen={this.onConnect} onMessage={this.handleData} onClose={this.onDisconnect} /> }
-                     <CustomPageSpinner visible={this.state.showSpinner} />
             </React.Fragment>
             
         );

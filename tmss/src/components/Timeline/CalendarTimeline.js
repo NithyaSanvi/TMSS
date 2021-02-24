@@ -22,6 +22,7 @@ import { Calendar } from 'primereact/calendar';
 import { Checkbox } from 'primereact/checkbox';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import UIConstants from '../../utils/ui.constants';
+import { CustomPageSpinner } from '../CustomPageSpinner';
 
 // Label formats for day headers based on the interval label width
 const DAY_HEADER_FORMATS = [{ name: "longer", minWidth: 300, maxWidth: 50000, format: "DD dddd, MMMM YYYY"},
@@ -1248,6 +1249,7 @@ export class CalendarTimeline extends Component {
      * @param {Object} props 
      */
     async updateTimeline(props) {
+        this.setState({ showSpinner: true });
         let group =  DEFAULT_GROUP.concat(props.group);
         if (!this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL) {
             props.items = await this.addStationSunTimes(this.state.defaultStartTime, this.state.defaultEndTime, props.group, props.items);
@@ -1256,12 +1258,13 @@ export class CalendarTimeline extends Component {
         }   else if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW) {
             props.items = await this.addWeekSunTimes(this.state.defaultStartTime, this.state.defaultEndTime, group, props.items);
         }
-        this.setState({group: group, items: _.orderBy(props.items, ['type'], ['desc'])});
+        this.setState({group: group, showSpinner: false, items: _.orderBy(props.items, ['type'], ['desc'])});
     }
 
     render() {
         return (
             <React.Fragment>
+                <CustomPageSpinner visible={this.state.showSpinner} />
                 {/* Toolbar for the timeline */}
                 <div className={`p-fluid p-grid timeline-toolbar ${this.props.className}`}>
                     {/* Clock Display */}
