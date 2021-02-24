@@ -373,7 +373,6 @@ body .p-multiselect-panel .p-multiselect-header .p-multiselect-filter-container 
     right: -1em;
     left: auto;
 }
-
 body .p-multiselect-panel .p-multiselect-header .p-multiselect-filter-container .p-inputtext {
     padding: 0.520em;
     padding-right: 6em;
@@ -381,8 +380,13 @@ body .p-multiselect-panel .p-multiselect-header .p-multiselect-filter-container 
 .alignTimeLineHeader {
     display: flex;
     justify-content: space-between;
-    padding-top: 8px;
+
 }
 .sub-header {
     display: inline-block;
 } 
+.body .p-inputswitch {
+    width: 3em;
+    height: 1.75em;
+  //  top: -3px;
+}

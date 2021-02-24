@@ -5,7 +5,8 @@ import _ from 'lodash';
 import Websocket from 'react-websocket';
 
 // import SplitPane, { Pane }  from 'react-split-pane';
-import {InputSwitch} from 'primereact/inputswitch';
+import { InputSwitch } from 'primereact/inputswitch';
+import { CustomPageSpinner } from '../../components/CustomPageSpinner';
 
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
@@ -24,7 +25,8 @@ import { Dropdown } from 'primereact/dropdown';
 import { OverlayPanel } from 'primereact/overlaypanel';
 import { RadioButton } from 'primereact/radiobutton';
 import { TieredMenu } from 'primereact/tieredmenu';
-import {MultiSelect} from 'primereact/multiselect';
+import { MultiSelect } from 'primereact/multiselect';
+//import { TRUE } from 'node-sass';
 
 
 // Color constant for SU status
@@ -64,6 +66,7 @@ export class TimelineView extends Component {
             suTaskList:[],
             isSummaryLoading: false,
             stationGroup: [],
+            showSpinner: false,
             selectedStationGroup: [], //Station Group(core,international,remote)
             reservationFilter: null,
             showSUs: true,
@@ -188,11 +191,12 @@ export class TimelineView extends Component {
                             currentStartTime: defaultStartTime, currentEndTime: defaultEndTime});
                             this.mainStationGroups = responses[7];
                             this.mainStationGroupOptions = Object.keys(responses[7]).map(value => ({ value }));
+                            
         });
     }
 
     setSelectedStationGroup(value) {
-        this.setState({ selectedStationGroup: value });
+        this.setState({ selectedStationGroup: value, showSpinner:true });
     }
 
     /**
@@ -658,13 +662,13 @@ export class TimelineView extends Component {
     }
 
     getStationsByGroupName() {
-        this.setState({ loader: true });
+      //  this.setState({ showSpinner: true });
         let stations = [];
         this.state.selectedStationGroup.forEach((i) => {
-            stations = [...stations, ...this.mainStationGroups[i]];
+           stations = [...stations, ...this.mainStationGroups[i]];
         });
         stations = stations.map(i => ({id: i, title: i}));
-        this.setState({ loader: false });
+     // this.setState({ showSpinner: false });
         return stations;
     }
 
@@ -672,7 +676,6 @@ export class TimelineView extends Component {
         this.closeSUDets();
         this.setState({stationView: e.value});
     }
-
     showOptionMenu(event) {
         this.optionsMenu.toggle(event);
     }
@@ -843,7 +846,7 @@ export class TimelineView extends Component {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
         }
-        if (this.state.loader) {
+         if (this.state.loader) {
             return <AppLoader />
         }
         const isSUDetsVisible = this.state.isSUDetsVisible;
@@ -899,29 +902,31 @@ export class TimelineView extends Component {
                                         <i className="pi pi-step-forward"></i>
                                     </button>
                                 </div> 
+                            
                                 <div className={`timeline-view-toolbar ${this.state.stationView && 'alignTimeLineHeader'}`}>
                                     <div  className="sub-header">
-                                        <label>Station View</label>
-                                        <InputSwitch checked={this.state.stationView} onChange={(e) => {this.setStationView(e)}} />
-                                        {this.state.stationView && 
+                                        <label >Station View</label>
+                                        <InputSwitch checked={this.state.stationView} onChange={(e) => {this.setStationView(e)}} />                                       
+                                       { this.state.stationView && 
                                             <>
-                                            <label style={{marginLeft: '15px'}}>Stations Group</label>
+                                             <label style={{marginLeft: '20px'}}>Stations Group</label>
                                              <MultiSelect data-testid="stations" id="stations" optionLabel="value" optionValue="value" filter={true}
-                                                style={{fontSize: '10px', top: '-5px' }}
+                                                style={{top:'2px'}}
                                                 tooltip="Select Stations"
                                                 value={this.state.selectedStationGroup} 
                                                 options={this.mainStationGroupOptions} 
                                                 placeholder="Select Stations"
                                                 onChange={(e) => this.setSelectedStationGroup(e.value)}
                                             />
-                                            </>
+                                         </>
                                         }
                                     </div>
+                                
                                     {this.state.stationView &&
                                     <div className="sub-header">
                                         <label style={{marginLeft: '20px'}}>Reservation</label>
                                         <Dropdown optionLabel="name" optionValue="name" 
-                                                    style={{fontSize: '10px', top: '-5px'}}
+                                                    style={{top:'2px'}}
                                                     value={this.state.reservationFilter} 
                                                     options={this.reservationReasons} 
                                                     filter showClear={true} filterBy="name"
@@ -942,6 +947,7 @@ export class TimelineView extends Component {
                                     </>
                                     }
                                 </div>
+    
                                 <Timeline ref={(tl)=>{this.timeline=tl}} 
                                         group={this.state.group} 
                                         items={this.state.items}
@@ -1019,7 +1025,9 @@ export class TimelineView extends Component {
                 </OverlayPanel>
                 {!this.state.isLoading &&
                     <Websocket url={process.env.REACT_APP_WEBSOCKET_URL} onOpen={this.onConnect} onMessage={this.handleData} onClose={this.onDisconnect} /> }
+                     <CustomPageSpinner visible={this.state.showSpinner} />
             </React.Fragment>
+            
         );
     }
 
