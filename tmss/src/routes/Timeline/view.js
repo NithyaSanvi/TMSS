@@ -658,11 +658,13 @@ export class TimelineView extends Component {
     }
 
     getStationsByGroupName() {
+        this.setState({ loader: true });
         let stations = [];
         this.state.selectedStationGroup.forEach((i) => {
             stations = [...stations, ...this.mainStationGroups[i]];
         });
         stations = stations.map(i => ({id: i, title: i}));
+        this.setState({ loader: false });
         return stations;
     }
 
