@@ -441,8 +441,7 @@ function Jeditor(props) {
      */
     function validateTime(prpOutput) {
         const splitOutput = prpOutput.split(':');
-        const isMilliSecondsPresent = splitOutput[3];
-        if (splitOutput.length < 3 || (isMilliSecondsPresent[1] && isMilliSecondsPresent[1].length > 4)) {
+        if (splitOutput.length < 3) {
         // if (splitOutput.length < 3) {
             return false;
         }   else {
@@ -464,9 +463,7 @@ function Jeditor(props) {
      */
     function validateAngle(prpOutput) {
         const splitOutput = prpOutput.split(':');
-        const isMilliSecondsPresent = prpOutput.split('.');
-        if (splitOutput.length < 3 || isMilliSecondsPresent[1].length > 4) {
-        //if (splitOutput.length < 3) {
+        if (splitOutput.length < 3) {
             return false;
         }   else {
             if (parseInt(splitOutput[0]) > 90 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59 || parseInt(splitOutput[3])>999) {

@@ -114,7 +114,7 @@ const UnitConverter = {
     },
 
     /**
-     * Function to add leading zeros in end
+     * Function to add trailing zeros in end
      * @param {*} number 
      * @param {*} digits 
      */
