@@ -106,7 +106,7 @@ const UnitConverter = {
             if (isDegree) {
                 return ((splitOutput[0]*1 + splitOutput[1]/60 + splitOutput[2].split('.')[0]/3600 + milliSeconds/36000000)*Math.PI/180);
             }   else {
-                return ((splitOutput[0]*15 + splitOutput[1]/4  + splitOutput[2]/240 + splitOutput[3]/2400000)*Math.PI/180);
+                return ((splitOutput[0]*15 + splitOutput[1]/4  + splitOutput[2].split('.')[0]/240 + milliSeconds/2400000)*Math.PI/180);
             }
         }else{
             return "00:00:00.0000";
