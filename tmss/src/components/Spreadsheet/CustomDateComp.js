@@ -34,7 +34,7 @@ export default class CustomDateComp extends Component {
   render() {
     return (
          <Calendar
-              d dateFormat="dd-M-yy"
+              d dateFormat="dd-mm-yy"
               value= {this.state.date}
               onChange= {e => {this.updateDateChanges(e)}}
               onBlur= {e => {this.updateDateChanges(e)}}
@@ -49,9 +49,9 @@ export default class CustomDateComp extends Component {
 
 
   updateDateChanges(e){
-    if(e.value){
-      this.setState({date : e.value});
-    }
+    // if(e.value){
+      this.setState({date : e.value || new Date()});
+    // }
   }
 
   ondatechange(e){

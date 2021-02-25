@@ -15,7 +15,7 @@ import SchedulingUnitCreate from './Scheduling/create';
 import EditSchedulingUnit from './Scheduling/edit';
 import { CycleList, CycleCreate, CycleView, CycleEdit } from './Cycle';
 import { TimelineView, WeekTimelineView, ReservationCreate, ReservationList } from './Timeline';
-import SchedulingSetCreate from './Scheduling/create.scheduleset';
+import SchedulingSetCreate from './Scheduling/excelview.schedulingset';
 import Workflow from './Workflow';
 
 export const routes = [

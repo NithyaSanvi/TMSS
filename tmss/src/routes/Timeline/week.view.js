@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import { Redirect } from 'react-router-dom/cjs/react-router-dom.min';
 import moment from 'moment';
 import _ from 'lodash';
+import Websocket from 'react-websocket';
 
 // import SplitPane, { Pane }  from 'react-split-pane';
 // import { Dropdown } from 'primereact/dropdown';
@@ -17,6 +18,7 @@ import UtilService from '../../services/util.service';
 import TaskService from '../../services/task.service';
 
 import UnitConverter from '../../utils/unit.converter';
+import Validator from '../../utils/validator';
 import SchedulingUnitSummary from '../Scheduling/summary';
 import UIConstants from '../../utils/ui.constants';
 import { OverlayPanel } from 'primereact/overlaypanel';
@@ -66,6 +68,10 @@ export class WeekTimelineView extends Component {
         this.dateRangeCallback = this.dateRangeCallback.bind(this);
         this.resizeSUList = this.resizeSUList.bind(this);
         this.suListFilterCallback = this.suListFilterCallback.bind(this);
+        this.handleData = this.handleData.bind(this);
+        this.addNewData = this.addNewData.bind(this);
+        this.updateExistingData = this.updateExistingData.bind(this);
+        this.updateSchedulingUnit = this.updateSchedulingUnit.bind(this);
     }
 
     async componentDidMount() {
@@ -167,7 +173,8 @@ export class WeekTimelineView extends Component {
     async getTimelineItem(suBlueprint, displayDate) {
         let antennaSet = "";
         for (let task of suBlueprint.tasks) {
-            if (task.specifications_template.type_value.toLowerCase() === "observation") {
+            if (task.specifications_template.type_value.toLowerCase() === "observation" 
+                && task.specifications_doc.antenna_set) {
                 antennaSet = task.specifications_doc.antenna_set;
             }
         }
@@ -176,7 +183,7 @@ export class WeekTimelineView extends Component {
             group: moment.utc(suBlueprint.start_time).format("MMM DD ddd"),
             title: "",
             project: suBlueprint.project,
-            name: suBlueprint.suDraft.name,
+            name: suBlueprint.name,
             band: antennaSet?antennaSet.split("_")[0]:"",
             antennaSet: antennaSet,
             duration: suBlueprint.durationInSec?`${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs`:"",
@@ -216,7 +223,8 @@ export class WeekTimelineView extends Component {
                                 //Control Task ID
                                 const subTaskIds = (task.subTasks || []).filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1);
                                 task.subTaskID = subTaskIds.length ? subTaskIds[0].id : ''; 
-                                if (task.template.type_value.toLowerCase() === "observation") {
+                                if (task.template.type_value.toLowerCase() === "observation"
+                                    && task.specifications_doc.antenna_set) {
                                     task.antenna_set = task.specifications_doc.antenna_set;
                                     task.band = task.specifications_doc.filter;
                                 }
@@ -270,6 +278,8 @@ export class WeekTimelineView extends Component {
             counts = counts.concat(itemStationGroups[stationgroup].length);
             item.stations.groups = groups;
             item.stations.counts = counts;
+            item.suStartTime = moment.utc(itemSU.start_time);
+            item.suStopTime = moment.utc(itemSU.stop_time);
         }
         this.popOver.toggle(evt);
         this.setState({mouseOverItem: item});
@@ -430,6 +440,144 @@ export class WeekTimelineView extends Component {
         }
     }
 
+    /**
+     * Function to call wnen websocket is connected
+     */
+    onConnect() {
+        console.log("WS Opened")
+    }
+
+    /**
+     * Function to call when websocket is disconnected
+     */
+    onDisconnect() {
+        console.log("WS Closed")
+    }
+
+    /**
+     * Handles the message received through websocket
+     * @param {String} data - String of JSON data
+     */
+    handleData(data) {
+        if (data) {
+            const jsonData = JSON.parse(data);
+            if (jsonData.action === 'create') {
+                this.addNewData(jsonData.object_details.id, jsonData.object_type, jsonData.object_details);
+            }   else if (jsonData.action === 'update') {
+                this.updateExistingData(jsonData.object_details.id, jsonData.object_type, jsonData.object_details);
+            }
+        }
+    }
+
+    /**
+     * If any new object that is relevant to the timeline view, load the data to the existing state variable.
+     * @param {Number} id  - id of the object created
+     * @param {String} type  - model name of the object like scheduling_unit_draft, scheduling_unit_blueprint, task_blueprint, etc.,
+     * @param {Object} object - model object with certain properties
+     */
+    addNewData(id, type, object) {
+        switch(type) {
+            /* When a new scheduling_unit_draft is created, it should be added to the existing list of suDraft. */
+            case 'scheduling_unit_draft': {
+                let suDrafts = this.state.suDrafts;
+                let suSets = this.state.suSets;
+                ScheduleService.getSchedulingUnitDraftById(id)
+                .then(suDraft => {
+                    suDrafts.push(suDraft);
+                    _.remove(suSets, function(suSet) { return suSet.id === suDraft.scheduling_set_id});
+                    suSets.push(suDraft.scheduling_set_object);
+                    this.setState({suSet: suSets, suDrafts: suDrafts});
+                });
+                break;
+            }
+            case 'scheduling_unit_blueprint': {
+                this.updateSchedulingUnit(id);
+                break;
+            }
+            case 'task_blueprint': {
+                // this.updateSchedulingUnit(object.scheduling_unit_blueprint_id);
+                break;
+            }
+            default: { break; }
+        }
+    }
+
+    /**
+     * If any if the given properties of the object is modified, update the schedulingUnit object in the list of the state.
+     * It is validated for both scheduling_unit_blueprint and task_blueprint objects
+     * @param {Number} id 
+     * @param {String} type 
+     * @param {Object} object 
+     */
+    updateExistingData(id, type, object) {
+        const objectProps = ['status', 'start_time', 'stop_time', 'duration'];
+        switch(type) {
+            case 'scheduling_unit_blueprint': {
+                let suBlueprints = this.state.suBlueprints;
+                let existingSUB = _.find(suBlueprints, ['id', id]);
+                if (Validator.isObjectModified(existingSUB, object, objectProps)) {
+                    this.updateSchedulingUnit(id);
+                }
+                break;
+            }
+            case 'task_blueprint': {
+                // let suBlueprints = this.state.suBlueprints;
+                // let existingSUB = _.find(suBlueprints, ['id', object.scheduling_unit_blueprint_id]);
+                // let existingTask = _.find(existingSUB.tasks, ['id', id]);
+                // if (Validator.isObjectModified(existingTask, object, objectProps)) {
+                //     this.updateSchedulingUnit(object.scheduling_unit_blueprint_id);
+                // }
+                break;
+            }
+            default: { break;}
+        }
+    }
+
+    /**
+     * Fetch the latest SUB object from the backend and format as required for the timeline and pass them to the timeline component
+     * to update the timeline view with latest data.
+     * @param {Number} id 
+     */
+    updateSchedulingUnit(id) {
+        ScheduleService.getSchedulingUnitExtended('blueprint', id, true)
+        .then(async(suBlueprint) => {
+            const suDraft = _.find(this.state.suDrafts, ['id', suBlueprint.draft_id]);
+            const suSet = this.state.suSets.find((suSet) => { return suDraft.scheduling_set_id===suSet.id});
+            const project = this.state.projects.find((project) => { return suSet.project_id===project.name});
+            let suBlueprints = this.state.suBlueprints;
+            suBlueprint['actionpath'] = `/schedulingunit/view/blueprint/${id}`;
+            suBlueprint.suDraft = suDraft;
+            suBlueprint.project = project.name;
+            suBlueprint.suSet = suSet;
+            suBlueprint.durationInSec = suBlueprint.duration;
+            suBlueprint.duration = UnitConverter.getSecsToHHmmss(suBlueprint.duration);
+            suBlueprint.tasks = suBlueprint.task_blueprints;
+            // Add Subtask Id as control id for task if subtask type us control. Also add antenna_set & band prpoerties to the task object.
+            for (let task of suBlueprint.tasks) {
+                const subTaskIds = task.subtasks.filter(subtask => {
+                    const template = _.find(this.subtaskTemplates, ['id', subtask.specifications_template_id]);
+                    return (template && template.name.indexOf('control')) > 0;
+                });
+                task.subTaskID = subTaskIds.length ? subTaskIds[0].id : ''; 
+                if (task.specifications_template.type_value.toLowerCase() === "observation"
+                    && task.specifications_doc.antenna_set) {
+                    task.antenna_set = task.specifications_doc.antenna_set;
+                    task.band = task.specifications_doc.filter;
+                }
+            }
+            // Get stations involved for this SUB
+            let stations = this.getSUStations(suBlueprint);
+            suBlueprint.stations = _.uniq(stations);
+            // Remove the old SUB object from the existing list and add the newly fetched SUB
+            _.remove(suBlueprints, function(suB) { return suB.id === id});
+            suBlueprints.push(suBlueprint);
+            this.setState({suBlueprints: suBlueprints});
+            // Create timeline group and items
+            let updatedItemGroupData = await this.dateRangeCallback(this.state.startTime, this.state.endTime, true);
+            this.timeline.updateTimeline(updatedItemGroupData);
+        });
+    }
+
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -539,9 +687,9 @@ export class WeekTimelineView extends Component {
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>Friends:</label>
                         <div className="col-7">{mouseOverItem.friends?mouseOverItem.friends:"-"}</div>
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>Start Time:</label>
-                        <div className="col-7">{mouseOverItem.start_time.format("YYYY-MM-DD HH:mm:ss")}</div>
+                        <div className="col-7">{mouseOverItem.suStartTime.format(UIConstants.CALENDAR_DATETIME_FORMAT)}</div>
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>End Time:</label>
-                        <div className="col-7">{mouseOverItem.end_time.format("YYYY-MM-DD HH:mm:ss")}</div>
+                        <div className="col-7">{mouseOverItem.suStopTime.format(UIConstants.CALENDAR_DATETIME_FORMAT)}</div>
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>Antenna Set:</label>
                         <div className="col-7">{mouseOverItem.antennaSet}</div>
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>Stations:</label>
@@ -553,6 +701,9 @@ export class WeekTimelineView extends Component {
                     </div>
                 }
                 </OverlayPanel>
+                {/* Open Websocket after loading all initial data */}
+                {!this.state.isLoading &&
+                    <Websocket url={process.env.REACT_APP_WEBSOCKET_URL} onOpen={this.onConnect} onMessage={this.handleData} onClose={this.onDisconnect} /> }
             </React.Fragment>
         );
     }

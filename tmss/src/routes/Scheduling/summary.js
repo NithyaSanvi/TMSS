@@ -5,6 +5,7 @@ import _ from 'lodash';
 import ViewTable from '../../components/ViewTable';
 import { JsonToTable } from "react-json-to-table";
 import SchedulingConstraints from './Scheduling.Constraints';
+import UIConstants from '../../utils/ui.constants';
 // import Stations from './Stations';
 
 /**
@@ -61,7 +62,7 @@ export class SchedulingUnitSummary extends Component {
                     try {
                         const dateConstraint = moment.utc(constraint);
                         if (dateConstraint.isValid()) {
-                            constraint = dateConstraint.format("YYYY-MM-DD HH:mm:ss");
+                            constraint = dateConstraint.format(UIConstants.CALENDAR_DATETIME_FORMAT);
                         }
                     } catch (error) {}
                     break;
@@ -130,9 +131,9 @@ export class SchedulingUnitSummary extends Component {
                     <div className="col-4"><label>Project:</label></div>
                     <div className="col-8">{schedulingUnit.project}</div>
                     <div className="col-4"><label>Start Time:</label></div>
-                    <div className="col-8">{moment.utc(schedulingUnit.start_time).format("DD-MMM-YYYY HH:mm:ss")}</div>
+                    <div className="col-8">{moment.utc(schedulingUnit.start_time).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</div>
                     <div className="col-4"><label>Stop Time:</label></div>
-                    <div className="col-8">{moment.utc(schedulingUnit.stop_time).format("DD-MMM-YYYY HH:mm:ss")}</div>
+                    <div className="col-8">{moment.utc(schedulingUnit.stop_time).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</div>
                     <div className="col-4"><label>Status:</label></div>
                     <div className="col-8">{schedulingUnit.status}</div>
                     {constraintsTemplate && schedulingUnit.suDraft.scheduling_constraints_doc && 

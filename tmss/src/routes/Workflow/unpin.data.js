@@ -3,12 +3,12 @@ import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import ViewTable from './../../components/ViewTable';
 
-export default ({ tasks, schedulingUnit }) => {
+export default ({ tasks, schedulingUnit, onCancel }) => {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const defaultcolumns = [ {
         name: "Name",
         totalDataSize:"Total Data Size(TB)", 
-        dataSizeNotDeleted :"Data Size Not Deleted(TB)"
+        dataSizeNotDeleted :"Data Size on Disk(TB)"
     }];
     const optionalcolumns = [{
         actionpath:"actionpath",
@@ -25,7 +25,7 @@ export default ({ tasks, schedulingUnit }) => {
         <div className="p-fluid mt-2">
         <label><h6>Details of data products of Tasks</h6></label>
          <ViewTable 
-                 data={tasks.filter(task => task.template.name !== 'ingest' && (task.totalDataSize || task.dataSizeNotDeleted))} 
+                 data={tasks.filter(task => (task.totalDataSize || task.dataSizeNotDeleted))} 
                 optionalcolumns={optionalcolumns}
                 defaultcolumns={defaultcolumns} 
                 defaultSortColumn={defaultSortColumn}
@@ -43,7 +43,8 @@ export default ({ tasks, schedulingUnit }) => {
                     <Button label="Delete" className="p-button-primary" icon="pi pi-trash" onClick={toggleDialog} />
                 </div>
                 <div className="p-col-1">
-                    <Button label="Cancel" className="p-button-danger" icon="pi pi-times" style={{ width: '90px' }} />
+                    <Button label="Cancel" className="p-button-danger" icon="pi pi-times" style={{ width: '90px' }}
+                            onClick={(e) => { onCancel()}} />
                 </div>
             </div>
             <div className="p-grid" data-testid="confirm_dialog">

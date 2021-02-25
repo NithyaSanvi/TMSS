@@ -18,7 +18,9 @@ import { CustomDialog } from '../../layout/components/CustomDialog';
 import { CustomPageSpinner } from '../../components/CustomPageSpinner';
 import { Growl } from 'primereact/components/growl/Growl';
 import Schedulingtaskrelation from './Scheduling.task.relation';
+import UnitConverter from '../../utils/unit.converter';
 import TaskService from '../../services/task.service';
+import UIConstants from '../../utils/ui.constants';
 
 
 class ViewSchedulingUnit extends Component{
@@ -35,8 +37,36 @@ class ViewSchedulingUnit extends Component{
             }],
             ingestGroup: {},
             missingStationFieldsErrors: [],
+            columnOrders: [
+                "Status Logs",
+                 "Status",
+                 "Type",
+                 "ID",
+                 "Control ID",
+                 "Name",
+                 "Description",
+                 "Start Time",
+                 "End Time",
+                 "Duration (HH:mm:ss)",
+                 "Relative Start Time (HH:mm:ss)",
+                 "Relative End Time (HH:mm:ss)",
+                 "#Dataproducts",
+                 "size",
+                 "dataSizeOnDisk",
+                 "subtaskContent",
+                 "tags",
+                 "blueprint_draft",
+                 "url",
+                 "Cancelled",
+                 "Created at",
+                 "Updated at"
+             ],
             defaultcolumns: [ {
                 status_logs: "Status Logs",
+                status:{
+                name:"Status",
+                filter: "select"
+                },
                 tasktype:{
                     name:"Type",
                     filter:"select"
@@ -45,6 +75,30 @@ class ViewSchedulingUnit extends Component{
                 subTaskID: 'Control ID',
                 name:"Name",
                 description:"Description",
+                start_time:{
+                    name:"Start Time",
+                    filter: "date"
+                },
+                stop_time:{
+                    name:"End Time",
+                    filter: "date"
+                },
+                duration:"Duration (HH:mm:ss)",
+                relative_start_time:"Relative Start Time (HH:mm:ss)",
+                relative_stop_time:"Relative End Time (HH:mm:ss)",
+                noOfOutputProducts: "#Dataproducts",
+                do_cancel:{
+                    name: "Cancelled",
+                    filter: "switch"
+                },
+            }],
+            optionalcolumns:  [{
+                size: "Data size",
+                dataSizeOnDisk: "Data size on Disk",
+                subtaskContent: "Subtask Content",
+                tags:"Tags",
+                blueprint_draft:"BluePrint / Task Draft link",
+                url:"API URL",
                 created_at:{
                     name: "Created at",
                     filter: "date"
@@ -53,21 +107,6 @@ class ViewSchedulingUnit extends Component{
                     name: "Updated at",
                     filter: "date"
                 },
-                do_cancel:{
-                    name: "Cancelled",
-                    filter: "switch"
-                },
-                start_time:"Start Time",
-                stop_time:"End Time",
-                duration:"Duration (HH:mm:ss)",
-                status:"Status"
-            }],
-            optionalcolumns:  [{
-                relative_start_time:"Relative Start Time (HH:mm:ss)",
-                relative_stop_time:"Relative End Time (HH:mm:ss)",
-                tags:"Tags",
-                blueprint_draft:"BluePrint / Task Draft link",
-                url:"URL",
                 actionpath:"actionpath"
             }],
             columnclassname: [{
@@ -78,10 +117,15 @@ class ViewSchedulingUnit extends Component{
                 "Cancelled":"filter-input-50",
                 "Duration (HH:mm:ss)":"filter-input-75",
                 "Template ID":"filter-input-50",
-                "BluePrint / Task Draft link": "filter-input-100",
+                // "BluePrint / Task Draft link": "filter-input-100",
                 "Relative Start Time (HH:mm:ss)": "filter-input-75",
                 "Relative End Time (HH:mm:ss)": "filter-input-75",
-                "Status":"filter-input-100"
+                "Status":"filter-input-100",
+                "#Dataproducts":"filter-input-75",
+                "Data size":"filter-input-50",
+                "Data size on Disk":"filter-input-50",
+                "Subtask Content":"filter-input-75",
+                "BluePrint / Task Draft link":"filter-input-50",
             }],
             stationGroup: [],
             dialog: {header: 'Confirm', detail: 'Do you want to create a Scheduling Unit Blueprint?'},
@@ -128,7 +172,7 @@ class ViewSchedulingUnit extends Component{
             </button>
         );
     };
-    
+
     getSchedulingUnitDetails(schedule_type, schedule_id) {
         ScheduleService.getSchedulingUnitExtended(schedule_type, schedule_id)
             .then(async(schedulingUnit) =>{
@@ -140,13 +184,28 @@ class ViewSchedulingUnit extends Component{
                     let tasks = schedulingUnit.task_drafts?(await this.getFormattedTaskDrafts(schedulingUnit)):this.getFormattedTaskBlueprints(schedulingUnit);
                     let ingestGroup = tasks.map(task => ({name: task.name, canIngest: task.canIngest, type_value: task.type_value, id: task.id }));
                     ingestGroup = _.groupBy(_.filter(ingestGroup, 'type_value'), 'type_value');
-                    tasks.map(task => {
+                    await Promise.all(tasks.map(async task => {
                         task.status_logs = task.tasktype === "Blueprint"?this.subtaskComponent(task):"";
                         //Displaying SubTask ID of the 'control' Task
-                        const subTaskIds = task.subTasks?task.subTasks.filter(sTask => sTask.subTaskTemplate.name.indexOf('control') > 1):[];
+                        const subTaskIds = task.subTasks?task.subTasks.filter(sTask => sTask.subTaskTemplate.name.indexOf('control') >= 0):[];
+                        const promise = [];
+                        subTaskIds.map(subTask => promise.push(ScheduleService.getSubtaskOutputDataproduct(subTask.id)));
+                        const dataProducts = promise.length > 0? await Promise.all(promise):[];
+                        task.dataProducts = [];
+                        task.size = 0;
+                        task.dataSizeOnDisk = 0;
+                        task.noOfOutputProducts = 0;
+                        if (dataProducts.length && dataProducts[0].length) {
+                            task.dataProducts = dataProducts[0];
+                            task.noOfOutputProducts = dataProducts[0].length;
+                            task.size = _.sumBy(dataProducts[0], 'size');
+                            task.dataSizeOnDisk = _.sumBy(dataProducts[0], function(product) { return product.deletedSince?0:product.size});
+                            task.size = UnitConverter.getUIResourceUnit('bytes', (task.size));
+                            task.dataSizeOnDisk = UnitConverter.getUIResourceUnit('bytes', (task.dataSizeOnDisk));
+                        }
                         task.subTaskID = subTaskIds.length ? subTaskIds[0].id : ''; 
                         return task;
-                    });
+                    }));
                     const targetObservation = _.find(tasks, (task)=> {return task.template.type_value==='observation' && task.tasktype.toLowerCase()===schedule_type && task.specifications_doc.station_groups});
                     this.setState({
                         scheduleunitId: schedule_id,
@@ -194,7 +253,7 @@ class ViewSchedulingUnit extends Component{
         // Common keys for Task and Blueprint
         let commonkeys = ['id','created_at','description','name','tags','updated_at','url','do_cancel','relative_start_time','relative_stop_time','start_time','stop_time','duration','status'];
         for(const task of schedulingUnit.task_drafts){
-            let scheduletask = [];
+            let scheduletask = {};
             scheduletask['tasktype'] = 'Draft';
             scheduletask['actionpath'] = '/task/view/draft/'+task['id'];
             scheduletask['blueprint_draft'] = _.map(task['task_blueprints'], 'url');
@@ -204,19 +263,19 @@ class ViewSchedulingUnit extends Component{
             for(const key of commonkeys){
                 scheduletask[key] = task[key];
             }
-            scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-            scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+            scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+            scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
             scheduletask['specifications_doc'] = task['specifications_doc'];
-            scheduletask.duration = moment.utc((scheduletask.duration || 0)*1000).format('HH:mm:ss'); 
-            scheduletask.relative_start_time = moment.utc(scheduletask.relative_start_time*1000).format('HH:mm:ss'); 
-            scheduletask.relative_stop_time = moment.utc(scheduletask.relative_stop_time*1000).format('HH:mm:ss'); 
+            scheduletask.duration = moment.utc((scheduletask.duration || 0)*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
+            scheduletask.relative_start_time = moment.utc(scheduletask.relative_start_time*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
+            scheduletask.relative_stop_time = moment.utc(scheduletask.relative_stop_time*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
             scheduletask.template = task.specifications_template;
             scheduletask.type_value = task.specifications_template.type_value;
             scheduletask.produced_by = task.produced_by;
             scheduletask.produced_by_ids = task.produced_by_ids;
             
             for(const blueprint of task['task_blueprints']){
-                let taskblueprint = [];
+                let taskblueprint = {};
                 taskblueprint['tasktype'] = 'Blueprint';
                 taskblueprint['actionpath'] = '/task/view/blueprint/'+blueprint['id'];
                 taskblueprint['blueprint_draft'] = blueprint['draft'];
@@ -225,11 +284,11 @@ class ViewSchedulingUnit extends Component{
                 for(const key of commonkeys){
                     taskblueprint[key] = blueprint[key];
                 }
-                taskblueprint['created_at'] = moment(blueprint['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-                taskblueprint['updated_at'] = moment(blueprint['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-                taskblueprint.duration = moment.utc((taskblueprint.duration || 0)*1000).format('HH:mm:ss'); 
-                taskblueprint.relative_start_time = moment.utc(taskblueprint.relative_start_time*1000).format('HH:mm:ss'); 
-                taskblueprint.relative_stop_time = moment.utc(taskblueprint.relative_stop_time*1000).format('HH:mm:ss'); 
+                taskblueprint['created_at'] = moment(blueprint['created_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                taskblueprint['updated_at'] = moment(blueprint['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                taskblueprint.duration = moment.utc((taskblueprint.duration || 0)*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
+                taskblueprint.relative_start_time = moment.utc(taskblueprint.relative_start_time*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
+                taskblueprint.relative_stop_time = moment.utc(taskblueprint.relative_stop_time*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
                 taskblueprint.template = scheduletask.template;
                 taskblueprint.subTasks = blueprint.subtasks;
                 for (const subtask of taskblueprint.subTasks) {
@@ -243,10 +302,12 @@ class ViewSchedulingUnit extends Component{
         }
         //Ingest Task Relation 
         const ingestTask = scheduletasklist.find(task => task.type_value === 'ingest' && task.tasktype.toLowerCase() === 'draft');
-        for (const producer_id of ingestTask.produced_by_ids) {
-            const taskRelation = await ScheduleService.getTaskRelation(producer_id);
-            const producerTask = scheduletasklist.find(task => task.id === taskRelation.producer_id && task.tasktype.toLowerCase() === 'draft');
-            producerTask.canIngest = true;
+        if (ingestTask) {
+            for (const producer_id of ingestTask.produced_by_ids) {
+                const taskRelation = await ScheduleService.getTaskRelation(producer_id);
+                const producerTask = scheduletasklist.find(task => task.id === taskRelation.producer_id && task.tasktype.toLowerCase() === 'draft');
+                producerTask.canIngest = true;
+            }
         }
         return scheduletasklist;
     }
@@ -263,7 +324,7 @@ class ViewSchedulingUnit extends Component{
             taskBlueprint['blueprint_draft'] = taskBlueprint['draft'];
             taskBlueprint['relative_start_time'] = 0;
             taskBlueprint['relative_stop_time'] = 0;
-            taskBlueprint.duration = moment.utc((taskBlueprint.duration || 0)*1000).format('HH:mm:ss');
+            taskBlueprint.duration = moment.utc((taskBlueprint.duration || 0)*1000).format(UIConstants.CALENDAR_TIME_FORMAT);
             taskBlueprint.template = taskBlueprint.specifications_template;
             for (const subtask of taskBlueprint.subtasks) {
                 subtask.subTaskTemplate = _.find(this.subtaskTemplates, ['id', subtask.specifications_template_id]);
@@ -342,19 +403,19 @@ class ViewSchedulingUnit extends Component{
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Created At</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{moment(this.state.scheduleunit.created_at).format("YYYY-MMM-DD HH:mm:SS")}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{moment(this.state.scheduleunit.created_at).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
                             <label className="col-lg-2 col-md-2 col-sm-12">Updated At</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{moment(this.state.scheduleunit.updated_at).format("YYYY-MMM-DD HH:mm:SS")}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{moment(this.state.scheduleunit.updated_at).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Start Time</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.start_time && moment(this.state.scheduleunit.start_time).format("YYYY-MMM-DD HH:mm:SS")}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.start_time && moment(this.state.scheduleunit.start_time).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
                             <label className="col-lg-2 col-md-2 col-sm-12">End Time</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.stop_time && moment(this.state.scheduleunit.stop_time).format("YYYY-MMM-DD HH:mm:SS")}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.stop_time && moment(this.state.scheduleunit.stop_time).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12" >Duration (HH:mm:ss)</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc((this.state.scheduleunit.duration?this.state.scheduleunit.duration:0)*1000).format('HH:mm:ss')}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc((this.state.scheduleunit.duration?this.state.scheduleunit.duration:0)*1000).format(UIConstants.CALENDAR_TIME_FORMAT)}</span>
                             <label className="col-lg-2 col-md-2 col-sm-12">Template ID</label>
                             <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.requirements_template_id}</span>
                         </div>
@@ -419,6 +480,7 @@ class ViewSchedulingUnit extends Component{
                         defaultcolumns={this.state.defaultcolumns}
                         optionalcolumns={this.state.optionalcolumns}
                         columnclassname={this.state.columnclassname}
+                        columnOrders={this.state.columnOrders}
                         defaultSortColumn={this.state.defaultSortColumn}
                         showaction="true"
                         keyaccessor="id"

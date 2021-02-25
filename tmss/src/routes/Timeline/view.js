@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import { Redirect } from 'react-router-dom/cjs/react-router-dom.min';
 import moment from 'moment';
 import _ from 'lodash';
+import Websocket from 'react-websocket';
 
 // import SplitPane, { Pane }  from 'react-split-pane';
 import {InputSwitch} from 'primereact/inputswitch';
@@ -14,9 +15,11 @@ import ViewTable from '../../components/ViewTable';
 import ProjectService from '../../services/project.service';
 import ScheduleService from '../../services/schedule.service';
 import UtilService from '../../services/util.service';
+import UIConstants from '../../utils/ui.constants';
 import TaskService from '../../services/task.service';
 
 import UnitConverter from '../../utils/unit.converter';
+import Validator from '../../utils/validator';
 import SchedulingUnitSummary from '../Scheduling/summary';
 import { Dropdown } from 'primereact/dropdown';
 import { OverlayPanel } from 'primereact/overlaypanel';
@@ -86,6 +89,10 @@ export class TimelineView extends Component {
         this.resizeSUList = this.resizeSUList.bind(this);
         this.suListFilterCallback = this.suListFilterCallback.bind(this);
         this.addStationReservations = this.addStationReservations.bind(this);
+        this.handleData = this.handleData.bind(this);
+        this.addNewData = this.addNewData.bind(this);
+        this.updateExistingData = this.updateExistingData.bind(this);
+        this.updateSchedulingUnit = this.updateSchedulingUnit.bind(this);
     }
 
     async componentDidMount() {
@@ -185,7 +192,8 @@ export class TimelineView extends Component {
     getTimelineItem(suBlueprint) {
         let antennaSet = "";
         for (let task of suBlueprint.tasks) {
-            if (task.specifications_template.type_value.toLowerCase() === "observation") {
+            if (task.specifications_template.type_value.toLowerCase() === "observation"
+                    && task.specifications_doc.antenna_set) {
                 antennaSet = task.specifications_doc.antenna_set;
             }
         }
@@ -441,7 +449,8 @@ export class TimelineView extends Component {
                         currentStartTime: startTime, currentEndTime: endTime});
         // On range change close the Details pane
         // this.closeSUDets();
-        return {group: this.stationView?this.allStationsGroup:_.orderBy(group,["parent", "id"], ['asc', 'desc']), items: items};
+        // console.log(_.orderBy(group, ["parent", "id"], ['asc', 'desc']));
+        return {group: this.stationView?this.allStationsGroup:_.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']), items: items};
     }
 
     /**
@@ -662,6 +671,153 @@ export class TimelineView extends Component {
             }
         }
     }
+
+    /**
+     * Function to call wnen websocket is connected
+     */
+    onConnect() {
+        console.log("WS Opened")
+    }
+
+    /**
+     * Function to call when websocket is disconnected
+     */
+    onDisconnect() {
+        console.log("WS Closed")
+    }
+
+    /**
+     * Handles the message received through websocket
+     * @param {String} data - String of JSON data
+     */
+    handleData(data) {
+        if (data) {
+            const jsonData = JSON.parse(data);
+            if (jsonData.action === 'create') {
+                this.addNewData(jsonData.object_details.id, jsonData.object_type, jsonData.object_details);
+            }   else if (jsonData.action === 'update') {
+                this.updateExistingData(jsonData.object_details.id, jsonData.object_type, jsonData.object_details);
+            }
+        }
+    }
+
+    /**
+     * If any new object that is relevant to the timeline view, load the data to the existing state variable.
+     * @param {Number} id  - id of the object created
+     * @param {String} type  - model name of the object like scheduling_unit_draft, scheduling_unit_blueprint, task_blueprint, etc.,
+     * @param {Object} object - model object with certain properties
+     */
+    addNewData(id, type, object) {
+        switch(type) {
+            /* When a new scheduling_unit_draft is created, it should be added to the existing list of suDraft. */
+            case 'scheduling_unit_draft': {
+                this.updateSUDraft(id);
+                // let suDrafts = this.state.suDrafts;
+                // let suSets = this.state.suSets;
+                // ScheduleService.getSchedulingUnitDraftById(id)
+                // .then(suDraft => {
+                //     suDrafts.push(suDraft);
+                //     _.remove(suSets, function(suSet) { return suSet.id === suDraft.scheduling_set_id});
+                //     suSets.push(suDraft.scheduling_set_object);
+                //     this.setState({suSet: suSets, suDrafts: suDrafts});
+                // });
+                break;
+            }
+            case 'scheduling_unit_blueprint': {
+                this.updateSchedulingUnit(id);
+                break;
+            }
+            case 'task_blueprint': {
+                // this.updateSchedulingUnit(object.scheduling_unit_blueprint_id);
+                break;
+            }
+            default: { break; }
+        }
+    }
+
+    /**
+     * If any if the given properties of the object is modified, update the schedulingUnit object in the list of the state.
+     * It is validated for both scheduling_unit_blueprint and task_blueprint objects
+     * @param {Number} id 
+     * @param {String} type 
+     * @param {Object} object 
+     */
+    updateExistingData(id, type, object) {
+        const objectProps = ['status', 'start_time', 'stop_time', 'duration'];
+        switch(type) {
+            case 'scheduling_unit_draft': {
+                this.updateSUDraft(id);
+                // let suDrafts = this.state.suDrafts;
+                // _.remove(suDrafts, function(suDraft) { return suDraft.id === id});
+                // suDrafts.push(object);
+                // this.setState({suDrafts: suDrafts});
+                break;
+            }
+            case 'scheduling_unit_blueprint': {
+                let suBlueprints = this.state.suBlueprints;
+                let existingSUB = _.find(suBlueprints, ['id', id]);
+                if (Validator.isObjectModified(existingSUB, object, objectProps)) {
+                    this.updateSchedulingUnit(id);
+                }
+                break;
+            }
+            case 'task_blueprint': {
+                // let suBlueprints = this.state.suBlueprints;
+                // let existingSUB = _.find(suBlueprints, ['id', object.scheduling_unit_blueprint_id]);
+                // let existingTask = _.find(existingSUB.tasks, ['id', id]);
+                // if (Validator.isObjectModified(existingTask, object, objectProps)) {
+                //     this.updateSchedulingUnit(object.scheduling_unit_blueprint_id);
+                // }
+                break;
+            }
+            default: { break;}
+        }
+    }
+
+    /**
+     * Add or update the SUDraft object in the state suDraft list after fetching through API call
+     * @param {Number} id 
+     */
+    updateSUDraft(id) {
+        let suDrafts = this.state.suDrafts;
+        let suSets = this.state.suSets;
+        ScheduleService.getSchedulingUnitDraftById(id)
+        .then(suDraft => {
+            _.remove(suDrafts, function(suDraft) { return suDraft.id === id});
+            suDrafts.push(suDraft);
+            _.remove(suSets, function(suSet) { return suSet.id === suDraft.scheduling_set_id});
+            suSets.push(suDraft.scheduling_set_object);
+            this.setState({suSet: suSets, suDrafts: suDrafts});
+        });
+    }
+
+    /**
+     * Fetch the latest SUB object from the backend and format as required for the timeline and pass them to the timeline component
+     * to update the timeline view with latest data.
+     * @param {Number} id 
+     */
+    updateSchedulingUnit(id) {
+        ScheduleService.getSchedulingUnitExtended('blueprint', id, true)
+        .then(suBlueprint => {
+            const suDraft = _.find(this.state.suDrafts, ['id', suBlueprint.draft_id]);
+            const suSet = this.state.suSets.find((suSet) => { return suDraft.scheduling_set_id===suSet.id});
+            const project = this.state.projects.find((project) => { return suSet.project_id===project.name});
+            let suBlueprints = this.state.suBlueprints;
+            suBlueprint['actionpath'] = `/schedulingunit/view/blueprint/${id}`;
+            suBlueprint.suDraft = suDraft;
+            suBlueprint.project = project.name;
+            suBlueprint.suSet = suSet;
+            suBlueprint.durationInSec = suBlueprint.duration;
+            suBlueprint.duration = UnitConverter.getSecsToHHmmss(suBlueprint.duration);
+            suBlueprint.tasks = suBlueprint.task_blueprints;
+            _.remove(suBlueprints, function(suB) { return suB.id === id});
+            suBlueprints.push(suBlueprint);
+            // Set updated suBlueprints in the state and call the dateRangeCallback to create the timeline group and items
+            this.setState({suBlueprints: suBlueprints});
+            this.dateRangeCallback(this.state.currentStartTime, this.state.currentEndTime);
+        });
+    }
+
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -804,9 +960,9 @@ export class TimelineView extends Component {
                             <div className="col-7">{mouseOverItem.name}</div>
                         </>}
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>Start Time:</label>
-                        <div className="col-7">{mouseOverItem.start_time.format("YYYY-MM-DD HH:mm:ss")}</div>
+                        <div className="col-7">{mouseOverItem.start_time.format(UIConstants.CALENDAR_DATETIME_FORMAT)}</div>
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>End Time:</label>
-                        <div className="col-7">{mouseOverItem.end_time.format("YYYY-MM-DD HH:mm:ss")}</div>
+                        <div className="col-7">{mouseOverItem.end_time.format(UIConstants.CALENDAR_DATETIME_FORMAT)}</div>
                         {mouseOverItem.type==='SCHEDULE' &&
                         <>
                             <label className={`col-5 su-${mouseOverItem.status}-icon`}>Antenna Set:</label>
@@ -821,6 +977,8 @@ export class TimelineView extends Component {
                     </div>
                 }
                 </OverlayPanel>
+                {!this.state.isLoading &&
+                    <Websocket url={process.env.REACT_APP_WEBSOCKET_URL} onOpen={this.onConnect} onMessage={this.handleData} onClose={this.onDisconnect} /> }
             </React.Fragment>
         );
     }
