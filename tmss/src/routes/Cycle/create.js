@@ -270,9 +270,9 @@ export class CycleCreate extends Component {
         if (this.validateForm) {
             let cycleQuota = [];
             let cycle = this.state.cycle;
-            let stoptime =  _.replace(this.state.cycle['stop'],'00:00:00', '23:59:59');
-            cycle['start'] = moment(cycle['start']).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-            cycle['stop'] = moment(stoptime).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+            // let stoptime =  _.replace(this.state.cycle['stop'],'00:00:00', '23:59:59');
+            cycle['start'] = cycle['start'];
+            cycle['stop'] = cycle['stop'];
             this.setState({cycle: cycle, isDirty: false});
             for (const resource in this.state.cycleQuota) {
                 let resourceType = _.find(this.state.resources, {'name': resource});
@@ -427,7 +427,6 @@ export class CycleCreate extends Component {
  				                    d dateFormat={UIConstants.CALENDAR_DATE_FORMAT}
                                     value= {this.state.cycle.start}
                                     onChange= {e => this.setCycleParams('start',e.value)}
-                                    onBlur= {e => this.setCycleParams('start',e.value || new Date())}
                                     data-testid="start"
                                     tooltip="Moment at which the cycle starts, that is, when its projects can run." tooltipOptions={this.tooltipOptions}
 				                    showIcon={true}
@@ -444,7 +443,6 @@ export class CycleCreate extends Component {
                                     d dateFormat={UIConstants.CALENDAR_DATE_FORMAT}
                                     value= {this.state.cycle.stop}
                                     onChange= {e => this.setCycleParams('stop', e.value)}
-                                    onBlur= {e => this.setCycleParams('stop',e.value || new Date())}
                                     data-testid="stop"
                                     tooltip="Moment at which the cycle officially ends." tooltipOptions={this.tooltipOptions}
                                     showIcon={true}
