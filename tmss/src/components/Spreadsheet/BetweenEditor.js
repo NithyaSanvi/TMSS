@@ -61,50 +61,56 @@ export default class BetweenEditor extends Component {
     });
 
   }
+ 
+  /*isCancelAfterEnd(){console.log('after')
+  console.log('called')
+    this.copyDateValue();
+  }*/
 
   /**
    * Call the function on click Esc or Close the dialog
    */
-  async copyDateValue(){
-      let consolidateDates = '';
-      this.state.rowData.map(row =>{
-          if((row['from'] !== '' && row['from'] !== 'undefined') && (row['until'] !== '' && row['until'] !== 'undefined')){
-          consolidateDates += ((row['from'] !== '')?moment(row['from']).format(DATE_TIME_FORMAT):'' )+","+((row['until'] !== '')?moment(row['until']).format(DATE_TIME_FORMAT):'')+"|";
-          }
-      });
-      await this.props.context.componentParent.updateTime(
-          this.props.node.rowIndex,this.props.colDef.field, consolidateDates 
-      );
-      this.setState({ showDialog: false});
-  }
+async copyDateValue(){
+  let consolidateDates = '';
+  this.state.rowData.map(row =>{
+    if((row['from'] !== '' && row['from'] !== 'undefined') && (row['until'] !== '' && row['until'] !== 'undefined')){
+      consolidateDates += ((row['from'] !== '')?moment(row['from']).format(DATE_TIME_FORMAT):'' )+","+((row['until'] !== '')?moment(row['until']).format(DATE_TIME_FORMAT):'')+"|";
+    }
+  });
+  await this.props.context.componentParent.updateTime(
+    this.props.node.rowIndex,this.props.colDef.field, consolidateDates 
+  );
+  this.setState({ showDialog: false});
+ 
+}
 
-  /*
-  Set value in relevant field
-  */
-  updateDateChanges(rowIndex, field, e){
-      let tmpRows = this.state.rowData;
-      let row = tmpRows[rowIndex];
-      row[field] = e.value;
-      tmpRows[rowIndex] = row;
-      if(this.state.rowData.length === rowIndex+1){
-          let line = {'from': '', 'until': ''};
-          tmpRows.push(line);
-      }
-      this.setState({
-        rowData: tmpRows
-      });
+/*
+ Set value in relevant field
+ */
+updateDateChanges(rowIndex, field, e){
+  let tmpRows = this.state.rowData;
+  let row = tmpRows[rowIndex];
+  row[field] = e.value;
+  tmpRows[rowIndex] = row;
+  if(this.state.rowData.length === rowIndex+1){
+    let line = {'from': '', 'until': ''};
+    tmpRows.push(line);
   }
+  this.setState({
+    rowData: tmpRows
+  })
+}
 
-  /*
-    Remove the the row from dialog
-  */
-  removeInput(rowIndex){
-      let tmpRows = this.state.rowData;
-      delete tmpRows[rowIndex];
-      this.setState({
-         rowData: tmpRows
-    } );
-  }
+/*
+  Remove the the row from dialog
+*/
+removeInput(rowIndex){
+  let tmpRows = this.state.rowData;
+  delete tmpRows[rowIndex];
+  this.setState({
+    rowData: tmpRows
+  })
+}
 
 render() {
   return (

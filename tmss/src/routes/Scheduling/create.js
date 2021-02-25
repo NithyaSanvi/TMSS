@@ -1,14 +1,15 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import { Redirect } from 'react-router-dom';
 import _ from 'lodash';
 import $RefParser from "@apidevtools/json-schema-ref-parser";
 import moment from 'moment';
-import { InputText } from 'primereact/inputtext';
-import { InputTextarea } from 'primereact/inputtextarea';
-import { Dropdown } from 'primereact/dropdown';
+import {InputText} from 'primereact/inputtext';
+import {InputTextarea} from 'primereact/inputtextarea';
+import {Dropdown} from 'primereact/dropdown';
 import { Button } from 'primereact/button';
-import { Dialog } from 'primereact/components/dialog/Dialog';
-import { Growl } from 'primereact/components/growl/Growl';
+import {Dialog} from 'primereact/components/dialog/Dialog';
+import {Growl} from 'primereact/components/growl/Growl';
+
 import AppLoader from '../../layout/components/AppLoader';
 import Jeditor from '../../components/JSONEditor/JEditor';
 import UnitConversion from '../../utils/unit.converter';
@@ -20,8 +21,6 @@ import UIConstants from '../../utils/ui.constants';
 import PageHeader from '../../layout/components/PageHeader';
 import SchedulingConstraint from './Scheduling.Constraints';
 import Stations from './Stations';
-import { CustomDialog } from '../../layout/components/CustomDialog';
-import SchedulingSet from './schedulingset.create';
 
 /**
  * Component to create a new SchedulingUnit from Observation strategy template
@@ -30,10 +29,6 @@ export class SchedulingUnitCreate extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            selectedProject: {},
-            showAddSet: false,
-            showDialog: false,
-            isDirty: false,
             isLoading: true,                        // Flag for loading spinner
             dialog: { header: '', detail: ''},      // Dialog properties
             touched: {},
@@ -44,9 +39,7 @@ export class SchedulingUnitCreate extends Component {
             stationOptions: [],
             stationGroup: [],
             customSelectedStations: [],             // custom stations
-            schedulingUnit: {                
-                name: '',
-                description: '',
+            schedulingUnit: {
                 project: (props.match?props.match.params.project:null) || null,
             },
             projectDisabled: (props.match?(props.match.params.project? true:false):false),      // Disable project selection if 
@@ -83,9 +76,6 @@ export class SchedulingUnitCreate extends Component {
         this.saveSchedulingUnit = this.saveSchedulingUnit.bind(this);
         this.cancelCreate = this.cancelCreate.bind(this);
         this.reset = this.reset.bind(this);
-        this.refreshSchedulingSet = this.refreshSchedulingSet.bind(this);
-        this.checkIsDirty = this.checkIsDirty.bind(this);
-        this.close = this.close.bind(this);
     }
 
     componentDidMount() {
@@ -105,9 +95,8 @@ export class SchedulingUnitCreate extends Component {
             //  Setting first value as constraint template
              this.constraintStrategy(this.constraintTemplates[0]);
             if (this.state.schedulingUnit.project) {
-                const selectedProject = _.filter(this.projects, {'name': this.state.schedulingUnit.project});
                 const projectSchedSets = _.filter(this.schedulingSets, {'project_id': this.state.schedulingUnit.project});
-                this.setState({isLoading: false, schedulingSets: projectSchedSets,selectedProject:selectedProject});
+                this.setState({isLoading: false, schedulingSets: projectSchedSets});
             }   else {
                 this.setState({isLoading: false});
             }
@@ -122,8 +111,7 @@ export class SchedulingUnitCreate extends Component {
         const projectSchedSets = _.filter(this.schedulingSets, {'project_id': projectName});
         let schedulingUnit = this.state.schedulingUnit;
         schedulingUnit.project = projectName;
-        const selectedProject = _.filter(this.projects, {'name': projectName});
-        this.setState({selectedProject: selectedProject, schedulingUnit: schedulingUnit, schedulingSets: projectSchedSets, validForm: this.validateForm('project'), isDirty: true});
+        this.setState({schedulingUnit: schedulingUnit, schedulingSets: projectSchedSets, validForm: this.validateForm('project')});
     }
     
     /**
@@ -188,7 +176,7 @@ export class SchedulingUnitCreate extends Component {
             }
             
         }
-        this.setState({observStrategy: observStrategy, paramsSchema: schema, paramsOutput: paramsOutput, stationGroup: station_group, isDirty: true});
+        this.setState({observStrategy: observStrategy, paramsSchema: schema, paramsOutput: paramsOutput, stationGroup: station_group});
 
         // Function called to clear the JSON Editor fields and reload with new schema
         if (this.state.editorFunction) {
@@ -215,16 +203,12 @@ export class SchedulingUnitCreate extends Component {
         if (jsonOutput.scheduler === 'online' || jsonOutput.scheduler === 'dynamic') {
             err = err.filter(e => e.path !== 'root.time.at');
         }
-       // this.constraintParamsOutput = jsonOutput;
+        this.constraintParamsOutput = jsonOutput;
         // condition goes here..
         this.constraintValidEditor = err.length === 0;
-        if  ( !this.state.isDirty && this.state.constraintParamsOutput && !_.isEqual(this.state.constraintParamsOutput, jsonOutput) ) {
-            this.setState({ constraintParamsOutput: jsonOutput, constraintValidEditor: err.length === 0, validForm: this.validateForm(), isDirty: true});
-        }   else {
-            this.setState({ constraintParamsOutput: jsonOutput, constraintValidEditor: err.length === 0, validForm: this.validateForm()});
-        }
-
-        
+        this.setState({ constraintParamsOutput: jsonOutput, 
+                        constraintValidEditor: err.length === 0,
+                        validForm: this.validateForm()});
     }
 
     /**
@@ -246,13 +230,9 @@ export class SchedulingUnitCreate extends Component {
                 [key]: true
             }
         });
-        let schedulingUnit = _.cloneDeep(this.state.schedulingUnit);
+        let schedulingUnit = this.state.schedulingUnit;
         schedulingUnit[key] = value;
-        if  ( !this.state.isDirty && !_.isEqual(this.state.schedulingUnit, schedulingUnit) ) {
-            this.setState({schedulingUnit: schedulingUnit, validForm: this.validateForm(key), validEditor: this.validateEditor(), isDirty: true});
-        }   else {
-            this.setState({schedulingUnit: schedulingUnit, validForm: this.validateForm(key), validEditor: this.validateEditor()});
-        }
+        this.setState({schedulingUnit: schedulingUnit, validForm: this.validateForm(key), validEditor: this.validateEditor()});
         this.validateEditor();
     }
 
@@ -381,25 +361,10 @@ export class SchedulingUnitCreate extends Component {
         if (!schedulingUnit.error) {
             // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks created successfully!'});
             const dialog = {header: 'Success', detail: 'Scheduling Unit and Tasks are created successfully. Do you want to create another Scheduling Unit?'};
-            this.setState({schedulingUnit: schedulingUnit, dialogVisible: true, dialog: dialog, isDirty: false});
+            this.setState({schedulingUnit: schedulingUnit, dialogVisible: true, dialog: dialog})
         }   else {
             this.growl.show({severity: 'error', summary: 'Error Occured', detail: schedulingUnit.message || 'Unable to save Scheduling Unit/Tasks'});
         }
-    }
-
-    /**
-     * warn before cancel the page if any changes detected 
-     */
-    checkIsDirty() {
-        if( this.state.isDirty ){
-            this.setState({showDialog: true});
-        } else {
-            this.cancelCreate();
-        }
-    }
-    
-    close() {
-        this.setState({showDialog: false});
     }
 
     /**
@@ -423,7 +388,6 @@ export class SchedulingUnitCreate extends Component {
         this.nameInput.element.focus();
         this.setState({
             dialogVisible: false,
-            isDirty: false,
             dialog: { header: '', detail: ''},      
             errors: [],
             schedulingSets: this.props.match.params.project?schedulingSets:[],
@@ -451,39 +415,25 @@ export class SchedulingUnitCreate extends Component {
     }
 
     onUpdateStations = (state, selectedStations, missing_StationFieldsErrors, customSelectedStations) => {
-        const selectedStation = this.state.selectedStations;
-        const customStation = this.state.customSelectedStations;
-        if  ( !this.state.isDirty ) {
-            if (selectedStation && !_.isEqual(selectedStation, selectedStations)){
-                this.setState({...state, selectedStations, missing_StationFieldsErrors, customSelectedStations }, () => {
-                    this.setState({ validForm: this.validateForm(), isDirty: true });
-                });
-            }   else if (customStation && !_.isEqual(customStation, customSelectedStations)){
-                this.setState({...state, selectedStations, missing_StationFieldsErrors, customSelectedStations }, () => {
-                    this.setState({ validForm: this.validateForm(), isDirty: true });
-                });
-            }   else {
-                this.setState({...state, selectedStations, missing_StationFieldsErrors, customSelectedStations }, () => {
-                    this.setState({ validForm: this.validateForm() });
-                });
-            }
-        }   else {
-            this.setState({...state, selectedStations, missing_StationFieldsErrors, customSelectedStations }, () => {
-                this.setState({ validForm: this.validateForm() });
+        this.setState({
+            ...state,
+            selectedStations,
+            missing_StationFieldsErrors,
+            customSelectedStations
+           
+        }, () => {
+            this.setState({
+                validForm: this.validateForm()
             });
-        }
-    };
 
-    async refreshSchedulingSet(){
-        this.schedulingSets = await ScheduleService.getSchedulingSets();
-        const filteredSchedluingSets = _.filter(this.schedulingSets, {'project_id': this.state.schedulingUnit.project});
-        this.setState({saveDialogVisible: false, showAddSet: false, schedulingSets: filteredSchedluingSets});
-    }
+        });
+    };
 
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
         }
+        
         const schema = this.state.paramsSchema;
         
         let jeditor = null;
@@ -500,8 +450,7 @@ export class SchedulingUnitCreate extends Component {
             <React.Fragment>
                 <Growl ref={(el) => this.growl = el} />
                 <PageHeader location={this.props.location} title={'Scheduling Unit - Add'} 
-                           actions={[{icon: 'fa-window-close', title:'Click to close Scheduling Unit creation',
-                           type: 'button',  actOn: 'click', props:{ callback: this.checkIsDirty }}]}/>
+                           actions={[{icon: 'fa-window-close',link: this.props.history.goBack,title:'Click to close Scheduling Unit creation', props : { pathname: `/schedulingunit`}}]}/>
                 { this.state.isLoading ? <AppLoader /> :
                 <>
                  <div>
@@ -554,13 +503,6 @@ export class SchedulingUnitCreate extends Component {
                                         options={this.state.schedulingSets} 
                                         onChange={(e) => {this.setSchedUnitParams('scheduling_set_id',e.value)}} 
                                         placeholder="Select Scheduling Set" />
-
-                                        <Button label="" className="p-button-primary" icon="pi pi-plus" 
-                                        onClick={() => {this.setState({showAddSet: true})}}  
-                                        tooltip="Add new Scheduling Set"
-                                        style={{bottom: '2em', left: '25em'}}
-                                        disabled={this.state.schedulingUnit.project !== null ? false : true }/>
-
                                 <label className={(this.state.errors.scheduling_set_id && this.state.touched.scheduling_set_id) ?"error":"info"}>
                                     {(this.state.errors.scheduling_set_id && this.state.touched.scheduling_set_id) ? this.state.errors.scheduling_set_id : "Scheduling Set of the Project"}
                                 </label>
@@ -617,7 +559,7 @@ export class SchedulingUnitCreate extends Component {
                                       disabled={!this.state.constraintValidEditor || !this.state.validEditor || !this.state.validForm} data-testid="save-btn" />
                         </div>
                         <div className="p-col-1">
-                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.checkIsDirty}  />
+                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.cancelCreate}  />
                         </div>
                     </div>
                 </div>
@@ -643,16 +585,6 @@ export class SchedulingUnitCreate extends Component {
                                 </div>
                             </div>
                     </Dialog>
-
-                    <CustomDialog type="success" visible={this.state.showAddSet} width="40vw"
-                    header={'Add Scheduling Set’'} message= {<SchedulingSet project={this.state.selectedProject[0]} onCancel={this.refreshSchedulingSet} />} showIcon={false} actions={this.actions}
-                    content={''} onClose={this.refreshSchedulingSet} onCancel={this.refreshSchedulingSet} onSubmit={this.refreshSchedulingSet}
-                    showAction={true}>
-                </CustomDialog>
-                <CustomDialog type="confirmation" visible={this.state.showDialog} width="40vw"
-                    header={'Add Scheduling Unit'} message={'Do you want to leave this page? Your changes may not be saved.'} 
-                    content={''} onClose={this.close} onCancel={this.close} onSubmit={this.cancelCreate}>
-                </CustomDialog>
                 </div>
             </React.Fragment>
         );

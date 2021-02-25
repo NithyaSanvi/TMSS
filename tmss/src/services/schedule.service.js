@@ -45,17 +45,17 @@ const ScheduleService = {
         }
         return blueprints;
     },
-    getSchedulingUnitExtended: async function (type, id, ignoreRef){
+    getSchedulingUnitExtended: async function (type, id){
         let schedulingUnit = null;
         try {
             const response = await axios.get(`/api/scheduling_unit_${type}_extended/${id}/`);
             schedulingUnit = response.data;
-            if (schedulingUnit && !ignoreRef) {
+            if (schedulingUnit) {
                 if (type === "blueprint") {
                     const schedulingUnitDraft = (await axios.get(`/api/scheduling_unit_draft/${schedulingUnit.draft_id}/`)).data;
                     schedulingUnit.draft_object = schedulingUnitDraft;
                     schedulingUnit.scheduling_set_id = schedulingUnitDraft.scheduling_set_id;
-                    schedulingUnit.scheduling_constraints_doc = schedulingUnitDraft.scheduling_constraints_doc?schedulingUnitDraft.scheduling_constraints_doc:{};
+                    schedulingUnit.scheduling_constraints_doc = schedulingUnitDraft.scheduling_constraints_doc;
                 }   else {
                     // Fetch all blueprints data associated with draft to display the name
                     schedulingUnit.blueprintList = (await this.getBlueprintsByschedulingUnitId(schedulingUnit.id)).data.results;
@@ -135,15 +135,6 @@ const ScheduleService = {
         }   catch(error){
             console.error('[schedule.services.getSchedulingUnitDraftById]',error);
             return null;
-        }
-    },
-    getSubtaskOutputDataproduct: async function(id){
-        try {
-          const url = `/api/subtask/${id}/output_dataproducts/`;
-          const response = await axios.get(url);
-          return response.data;
-        } catch (error) {
-          console.error('[data.product.getSubtaskOutputDataproduct]',error);
         }
     },
     getTaskBlueprintById: async function(id, loadTemplate, loadSubtasks, loadSubtaskTemplate){
@@ -311,11 +302,11 @@ const ScheduleService = {
             if (loadTemplate) {
                 const ingest = scheduletasklist.find(task => task.template.type_value === 'ingest' && task.tasktype.toLowerCase() === 'draft');
                 const promises = [];
-                ingest.produced_by_ids.forEach(id => promises.push(this.getTaskRelation(id)));
+                ingest.produced_by_ids.map(id => promises.push(this.getTaskRelation(id)));
                 const response = await Promise.all(promises);
-                response.forEach(producer => {
+                response.map(producer => {
                     const tasks = scheduletasklist.filter(task => producer.producer_id  === task.id);
-                    tasks.forEach(task => {
+                    tasks.map(task => {
                        task.canIngest = true;
                     });
                 });
@@ -405,15 +396,6 @@ const ScheduleService = {
             console.error('[schedule.services.getBlueprintsByschedulingUnitId]',error);
         });
         return res;
-    },
-    getSchedulingUnitTemplate: async function(id){
-        try {
-            const response = await axios.get(`/api/scheduling_unit_template/${id}`);
-            return response.data;
-        }   catch(error) {
-            console.error(error);
-            return null;
-        };
     },
     getSchedulingSets: async function() {
         try {
@@ -642,21 +624,12 @@ const ScheduleService = {
         }
         return stationGroups;
     },
-    getProjectList: async function() {
-    try {
-        const response = await axios.get('/api/project/');
-        return response.data.results;
-    } catch (error) {
-        console.error('[project.services.getProjectList]',error);
-    }
-    },
-    saveSchedulingSet: async function(suSet) {
+      getProjectList: async function() {
         try {
-            const response = await axios.post(('/api/scheduling_set/'), suSet);
-            return response.data;
+          const response = await axios.get('/api/project/');
+          return response.data.results;
         } catch (error) {
-            console.log(error.response.data);
-            return error.response.data;
+          console.error('[project.services.getProjectList]',error);
         }
       }
 }

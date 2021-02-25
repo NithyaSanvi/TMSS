@@ -1,14 +1,13 @@
 import React, {Component} from 'react';
 import { Redirect } from 'react-router-dom';
-import { InputText } from 'primereact/inputtext';
-import { Calendar } from 'primereact/calendar';
-import { InputTextarea } from 'primereact/inputtextarea';
-import { Dropdown } from 'primereact/dropdown';
-import { Button } from 'primereact/button';
-import { Dialog } from 'primereact/components/dialog/Dialog';
-import { Growl } from 'primereact/components/growl/Growl';
-import { ResourceInputList } from './ResourceInputList';
-import { CustomDialog } from '../../layout/components/CustomDialog';
+import {InputText} from 'primereact/inputtext';
+import {Calendar} from 'primereact/calendar';
+import {InputTextarea} from 'primereact/inputtextarea';
+import {Dropdown} from 'primereact/dropdown';
+import {Button} from 'primereact/button';
+import {Dialog} from 'primereact/components/dialog/Dialog';
+import {Growl} from 'primereact/components/growl/Growl';
+import {ResourceInputList} from './ResourceInputList';
 import moment from 'moment'
 import _ from 'lodash';
 
@@ -25,13 +24,9 @@ export class CycleCreate extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            showDialog: false,
-            isDirty: false,
             isLoading: true,
             dialog: { header: '', detail: ''},      
             cycle: {
-                name: '',
-                description: '',
                 projects: [],
                 quota: [],  
                 start: "",
@@ -73,8 +68,6 @@ export class CycleCreate extends Component {
         this.saveCycle = this.saveCycle.bind(this);
         this.cancelCreate = this.cancelCreate.bind(this);
         this.reset = this.reset.bind(this);
-        this.checkIsDirty = this.checkIsDirty.bind(this);
-        this.close = this.close.bind(this);
     }
 
     componentDidMount() {
@@ -118,15 +111,11 @@ export class CycleCreate extends Component {
      */
     addNewResource(){
         if (this.state.newResource) {
-            let resourceList = _.cloneDeep(this.state.resourceList);
+            let resourceList = this.state.resourceList;
             const newResource = _.remove(resourceList, {'name': this.state.newResource});
             let resources = this.state.resources;
             resources.push(newResource[0]);
-            if  ( !this.state.isDirty && !_.isEqual(this.state.resourceList, resourceList) ) {
-                this.setState({resources: resources, resourceList: resourceList, newResource: null, isDirty: true});
-            }   else {
-                this.setState({resources: resources, resourceList: resourceList, newResource: null});
-            }
+            this.setState({resources: resources, resourceList: resourceList, newResource: null});
         }
     }
 
@@ -137,16 +126,12 @@ export class CycleCreate extends Component {
     removeResource(name) {
         let resources = this.state.resources;
         let resourceList = this.state.resourceList;
-        let cycleQuota = _.cloneDeep(this.state.cycleQuota);
+        let cycleQuota = this.state.cycleQuota;
         const removedResource = _.remove(resources, (resource) => { return resource.name === name });
         resourceList.push(removedResource[0]);
         resourceList = _.sortBy(resourceList, 'name');
         delete cycleQuota[name];
-        if  ( !this.state.isDirty && !_.isEqual(this.state.cycleQuota, cycleQuota) ) {
-            this.setState({resourceList: resourceList, resources: resources, cycleQuota: cycleQuota, isDirty: true});
-        }   else {
-            this.setState({resourceList: resourceList, resources: resources, cycleQuota: cycleQuota});
-        }
+        this.setState({resourceList: resourceList, resources: resources, cycleQuota: cycleQuota});
     }
 
     /**
@@ -155,7 +140,7 @@ export class CycleCreate extends Component {
      * @param {any} value 
      */
     setCycleParams(key, value, type) {
-        let cycle = _.cloneDeep(this.state.cycle);
+        let cycle = this.state.cycle;
         switch(type) {
             case 'NUMBER': {
                 cycle[key] = value?parseInt(value):0;
@@ -165,12 +150,9 @@ export class CycleCreate extends Component {
                 cycle[key] = value;                
                 break;
             }
+           
         }
-        if  ( !this.state.isDirty && !_.isEqual(this.state.cycle, cycle) ) {
-            this.setState({cycle: cycle, validForm: this.validateForm(key), isDirty: true});
-        }   else {
-            this.setState({cycle: cycle, validForm: this.validateForm(key)});
-        }
+        this.setState({cycle: cycle, validForm: this.validateForm(key)});
     }
 
     /**
@@ -179,28 +161,23 @@ export class CycleCreate extends Component {
      * @param {InputEvent} event 
      */
     setCycleQuotaParams(key, event) {
-        let cycleQuota = _.cloneDeep(this.state.cycleQuota);
+        let cycleQuota = this.state.cycleQuota;
         if (event.target.value) {
             let resource = _.find(this.state.resources, {'name': key});
             
             let newValue = 0;
             if (this.resourceUnitMap[resource.quantity_value] && 
                 event.target.value.toString().indexOf(this.resourceUnitMap[resource.quantity_value].display)>=0) {
-                newValue = _.trim(event.target.value.replace(this.resourceUnitMap[resource.quantity_value].display,'',''));
+                newValue = event.target.value.replace(this.resourceUnitMap[resource.quantity_value].display,'');
             }   else {
-                newValue = _.trim(event.target.value);
+                newValue = event.target.value;
             }
-            cycleQuota[key] = (newValue==="NaN" || isNaN(newValue))?0:Number(newValue);
+            cycleQuota[key] = (newValue==="NaN" || isNaN(newValue))?0:newValue;
         }   else {
             let cycleQuota = this.state.cycleQuota;
             cycleQuota[key] = 0;
         }
-
-        if  ( !this.state.isDirty && !_.isEqual(this.state.cycleQuota, cycleQuota) ) {
-            this.setState({cycleQuota: cycleQuota, isDirty: true});
-        }   else {
-            this.setState({cycleQuota: cycleQuota});
-        }
+        this.setState({cycleQuota: cycleQuota});
     }
 
     /**
@@ -269,7 +246,7 @@ export class CycleCreate extends Component {
             let stoptime =  _.replace(this.state.cycle['stop'],'00:00:00', '23:59:59');
             cycle['start'] = moment(cycle['start']).format("YYYY-MM-DDTHH:mm:ss");
             cycle['stop'] = moment(stoptime).format("YYYY-MM-DDTHH:mm:ss");
-            this.setState({cycle: cycle, isDirty: false});
+            this.setState({cycle: cycle});
             for (const resource in this.state.cycleQuota) {
                 let resourceType = _.find(this.state.resources, {'name': resource});
                 if(resourceType){
@@ -297,21 +274,6 @@ export class CycleCreate extends Component {
                 }
             });
         }
-    }
-
-     /**
-     * warn before cancel the page if any changes detected 
-     */
-    checkIsDirty() {
-        if( this.state.isDirty ){
-            this.setState({showDialog: true});
-        } else {
-            this.cancelCreate();
-        }
-    }
-    
-    close() {
-        this.setState({showDialog: false});
     }
 
     /**
@@ -379,7 +341,7 @@ export class CycleCreate extends Component {
                 
                 <PageHeader location={this.props.location} title={'Cycle - Add'} actions={[{icon:'fa-window-close',
                             title:'Click to Close Add Cycle',
-                            type: 'button',  actOn: 'click', props:{ callback: this.checkIsDirty }}]}/>
+                            props:{pathname: '/cycle' }}]}/>
                 { this.state.isLoading ? <AppLoader /> :
                 <>
                 <div>
@@ -420,7 +382,7 @@ export class CycleCreate extends Component {
                             <label htmlFor="cycleName" className="col-lg-2 col-md-2 col-sm-12">Start Date <span style={{color:'red'}}>*</span></label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
                                 <Calendar
- 				                    d dateFormat="dd-M-yy"
+ 				    d dateFormat="dd-M-yy"
                                     value= {this.state.cycle.start}
                                     onChange= {e => this.setCycleParams('start',e.value)}
                                     onBlur= {e => this.setCycleParams('start',e.value)}
@@ -473,8 +435,8 @@ export class CycleCreate extends Component {
                                 </div>
                                 <div className="p-field p-grid resource-input-grid">
                                     <ResourceInputList list={this.state.resources} unitMap={this.resourceUnitMap} 
-                                        cycleQuota={this.state.cycleQuota} callback={this.setCycleQuotaParams} 
-                                        removeInputCallback={this.removeResource} />
+                                                      cycleQuota={this.state.cycleQuota} callback={this.setCycleQuotaParams} 
+                                                      removeInputCallback={this.removeResource} />
                                 </div>
                             </div>
                         }
@@ -485,7 +447,7 @@ export class CycleCreate extends Component {
                         <Button label="Save" className="p-button-primary" id="save-btn" data-testid="save-btn" icon="pi pi-check" onClick={this.saveCycle} disabled={!this.state.validForm} />
                     </div>
                      <div className="p-col-1">
-                        <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.checkIsDirty}  />
+                        <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.cancelCreate}  />
                     </div>
                 </div>
                 </>
@@ -509,11 +471,6 @@ export class CycleCreate extends Component {
                                 </div>
                             </div>
                     </Dialog>
-
-                    <CustomDialog type="confirmation" visible={this.state.showDialog} width="40vw"
-                        header={'Add Cycle'} message={'Do you want to leave this page? Your changes may not be saved.'} 
-                        content={''} onClose={this.close} onCancel={this.close} onSubmit={this.cancelCreate}>
-                    </CustomDialog>
                 </div>
                 
             </React.Fragment>

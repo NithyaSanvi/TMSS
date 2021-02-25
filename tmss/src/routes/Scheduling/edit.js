@@ -1,15 +1,15 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import { Redirect } from 'react-router-dom';
 import moment from 'moment';
 import _ from 'lodash';
 import $RefParser from "@apidevtools/json-schema-ref-parser";
 
-import { InputText } from 'primereact/inputtext';
-import { InputTextarea } from 'primereact/inputtextarea';
-import { Dropdown } from 'primereact/dropdown';
+import {InputText} from 'primereact/inputtext';
+import {InputTextarea} from 'primereact/inputtextarea';
+import {Dropdown} from 'primereact/dropdown';
 import { Button } from 'primereact/button';
-import { Growl } from 'primereact/components/growl/Growl';
-import { CustomDialog } from '../../layout/components/CustomDialog';
+import {Growl} from 'primereact/components/growl/Growl';
+
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
 import Jeditor from '../../components/JSONEditor/JEditor';
@@ -29,8 +29,6 @@ export class EditSchedulingUnit extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            showDialog: false,
-            isDirty: false,
             isLoading: true,                        //Flag for loading spinner                     
             dialog: { header: '', detail: ''},      //Dialog properties
             redirect: null,                         //URL to redirect
@@ -73,8 +71,6 @@ export class EditSchedulingUnit extends Component {
         this.saveSchedulingUnit = this.saveSchedulingUnit.bind(this);
         this.cancelCreate = this.cancelCreate.bind(this);
         this.setEditorOutputConstraint = this.setEditorOutputConstraint.bind(this);
-        this.checkIsDirty = this.checkIsDirty.bind(this);
-        this.close = this.close.bind(this);
     }
 
     /**
@@ -193,18 +189,8 @@ export class EditSchedulingUnit extends Component {
         this.paramsOutput = jsonOutput;
         this.validEditor = errors.length === 0;
         this.setState({ paramsOutput: jsonOutput, 
-            validEditor: errors.length === 0,
-            validForm: this.validateForm()});
-        /*if  ( !this.state.isDirty && this.state.paramsOutput && !_.isEqual(this.state.paramsOutput, jsonOutput) ) {
-            this.setState({ paramsOutput: jsonOutput, 
-                validEditor: errors.length === 0,
-                validForm: this.validateForm()});
-        }   else {
-            this.setState({ paramsOutput: jsonOutput, 
-                validEditor: errors.length === 0,
-                validForm: this.validateForm()});
-        }*/
-        
+                        validEditor: errors.length === 0,
+                        validForm: this.validateForm()});
     }
 
     setEditorOutputConstraint(jsonOutput, errors) {
@@ -214,16 +200,9 @@ export class EditSchedulingUnit extends Component {
         }
         this.constraintParamsOutput = jsonOutput || {};
         this.constraintValidEditor = err.length === 0;
-        if  ( !this.state.isDirty && this.state.constraintParamsOutput && !_.isEqual(this.state.constraintParamsOutput, this.constraintParamsOutput) ) {
-            this.setState({ constraintParamsOutput: jsonOutput, 
-                constraintValidEditor: err.length === 0,
-                validForm: this.validateForm(), isDirty: true});
-        }   else {
-            this.setState({ constraintParamsOutput: jsonOutput, 
-                constraintValidEditor: err.length === 0,
-                validForm: this.validateForm()});
-        }
-        
+        this.setState({ constraintParamsOutput: jsonOutput, 
+                        constraintValidEditor: err.length === 0,
+                        validForm: this.validateForm()});
     }
 
     /**
@@ -239,14 +218,9 @@ export class EditSchedulingUnit extends Component {
      * @param {object} value 
      */
     setSchedUnitParams(key, value) {
-        let schedulingUnit = _.cloneDeep(this.state.schedulingUnit);
+        let schedulingUnit = this.state.schedulingUnit;
         schedulingUnit[key] = value;
-        if  ( !this.state.isDirty && !_.isEqual(this.state.schedulingUnit, schedulingUnit) ) {
-            this.setState({schedulingUnit: schedulingUnit, validForm: this.validateForm(key), validEditor: this.validateEditor(), isDirty: true});
-        }   else {
-            this.setState({schedulingUnit: schedulingUnit, validForm: this.validateForm(key), validEditor: this.validateEditor()});
-        }
-       // this.setState({schedulingUnit: schedulingUnit, validForm: this.validateForm(key), validEditor: this.validateEditor()});
+        this.setState({schedulingUnit: schedulingUnit, validForm: this.validateForm(key), validEditor: this.validateEditor()});
         this.validateEditor();
     }
 
@@ -379,24 +353,9 @@ export class EditSchedulingUnit extends Component {
         }   else {
             this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Template Missing.'});
         }
-        this.setState({isDirty: false});
     }
     
-    /**
-     * warn before cancel the page if any changes detected 
-     */
-    checkIsDirty() {
-        if( this.state.isDirty ){
-                this.setState({showDialog: true});
-        } else {
-            this.cancelCreate();
-        }
-    }
     
-    close() {
-        this.setState({showDialog: false});
-    }
-
     /**
      * Cancel SU creation and redirect
      */
@@ -409,28 +368,7 @@ export class EditSchedulingUnit extends Component {
     }
   
     onUpdateStations = (state, selectedStations, missingStationFieldsErrors, customSelectedStations) => {
-        const selectedStation = this.state.selectedStations;
-        const customStation = this.state.customSelectedStations;
-        if  ( !this.state.isDirty ) {
-            if (selectedStation && !_.isEqual(selectedStation, selectedStations)){
-                this.setState({...state, selectedStations, missingStationFieldsErrors, customSelectedStations }, () => {
-                    this.setState({ validForm: this.validateForm(), isDirty: true });
-                });
-            }   else if (customStation && !_.isEqual(customStation, customSelectedStations)){
-                this.setState({...state, selectedStations, missingStationFieldsErrors, customSelectedStations }, () => {
-                    this.setState({ validForm: this.validateForm(), isDirty: true });
-                });
-            }   else {
-                this.setState({...state, selectedStations, missingStationFieldsErrors, customSelectedStations }, () => {
-                    this.setState({ validForm: this.validateForm() });
-                });
-            }
-        }   else {
-            this.setState({...state, selectedStations, missingStationFieldsErrors, customSelectedStations }, () => {
-                this.setState({ validForm: this.validateForm() });
-            });
-        }
-       /* this.setState({
+        this.setState({
             ...state,
             selectedStations,
             missingStationFieldsErrors,
@@ -439,7 +377,7 @@ export class EditSchedulingUnit extends Component {
             this.setState({
                 validForm: this.validateForm()
             });
-        });*/
+        });
     };
 
     render() {
@@ -462,8 +400,7 @@ export class EditSchedulingUnit extends Component {
             <React.Fragment>
                 <Growl ref={el => (this.growl = el)} />
                 <PageHeader location={this.props.location} title={'Scheduling Unit - Edit'} 
-                           actions={[{icon: 'fa-window-close', title:'Click to Close Scheduling Unit View', 
-                           type: 'button',  actOn: 'click', props:{ callback: this.checkIsDirty }}]}/>
+                           actions={[{icon: 'fa-window-close',link: this.props.history.goBack,title:'Click to Close Scheduling Unit View', props : { pathname: `/schedulingunit/view/draft/${this.props.match.params.id}`}}]}/>
                 { this.state.isLoading ? <AppLoader /> :
                 <>
                 <div>
@@ -543,11 +480,13 @@ export class EditSchedulingUnit extends Component {
                             </div> 
                         </div>
                     </div>
+
                     
                     <Stations
                         stationGroup={this.state.stationGroup}
                         onUpdateStations={this.onUpdateStations.bind(this)}
                     />
+
 
                     {this.state.constraintSchema && <div className="p-fluid">
                         <div className="p-grid">
@@ -570,15 +509,8 @@ export class EditSchedulingUnit extends Component {
                                     disabled={!this.state.validEditor || !this.state.validForm} data-testid="save-btn" />
                         </div>
                         <div className="p-col-1">
-                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.checkIsDirty}  />
+                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={this.cancelCreate}  />
                         </div>
-                    </div>
-
-                    <div className="p-grid" data-testid="confirm_dialog">
-                        <CustomDialog type="confirmation" visible={this.state.showDialog} width="40vw"
-                            header={'Edit Scheduling Unit'} message={'Do you want to leave this page? Your changes may not be saved.'} 
-                            content={''} onClose={this.close} onCancel={this.close} onSubmit={this.cancelCreate}>
-                        </CustomDialog>
                     </div>
                 </div>
                     
