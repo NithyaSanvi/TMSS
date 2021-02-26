@@ -33,10 +33,10 @@ export default class DegreeInputMask extends Component {
 
   render() {
     return (
-        <InputMask mask="99:99:99.9999" value={this.props.value}
+      <InputMask mask="99:99:99.9999" value={this.props.value}
         placeholder="DD:mm:ss.ssss" 
         className="inputmask"
-        onComplete={this.callbackUpdateAngle}
+        onChange={this.callbackUpdateAngle}
         autoFocus
         ref={input =>{this.input = input}} />
     );

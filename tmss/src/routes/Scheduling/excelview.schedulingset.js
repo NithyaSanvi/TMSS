@@ -687,8 +687,8 @@ export class SchedulingSetCreate extends Component {
         colKeyOrder.push('md_moon');
         colKeyOrder.push('md_jupiter');
         defaultCellValues['scheduler'] = constraintSchema.schema.properties.scheduler.default;
-        defaultCellValues['min_target_elevation'] =  (constraintSchema.schema.properties.sky.properties.min_target_elevation.default * 180) / Math.PI;
-        defaultCellValues['min_calibrator_elevation'] =(constraintSchema.schema.properties.sky.properties.min_calibrator_elevation.default * 180) / Math.PI;
+        defaultCellValues['min_target_elevation'] = constraintSchema.schema.properties.sky.properties.min_target_elevation.default;
+        defaultCellValues['min_calibrator_elevation'] = constraintSchema.schema.properties.sky.properties.min_calibrator_elevation.default;
         defaultCellValues['offset_from'] = 0;
         defaultCellValues['offset_to'] = 0;
         defaultCellValues['md_sun'] = constraintSchema.schema.properties.sky.properties.min_distance.properties.sun.default;
