@@ -195,6 +195,8 @@ class ViewSchedulingUnit extends Component{
                         task.size = 0;
                         task.dataSizeOnDisk = 0;
                         task.noOfOutputProducts = 0;
+                        task.stop_time = moment(task.stop_time).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                        task.start_time = moment(task.start_time).format(UIConstants.CALENDAR_DATETIME_FORMAT);
                         if (dataProducts.length && dataProducts[0].length) {
                             task.dataProducts = dataProducts[0];
                             task.noOfOutputProducts = dataProducts[0].length;
