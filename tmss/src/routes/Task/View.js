@@ -196,9 +196,9 @@ export class TaskView extends Component {
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Start Time</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.task.start?moment.utc(this.state.task.start).format(UIConstants.CALENDAR_DATETIME_FORMAT):""}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.task.start_time?moment(this.state.task.start_time,moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT):""}</span>
                             <label className="col-lg-2 col-md-2 col-sm-12">End Time</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.task.end?moment.utc(this.state.task.end).format(UIConstants.CALENDAR_DATETIME_FORMAT):""}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.task.end_time?moment(this.state.task.end_time,moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT):""}</span>
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Tags</label>

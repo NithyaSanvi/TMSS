@@ -258,13 +258,14 @@ class ViewSchedulingUnit extends Component{
             scheduletask['actionpath'] = '/task/view/draft/'+task['id'];
             scheduletask['blueprint_draft'] = _.map(task['task_blueprints'], 'url');
             scheduletask['status'] = task['status'];
-            
             //fetch task draft details
             for(const key of commonkeys){
                 scheduletask[key] = task[key];
             }
-            scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-            scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+            scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+            // scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+            // scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+           // scheduletask['created_at'] = task['created_at'];
             scheduletask['specifications_doc'] = task['specifications_doc'];
             scheduletask.duration = moment.utc((scheduletask.duration || 0)*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
             scheduletask.relative_start_time = moment.utc(scheduletask.relative_start_time*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
@@ -403,9 +404,9 @@ class ViewSchedulingUnit extends Component{
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Created At</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{moment(this.state.scheduleunit.created_at).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.created_at && moment(this.state.scheduleunit.created_at,moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
                             <label className="col-lg-2 col-md-2 col-sm-12">Updated At</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{moment(this.state.scheduleunit.updated_at).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.created_at && moment(this.state.scheduleunit.updated_at,moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Start Time</label>

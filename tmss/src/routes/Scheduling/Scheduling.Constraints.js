@@ -72,7 +72,7 @@ export default (props) => {
         propertyValue.skipFormat = true;
         propertyValue.options = {
             "inputAttributes": {
-                "placeholder": "mm/dd/yyyy,--:--:--"
+                "placeholder": "yyyy/mm/dd,--:--:--"
               },
             "flatpickr": {
                 "inlineHideInput": true,

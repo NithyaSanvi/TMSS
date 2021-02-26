@@ -6,6 +6,7 @@ import { Button } from 'primereact/button';
 
 import moment from 'moment';
 import _ from 'lodash';
+import UIConstants from '../../utils/ui.constants';
 
 const DATE_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 
@@ -84,7 +85,7 @@ export default class BetweenEditor extends Component {
   updateDateChanges(rowIndex, field, e){
       let tmpRows = this.state.rowData;
       let row = tmpRows[rowIndex];
-      row[field] = e.value || new Date();
+      row[field] = e.value;
       tmpRows[rowIndex] = row;
       if(this.state.rowData.length === rowIndex+1){
           let line = {'from': '', 'until': ''};
@@ -128,7 +129,7 @@ render() {
                 <React.Fragment key={index}>
                   <div className="p-field p-grid" >
                       <Calendar
-                            d dateFormat="dd-mm-yy"
+                            d dateFormat="yy-mm-dd"
                             value= {this.state.rowData[index].from}
                             onChange= {e => {this.updateDateChanges(index, 'from', e)}}
                             onBlur= {e => {this.updateDateChanges(index, 'from', e)}}
@@ -138,10 +139,10 @@ render() {
                             showIcon={true}
                         />
                         <Calendar
-                            d dateFormat="dd-mm-yy"
+                            d dateFormat={UIConstants.CALENDAR_DATE_FORMAT}                           
                             value= {this.state.rowData[index].until}
                             onChange= {e => {this.updateDateChanges(index, 'until', e)}}
-                            onBlur= {e => {this.updateDateChanges(index, 'until', e)}}
+                          //  onBlur= {e => {this.updateDateChanges(index, 'until', e)}}
                             showTime={true}
                             showSeconds={true}
                             hourFormat="24"

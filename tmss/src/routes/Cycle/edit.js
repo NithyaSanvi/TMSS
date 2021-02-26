@@ -306,9 +306,9 @@ export class CycleEdit extends Component {
     saveCycle() {
         if (this.validateForm) {
             let cycle = this.state.cycle;
-            let stoptime =  _.replace(this.state.cycle['stop'],'00:00:00', '23:59:59');
-            cycle['start'] = moment(this.state.cycle['start']).format("YYYY-MM-DDTHH:mm:ss");
-            cycle['stop'] = moment(stoptime).format("YYYY-MM-DDTHH:mm:ss");
+           // let stoptime =  _.replace(this.state.cycle['stop'],'00:00:00', '23:59:59');
+           cycle['start'] = cycle['start'];
+           cycle['stop'] = cycle['stop'];
             this.setState({cycle: cycle, isDirty: false});
             CycleService.updateCycle(this.props.match.params.id, this.state.cycle)
                 .then(async (cycle) => { 
@@ -456,7 +456,6 @@ export class CycleEdit extends Component {
                                     inputId="start"
                                     value= {new Date(this.state.cycle.start)}
                                     onChange= {e => this.setCycleParams('start',e.value)}
-                                    onBlur= {e => this.setCycleParams('start',e.value || new Date())}
                                     data-testid="start" 
                                     tooltip="Moment at which the cycle starts, that is, when its projects can run." tooltipOptions={this.tooltipOptions}
                                     showIcon={true} 
@@ -472,7 +471,6 @@ export class CycleEdit extends Component {
                                     d dateFormat={UIConstants.CALENDAR_DATE_FORMAT}
                                     value= {new Date(this.state.cycle.stop)}
                                     onChange= {e => this.setCycleParams('stop', e.value)}
-                                    onBlur= {e => this.setCycleParams('stop',e.value || new Date())}
                                     inputId="stop"
                                     data-testid="stop"
                                     tooltip="Moment at which the cycle officially ends." tooltipOptions={this.tooltipOptions}

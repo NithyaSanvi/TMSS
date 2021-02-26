@@ -1217,16 +1217,7 @@ export class CalendarTimeline extends Component {
         }
     }
 
-    dateRangeBlurEvent(value) {
-        if (!value || !value.length) {
-            const todaysDate = new Date();
-            var tomorrow = new Date();
-            tomorrow.setDate(todaysDate.getDate()+1);
-            this.setZoomRange([todaysDate, tomorrow]);
-        }
-    }
-
-    async changeWeek(direction) {
+  async changeWeek(direction) {
         this.setState({isWeekLoading: true});
         let startDate = this.state.group[1].value.clone().add(direction * 7, 'days');
         let endDate = this.state.group[this.state.group.length-1].value.clone().add(direction * 7, 'days').hours(23).minutes(59).seconds(59);
@@ -1299,10 +1290,8 @@ export class CalendarTimeline extends Component {
                         {this.state.allowDateSelection &&
                         <>
                         {/* <span className="p-float-label"> */}
-                        <Calendar id="range" placeholder="Select Date Range" selectionMode="range" showIcon={!this.state.zoomRange}
-                                value={this.state.zoomRange} 
-                                onChange={(e) => this.setZoomRange( e.value )}  
-                                value={this.state.zoomRange} onChange={(e) => this.setZoomRange( e.value )} onBlur={(e) => this.dateRangeBlurEvent(e.value)} readOnlyInput />  
+                        <Calendar id="range" placeholder="Select Date Range" selectionMode="range" dateFormat="yy/mm/dd" showIcon={!this.state.zoomRange}
+                                value={this.state.zoomRange} onChange={(e) => this.setZoomRange( e.value )} readOnlyInput />
                         {/* <label htmlFor="range">Select Date Range</label>
                         </span> */}
                         {this.state.zoomRange && <i className="pi pi-times pi-primary" style={{position: 'relative', left:'90%', bottom:'20px', cursor:'pointer'}} 

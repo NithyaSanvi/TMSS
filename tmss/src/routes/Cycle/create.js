@@ -270,9 +270,9 @@ export class CycleCreate extends Component {
         if (this.validateForm) {
             let cycleQuota = [];
             let cycle = this.state.cycle;
-            // let stoptime =  _.replace(this.state.cycle['stop'],'00:00:00', '23:59:59');
-            cycle['start'] = cycle['start'];
-            cycle['stop'] = cycle['stop'];
+             // let stoptime =  _.replace(this.state.cycle['stop'],'00:00:00', '23:59:59');
+             cycle['start'] = cycle['start'];
+             cycle['stop'] = cycle['stop'];
             this.setState({cycle: cycle, isDirty: false});
             for (const resource in this.state.cycleQuota) {
                 let resourceType = _.find(this.state.resources, {'name': resource});

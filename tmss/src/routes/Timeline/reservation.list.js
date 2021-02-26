@@ -125,9 +125,9 @@ export class ReservationList extends Component{
                     reservation.duration = UnitService.getSecsToHHmmss(reservation.duration);
                     let endDate = moment(reservation.start_time);
                     endDate = moment(endDate).add(duration, 's');
-                    reservation['end_time']= moment( reservation['end_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                    reservation['end_time']= moment( reservation['end_time'], moment.ISO_8601).format('YYYY-MM-DD HH:mm:ss');
                 }
-                reservation['start_time']= moment(reservation['start_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                reservation['start_time']= moment(reservation['start_time'], moment.ISO_8601).format('YYYY-MM-DD HH:mm:ss');
                 this.reservations.push(reservation);
             };
             this.cycleList.map(cycle => {
@@ -329,7 +329,6 @@ export class ReservationList extends Component{
                                         value= {this.state.fStartTime}
                                        // placeholder="Select Start Date Time"
                                         onChange= {e => this.setDateRange('fStartTime', e.value)}
-                                        onBlur= {e => this.setDateRange('fStartTime',e.value || new Date())}
                                         tooltip="Select Reserved Between - From"  tooltipOptions={this.tooltipOptions}
                                         showIcon={true}
                                         showTime={true} 
@@ -352,7 +351,6 @@ export class ReservationList extends Component{
                                         value= {this.state.fEndTime}
                                     // placeholder="Select End Date Time"
                                         onChange= {e => this.setDateRange('fEndTime', e.value)}
-                                        onBlur= {e => this.setDateRange('fEndTime', e.value || new Date())}
                                         tooltip="Select Reserved Between-To" tooltipOptions={this.tooltipOptions}
                                         showIcon={true}
                                         showTime={true} 
