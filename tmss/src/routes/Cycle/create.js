@@ -1,4 +1,3 @@
-
 import React, {Component} from 'react';
 import { Redirect } from 'react-router-dom';
 import { InputText } from 'primereact/inputtext';
@@ -155,7 +154,7 @@ export class CycleCreate extends Component {
      * @param {string} key 
      * @param {any} value 
      */
-    async setCycleParams(key, value, type) {
+    setCycleParams(key, value, type) {
         let cycle = _.cloneDeep(this.state.cycle);
         switch(type) {
             case 'NUMBER': {
@@ -168,11 +167,9 @@ export class CycleCreate extends Component {
             }
         }
         if  ( !this.state.isDirty && !_.isEqual(this.state.cycle, cycle) ) {
-            await this.setState({cycle: cycle});
-            await this.setState({validForm: this.validateForm(key), isDirty: true});
+            this.setState({cycle: cycle, validForm: this.validateForm(key), isDirty: true});
         }   else {
-            await this.setState({cycle: cycle});
-            await this.setState({validForm: this.validateForm(key)});
+            this.setState({cycle: cycle, validForm: this.validateForm(key)});
         }
     }
 
@@ -211,7 +208,6 @@ export class CycleCreate extends Component {
      * If no argument passed for fieldName, validates all fields in the form.
      * @param {string} fieldName 
      */
-    
     validateForm(fieldName) {
         let validForm = false;
         let errors = this.state.errors;
@@ -270,9 +266,9 @@ export class CycleCreate extends Component {
         if (this.validateForm) {
             let cycleQuota = [];
             let cycle = this.state.cycle;
-             // let stoptime =  _.replace(this.state.cycle['stop'],'00:00:00', '23:59:59');
-             cycle['start'] = cycle['start'];
-             cycle['stop'] = cycle['stop'];
+            let stoptime =  _.replace(this.state.cycle['stop'],'00:00:00', '23:59:59');
+            cycle['start'] = moment(cycle['start']).format("YYYY-MM-DDTHH:mm:ss");
+            cycle['stop'] = moment(stoptime).format("YYYY-MM-DDTHH:mm:ss");
             this.setState({cycle: cycle, isDirty: false});
             for (const resource in this.state.cycleQuota) {
                 let resourceType = _.find(this.state.resources, {'name': resource});
@@ -424,9 +420,10 @@ export class CycleCreate extends Component {
                             <label htmlFor="cycleName" className="col-lg-2 col-md-2 col-sm-12">Start Date <span style={{color:'red'}}>*</span></label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
                                 <Calendar
- 				                    d dateFormat={UIConstants.CALENDAR_DATE_FORMAT}
+ 				                    d dateFormat="dd-M-yy"
                                     value= {this.state.cycle.start}
                                     onChange= {e => this.setCycleParams('start',e.value)}
+                                    onBlur= {e => this.setCycleParams('start',e.value)}
                                     data-testid="start"
                                     tooltip="Moment at which the cycle starts, that is, when its projects can run." tooltipOptions={this.tooltipOptions}
 				                    showIcon={true}
@@ -440,9 +437,10 @@ export class CycleCreate extends Component {
                             <label htmlFor="cycleName" className="col-lg-2 col-md-2 col-sm-12">Stop Date <span style={{color:'red'}}>*</span></label>
                              <div className="col-lg-3 col-md-3 col-sm-12">
                                 <Calendar
-                                    d dateFormat={UIConstants.CALENDAR_DATE_FORMAT}
+                                    d dateFormat="dd-M-yy"
                                     value= {this.state.cycle.stop}
                                     onChange= {e => this.setCycleParams('stop', e.value)}
+                                    onBlur= {e => this.setCycleParams('stop',e.value)}
                                     data-testid="stop"
                                     tooltip="Moment at which the cycle officially ends." tooltipOptions={this.tooltipOptions}
                                     showIcon={true}

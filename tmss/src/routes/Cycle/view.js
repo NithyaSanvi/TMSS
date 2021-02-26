@@ -11,14 +11,13 @@ import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
 import CycleService from '../../services/cycle.service';
 import UnitConverter from '../../utils/unit.converter';
-import UIConstants from '../../utils/ui.constants';
 import {ProjectList} from './../Project/list';
 
 /**
  * Component to view the details of a cycle
  */
 export class CycleView extends Component {
- //   DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss';
+    DATE_FORMAT = 'YYYY-MMM-DD HH:mm:ss';
     constructor(props) {
         super(props);
         this.state = {
@@ -111,9 +110,9 @@ export class CycleView extends Component {
                             </div>
                             <div className="p-grid">
                                 <label className="col-lg-2 col-md-2 col-sm-12">Created At</label>
-                                <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.cycle.created_at).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
+                                <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.cycle.created_at).format(this.DATE_FORMAT)}</span>
                                 <label className="col-lg-2 col-md-2 col-sm-12">Updated At</label>
-                                <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.cycle.updated_at).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
+                                <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.cycle.updated_at).format(this.DATE_FORMAT)}</span>
                             </div>
                             
                             {/* <div className="p-grid">

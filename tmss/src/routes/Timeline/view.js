@@ -15,7 +15,6 @@ import ViewTable from '../../components/ViewTable';
 import ProjectService from '../../services/project.service';
 import ScheduleService from '../../services/schedule.service';
 import UtilService from '../../services/util.service';
-import UIConstants from '../../utils/ui.constants';
 import TaskService from '../../services/task.service';
 
 import UnitConverter from '../../utils/unit.converter';
@@ -960,9 +959,9 @@ export class TimelineView extends Component {
                             <div className="col-7">{mouseOverItem.name}</div>
                         </>}
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>Start Time:</label>
-                        <div className="col-7">{mouseOverItem.start_time.format(UIConstants.CALENDAR_DATETIME_FORMAT)}</div>
+                        <div className="col-7">{mouseOverItem.start_time.format("YYYY-MM-DD HH:mm:ss")}</div>
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>End Time:</label>
-                        <div className="col-7">{mouseOverItem.end_time.format(UIConstants.CALENDAR_DATETIME_FORMAT)}</div>
+                        <div className="col-7">{mouseOverItem.end_time.format("YYYY-MM-DD HH:mm:ss")}</div>
                         {mouseOverItem.type==='SCHEDULE' &&
                         <>
                             <label className={`col-5 su-${mouseOverItem.status}-icon`}>Antenna Set:</label>

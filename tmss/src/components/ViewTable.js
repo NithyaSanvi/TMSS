@@ -17,7 +17,6 @@ import { InputNumber } from "primereact/inputnumber";
 import { MultiSelect } from 'primereact/multiselect';
 import { RadioButton } from 'primereact/radiobutton';
 import { useExportData } from "react-table-plugins";
-import UIConstants from '../utils/ui.constants';
 import Papa from "papaparse";
 import JsPDF from "jspdf";
 import "jspdf-autotable";
@@ -282,8 +281,8 @@ function CalendarColumnFilter({
   return (
 
     <div className="table-filter" onClick={e => { e.stopPropagation() }}>
-      <Calendar value={value} appendTo={document.body} dateFormat="yy/mm/dd" onChange={(e) => {
-        const value = moment(e.value).format('YYYY-MM-DD')
+      <Calendar value={value} appendTo={document.body} onChange={(e) => {
+        const value = moment(e.value, moment.ISO_8601).format("YYYY-MMM-DD")
         setValue(value); setFilter(value);
       }} showIcon></Calendar>
       {value && <i onClick={() => { setFilter(undefined); setValue('') }} className="tb-cal-reset fa fa-times" />}
@@ -305,8 +304,8 @@ function DateTimeColumnFilter({
   return (
 
     <div className="table-filter" onClick={e => { e.stopPropagation() }}>
-      <Calendar value={value} appendTo={document.body} dateFormat="yy/mm/dd" onChange={(e) => {
-        const value = moment(e.value, moment.ISO_8601).format('YYYY-MM-DD HH:mm:ss')
+      <Calendar value={value} appendTo={document.body} onChange={(e) => {
+        const value = moment(e.value, moment.ISO_8601).format("YYYY-MMM-DD HH:mm:SS")
         setValue(value); setFilter(value);
       }} showIcon
       // showTime= {true}
@@ -334,9 +333,9 @@ function fromDatetimeFilterFn(rows, id, filterValue) {
     let rowValue = moment.utc(row.values[id].split('.')[0]);
     if (!rowValue.isValid()) {
       // For cell data in format 'YYYY-MMM-DD'
-      rowValue = moment.utc(moment(row.values[id], 'YYYY-MM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
+      rowValue = moment.utc(moment(row.values[id], 'YYYY-MMM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
     }
-    const start = moment.utc(moment(filterValue, 'YYYY-MM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
+    const start = moment.utc(moment(filterValue, 'YYYY-MMM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
 
     return (start.isSameOrBefore(rowValue));
   });
@@ -390,7 +389,7 @@ function multiSelectFilterFn(rows, id, filterValue) {
  * @param {String} filterValue 
  */
 function toDatetimeFilterFn(rows, id, filterValue) {
-  let end = moment.utc(moment(filterValue, 'YYYY-MM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
+  let end = moment.utc(moment(filterValue, 'YYYY-MMM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
   end = moment(end, "DD-MM-YYYY").add(1, 'days');
   const filteredRows = _.filter(rows, function (row) {
     // If cell value is null or empty
@@ -401,7 +400,7 @@ function toDatetimeFilterFn(rows, id, filterValue) {
     let rowValue = moment.utc(row.values[id].split('.')[0]);
     if (!rowValue.isValid()) {
       // For cell data in format 'YYYY-MMM-DD'
-      rowValue = moment.utc(moment(row.values[id], 'YYYY-MM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
+      rowValue = moment.utc(moment(row.values[id], 'YYYY-MMM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
     }
     return (end.isSameOrAfter(rowValue));
   });
@@ -424,10 +423,10 @@ function dateFilterFn(rows, id, filterValue) {
     let rowValue = moment.utc(row.values[id].split('.')[0]);
     if (!rowValue.isValid()) {
       // For cell data in format 'YYYY-MMM-DD'
-      rowValue = moment.utc(moment(row.values[id], 'YYYY-MM-DD').format("YYYY-MM-DDT00:00:00"));
+      rowValue = moment.utc(moment(row.values[id], 'YYYY-MMM-DD').format("YYYY-MM-DDT00:00:00"));
     }
-    const start = moment.utc(moment(filterValue, 'YYYY-MM-DD').format("YYYY-MM-DDT00:00:00"));
-    const end = moment.utc(moment(filterValue, 'YYYY-MM-DD').format("YYYY-MM-DDT23:59:59"));
+    const start = moment.utc(moment(filterValue, 'YYYY-MMM-DD').format("YYYY-MM-DDT00:00:00"));
+    const end = moment.utc(moment(filterValue, 'YYYY-MMM-DD').format("YYYY-MM-DDT23:59:59"));
     return (start.isSameOrBefore(rowValue) && end.isSameOrAfter(rowValue));
   });
   return filteredRows;
@@ -1048,12 +1047,12 @@ function ViewTable(props) {
         return retval;
       } else if (typeof value == "boolean") {
         return value.toString();
-      }// else if (typeof value == "string") {
-      //   const dateval = moment(value, moment.ISO_8601).format('YYYY-MM-DD HH:mm:ss');
-      //  else if (dateval !== 'Invalid date') {
-      //     return dateval;
-        // }
-     // }
+      } else if (typeof value == "string") {
+        const dateval = moment(value, moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+        if (dateval !== 'Invalid date') {
+          return dateval;
+        }
+      }
     } catch (err) {
       console.error('Error', err)
     }
