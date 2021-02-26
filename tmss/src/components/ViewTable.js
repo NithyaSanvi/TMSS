@@ -17,6 +17,7 @@ import { InputNumber } from "primereact/inputnumber";
 import { MultiSelect } from 'primereact/multiselect';
 import { RadioButton } from 'primereact/radiobutton';
 import { useExportData } from "react-table-plugins";
+import UIConstants from '../utils/ui.constants';
 import Papa from "papaparse";
 import JsPDF from "jspdf";
 import "jspdf-autotable";
@@ -281,8 +282,8 @@ function CalendarColumnFilter({
   return (
 
     <div className="table-filter" onClick={e => { e.stopPropagation() }}>
-      <Calendar value={value} appendTo={document.body} onChange={(e) => {
-        const value = moment(e.value, moment.ISO_8601).format("YYYY-MMM-DD")
+      <Calendar value={value} appendTo={document.body} dateFormat="yy/mm/dd" onChange={(e) => {
+        const value = moment(e.value).format('YYYY-MM-DD')
         setValue(value); setFilter(value);
       }} showIcon></Calendar>
       {value && <i onClick={() => { setFilter(undefined); setValue('') }} className="tb-cal-reset fa fa-times" />}
@@ -304,8 +305,8 @@ function DateTimeColumnFilter({
   return (
 
     <div className="table-filter" onClick={e => { e.stopPropagation() }}>
-      <Calendar value={value} appendTo={document.body} onChange={(e) => {
-        const value = moment(e.value, moment.ISO_8601).format("YYYY-MMM-DD HH:mm:SS")
+      <Calendar value={value} appendTo={document.body} dateFormat="yy/mm/dd" onChange={(e) => {
+        const value = moment(e.value, moment.ISO_8601).format('YYYY-MM-DD HH:mm:ss')
         setValue(value); setFilter(value);
       }} showIcon
       // showTime= {true}
@@ -333,9 +334,9 @@ function fromDatetimeFilterFn(rows, id, filterValue) {
     let rowValue = moment.utc(row.values[id].split('.')[0]);
     if (!rowValue.isValid()) {
       // For cell data in format 'YYYY-MMM-DD'
-      rowValue = moment.utc(moment(row.values[id], 'YYYY-MMM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
+      rowValue = moment.utc(moment(row.values[id], 'YYYY-MM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
     }
-    const start = moment.utc(moment(filterValue, 'YYYY-MMM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
+    const start = moment.utc(moment(filterValue, 'YYYY-MM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
 
     return (start.isSameOrBefore(rowValue));
   });
@@ -389,7 +390,7 @@ function multiSelectFilterFn(rows, id, filterValue) {
  * @param {String} filterValue 
  */
 function toDatetimeFilterFn(rows, id, filterValue) {
-  let end = moment.utc(moment(filterValue, 'YYYY-MMM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
+  let end = moment.utc(moment(filterValue, 'YYYY-MM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
   end = moment(end, "DD-MM-YYYY").add(1, 'days');
   const filteredRows = _.filter(rows, function (row) {
     // If cell value is null or empty
@@ -400,7 +401,7 @@ function toDatetimeFilterFn(rows, id, filterValue) {
     let rowValue = moment.utc(row.values[id].split('.')[0]);
     if (!rowValue.isValid()) {
       // For cell data in format 'YYYY-MMM-DD'
-      rowValue = moment.utc(moment(row.values[id], 'YYYY-MMM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
+      rowValue = moment.utc(moment(row.values[id], 'YYYY-MM-DDTHH:mm:SS').format("YYYY-MM-DDTHH:mm:SS"));
     }
     return (end.isSameOrAfter(rowValue));
   });
@@ -423,10 +424,10 @@ function dateFilterFn(rows, id, filterValue) {
     let rowValue = moment.utc(row.values[id].split('.')[0]);
     if (!rowValue.isValid()) {
       // For cell data in format 'YYYY-MMM-DD'
-      rowValue = moment.utc(moment(row.values[id], 'YYYY-MMM-DD').format("YYYY-MM-DDT00:00:00"));
+      rowValue = moment.utc(moment(row.values[id], 'YYYY-MM-DD').format("YYYY-MM-DDT00:00:00"));
     }
-    const start = moment.utc(moment(filterValue, 'YYYY-MMM-DD').format("YYYY-MM-DDT00:00:00"));
-    const end = moment.utc(moment(filterValue, 'YYYY-MMM-DD').format("YYYY-MM-DDT23:59:59"));
+    const start = moment.utc(moment(filterValue, 'YYYY-MM-DD').format("YYYY-MM-DDT00:00:00"));
+    const end = moment.utc(moment(filterValue, 'YYYY-MM-DD').format("YYYY-MM-DDT23:59:59"));
     return (start.isSameOrBefore(rowValue) && end.isSameOrAfter(rowValue));
   });
   return filteredRows;
@@ -666,7 +667,8 @@ function Table({ columns, data, defaultheader, optionalheader, tablename, defaul
   );
   React.useEffect(() => {
     setHiddenColumns(
-      columns.filter(column => !column.isVisible).map(column => column.accessor)
+    //  columns.filter(column => !column.isVisible).map(column => column.accessor)
+    columns.filter(column => !column.isVisible).map(column => column.id)
     );
     // console.log('columns List', visibleColumns.map((d) => d.id));
     if (columnOrders && columnOrders.length) {
@@ -1006,11 +1008,11 @@ function ViewTable(props) {
   optionaldataheader.forEach(header => {
     const isString = typeof optionalheader[0][header] === 'string';
     const filterFn = (showColumnFilter ? (isString ? DefaultColumnFilter : (filterTypes[optionalheader[0][header].filter].fn ? filterTypes[optionalheader[0][header].filter].fn : DefaultColumnFilter)) : "");
-    const filtertype = (showColumnFilter ? (!isString && filterTypes[optionalheader[0][header].filter].type) ? filterTypes[optionalheader[0][header].filter].type : 'fuzzyText' : "");
+    const filtertype = (showColumnFilter ? (!isString && filterTypes[optionalheader[0][header].filter]) ? (filterTypes[optionalheader[0][header].filter].type || filterTypes[optionalheader[0][header].filter]) : 'fuzzyText' : "");
     columns.push({
       Header: isString ? optionalheader[0][header] : optionalheader[0][header].name,
       id: isString ? header : optionalheader[0][header].name,
-      accessor: isString ? header : optionalheader[0][header].name,
+      accessor: header,
       filter: filtertype,
       Filter: filterFn,
       isVisible: false,
@@ -1047,12 +1049,12 @@ function ViewTable(props) {
         return retval;
       } else if (typeof value == "boolean") {
         return value.toString();
-      } else if (typeof value == "string") {
-        const dateval = moment(value, moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-        if (dateval !== 'Invalid date') {
-          return dateval;
-        }
-      }
+      }// else if (typeof value == "string") {
+      //   const dateval = moment(value, moment.ISO_8601).format('YYYY-MM-DD HH:mm:ss');
+      //  else if (dateval !== 'Invalid date') {
+      //     return dateval;
+        // }
+     // }
     } catch (err) {
       console.error('Error', err)
     }

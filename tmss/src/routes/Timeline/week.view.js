@@ -687,9 +687,9 @@ export class WeekTimelineView extends Component {
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>Friends:</label>
                         <div className="col-7">{mouseOverItem.friends?mouseOverItem.friends:"-"}</div>
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>Start Time:</label>
-                        <div className="col-7">{mouseOverItem.suStartTime.format("YYYY-MM-DD HH:mm:ss")}</div>
+                        <div className="col-7">{mouseOverItem.suStartTime.format(UIConstants.CALENDAR_DATETIME_FORMAT)}</div>
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>End Time:</label>
-                        <div className="col-7">{mouseOverItem.suStopTime.format("YYYY-MM-DD HH:mm:ss")}</div>
+                        <div className="col-7">{mouseOverItem.suStopTime.format(UIConstants.CALENDAR_DATETIME_FORMAT)}</div>
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>Antenna Set:</label>
                         <div className="col-7">{mouseOverItem.antennaSet}</div>
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>Stations:</label>

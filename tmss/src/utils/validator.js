@@ -1,16 +1,13 @@
 const Validator = {
     validateTime(value) {
     const splitOutput = value.split(':');
-    const seconds = splitOutput[2]?splitOutput[2].split('.')[0].split('.')[0]:splitOutput[2];
-        let milliSeconds = value.split('.')[1] || '0000';
-        milliSeconds = milliSeconds.padEnd(4,0);
         if (splitOutput.length < 3) {
             return false;
         }   else {
             if (parseInt(splitOutput[0]) > 23 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59) {
                 return false;
             }
-            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(seconds) + milliSeconds/10000;
+            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(splitOutput[2]);
             if (timeValue >= 86400) {
                 return false;
             }
@@ -19,17 +16,13 @@ const Validator = {
     },
     validateAngle(value) {
         const splitOutput = value.split(':');
-        const seconds = splitOutput[2]?splitOutput[2].split('.')[0].split('.')[0]:splitOutput[2];
-        let milliSeconds = value.split('.')[1] || '0000';
-        milliSeconds = milliSeconds.padEnd(4,0);
-        console.log(milliSeconds);
         if (splitOutput.length < 3) {
             return false;
         }   else {
             if (parseInt(splitOutput[0]) > 90 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59) {
                 return false;
             }
-            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(seconds) + milliSeconds/10000;
+            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(splitOutput[2]);
             if (timeValue > 324000) {
                 return false;
             }

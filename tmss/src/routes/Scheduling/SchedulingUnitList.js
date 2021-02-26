@@ -8,6 +8,7 @@ import _ from 'lodash';
 import ScheduleService from '../../services/schedule.service';
 import { Link } from 'react-router-dom';
 import WorkflowService from '../../services/workflow.service';
+import UIConstants from '../../utils/ui.constants';
 
 class SchedulingUnitList extends Component{
     constructor(props){
@@ -258,8 +259,10 @@ class SchedulingUnitList extends Component{
                             blueP.duration = moment.utc((blueP.duration || 0)*1000).format('HH:mm:ss');
                             blueP.type="Blueprint"; 
                             blueP['actionpath'] ='/schedulingunit/view/blueprint/'+blueP.id;
-                            blueP['created_at'] = moment(blueP['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-                            blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                            blueP['created_at'] = moment(blueP['created_at'],  moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                            blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                            blueP['start_time'] = moment(blueP['start_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                            blueP['stop_time'] = moment(blueP['stop_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
                             blueP['task_content'] = this.getTaskTypeGroupCounts(blueP['task_blueprints']);
                             blueP['linked_bp_draft'] = this.getLinksList([blueP.draft_id], 'draft');
                             blueP['template_description'] = suTemplate[blueP.requirements_template_id].description;
@@ -267,10 +270,6 @@ class SchedulingUnitList extends Component{
                             blueP.project = project.name;
                             blueP.canSelect = false;
                             blueP.suSet = suSet.name;
-                            // blueP.links = ['Project'];
-                            // blueP.linksURL = {
-                            //     'Project': `/project/view/${project.name}`
-                            // }
                             blueP.links = ['Project', 'id'];
                             blueP.linksURL = {
                                 'Project': `/project/view/${project.name}`,
@@ -282,8 +281,10 @@ class SchedulingUnitList extends Component{
                         scheduleunit['actionpath']='/schedulingunit/view/draft/'+scheduleunit.id;
                         scheduleunit['type'] = 'Draft';
                         scheduleunit['duration'] = moment.utc((scheduleunit.duration || 0)*1000).format('HH:mm:ss');
-                        scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-                        scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                        scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                        scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                       // scheduleunit['start_time'] = moment(scheduleunit['start_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                       // scheduleunit['stop_time'] = moment(scheduleunit['stop_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
                         scheduleunit.project = project.name;
                         scheduleunit.canSelect = true;
                         scheduleunit.suSet = suSet.name;
@@ -295,35 +296,6 @@ class SchedulingUnitList extends Component{
                         output.push(scheduleunit);
                     }
                 }
-               // const defaultColumns = this.defaultcolumns;
-                let optionalColumns = this.state.optionalcolumns[0];
-                let columnclassname = this.state.columnclassname[0];
-                output.map(su => {
-                    su.taskDetails = su.type==="Draft"?su.task_drafts:su.task_blueprints;
-                    const targetObserv = su.taskDetails.find(task => task.specifications_template.type_value==='observation' && task.specifications_doc.SAPs);
-                    // Constructing targets in single string to make it clear display 
-                    if (targetObserv && targetObserv.specifications_doc) {
-                        targetObserv.specifications_doc.SAPs.map((target, index) => {
-                            su[`target${index}angle1`] = UnitConverter.getAngleInput(target.digital_pointing.angle1);
-                            su[`target${index}angle2`] = UnitConverter.getAngleInput(target.digital_pointing.angle2,true);
-                            su[`target${index}referenceframe`] = target.digital_pointing.direction_type;
-                            optionalColumns[`target${index}angle1`] = `Target ${index + 1} - Angle 1`;
-                            optionalColumns[`target${index}angle2`] = `Target ${index + 1} - Angle 2`;
-                            optionalColumns[`target${index}referenceframe`] = {
-                                name: `Target ${index + 1} - Reference Frame`,
-                                filter: "select"
-                            };
-                            columnclassname[`Target ${index + 1} - Angle 1`] = "filter-input-75";
-                            columnclassname[`Target ${index + 1} - Angle 2`] = "filter-input-75";
-                            return target;
-                        });
-                    }
-                    return su;
-                });
-                this.setState({
-                    scheduleunit: output, isLoading: false, optionalColumns: [optionalColumns],
-                    columnclassname: [columnclassname]
-                });
                 this.addTargetColumns(output);
                 this.selectedRows = [];
             });
