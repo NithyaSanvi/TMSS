@@ -6,6 +6,7 @@ import { Button } from 'primereact/button';
 
 import moment from 'moment';
 import _ from 'lodash';
+import UIConstants from '../../utils/ui.constants';
 
 const DATE_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 
@@ -128,17 +129,17 @@ render() {
                 <React.Fragment key={index}>
                   <div className="p-field p-grid" >
                       <Calendar
-                            d dateFormat="dd-M-yy"
+                            d dateFormat="yy-mm-dd"
                             value= {this.state.rowData[index].from}
                             onChange= {e => {this.updateDateChanges(index, 'from', e)}}
-                           // onBlur= {e => {this.updateDateChanges(index, 'from', e)}}
+                            onBlur= {e => {this.updateDateChanges(index, 'from', e)}}
                             showTime={true}
                             showSeconds={true}
                             hourFormat="24"
                             showIcon={true}
                         />
                         <Calendar
-                            d dateFormat="dd-M-yy"
+                            d dateFormat={UIConstants.CALENDAR_DATE_FORMAT}                           
                             value= {this.state.rowData[index].until}
                             onChange= {e => {this.updateDateChanges(index, 'until', e)}}
                           //  onBlur= {e => {this.updateDateChanges(index, 'until', e)}}

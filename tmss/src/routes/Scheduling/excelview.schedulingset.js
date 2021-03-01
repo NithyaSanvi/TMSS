@@ -561,7 +561,7 @@ export class SchedulingSetCreate extends Component {
             {
                 headerName: 'Sky',
                 children: [
-                    {headerName: 'Min Target Elevation',field: 'min_target_elevation', cellEditor: 'numericEditor', valueSetter: 'valueSetter', cellStyle: function(params) {
+                    {headerName: 'Min Target Elevation',field: 'min_target_elevation', cellStyle: function(params) {
                         if  (params.value){
                             if ( !Number(params.value)){
                                 return { backgroundColor: BG_COLOR};
@@ -658,7 +658,7 @@ export class SchedulingSetCreate extends Component {
                 }, },
                 {headerName: 'Jupiter',field: 'md_jupiter', cellStyle: function(params) {
                     if  (params.value){
-                        if (params.value === undefined || params.value === null || isNaN(params.value)){
+                        if ( !Number(params.value)){
                             return { backgroundColor: BG_COLOR};
                         }
                         else if ( Number(params.value) < 0 ||   Number(params.value) > 180) {
@@ -1187,14 +1187,14 @@ export class SchedulingSetCreate extends Component {
                 observationProps['min_target_elevation'] = constraint.sky.min_target_elevation;
                 observationProps['min_calibrator_elevation'] = constraint.sky.min_calibrator_elevation;
                 if  ( constraint.sky.transit_offset ){
-                    observationProps['offset_from'] = constraint.sky.transit_offset.from ;//constraint.sky.transit_offset.from:'';
-                    observationProps['offset_to'] = constraint.sky.transit_offset.to ; //constraint.sky.transit_offset.to:'';
+                    observationProps['offset_from'] = (constraint.sky.transit_offset.from)?constraint.sky.transit_offset.from:'';
+                    observationProps['offset_to'] = (constraint.sky.transit_offset.to)?constraint.sky.transit_offset.to:'';
                 }
                 
                if  (constraint.sky.min_distance){
-                observationProps['md_sun'] = constraint.sky.min_distance.sun;//constraint.sky.min_distance.sun:0;
-                observationProps['md_moon'] =  constraint.sky.min_distance.moon; //constraint.sky.min_distance.moon:0;
-                observationProps['md_jupiter'] =  constraint.sky.min_distance.jupiter;//constraint.sky.min_distance.jupiter:0;
+                observationProps['md_sun'] = (constraint.sky.min_distance.sun)?constraint.sky.min_distance.sun:'';
+                observationProps['md_moon'] =  (constraint.sky.min_distance.moon)?constraint.sky.min_distance.moon:'';
+                observationProps['md_jupiter'] =  (constraint.sky.min_distance.jupiter)?constraint.sky.min_distance.jupiter:'';
                }
             }
             observationPropsList.push(observationProps);
@@ -1901,7 +1901,7 @@ export class SchedulingSetCreate extends Component {
      * @param {*} value 
      */
     isNotEmpty(value){
-        if (/* !value ||*/ value === 'undefined' /* || value.length === 0 */){
+        if ( !value || value === 'undefined' || value.length === 0 ){
             return false;
         } else {
             return true;

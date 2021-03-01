@@ -129,7 +129,6 @@ export default class NumericEditor extends Component {
         ref="input"
         value={this.state.value}
         onChange={this.handleChange}
-        className="numericAgGridField"
         style={{ width: '100%' }}
       />
     );

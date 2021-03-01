@@ -240,14 +240,13 @@ const ScheduleService = {
                 scheduletask['actionpath'] = '/task/view/draft/'+task['id'];
                 scheduletask['blueprint_draft'] = task['task_blueprints'];
                 scheduletask['status'] = task['status'];
-
               
                 //fetch task draft details
                 for(const key of commonkeys){
                     scheduletask[key] = task[key];
                 }
-                scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-                scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format("YYYY-MM-DD HH:mm:ss");
+                scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format("YYYY-MM-DD HH:mm:ss");
                 scheduletask['specifications_doc'] = task['specifications_doc'];
                 scheduletask.duration = moment.utc((scheduletask.duration || 0)*1000).format('HH:mm:ss'); 
                 scheduletask.produced_by = task.produced_by;
@@ -275,8 +274,8 @@ const ScheduleService = {
                     for(const key of commonkeys){
                         taskblueprint[key] = blueprint[key];
                     }
-                    taskblueprint['created_at'] = moment(blueprint['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-                    taskblueprint['updated_at'] = moment(blueprint['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                    taskblueprint['created_at'] = moment(blueprint['created_at'], moment.ISO_8601).format("YYYY-MM-DD HH:mm:ss");
+                    taskblueprint['updated_at'] = moment(blueprint['updated_at'], moment.ISO_8601).format("YYYY-MM-DD HH:mm:ss");
                     taskblueprint.duration = moment.utc((taskblueprint.duration || 0)*1000).format('HH:mm:ss'); 
                     taskblueprint.relative_start_time = moment.utc(taskblueprint.relative_start_time*1000).format('HH:mm:ss'); 
                     taskblueprint.relative_stop_time = moment.utc(taskblueprint.relative_stop_time*1000).format('HH:mm:ss'); 

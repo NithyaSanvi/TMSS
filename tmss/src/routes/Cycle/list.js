@@ -8,6 +8,7 @@ import CycleService from '../../services/cycle.service';
 import UnitConversion from '../../utils/unit.converter';
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
+import UIConstants from '../../utils/ui.constants';
 
 class CycleList extends Component{
 	 constructor(props){
@@ -24,11 +25,13 @@ class CycleList extends Component{
         this.defaultcolumns = [ {   id:"Cycle Code",
                                     start: {
                                         name: "Start Date",
-                                        filter: "date"
+                                        filter: "date",
+                                        format: UIConstants.CALENDAR_DEFAULTDATE_FORMAT
                                     },
                                     stop: {
                                         name: "End Date",
-                                        filter: "date"
+                                        filter: "date",
+                                        format: UIConstants.CALENDAR_DEFAULTDATE_FORMAT
                                     },
                                     duration:{
                                         name: "Duration (Days)",
@@ -110,8 +113,8 @@ class CycleList extends Component{
                 cycle.id = cycle.name ;
                 cycle.regularProjects = regularProjects.length;
                 cycle.longterm = longterm.length;
-                cycle.start = moment(cycle['start'], moment.ISO_8601).format("YYYY-MMM-DD");
-                cycle.stop = moment(cycle['stop'], moment.ISO_8601).format("YYYY-MMM-DD");
+                cycle.start = moment(cycle['start'], moment.ISO_8601).format(UIConstants.CALENDAR_DEFAULTDATE_FORMAT);
+                cycle.stop = moment(cycle['stop'], moment.ISO_8601).format(UIConstants.CALENDAR_DEFAULTDATE_FORMAT);
                 // cycle.observingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'observing_time');
                 // cycle.processingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'cep_processing_time');
                 // cycle.ltaResources = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'lta_storage');
