@@ -561,7 +561,7 @@ export class SchedulingSetCreate extends Component {
             {
                 headerName: 'Sky',
                 children: [
-                    {headerName: 'Min Target Elevation',field: 'min_target_elevation', cellStyle: function(params) {
+                    {headerName: 'Min Target Elevation',field: 'min_target_elevation', cellEditor: 'numericEditor', valueSetter: 'valueSetter', cellStyle: function(params) {
                         if  (params.value){
                             if ( !Number(params.value)){
                                 return { backgroundColor: BG_COLOR};
@@ -658,7 +658,7 @@ export class SchedulingSetCreate extends Component {
                 }, },
                 {headerName: 'Jupiter',field: 'md_jupiter', cellStyle: function(params) {
                     if  (params.value){
-                        if ( !Number(params.value)){
+                        if (params.value === undefined || params.value === null || isNaN(params.value)){
                             return { backgroundColor: BG_COLOR};
                         }
                         else if ( Number(params.value) < 0 ||   Number(params.value) > 180) {
