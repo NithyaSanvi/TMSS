@@ -40,12 +40,18 @@ function Jeditor(props) {
                 if (property["$ref"] && !property["$ref"].startsWith("#")) {    // 1st level reference of the object
                     const refUrl = property["$ref"];
                     let newRef = refUrl.substring(refUrl.indexOf("#"));
+                    //>>>>>> TODO if pointin works fine, remove these commented lines
+                    // if (refUrl.endsWith("/pointing")) {                         // For type pointing
+                    //     schema.definitions["pointing"] = (await $RefParser.resolve(refUrl)).get(newRef);
+                    //     property["$ref"] = newRef;
+                    // }   else {                   // General object to resolve if any reference in child level
+                    //     property = await resolveSchema((await $RefParser.resolve(refUrl)).get(newRef));
+                    // }
                     let defKey = refUrl.substring(refUrl.lastIndexOf("/")+1);
                     schema.definitions[defKey] = (await $RefParser.resolve(refUrl)).get(newRef);
                     property["$ref"] = newRef;
-                    if(schema.definitions[defKey].type && (schema.definitions[defKey].type === 'array'
-                        || schema.definitions[defKey].type === 'object')){
-                        let resolvedItems = await resolveSchema(schema.definitions[defKey]);
+                    if(schema.definitions[defKey].type && schema.definitions[defKey].type === 'array'){
+                        let resolvedItems = await resolveSchema(schema.definitions[defKey].items);
                         schema.definitions = {...schema.definitions, ...resolvedItems.definitions};
                         delete resolvedItems['definitions'];
                     }
@@ -61,35 +67,32 @@ function Jeditor(props) {
                 }
                 properties[propertyKey] = property;
             }
-        }   else if (schema["oneOf"] || schema["anyOf"]) {             // Reference in OneOf/anyOf array
-            let defKey = schema["oneOf"]?"oneOf":"anyOf";
+        }   else if (schema["oneOf"]) {             // Reference in OneOf array
             let resolvedOneOfList = []
-            for (const oneOfProperty of schema[defKey]) {
+            for (const oneOfProperty of schema["oneOf"]) {
                 const resolvedOneOf = await resolveSchema(oneOfProperty);
                 resolvedOneOfList.push(resolvedOneOf);
-                if (resolvedOneOf.definitions) {
-                  schema.definitions = {...schema.definitions, ...resolvedOneOf.definitions};
-                }
             }
-            schema[defKey] = resolvedOneOfList;
+            schema["oneOf"] = resolvedOneOfList;
         }   else if (schema["$ref"] && !schema["$ref"].startsWith("#")) {   //reference in oneOf list item
             const refUrl = schema["$ref"];
             let newRef = refUrl.substring(refUrl.indexOf("#"));
+            //>>>>>> TODO: If pointing works fine, remove these commented lines
+            // if (refUrl.endsWith("/pointing")) {
+            //     schema.definitions["pointing"] = (await $RefParser.resolve(refUrl)).get(newRef);
+            //     schema["$ref"] = newRef;
+            // }   else {
+            //     schema = await resolveSchema((await $RefParser.resolve(refUrl)).get(newRef));
+            // }
             let defKey = refUrl.substring(refUrl.lastIndexOf("/")+1);
             schema.definitions[defKey] = (await $RefParser.resolve(refUrl)).get(newRef);
-            if (schema.definitions[defKey].properties || schema.definitions[defKey].type === "object"
-                  || schema.definitions[defKey].type === "array") {
+            if (schema.definitions[defKey].properties) {
                 let property = await resolveSchema(schema.definitions[defKey]);
                 schema.definitions = {...schema.definitions, ...property.definitions};
                 delete property['definitions'];
                 schema.definitions[defKey] = property;
             }
             schema["$ref"] = newRef;
-        }   else if(schema["type"] === "array") {             // reference in array items definition
-            let resolvedItems = await resolveSchema(schema["items"]);
-            schema.definitions = {...schema.definitions, ...resolvedItems.definitions};
-            delete resolvedItems['definitions'];
-            schema["items"] = resolvedItems;
         }
         return schema;
     }
@@ -157,7 +160,7 @@ function Jeditor(props) {
                     });
                 }
             } else if (schema.validationType === "distanceOnSky") {
-                if (!value || isNaN(value) || value < 0 || value > 180) {
+                 if (value === '' || value === undefined || value === null || isNaN(value) || value < 0 || value > 180) {
                     errors.push({
                         path: path,
                         property: 'validationType',

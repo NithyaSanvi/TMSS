@@ -93,7 +93,7 @@ export class CalendarTimeline extends Component {
         timeHeaderLabelVisibile: true,
         currentUTC: props.currentUTC || moment().utc(),             // Current UTC for clock display
         currentLST: null,                                           // Current LST for clock display
-        cursorLST: moment().format(UIConstants.CALENDAR_TIME_FORMAT),                     // Holds the LST value for the cursot position in the timeline
+        cursorLST: moment().format('HH:mm:ss'),                     // Holds the LST value for the cursot position in the timeline
         lastCursorPosition: null,                                   // To track the last cursor position and fetch the data from server if changed
         utcLSTMap:{},                                               // JSON object to hold LST values fetched from server for UTC and show LST value in cursor label
         lstDateHeaderMap: {},                                       // JSON object to hold header value for the LST axis in required format like 'HH' or 'MM' or others
@@ -1217,7 +1217,7 @@ export class CalendarTimeline extends Component {
         }
     }
 
-  async changeWeek(direction) {
+    async changeWeek(direction) {
         this.setState({isWeekLoading: true});
         let startDate = this.state.group[1].value.clone().add(direction * 7, 'days');
         let endDate = this.state.group[this.state.group.length-1].value.clone().add(direction * 7, 'days').hours(23).minutes(59).seconds(59);
@@ -1274,7 +1274,7 @@ export class CalendarTimeline extends Component {
                         </div>
                         {this.state.currentLST && 
                             <div style={{marginTop: "0px"}}>
-                                <label style={{marginBottom: "0px"}}>LST:</label><span>{this.state.currentLST.format(UIConstants.CALENDAR_TIME_FORMAT)}</span>
+                                <label style={{marginBottom: "0px"}}>LST:</label><span>{this.state.currentLST.format("HH:mm:ss")}</span>
                             </div>
                         }
                     </div>
@@ -1290,7 +1290,7 @@ export class CalendarTimeline extends Component {
                         {this.state.allowDateSelection &&
                         <>
                         {/* <span className="p-float-label"> */}
-                        <Calendar id="range" placeholder="Select Date Range" selectionMode="range" dateFormat="yy/mm/dd" showIcon={!this.state.zoomRange}
+                        <Calendar id="range" placeholder="Select Date Range" selectionMode="range" showIcon={!this.state.zoomRange}
                                 value={this.state.zoomRange} onChange={(e) => this.setZoomRange( e.value )} readOnlyInput />
                         {/* <label htmlFor="range">Select Date Range</label>
                         </span> */}

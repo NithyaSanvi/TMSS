@@ -8,7 +8,6 @@ import _ from 'lodash';
 import ScheduleService from '../../services/schedule.service';
 import { Link } from 'react-router-dom';
 import WorkflowService from '../../services/workflow.service';
-import UIConstants from '../../utils/ui.constants';
 
 class SchedulingUnitList extends Component{
     constructor(props){
@@ -28,10 +27,7 @@ class SchedulingUnitList extends Component{
         },
         project:"Project",
         name:"Name",
-        start_time: {
-            name: "Start Time",
-            format: UIConstants.CALENDAR_DEFAULTDATE_FORMAT
-        },
+        start_time:"Start Time",
         stop_time:"End time",
         duration:"Duration (HH:mm:ss)",
        
@@ -262,10 +258,8 @@ class SchedulingUnitList extends Component{
                             blueP.duration = moment.utc((blueP.duration || 0)*1000).format('HH:mm:ss');
                             blueP.type="Blueprint"; 
                             blueP['actionpath'] ='/schedulingunit/view/blueprint/'+blueP.id;
-                            // blueP['created_at'] = moment(blueP['created_at'],  moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                            // blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                            // blueP['start_time'] = moment(blueP['start_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                            // blueP['stop_time'] = moment(blueP['stop_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                            blueP['created_at'] = moment(blueP['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                            blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                             blueP['task_content'] = this.getTaskTypeGroupCounts(blueP['task_blueprints']);
                             blueP['linked_bp_draft'] = this.getLinksList([blueP.draft_id], 'draft');
                             blueP['template_description'] = suTemplate[blueP.requirements_template_id].description;
@@ -273,6 +267,10 @@ class SchedulingUnitList extends Component{
                             blueP.project = project.name;
                             blueP.canSelect = false;
                             blueP.suSet = suSet.name;
+                            // blueP.links = ['Project'];
+                            // blueP.linksURL = {
+                            //     'Project': `/project/view/${project.name}`
+                            // }
                             blueP.links = ['Project', 'id'];
                             blueP.linksURL = {
                                 'Project': `/project/view/${project.name}`,
@@ -284,10 +282,8 @@ class SchedulingUnitList extends Component{
                         scheduleunit['actionpath']='/schedulingunit/view/draft/'+scheduleunit.id;
                         scheduleunit['type'] = 'Draft';
                         scheduleunit['duration'] = moment.utc((scheduleunit.duration || 0)*1000).format('HH:mm:ss');
-                        scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                        scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                       // scheduleunit['start_time'] = moment(scheduleunit['start_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                       // scheduleunit['stop_time'] = moment(scheduleunit['stop_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                        scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                        scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
                         scheduleunit.project = project.name;
                         scheduleunit.canSelect = true;
                         scheduleunit.suSet = suSet.name;
