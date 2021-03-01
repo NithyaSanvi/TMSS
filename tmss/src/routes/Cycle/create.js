@@ -247,19 +247,25 @@ export class CycleCreate extends Component {
         }
         
         this.setState({errors: errors, validFields: validFields});
-        if (Object.keys(validFields).length === Object.keys(this.formRules).length) {
-            validForm = true;
-        }
 
         if(this.state.cycle['start'] && this.state.cycle['stop']){
             var isSameOrAfter = moment(this.state.cycle['stop']).isSameOrAfter(this.state.cycle['start']);
             if(!isSameOrAfter){
                 errors['stop'] = ` Stop date can not be before Start date`;
                 validForm = false;
+                return validForm;
             }else{
+                delete errors['stop'];
                 validForm = true;
             }
         }
+
+        if (Object.keys(validFields).length === Object.keys(this.formRules).length) {
+            validForm = true;
+        } else {
+            validForm = false
+        }
+
         return validForm;
     }
     
