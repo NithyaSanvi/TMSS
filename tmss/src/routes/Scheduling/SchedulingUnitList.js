@@ -28,7 +28,10 @@ class SchedulingUnitList extends Component{
         },
         project:"Project",
         name:"Name",
-        start_time:"Start Time",
+        start_time: {
+            name: "Start Time",
+            format: UIConstants.CALENDAR_DEFAULTDATE_FORMAT
+        },
         stop_time:"End time",
         duration:"Duration (HH:mm:ss)",
        
@@ -259,10 +262,10 @@ class SchedulingUnitList extends Component{
                             blueP.duration = moment.utc((blueP.duration || 0)*1000).format('HH:mm:ss');
                             blueP.type="Blueprint"; 
                             blueP['actionpath'] ='/schedulingunit/view/blueprint/'+blueP.id;
-                            blueP['created_at'] = moment(blueP['created_at'],  moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                            blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                            blueP['start_time'] = moment(blueP['start_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                            blueP['stop_time'] = moment(blueP['stop_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                            // blueP['created_at'] = moment(blueP['created_at'],  moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                            // blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                            // blueP['start_time'] = moment(blueP['start_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                            // blueP['stop_time'] = moment(blueP['stop_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
                             blueP['task_content'] = this.getTaskTypeGroupCounts(blueP['task_blueprints']);
                             blueP['linked_bp_draft'] = this.getLinksList([blueP.draft_id], 'draft');
                             blueP['template_description'] = suTemplate[blueP.requirements_template_id].description;

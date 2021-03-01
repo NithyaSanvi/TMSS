@@ -988,8 +988,8 @@ function ViewTable(props) {
   //Default Columns
   defaultdataheader.forEach(header => {
     const isString = typeof defaultheader[0][header] === 'string';
-    const filterFn = (showColumnFilter ? (isString ? DefaultColumnFilter : (filterTypes[defaultheader[0][header].filter].fn ? filterTypes[defaultheader[0][header].filter].fn : DefaultColumnFilter)) : "");
-    const filtertype = (showColumnFilter ? (!isString && filterTypes[defaultheader[0][header].filter].type) ? filterTypes[defaultheader[0][header].filter].type : 'fuzzyText' : "");
+    const filterFn = (showColumnFilter ? (isString ? DefaultColumnFilter : (filterTypes[defaultheader[0][header].filter] && filterTypes[defaultheader[0][header].filter].fn ? filterTypes[defaultheader[0][header].filter].fn : DefaultColumnFilter)) : "");
+    const filtertype = (showColumnFilter ? (!isString && filterTypes[defaultheader[0][header].filter] && filterTypes[defaultheader[0][header].filter].type) ? filterTypes[defaultheader[0][header].filter].type : 'fuzzyText' : "");
     columns.push({
       Header: isString ? defaultheader[0][header] : defaultheader[0][header].name,
       id: isString ? defaultheader[0][header] : defaultheader[0][header].name,
@@ -1000,7 +1000,7 @@ function ViewTable(props) {
       // filter: (showColumnFilter?((!isString && defaultheader[0][header].filter=== 'date') ? 'includes' : 'fuzzyText'):""),
       // Filter: (showColumnFilter?(isString ? DefaultColumnFilter : (filterTypes[defaultheader[0][header].filter] ? filterTypes[defaultheader[0][header].filter] : DefaultColumnFilter)):""),
       isVisible: true,
-      Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
+      Cell: props => <div> {updatedCellvalue(header, props.value, defaultheader[0][header])} </div>,
     })
   })
 
@@ -1016,7 +1016,7 @@ function ViewTable(props) {
       filter: filtertype,
       Filter: filterFn,
       isVisible: false,
-      Cell: props => <div> {updatedCellvalue(header, props.value)} </div>,
+      Cell: props => <div> {updatedCellvalue(header, props.value, optionalheader[0][header])} </div>,
     })
   });
 
@@ -1031,7 +1031,7 @@ function ViewTable(props) {
     })
   }
 
-  function updatedCellvalue(key, value) {
+  function updatedCellvalue(key, value, properties) {
     try {
       if (key === 'blueprint_draft' && _.includes(value, '/task_draft/')) {
         //  'task_draft/' -> len = 12
@@ -1049,12 +1049,13 @@ function ViewTable(props) {
         return retval;
       } else if (typeof value == "boolean") {
         return value.toString();
-      }// else if (typeof value == "string") {
-      //   const dateval = moment(value, moment.ISO_8601).format('YYYY-MM-DD HH:mm:ss');
-      //  else if (dateval !== 'Invalid date') {
-      //     return dateval;
-        // }
-     // }
+      }else if (typeof value == "string") {
+        const format = properties ? properties.format : 'YYYY-MM-DD HH:mm:ss';
+        const dateval = moment(value, moment.ISO_8601).format(format);
+        if (dateval !== 'Invalid date') {
+          return dateval;
+        }
+     }
     } catch (err) {
       console.error('Error', err)
     }
