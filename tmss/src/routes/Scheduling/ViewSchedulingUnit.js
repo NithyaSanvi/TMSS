@@ -77,13 +77,18 @@ class ViewSchedulingUnit extends Component{
                 description:"Description",
                 start_time:{
                     name:"Start Time",
-                    filter: "date"
+                    filter: "date",
+                    format:UIConstants.CALENDAR_DATETIME_FORMAT
                 },
                 stop_time:{
                     name:"End Time",
-                    filter: "date"
+                    filter: "date",
+                    format:UIConstants.CALENDAR_DATETIME_FORMAT
                 },
-                duration:"Duration (HH:mm:ss)",
+                duration:{
+                    name:"Duration (HH:mm:ss)",
+                    format:UIConstants.CALENDAR_TIME_FORMAT
+                },
                 relative_start_time:"Relative Start Time (HH:mm:ss)",
                 relative_stop_time:"Relative End Time (HH:mm:ss)",
                 noOfOutputProducts: "#Dataproducts",
@@ -101,11 +106,13 @@ class ViewSchedulingUnit extends Component{
                 url:"API URL",
                 created_at:{
                     name: "Created at",
-                    filter:"date"
+                    filter:"date",
+                    format:UIConstants.CALENDAR_DATETIME_FORMAT
                 },
                 updated_at:{
                     name: "Updated at",
-                    filter: "date"
+                    filter: "date",
+                    format:UIConstants.CALENDAR_DATETIME_FORMAT
                 },
                 actionpath:"actionpath"
             }],
@@ -181,6 +188,11 @@ class ViewSchedulingUnit extends Component{
                         this.constraintTemplates = response;
                         this.setState({ constraintSchema:  this.constraintTemplates.find(i => i.id === schedulingUnit.scheduling_constraints_template_id) })
                     });
+                    if (schedulingUnit.draft_id) {
+                        await ScheduleService.getSchedulingUnitDraftById(schedulingUnit.draft_id).then((response) => {
+                            schedulingUnit['observation_strategy_template_id'] = response.observation_strategy_template_id;
+                        });
+                    }
                     let tasks = schedulingUnit.task_drafts?(await this.getFormattedTaskDrafts(schedulingUnit)):this.getFormattedTaskBlueprints(schedulingUnit);
                     let ingestGroup = tasks.map(task => ({name: task.name, canIngest: task.canIngest, type_value: task.type_value, id: task.id }));
                     ingestGroup = _.groupBy(_.filter(ingestGroup, 'type_value'), 'type_value');
@@ -195,10 +207,10 @@ class ViewSchedulingUnit extends Component{
                         task.size = 0;
                         task.dataSizeOnDisk = 0;
                         task.noOfOutputProducts = 0;
-                        task.stop_time = moment(task.stop_time).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                        task.start_time = moment(task.start_time).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                        task.created_at =  moment(task.created_at).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                        task.updated_at =  moment(task.updated_at).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                        // task.stop_time = moment(task.stop_time).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                        // task.start_time = moment(task.start_time).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                        // task.created_at =  moment(task.created_at).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                        // task.updated_at =  moment(task.updated_at).format(UIConstants.CALENDAR_DATETIME_FORMAT);
                         if (dataProducts.length && dataProducts[0].length) {
                             task.dataProducts = dataProducts[0];
                             task.noOfOutputProducts = dataProducts[0].length;
@@ -418,7 +430,7 @@ class ViewSchedulingUnit extends Component{
                             <label className="col-lg-2 col-md-2 col-sm-12" >Duration (HH:mm:ss)</label>
                             <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc((this.state.scheduleunit.duration?this.state.scheduleunit.duration:0)*1000).format(UIConstants.CALENDAR_TIME_FORMAT)}</span>
                             <label className="col-lg-2 col-md-2 col-sm-12">Template ID</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.requirements_template_id}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.observation_strategy_template_id}</span>
                         </div>
                         <div className="p-grid">
                             {this.state.scheduleunit.scheduling_set_object.project_id && 

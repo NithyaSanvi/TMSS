@@ -8,7 +8,7 @@ import moment from 'moment';
 import _ from 'lodash';
 import UIConstants from '../../utils/ui.constants';
 
-const DATE_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
+//const DATE_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 
 export default class BetweenEditor extends Component {
   constructor(props) {
@@ -70,7 +70,7 @@ export default class BetweenEditor extends Component {
       let consolidateDates = '';
       this.state.rowData.map(row =>{
           if((row['from'] !== '' && row['from'] !== 'undefined') && (row['until'] !== '' && row['until'] !== 'undefined')){
-          consolidateDates += ((row['from'] !== '')?moment(row['from']).format(DATE_TIME_FORMAT):'' )+","+((row['until'] !== '')?moment(row['until']).format(DATE_TIME_FORMAT):'')+"|";
+          consolidateDates += ((row['from'] !== '')?moment(row['from']).format(UIConstants.CALENDAR_DATETIME_FORMAT):'' )+","+((row['until'] !== '')?moment(row['until']).format(UIConstants.CALENDAR_DATETIME_FORMAT):'')+"|";
           }
       });
       await this.props.context.componentParent.updateTime(
@@ -129,10 +129,10 @@ render() {
                 <React.Fragment key={index}>
                   <div className="p-field p-grid" >
                       <Calendar
-                            d dateFormat="yy-mm-dd"
+                            d dateFormat={UIConstants.CALENDAR_DATE_FORMAT}
                             value= {this.state.rowData[index].from}
                             onChange= {e => {this.updateDateChanges(index, 'from', e)}}
-                            onBlur= {e => {this.updateDateChanges(index, 'from', e)}}
+                        //  onBlur= {e => {this.updateDateChanges(index, 'from', e)}}
                             showTime={true}
                             showSeconds={true}
                             hourFormat="24"
@@ -142,7 +142,7 @@ render() {
                             d dateFormat={UIConstants.CALENDAR_DATE_FORMAT}                           
                             value= {this.state.rowData[index].until}
                             onChange= {e => {this.updateDateChanges(index, 'until', e)}}
-                          //  onBlur= {e => {this.updateDateChanges(index, 'until', e)}}
+                      //    onBlur= {e => {this.updateDateChanges(index, 'until', e)}}
                             showTime={true}
                             showSeconds={true}
                             hourFormat="24"

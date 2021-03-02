@@ -22,7 +22,7 @@ class SchedulingUnitList extends Component{
             name:"Type",
             filter:"select"
         },
-        requirements_template_id:{
+        observation_strategy_template_id:{
             name: "Template ID",
             filter: "select"
         },
@@ -36,8 +36,10 @@ class SchedulingUnitList extends Component{
             name:"End time",
             format:UIConstants.CALENDAR_DATETIME_FORMAT
         },
-        duration:"Duration (HH:mm:ss)",
-       
+        duration:{
+            name:"Duration (HH:mm:ss)",
+            format:UIConstants.CALENDAR_TIME_FORMAT
+        }
        };
         if (props.hideProjectColumn) {
             delete this.defaultcolumns['project'];
@@ -235,18 +237,20 @@ class SchedulingUnitList extends Component{
         //         });
         //     }
         // }   else { 
-            const suTemplate = {};
+            
             const schedulingSet = await ScheduleService.getSchedulingSets();
             const projects = await ScheduleService.getProjectList();
             const promises = [ScheduleService.getSchedulingUnitsExtended('blueprint'), 
                                 ScheduleService.getSchedulingUnitsExtended('draft'),
                                 ScheduleService.getMainGroupStations(),
-                                WorkflowService.getWorkflowProcesses()];
+                                WorkflowService.getWorkflowProcesses(),
+                                ScheduleService.getObservationStrategies()];
             Promise.all(promises).then(async responses => {
                 const blueprints = responses[0];
                 let scheduleunits = responses[1];
                 this.mainStationGroups = responses[2];
                 let workflowProcesses = responses[3];
+                const suTemplates =  responses[4];
                 const output = [];
                 for( const scheduleunit  of scheduleunits){
                     const suSet = schedulingSet.find((suSet) => { return  scheduleunit.scheduling_set_id === suSet.id });
@@ -254,13 +258,8 @@ class SchedulingUnitList extends Component{
                     if (!this.props.project || (this.props.project && project.name===this.props.project)) {
                         scheduleunit['status'] = null;
                         scheduleunit['workflowStatus'] = null;
-                        if (!suTemplate[scheduleunit.requirements_template_id]) {
-                            const response = await ScheduleService.getSchedulingUnitTemplate(scheduleunit.requirements_template_id);
-                            scheduleunit['template_description'] = response.description;
-                            suTemplate[scheduleunit.requirements_template_id] = response;
-                        } else {
-                            scheduleunit['template_description'] = suTemplate[scheduleunit.requirements_template_id].description;
-                        }
+                        const obsStrategyTemplate = _.find(suTemplates, ['id',scheduleunit.observation_strategy_template_id]);
+                        scheduleunit['template_description'] = obsStrategyTemplate.description;
                         scheduleunit['linked_bp_draft'] = this.getLinksList(scheduleunit.scheduling_unit_blueprints_ids, 'blueprint');
                         scheduleunit['task_content'] = this.getTaskTypeGroupCounts(scheduleunit['task_drafts']);
                         scheduleunit['station_group'] = this.getStationGroup(scheduleunit).counts;
@@ -271,13 +270,14 @@ class SchedulingUnitList extends Component{
                             blueP.duration = moment.utc((blueP.duration || 0)*1000).format('HH:mm:ss');
                             blueP.type="Blueprint"; 
                             blueP['actionpath'] ='/schedulingunit/view/blueprint/'+blueP.id;
-                            blueP['created_at'] = moment(blueP['created_at'],  moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                            blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                            blueP['start_time'] = moment(blueP['start_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                            blueP['stop_time'] = moment(blueP['stop_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                            // blueP['created_at'] = moment(blueP['created_at'],  moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                            // blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                            // blueP['start_time'] = moment(blueP['start_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                            // blueP['stop_time'] = moment(blueP['stop_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
                             blueP['task_content'] = this.getTaskTypeGroupCounts(blueP['task_blueprints']);
                             blueP['linked_bp_draft'] = this.getLinksList([blueP.draft_id], 'draft');
-                            blueP['template_description'] = suTemplate[blueP.requirements_template_id].description;
+                            blueP['template_description'] = obsStrategyTemplate.description;
+                            blueP['observation_strategy_template_id'] = obsStrategyTemplate.id;
                             blueP['station_group'] = this.getStationGroup(blueP).counts;
                             blueP.project = project.name;
                             blueP.canSelect = false;
@@ -293,8 +293,8 @@ class SchedulingUnitList extends Component{
                         scheduleunit['actionpath']='/schedulingunit/view/draft/'+scheduleunit.id;
                         scheduleunit['type'] = 'Draft';
                         scheduleunit['duration'] = moment.utc((scheduleunit.duration || 0)*1000).format('HH:mm:ss');
-                        scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                        scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                        // scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                        // scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
                        // scheduleunit['start_time'] = moment(scheduleunit['start_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
                        // scheduleunit['stop_time'] = moment(scheduleunit['stop_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
                         scheduleunit.project = project.name;

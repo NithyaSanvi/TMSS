@@ -849,7 +849,15 @@ export class TimelineView extends Component {
                                 <ViewTable 
                                     data={this.state.suBlueprintList} 
                                     defaultcolumns={[{name: "Name",
-                                                        start_time:"Start Time", stop_time:"End Time"}]}
+                                                        start_time:
+                                                        {
+                                                            name:"Start Time",
+                                                            format:UIConstants.CALENDAR_DATETIME_FORMAT
+                                                        },
+                                                         stop_time:{
+                                                             name:"End Time",
+                                                             format:UIConstants.CALENDAR_DATETIME_FORMAT}
+                                                        }]}
                                     optionalcolumns={[{project:"Project",description: "Description", duration:"Duration (HH:mm:ss)", actionpath: "actionpath"}]}
                                     columnclassname={[{"Start Time":"filter-input-50", "End Time":"filter-input-50",
                                                         "Duration (HH:mm:ss)" : "filter-input-50",}]}

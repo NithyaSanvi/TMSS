@@ -19,7 +19,6 @@ import UIConstants from '../../utils/ui.constants';
  * Component to view the details of a project
  */
 export class ProjectView extends Component {
-  //  DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss';
     constructor(props) {
         super(props);
         this.state = {
