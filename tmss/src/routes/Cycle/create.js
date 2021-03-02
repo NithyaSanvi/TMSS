@@ -38,6 +38,7 @@ export class CycleCreate extends Component {
                 start: "",
                 stop: "",
             },
+            timeStamp: Date.now(),
             cycleQuota: {},                       // Resource Allocations
             validFields: {},                        // For Validation
             validForm: false,                       // To enable Save Button
@@ -279,7 +280,7 @@ export class CycleCreate extends Component {
              // let stoptime =  _.replace(this.state.cycle['stop'],'00:00:00', '23:59:59');
              cycle['start'] = cycle['start'];
              cycle['stop'] = cycle['stop'];
-            this.setState({cycle: cycle, isDirty: false});
+             this.setState({cycle: cycle, isDirty: false});
             for (const resource in this.state.cycleQuota) {
                 let resourceType = _.find(this.state.resources, {'name': resource});
                 if(resourceType){
@@ -350,11 +351,12 @@ export class CycleCreate extends Component {
                 cycle: {
                     name: '',
                     description: '',
-                    start: '',
-                    stop: '',
+                    start: null,
+                    stop: null,
                     projects: [],
                     quota: [],  
                 },
+                timeStamp: Date.now(),
                 cycleQuota: cycleQuota,
                 validFields: {},
                 validForm: false,
@@ -430,6 +432,7 @@ export class CycleCreate extends Component {
                             <label htmlFor="cycleName" className="col-lg-2 col-md-2 col-sm-12">Start Date <span style={{color:'red'}}>*</span></label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
                                 <Calendar
+                                    key={this.state.timeStamp}
  				                    d dateFormat={UIConstants.CALENDAR_DATE_FORMAT}
                                     value= {this.state.cycle.start}
                                     onChange= {e => this.setCycleParams('start',e.value)}
@@ -446,6 +449,7 @@ export class CycleCreate extends Component {
                             <label htmlFor="cycleName" className="col-lg-2 col-md-2 col-sm-12">Stop Date <span style={{color:'red'}}>*</span></label>
                              <div className="col-lg-3 col-md-3 col-sm-12">
                                 <Calendar
+                                    key={this.state.timeStamp}
                                     d dateFormat={UIConstants.CALENDAR_DATE_FORMAT}
                                     value= {this.state.cycle.stop}
                                     onChange= {e => this.setCycleParams('stop', e.value)}
