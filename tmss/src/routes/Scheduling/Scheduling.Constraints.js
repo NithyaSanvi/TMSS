@@ -43,6 +43,7 @@ export default (props) => {
                 propertyValue.propertyOrder=7;
             }
             if(propertyKey === 'min_calibrator_elevation' || propertyKey === 'min_target_elevation'){
+                propertyValue.default = (propertyValue.default * 180) / Math.PI;
                 propertyValue.propertyOrder=8;
                 propertyValue.validationType= 'elevation';
             }
@@ -56,7 +57,8 @@ export default (props) => {
                 propertyValue.propertyOrder=11;
             }
             if(propertyKey === 'sun' || propertyKey === 'moon' || propertyKey === 'jupiter'){
-               propertyValue.propertyOrder=12;
+                propertyValue.default = (propertyValue.default * 180) / Math.PI;
+                propertyValue.propertyOrder=12;
                 propertyValue.validationType= 'distanceOnSky';
             } 
             if(propertyKey === 'avoid_twilight' || propertyKey === 'require_day' || propertyKey === 'require_night'){

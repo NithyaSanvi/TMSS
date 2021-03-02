@@ -169,10 +169,6 @@ export class CalendarTimeline extends Component {
         return true;
     }
 
-    componentDidUpdate() {
-        // console.log("Component Updated");
-    }
-
     /**
      * Sets current UTC and LST time either from the server or locally.
      * @param {boolean} systemClock - to differetiate whether tosync with server or local update
@@ -1290,7 +1286,7 @@ export class CalendarTimeline extends Component {
                         {this.state.allowDateSelection &&
                         <>
                         {/* <span className="p-float-label"> */}
-                        <Calendar id="range" placeholder="Select Date Range" selectionMode="range" dateFormat="yy/mm/dd" showIcon={!this.state.zoomRange}
+                        <Calendar id="range" placeholder="Select Date Range" selectionMode="range" dateFormat="yy-mm-dd" showIcon={!this.state.zoomRange}
                                 value={this.state.zoomRange} onChange={(e) => this.setZoomRange( e.value )} readOnlyInput />
                         {/* <label htmlFor="range">Select Date Range</label>
                         </span> */}

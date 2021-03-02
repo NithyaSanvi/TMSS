@@ -375,6 +375,7 @@ export class SchedulingSetCreate extends Component {
         this.setState({isAGLoading: false,commonRowData: []});
     }
    
+    // TODO: This function should be modified or removed
     async getEmptySchedulingUnit(strategyId){
         let suList = await ScheduleService.getSchedulingUnitDraft();
         return [_.find(suList.data.results, {'observation_strategy_template_id': strategyId})];       
@@ -672,6 +673,7 @@ export class SchedulingSetCreate extends Component {
             },
         ];
         // Column order in excel to clipboard and vice versa 
+        // TODO: Based on the fields available in the constraint schema, these columns should be added.
         colKeyOrder.push('scheduler');
         colKeyOrder.push('timeat');
         colKeyOrder.push('timeafter');
@@ -687,13 +689,14 @@ export class SchedulingSetCreate extends Component {
         colKeyOrder.push('md_moon');
         colKeyOrder.push('md_jupiter');
         defaultCellValues['scheduler'] = constraintSchema.schema.properties.scheduler.default;
-        defaultCellValues['min_target_elevation'] = constraintSchema.schema.properties.sky.properties.min_target_elevation.default;
-        defaultCellValues['min_calibrator_elevation'] = constraintSchema.schema.properties.sky.properties.min_calibrator_elevation.default;
+        // TODO: The radian coonversion should call a function in UnitConverter.js
+        defaultCellValues['min_target_elevation'] =  (constraintSchema.schema.properties.sky.properties.min_target_elevation.default * 180) / Math.PI;
+        defaultCellValues['min_calibrator_elevation'] =(constraintSchema.schema.properties.sky.properties.min_calibrator_elevation.default * 180) / Math.PI;
         defaultCellValues['offset_from'] = 0;
         defaultCellValues['offset_to'] = 0;
-        defaultCellValues['md_sun'] = constraintSchema.schema.properties.sky.properties.min_distance.properties.sun.default;
-        defaultCellValues['md_moon'] = constraintSchema.schema.properties.sky.properties.min_distance.properties.moon.default;
-        defaultCellValues['md_jupiter'] = constraintSchema.schema.properties.sky.properties.min_distance.properties.jupiter.default;
+        defaultCellValues['md_sun'] = (constraintSchema.schema.properties.sky.properties.min_distance.properties.sun.default * 180) / Math.PI;
+        defaultCellValues['md_moon'] = (constraintSchema.schema.properties.sky.properties.min_distance.properties.moon.default * 180) / Math.PI;
+        defaultCellValues['md_jupiter'] = (constraintSchema.schema.properties.sky.properties.min_distance.properties.jupiter.default) / Math.PI;
         
         if(this.state.defaultStationGroups){
             let stationValue = '';

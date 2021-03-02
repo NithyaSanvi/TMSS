@@ -282,7 +282,7 @@ function CalendarColumnFilter({
   return (
 
     <div className="table-filter" onClick={e => { e.stopPropagation() }}>
-      <Calendar value={value} appendTo={document.body} dateFormat="yy/mm/dd" onChange={(e) => {
+      <Calendar value={value} appendTo={document.body} dateFormat="yy-mm-dd" onChange={(e) => {
         const value = moment(e.value).format('YYYY-MM-DD')
         setValue(value); setFilter(value);
       }} showIcon></Calendar>

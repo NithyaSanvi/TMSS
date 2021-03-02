@@ -27,13 +27,18 @@ export class ReservationList extends Component{
                 description:"Description",
                 start_time: {
                     name: "Start Time",
-                    filter: "fromdatetime"
+                    filter: "fromdatetime",
+                    format:UIConstants.CALENDAR_DATETIME_FORMAT
                 },
                 end_time: {
                     name: "End Time",
-                    filter: "todatetime"
+                    filter: "todatetime",
+                    format:UIConstants.CALENDAR_DATETIME_FORMAT
                 },
-                duration:"Duration (HH:mm:ss)",
+                duration:{
+                    name:"Duration (HH:mm:ss)",
+                    format:UIConstants.CALENDAR_TIME_FORMAT
+                },
                 type: {
                     name:"Reservation type",
                     filter:"select"
