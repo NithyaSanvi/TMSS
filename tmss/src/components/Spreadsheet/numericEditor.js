@@ -120,7 +120,7 @@ export default class NumericEditor extends Component {
   isKeyPressedNumeric(event) {
     const charCode = this.getCharCodeFromEvent(event);
     const charStr = event.key ? event.key : String.fromCharCode(charCode);
-    return this.isCharNumeric(charStr);
+    return `${event.target.value + charStr}`.split('.').length <= 2 && this.isCharNumeric(charStr);
   }
 
   render() {
