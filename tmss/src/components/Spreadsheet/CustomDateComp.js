@@ -37,8 +37,9 @@ export default class CustomDateComp extends Component {
               d dateFormat="dd-M-yy"
               value= {this.state.date}
               onChange= {e => {this.updateDateChanges(e)}}
-              onBlur= {e => {this.updateDateChanges(e)}}
+              // onBlur= {e => {this.updateDateChanges(e)}}
               //data-testid="start"
+              showButtonBar
               showTime= {true}
               showSeconds= {true}
               hourFormat= "24"
@@ -49,9 +50,7 @@ export default class CustomDateComp extends Component {
 
 
   updateDateChanges(e){
-    if(e.value){
-      this.setState({date : e.value});
-    }
+    this.setState({date : e.value || ''});
   }
 
   ondatechange(e){

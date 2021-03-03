@@ -114,7 +114,7 @@ export default class NumericEditor extends Component {
   }
 
   isCharNumeric(charStr) {
-    return !!/\d/.test(charStr);
+    return !!/^\d*\.?\d*$/.test(charStr);
   }
 
   isKeyPressedNumeric(event) {
