@@ -46,7 +46,12 @@ function Jeditor(props) {
                     if(schema.definitions[defKey].type && (schema.definitions[defKey].type === 'array'
                         || schema.definitions[defKey].type === 'object')){
                         let resolvedItems = await resolveSchema(schema.definitions[defKey]);
-                        schema.definitions = {...schema.definitions, ...resolvedItems.definitions};
+                        if (resolvedItems.items && resolvedItems.items['$ref'] && _.keys(resolvedItems.definitions).length===1) {
+                            const resolvedRefKey = resolvedItems.items['$ref'];
+                            resolvedItems.items = resolvedItems.definitions[resolvedRefKey.substring(resolvedRefKey.lastIndexOf("/")+1)];
+                        } else {
+                          schema.definitions = {...schema.definitions, ...resolvedItems.definitions};
+                        }
                         delete resolvedItems['definitions'];
                     }
                 }   else if(property["type"] === "array") {             // reference in array items definition
@@ -157,7 +162,7 @@ function Jeditor(props) {
                     });
                 }
             } else if (schema.validationType === "distanceOnSky") {
-                if (!value || isNaN(value) || value < 0 || value > 180) {
+                 if (value === '' || value === undefined || value === null || isNaN(value) || value < 0 || value > 180) {
                     errors.push({
                         path: path,
                         property: 'validationType',

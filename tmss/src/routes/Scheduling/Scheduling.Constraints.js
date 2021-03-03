@@ -3,7 +3,6 @@ import moment from 'moment';
 import _ from 'lodash';
 import Jeditor from '../../components/JSONEditor/JEditor'; 
 import UnitConversion from '../../utils/unit.converter';
-import UIConstants from '../../utils/ui.constants';
 /* eslint-disable react-hooks/exhaustive-deps */
 
 export default (props) => {
@@ -74,7 +73,7 @@ export default (props) => {
         propertyValue.skipFormat = true;
         propertyValue.options = {
             "inputAttributes": {
-                "placeholder": "yyyy/mm/dd,--:--:--"
+                "placeholder": "mm/dd/yyyy,--:--:--"
               },
             "flatpickr": {
                 "inlineHideInput": true,
@@ -162,11 +161,11 @@ export default (props) => {
         // For DateTime
         for (let key in initValue.time) {
             if (typeof initValue.time[key] === 'string') {
-                initValue.time[key] = moment(new Date((initValue.time[key] || '').replace('Z', ''))).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                initValue.time[key] = moment(new Date((initValue.time[key] || '').replace('Z', ''))).format("YYYY-MM-DD HH:mm:ss");
             } else {
                 initValue.time[key].forEach(time => {
                     for (let subKey in time) {
-                        time[subKey] = moment(new Date((time[subKey] || '').replace('Z', ''))).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                        time[subKey] = moment(new Date((time[subKey] || '').replace('Z', ''))).format("YYYY-MM-DD HH:mm:ss");
                     }
                     return true;
                 })

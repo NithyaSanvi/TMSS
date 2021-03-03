@@ -2,12 +2,12 @@ import React, { Component } from 'react'
 import 'primeflex/primeflex.css';
 // import { Link } from 'react-router-dom/cjs/react-router-dom.min';
 import _ from 'lodash';
+import moment from 'moment';
 import ViewTable from '../../components/ViewTable';
 import CycleService from '../../services/cycle.service';
 import UnitConversion from '../../utils/unit.converter';
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
-import UIConstants from '../../utils/ui.constants';
 
 class CycleList extends Component{
 	 constructor(props){
@@ -24,18 +24,15 @@ class CycleList extends Component{
         this.defaultcolumns = [ {   id:"Cycle Code",
                                     start: {
                                         name: "Start Date",
-                                        filter: "date",
-                                        format: UIConstants.CALENDAR_DEFAULTDATE_FORMAT
+                                        filter: "date"
                                     },
                                     stop: {
                                         name: "End Date",
-                                        filter: "date",
-                                        format: UIConstants.CALENDAR_DEFAULTDATE_FORMAT
+                                        filter: "date"
                                     },
                                     duration:{
                                         name: "Duration (Days)",
-                                        filter: "range",
-                                        format: UIConstants.CALENDAR_TIME_FORMAT
+                                        filter: "range"
                                     },
                                     totalProjects:{ 
                                         name:'No.of Projects',
@@ -113,6 +110,15 @@ class CycleList extends Component{
                 cycle.id = cycle.name ;
                 cycle.regularProjects = regularProjects.length;
                 cycle.longterm = longterm.length;
+                cycle.start = moment(cycle['start'], moment.ISO_8601).format("YYYY-MMM-DD");
+                cycle.stop = moment(cycle['stop'], moment.ISO_8601).format("YYYY-MMM-DD");
+                // cycle.observingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'observing_time');
+                // cycle.processingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'cep_processing_time');
+                // cycle.ltaResources = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'lta_storage');
+                // cycle.support = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'support_time');
+                // cycle.observingTimeDDT = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'observing_time_commissioning');
+                // cycle.observingTimePrioA = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'observing_time_prio_a');
+                // cycle.observingTimePrioB = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'observing_time_prio_b');
                 cycle.observingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'LOFAR Observing Time');
                 cycle.processingTime = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'CEP Processing Time');
                 cycle.ltaResources = this.getUnitConvertedQuotaValue(cycle, cycleQuota, 'LTA Storage');

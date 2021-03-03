@@ -5,7 +5,6 @@ import _ from 'lodash';
 import Jeditor from '../../components/JSONEditor/JEditor';
 
 import TaskService from '../../services/task.service';
-import UIConstants from '../../utils/ui.constants';
 import { Chips } from 'primereact/chips';
 import { Dialog } from 'primereact/dialog';
 
@@ -14,7 +13,7 @@ import PageHeader from '../../layout/components/PageHeader';
 import TaskStatusLogs from './state_logs';
 
 export class TaskView extends Component {
-   // DATE_FORMAT = 'YYYY-MMM-DD HH:mm:ss';
+    DATE_FORMAT = 'YYYY-MMM-DD HH:mm:ss';
     constructor(props) {
         super(props);
         this.state = {
@@ -184,9 +183,9 @@ export class TaskView extends Component {
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Created At</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.task.created_at).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.task.created_at).format(this.DATE_FORMAT)}</span>
                             <label className="col-lg-2 col-md-2 col-sm-12">Updated At</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.task.updated_at).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.task.updated_at).format(this.DATE_FORMAT)}</span>
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Copies</label>
@@ -196,9 +195,9 @@ export class TaskView extends Component {
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Start Time</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.task.start_time?moment(this.state.task.start_time,moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT):""}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.task.start?moment.utc(this.state.task.start).format(this.DATE_FORMAT):""}</span>
                             <label className="col-lg-2 col-md-2 col-sm-12">End Time</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.task.end_time?moment(this.state.task.end_time,moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT):""}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.task.end?moment.utc(this.state.task.end).format(this.DATE_FORMAT):""}</span>
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Tags</label>
