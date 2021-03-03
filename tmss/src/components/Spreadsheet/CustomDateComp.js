@@ -42,6 +42,7 @@ export default class CustomDateComp extends Component {
               showButtonBar
               showTime= {true}
               showSeconds= {true}
+              todayButtonClassName="today-clander-btn"
               hourFormat= "24"
               showIcon= {false} inline
           />

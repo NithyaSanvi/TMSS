@@ -237,3 +237,6 @@ div[data-schemapath='root.$schema'] {
   outline: none !important;
   border:  none !important;
 }
+.today-clander-btn {
+  display: none;
+}
