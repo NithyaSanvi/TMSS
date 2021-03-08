@@ -111,7 +111,7 @@ class DecideAcceptance extends Component {
                             </div>
                         </div>
                     </div>
-                    <div className="p-grid" style={{ marginTop: '20px' }}>
+                    {!this.props.readOnly && <div className="p-grid" style={{ marginTop: '20px' }}>
                         <div className="p-col-1">
                             <Button label="Next" className="p-button-primary" icon="pi pi-check" onClick = { this.Next } disabled={this.props.disableNextButton} />
                         </div>
@@ -119,7 +119,7 @@ class DecideAcceptance extends Component {
                             <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }}
                                 onClick={(e) => { this.props.onCancel()}} />
                         </div>
-                    </div>
+                    </div>}
 
                 </div>
             </>

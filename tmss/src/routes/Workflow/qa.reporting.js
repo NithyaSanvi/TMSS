@@ -84,7 +84,7 @@ class QAreporting extends Component{
                         <label htmlFor="operator_accept " className="p-checkbox-label">Operator Accept</label>
                     </div>
             </div>
-            <div className="p-grid p-justify-start">
+            {!this.props.readOnly && <div className="p-grid p-justify-start">
                 <div className="p-col-1">
                 <Button disabled= {!this.state.content} label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
                 </div>
@@ -92,7 +92,7 @@ class QAreporting extends Component{
                     <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '88px' }} 
                                 onClick={(e) => { this.props.onCancel()}} />
                 </div>
-            </div>
+            </div>}
         </>
     )
 };
