@@ -240,3 +240,7 @@ div[data-schemapath='root.$schema'] {
 .today-clander-btn {
   display: none;
 }
+.workflow-header a span {
+  display: block !important;
+  height: auto !important;
+}
