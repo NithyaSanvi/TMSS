@@ -180,38 +180,38 @@ export default (props) => {
                             </div>
                         </div>}
                         <TabView activeIndex={currentStep - 1}>
-                            <TabPanel header="Waiting To Be Scheduled" disabled={currentStep !== 1} headerClassName="workflow-header">
+                            <TabPanel header="Waiting To Be Scheduled" disabled={currentStep < 1} headerClassName="workflow-header">
                                 <Scheduled onNext={onNext} onCancel={onCancel} 
                                     schedulingUnit={schedulingUnit} /*disableNextButton={disableNextButton}*/ />
                             </TabPanel>
-                            <TabPanel header="Scheduled" disabled={currentStep !== 2} headerClassName="workflow-header">
+                            <TabPanel header="Scheduled" disabled={currentStep < 2} headerClassName="workflow-header">
                                 <ProcessingDone onNext={onNext} onCancel={onCancel} 
                                     schedulingUnit={schedulingUnit}  />
                             </TabPanel>
-                            <TabPanel header="QA Reporting (TO)" disabled={currentStep !== 3} headerClassName="workflow-header">
+                            <TabPanel header="QA Reporting (TO)" disabled={currentStep < 3} headerClassName="workflow-header">
                                 <QAreporting onNext={onNext} onCancel={onCancel} id={QASUProcess.id} 
                                                 getCurrentTaskDetails={getCurrentTaskDetails} onError={showMessage} />
                             </TabPanel>
-                            <TabPanel header="QA Reporting (SDCO)" disabled={currentStep !== 4} headerClassName="workflow-header">
+                            <TabPanel header="QA Reporting (SDCO)" disabled={currentStep < 4} headerClassName="workflow-header">
                                 <QAsos onNext={onNext} onCancel={onCancel} id={QASUProcess.id} 
                                                 process={QASUProcess} getCurrentTaskDetails={getCurrentTaskDetails} 
                                                 onError={showMessage} />
                             </TabPanel>
-                            <TabPanel header="PI Verification" disabled={currentStep !== 5} headerClassName="workflow-header">
+                            <TabPanel header="PI Verification" disabled={currentStep < 5} headerClassName="workflow-header">
                                 <PIverification onNext={onNext} onCancel={onCancel} id={QASUProcess.id} 
                                                 process={QASUProcess} getCurrentTaskDetails={getCurrentTaskDetails} 
                                                 onError={showMessage} />
                             </TabPanel>
-                            <TabPanel header="Decide Acceptance" disabled={currentStep !== 6} headerClassName="workflow-header">
+                            <TabPanel header="Decide Acceptance" disabled={currentStep < 6} headerClassName="workflow-header">
                                 <DecideAcceptance onNext={onNext} onCancel={onCancel} id={QASUProcess.id} 
                                                 process={QASUProcess} getCurrentTaskDetails={getCurrentTaskDetails} 
                                                 onError={showMessage} />
                             </TabPanel>
-                            <TabPanel header="Ingest" disabled={currentStep !== 7} headerClassName="workflow-header">
+                            <TabPanel header="Ingest" disabled={currentStep < 7} headerClassName="workflow-header">
                                 <Ingesting onNext={onNext} onCancel={onCancel} id={QASUProcess.id} 
                                                  onError={showMessage} task={getIngestTask()} />
                             </TabPanel>
-                            <TabPanel header="Unpin Data" disabled={currentStep !== 8} headerClassName="workflow-header">
+                            <TabPanel header="Unpin Data" disabled={currentStep < 8} headerClassName="workflow-header">
                                 <DataProduct onNext={onNext} onCancel={onCancel} onError={showMessage} 
                                                 tasks={tasks} schedulingUnit={schedulingUnit} />
                             </TabPanel>
