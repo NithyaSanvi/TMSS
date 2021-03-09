@@ -21,6 +21,15 @@ class QAreporting extends Component{
         this.handleChange = this.handleChange.bind(this);
     }
 
+    async componentDidMount() {
+        if (this.props.readOnly) {
+            const response = await WorkflowService.getQAReportingTo(this.props.process.qa_reporting_to);
+            this.setState({
+                content: response.operator_report
+            });
+        }
+    }
+
     /**
      * Method will trigger on click next buton
      * here onNext props coming from parent, where will handle redirection to other page

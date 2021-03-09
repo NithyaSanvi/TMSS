@@ -190,7 +190,8 @@ export default (props) => {
                             </TabPanel>
                             <TabPanel header="QA Reporting (TO)" disabled={currentStep < 3} headerClassName="workflow-header">
                                 <QAreporting onNext={onNext} onCancel={onCancel} id={QASUProcess.id} readOnly={ currentStep !== 3 } 
-                                                getCurrentTaskDetails={getCurrentTaskDetails} onError={showMessage} />
+                                                process={QASUProcess} getCurrentTaskDetails={getCurrentTaskDetails}
+                                                onError={showMessage} />
                             </TabPanel>
                             <TabPanel header="QA Reporting (SDCO)" disabled={currentStep < 4} headerClassName="workflow-header">
                                 <QAsos onNext={onNext} onCancel={onCancel} id={QASUProcess.id} readOnly={ currentStep !== 4 }

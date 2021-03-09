@@ -18,14 +18,26 @@ class PIverification extends Component {
         this.Next = this.Next.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.onChangePIComment = this.onChangePIComment.bind(this);
+        this.getPIVerificationDetails = this.getPIVerificationDetails.bind(this);
     }
 
     async componentDidMount() {
+        if (this.props.readOnly) {
+            this.getPIVerificationDetails();
+        }
         const response = await WorkflowService.getQAReportingSOS(this.props.process.qa_reporting_sos);
         this.setState({
             content: response.sos_report
         });
     }
+
+    async getPIVerificationDetails() {
+        const piVerificationResponse = await WorkflowService.getQAPIverification(this.props.process.pi_verification);
+        this.setState({
+            comment: piVerificationResponse.pi_report
+        });
+    }
+    
     
      /**
      * Method will trigger on change of operator report sun-editor

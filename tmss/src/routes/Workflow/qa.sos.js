@@ -16,12 +16,24 @@ class QAreportingSDCO extends Component {
         };
         this.Next = this.Next.bind(this);
         this.handleChange = this.handleChange.bind(this);
+        this.getQASOSDetails = this.getQASOSDetails.bind(this);
     }
 
     async componentDidMount() {
-        const response = await WorkflowService.getQAReportingTo(this.props.process.qa_reporting_to);
+        if (this.props.readOnly) {
+            this.getQASOSDetails()
+        } else {
+            const response = await WorkflowService.getQAReportingTo(this.props.process.qa_reporting_to);
+            this.setState({
+                content: response.operator_report
+            });
+        }
+    }
+
+    async getQASOSDetails() {
+        const response = await WorkflowService.getQAReportingSOS(this.props.process.qa_reporting_sos);
         this.setState({
-            content: response.operator_report
+            content: response.sos_report
         });
     }
 
@@ -100,15 +112,15 @@ class QAreportingSDCO extends Component {
                             {!this.state.showEditor && <div onClick={() => !this.props.readOnly && this.setState({ showEditor: !this.state.showEditor })} className="operator-report" dangerouslySetInnerHTML={{ __html: this.state.content }}></div>}
                         </div>
                     </div>
-                    {!this.props.readOnly && <div className="p-grid" style={{ marginTop: '20px' }}>
+                    <div className="p-grid" style={{ marginTop: '20px' }}>
                         <div className="p-col-1">
-                            <Button label="Next" disabled= {!this.state.content} className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
+                            <Button label="Next" disabled={!this.state.content || this.props.readOnly} className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
                         </div>
                         <div className="p-col-1">
-                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} 
+                            <Button label="Cancel" disabled={this.props.readOnly} className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} 
                                 onClick={(e) => { this.props.onCancel()}} />
                         </div>
-                    </div>}
+                    </div>
                 </div>
             </>
         )

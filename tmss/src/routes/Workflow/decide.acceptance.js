@@ -17,14 +17,25 @@ class DecideAcceptance extends Component {
         this.Next = this.Next.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.onChangePIComment = this.onChangePIComment.bind(this);
+        this.getQADecideAcceptance = this.getQADecideAcceptance.bind(this);
     }
 
     async componentDidMount() {
+        if (this.props.readOnly) {
+            this.getQADecideAcceptance();
+        }
         const qaSOSResponse = await WorkflowService.getQAReportingSOS(this.props.process.qa_reporting_sos);
         const piVerificationResponse = await WorkflowService.getQAPIverification(this.props.process.pi_verification);
         this.setState({
             content: qaSOSResponse.sos_report,
             comment: piVerificationResponse.pi_report
+        });
+    }
+
+    async getQADecideAcceptance() {
+        const decideAcceptanceResponse = await WorkflowService.getQADecideAcceptance(this.props.process.decide_acceptance);
+        this.setState({
+            sos_accept_after_pi: decideAcceptanceResponse.sos_accept_after_pi
         });
     }
 
