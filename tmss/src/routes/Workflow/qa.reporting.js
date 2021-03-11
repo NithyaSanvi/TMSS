@@ -25,7 +25,8 @@ class QAreporting extends Component{
         if (this.props.readOnly) {
             const response = await WorkflowService.getQAReportingTo(this.props.process.qa_reporting_to);
             this.setState({
-                content: response.operator_report
+                content: response.operator_report,
+                operator_accept: response.operator_accept
             });
         }
     }
@@ -78,6 +79,7 @@ class QAreporting extends Component{
                     <div className="col-lg-12 col-md-12 col-sm-12"></div>
                     <SunEditor enableToolbar={true}
                         setDefaultStyle="min-height: 250px; height: auto;"
+                        setContents={this.state.content}
                         onChange={ this.handleChange }
                         setOptions={{
                             buttonList: [

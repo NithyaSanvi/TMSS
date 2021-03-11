@@ -33,7 +33,9 @@ class QAreportingSDCO extends Component {
     async getQASOSDetails() {
         const response = await WorkflowService.getQAReportingSOS(this.props.process.qa_reporting_sos);
         this.setState({
-            content: response.sos_report
+            content: response.sos_report,
+            sos_accept_show_pi: response.sos_accept_show_pi,
+            quality_within_policy: response.quality_within_policy
         });
     }
 
@@ -82,14 +84,14 @@ class QAreportingSDCO extends Component {
                             <label htmlFor="qualityPolicy" className="col-lg-2 col-md-2 col-sm-12">Quality Policy</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
                                 <div className="p-field-checkbox">
-                                <Checkbox inputId="quality_within_policy" checked={this.state.quality_within_policy} onChange={e => this.setState({quality_within_policy: e.checked})} />
+                                <Checkbox disabled={this.props.readOnly} inputId="quality_within_policy" checked={this.state.quality_within_policy} onChange={e => this.setState({quality_within_policy: e.checked})} />
                                 </div>
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="sdcoAccept" className="col-lg-2 col-md-2 col-sm-12">SDCO Accept</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
                                 <div className="p-field-checkbox">
-                                    <Checkbox inputId="sos_accept_show_pi" checked={this.state.sos_accept_show_pi} onChange={e => this.setState({ sos_accept_show_pi: e.checked })} />
+                                    <Checkbox disabled={this.props.readOnly} inputId="sos_accept_show_pi" checked={this.state.sos_accept_show_pi} onChange={e => this.setState({ sos_accept_show_pi: e.checked })} />
                                 </div>
                             </div>
                         </div>

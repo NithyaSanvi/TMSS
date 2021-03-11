@@ -32,6 +32,9 @@ class PIverification extends Component {
     }
 
     async getPIVerificationDetails() {
+        if (!this.props.process.pi_verification) {
+            return
+        }
         const piVerificationResponse = await WorkflowService.getQAPIverification(this.props.process.pi_verification);
         this.setState({
             comment: piVerificationResponse.pi_report
@@ -85,7 +88,7 @@ class PIverification extends Component {
         return (
             <>
              <div>
-                   <div className="p-fluid">
+                   <div className={`p-fluid ${this.props.readOnly ? 'disableContainer' : ''}`}>
                         <div className="p-grid" style={{ padding: '10px' }}>
                             <label htmlFor="operatorReport" >Operator Report</label>
                             <div className="col-lg-12 col-md-12 col-sm-12"></div>
