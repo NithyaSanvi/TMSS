@@ -9,7 +9,8 @@ import TaskService from '../../services/task.service';
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
 import ViewTable from '../../components/ViewTable';
-
+import TaskStatusLogs from './state_logs';
+import { Dialog } from 'primereact/dialog';
 export class TaskList extends Component {
     DATE_FORMAT = 'YYYY-MMM-DD HH:mm:ss';
     constructor(props) {
@@ -116,6 +117,14 @@ export class TaskList extends Component {
         };
     }
 
+    subtaskComponent = (task)=> {
+        return (
+            <button className="p-link" onClick={(e) => {this.setState({showStatusLogs: true, task: task})}}>
+                <i className="fa fa-history"></i>
+            </button>
+        );
+    };
+
     /**
      * Formatting the task_blueprints in blueprint view to pass to the ViewTable component
      * @param {Object} schedulingUnit - scheduling_unit_blueprint object from extended API call loaded with tasks(blueprint) along with their template and subtasks
@@ -124,6 +133,7 @@ export class TaskList extends Component {
         let taskBlueprintsList = [];
         for(const taskBlueprint of tasks) {
             const template = this.subTaskTemplate.find(template => taskBlueprint.specifications_template_id === template.id);
+            taskBlueprint['status_logs'] = this.subtaskComponent(taskBlueprint);
             taskBlueprint['tasktype'] = 'Blueprint';
             taskBlueprint['actionpath'] = '/task/view/blueprint/'+taskBlueprint['id'];
             taskBlueprint['blueprint_draft'] = taskBlueprint['draft'];
@@ -233,6 +243,13 @@ export class TaskList extends Component {
                         tablename="scheduleunit_task_list"
                     />
                 }
+                {this.state.showStatusLogs &&
+                    <Dialog header={`Status change logs - ${this.state.task?this.state.task.name:""}`} 
+                            visible={this.state.showStatusLogs} maximizable maximized={false} position="left" style={{ width: '50vw' }} 
+                            onHide={() => {this.setState({showStatusLogs: false})}}>
+                            <TaskStatusLogs taskId={this.state.task.id}></TaskStatusLogs>
+                    </Dialog>
+                 }
             </React.Fragment>
         );
     }
