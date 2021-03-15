@@ -123,6 +123,7 @@ export class TaskList extends Component {
     getFormattedTaskBlueprints(tasks) {
         let taskBlueprintsList = [];
         for(const taskBlueprint of tasks) {
+            const template = this.subTaskTemplate.find(template => taskBlueprint.specifications_template_id === template.id);
             taskBlueprint['tasktype'] = 'Blueprint';
             taskBlueprint['actionpath'] = '/task/view/blueprint/'+taskBlueprint['id'];
             taskBlueprint['blueprint_draft'] = taskBlueprint['draft'];
@@ -132,6 +133,7 @@ export class TaskList extends Component {
             taskBlueprint.template = taskBlueprint.specifications_template;
             taskBlueprint.subTasks = taskBlueprint.subtasks;
             taskBlueprint.schedulingUnitId = taskBlueprint.scheduling_unit_blueprint_id;
+            taskBlueprint.subTaskID = template ? template.id : '';
             taskBlueprintsList.push(taskBlueprint);
         }
         return taskBlueprintsList;
@@ -168,6 +170,7 @@ export class TaskList extends Component {
             scheduletask.produced_by_ids = task.produced_by_ids;
             scheduletask.schedulingUnitId = task.scheduling_unit_draft_id;
             for(const blueprint of task['task_blueprints']){
+                const template = this.subTaskTemplate.find(template => blueprint.specifications_template_id === template.id);
                 let taskblueprint = {};
                 taskblueprint['tasktype'] = 'Blueprint';
                 taskblueprint['actionpath'] = '/task/view/blueprint/'+blueprint['id'];
@@ -185,6 +188,7 @@ export class TaskList extends Component {
                 taskblueprint.template = scheduletask.template;
                 taskblueprint.schedulingUnitId = task.scheduling_unit_draft_id;
                 taskblueprint.subTasks = blueprint.subtasks;
+                taskblueprint.subTaskID = template ? template.id : '';
                 //Add Blue print details to array
                 scheduletasklist.push(taskblueprint);
             }
@@ -197,9 +201,11 @@ export class TaskList extends Component {
     componentDidMount() {
         const promises = [
             TaskService.getTaskDraftList(),
-            TaskService.getTaskBlueprintList()
+            TaskService.getTaskBlueprintList(),
+            TaskService.getSubtaskTemplates()
         ];
         Promise.all(promises).then((responses) => {
+            this.subTaskTemplate = responses[2];
             this.setState({ tasks: [...this.getFormattedTaskDrafts(responses[0]), ...this.getFormattedTaskBlueprints(responses[1])], isLoading: false});
         });
     }
