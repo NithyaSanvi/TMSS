@@ -613,6 +613,7 @@ export class WeekTimelineView extends Component {
                                  style={{position: "inherit", borderRight: "5px solid #efefef", paddingTop: "10px"}}>
                                 <ViewTable 
                                     data={this.state.suBlueprintList} 
+                                    redirectNewWindow
                                     defaultcolumns={[{name: "Name",
                                                         start_time:"Start Time", stop_time:"End Time"}]}
                                     optionalcolumns={[{project:"Project",description: "Description", duration:"Duration (HH:mm:ss)",actionpath: "actionpath"}]}
@@ -665,6 +666,7 @@ export class WeekTimelineView extends Component {
                                      style={{borderLeft: "1px solid #efefef", marginTop: "0px", backgroundColor: "#f2f2f2"}}>
                                     {this.state.isSummaryLoading?<AppLoader /> :
                                         <SchedulingUnitSummary schedulingUnit={suBlueprint} suTaskList={this.state.suTaskList}
+                                                redirectNewWindow
                                                 constraintsTemplate={this.state.suConstraintTemplate}
                                                 closeCallback={this.closeSUDets}
                                                 stationGroup={this.state.stationGroup}

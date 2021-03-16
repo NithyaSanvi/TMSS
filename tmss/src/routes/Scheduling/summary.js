@@ -111,6 +111,14 @@ export class SchedulingUnitSummary extends Component {
         this.setState({constraintsDoc: jsonOutput});
     }
 
+    redirectToSUDetails = () => {
+        if (!this.props.redirectNewWindow) {
+            this.props.history.push(`/schedulingunit/view/blueprint/${this.props.schedulingUnit.id}`);
+        } else {
+            window.open(`/schedulingunit/view/blueprint/${this.props.schedulingUnit.id}`, '_blank');
+        }
+    }
+
     render() {
         const schedulingUnit = this.props.schedulingUnit;
         const suTaskList = this.props.suTaskList;
@@ -123,7 +131,7 @@ export class SchedulingUnitSummary extends Component {
             { schedulingUnit &&
                 <div className="p-grid timeline-details-pane" style={{marginTop: '10px'}}>
                     <h6 className="col-lg-10 col-sm-10">Details</h6>
-                    <Link to={`/schedulingunit/view/blueprint/${schedulingUnit.id}`} title="View Full Details"><i className="fa fa-eye"></i></Link>
+                    <Link onClick={this.redirectToSUDetails} title="View Full Details"><i className="fa fa-eye"></i></Link>
                     <Link to={this.props.location?this.props.location.pathname:"/su/timelineview"} onClick={this.closeSUDets} title="Close Details"><i className="fa fa-times"></i></Link>
                     <div className="col-4"><label>Name:</label></div>
                     <div className="col-8">{schedulingUnit.name}</div>
