@@ -353,3 +353,40 @@
 .timeline-popover:after {
     display: none !important;
 }
+
+.p-multiselect-items-wrapper {
+    height: 120px !important;
+}
+
+.p-multiselect-header .p-multiselect-close {
+    position: absolute;
+    right: -30px;
+    top: .375em;
+    display: block;
+    border: 0 none;
+}
+
+body .p-multiselect-panel .p-multiselect-header .p-multiselect-filter-container .p-multiselect-filter-icon {
+    color: #007ad9;
+    top: 50%;
+    margin-top: -0.5em;
+    right: -1em;
+    left: auto;
+}
+body .p-multiselect-panel .p-multiselect-header .p-multiselect-filter-container .p-inputtext {
+    padding: 0.520em;
+    // padding-right: 6em;  //Ramesh: Not sure why is it required. As the search text content in the multiselect component is not visible, removing it.
+}
+.alignTimeLineHeader {
+    display: flex;
+    justify-content: space-between;
+
+}
+.sub-header {
+    display: inline-block;
+} 
+.body .p-inputswitch {
+    width: 3em;
+    height: 1.75em;
+  //  top: -3px;
+}

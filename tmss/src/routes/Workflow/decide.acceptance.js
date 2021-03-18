@@ -17,25 +17,14 @@ class DecideAcceptance extends Component {
         this.Next = this.Next.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.onChangePIComment = this.onChangePIComment.bind(this);
-        this.getQADecideAcceptance = this.getQADecideAcceptance.bind(this);
     }
 
     async componentDidMount() {
-        if (this.props.readOnly) {
-            this.getQADecideAcceptance();
-        }
         const qaSOSResponse = await WorkflowService.getQAReportingSOS(this.props.process.qa_reporting_sos);
         const piVerificationResponse = await WorkflowService.getQAPIverification(this.props.process.pi_verification);
         this.setState({
             content: qaSOSResponse.sos_report,
             comment: piVerificationResponse.pi_report
-        });
-    }
-
-    async getQADecideAcceptance() {
-        const decideAcceptanceResponse = await WorkflowService.getQADecideAcceptance(this.props.process.decide_acceptance);
-        this.setState({
-            sos_accept_after_pi: decideAcceptanceResponse.sos_accept_after_pi
         });
     }
 
@@ -122,7 +111,7 @@ class DecideAcceptance extends Component {
                             </div>
                         </div>
                     </div>
-                    {!this.props.readOnly && <div className="p-grid" style={{ marginTop: '20px' }}>
+                    <div className="p-grid" style={{ marginTop: '20px' }}>
                         <div className="p-col-1">
                             <Button label="Next" className="p-button-primary" icon="pi pi-check" onClick = { this.Next } disabled={this.props.disableNextButton} />
                         </div>
@@ -130,7 +119,7 @@ class DecideAcceptance extends Component {
                             <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }}
                                 onClick={(e) => { this.props.onCancel()}} />
                         </div>
-                    </div>}
+                    </div>
 
                 </div>
             </>

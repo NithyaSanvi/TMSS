@@ -195,7 +195,7 @@ export class CycleEdit extends Component {
      * @param {string} key 
      * @param {any} value 
      */
-    setCycleParams(key, value, type) {
+    async setCycleParams(key, value, type) {
         let cycle = _.cloneDeep(this.state.cycle);
         switch(type) {
             case 'NUMBER': {
@@ -208,9 +208,11 @@ export class CycleEdit extends Component {
             }
         }
         if ( !this.state.isDirty && !_.isEqual(this.state.cycle, cycle)) {
-            this.setState({cycle: cycle, validForm: this.validateForm(key), isDirty: true});
+            await this.setState({cycle: cycle});
+            this.setState({validForm: this.validateForm(key), isDirty: true});
         }   else {
-            this.setState({cycle: cycle, validForm: this.validateForm(key)});
+            await await this.setState({cycle: cycle});
+            this.setState({validForm: this.validateForm(key)});
         }
         
     }
@@ -307,8 +309,8 @@ export class CycleEdit extends Component {
         if (this.validateForm) {
             let cycle = this.state.cycle;
             let stoptime =  _.replace(this.state.cycle['stop'],'00:00:00', '23:59:59');
-            cycle['start'] = moment(this.state.cycle['start']).format("YYYY-MM-DDTHH:mm:ss");
-            cycle['stop'] = moment(stoptime).format("YYYY-MM-DDTHH:mm:ss");
+            cycle['start'] = moment(cycle['start']).format(UIConstants.UTC_DATE_TIME_FORMAT);
+            cycle['stop'] = moment(stoptime).format(UIConstants.UTC_DATE_TIME_FORMAT);
             this.setState({cycle: cycle, isDirty: false});
             CycleService.updateCycle(this.props.match.params.id, this.state.cycle)
                 .then(async (cycle) => { 
@@ -452,11 +454,10 @@ export class CycleEdit extends Component {
                             <label htmlFor="cycleName" className="col-lg-2 col-md-2 col-sm-12">Start Date <span style={{color:'red'}}>*</span></label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
                                 <Calendar  
-                                    d dateFormat="dd-M-yy"
+                                    d dateFormat={UIConstants.CALENDAR_DATE_FORMAT}
                                     inputId="start"
                                     value= {new Date(this.state.cycle.start)}
                                     onChange= {e => this.setCycleParams('start',e.value)}
-                                    onBlur= {e => this.setCycleParams('start',e.value)}
                                     data-testid="start" 
                                     tooltip="Moment at which the cycle starts, that is, when its projects can run." tooltipOptions={this.tooltipOptions}
                                     showIcon={true} 
@@ -469,10 +470,9 @@ export class CycleEdit extends Component {
                             <label htmlFor="cycleName" className="col-lg-2 col-md-2 col-sm-12">Stop Date <span style={{color:'red'}}>*</span></label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
                                 <Calendar
-                                    d dateFormat="dd-M-yy"
+                                    d dateFormat={UIConstants.CALENDAR_DATE_FORMAT}
                                     value= {new Date(this.state.cycle.stop)}
                                     onChange= {e => this.setCycleParams('stop', e.value)}
-                                    onBlur= {e => this.setCycleParams('stop',e.value)}
                                     inputId="stop"
                                     data-testid="stop"
                                     tooltip="Moment at which the cycle officially ends." tooltipOptions={this.tooltipOptions}

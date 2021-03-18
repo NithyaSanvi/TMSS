@@ -21,6 +21,7 @@ import ScheduleService from '../../services/schedule.service';
 import TaskService from '../../services/task.service';
 import UIConstants from '../../utils/ui.constants';
 import SchedulingConstraint from './Scheduling.Constraints';
+import UtilService from '../../services/util.service';
 
 /**
  * Compoenent to edit scheduling unit draft
@@ -90,6 +91,7 @@ export class EditSchedulingUnit extends Component {
         let schema = { type: 'object', additionalProperties: false, 
                         properties: {}, definitions:{}
                      };
+        // TODo: This schema reference resolving code has to be moved to common file and needs to rework
         for (const taskName in tasks)  {
             const task = tasks[taskName];
             const taskDraft = this.state.taskDrafts.find(taskD => taskD.name === taskName);
@@ -118,7 +120,16 @@ export class EditSchedulingUnit extends Component {
                         tempProperty = $templateRefs.get(parameterRef);
                     }   catch(error) {
                         tempProperty = _.cloneDeep(taskTemplate.schema.properties[taskPaths[4]]);
-                        if (tempProperty.type === 'array') {
+                        if (tempProperty['$ref']) {
+                            tempProperty = await UtilService.resolveSchema(tempProperty);
+                            if (tempProperty.definitions && tempProperty.definitions[taskPaths[4]]) {
+                                schema.definitions = {...schema.definitions, ...tempProperty.definitions};
+                                tempProperty = tempProperty.definitions[taskPaths[4]];
+                            }   else if (tempProperty.properties && tempProperty.properties[taskPaths[4]]) {
+                                tempProperty = tempProperty.properties[taskPaths[4]];
+                            }
+                        }
+                        if (tempProperty.type === 'array' && taskPaths.length>6) {
                             tempProperty = tempProperty.items.properties[taskPaths[6]];
                         }
                         property = tempProperty;

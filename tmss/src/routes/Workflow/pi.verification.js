@@ -18,29 +18,14 @@ class PIverification extends Component {
         this.Next = this.Next.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.onChangePIComment = this.onChangePIComment.bind(this);
-        this.getPIVerificationDetails = this.getPIVerificationDetails.bind(this);
     }
 
     async componentDidMount() {
-        if (this.props.readOnly) {
-            this.getPIVerificationDetails();
-        }
         const response = await WorkflowService.getQAReportingSOS(this.props.process.qa_reporting_sos);
         this.setState({
             content: response.sos_report
         });
     }
-
-    async getPIVerificationDetails() {
-        if (!this.props.process.pi_verification) {
-            return
-        }
-        const piVerificationResponse = await WorkflowService.getQAPIverification(this.props.process.pi_verification);
-        this.setState({
-            comment: piVerificationResponse.pi_report
-        });
-    }
-    
     
      /**
      * Method will trigger on change of operator report sun-editor
@@ -88,7 +73,7 @@ class PIverification extends Component {
         return (
             <>
              <div>
-                   <div className={`p-fluid ${this.props.readOnly ? 'disableContainer' : ''}`}>
+                   <div className="p-fluid">
                         <div className="p-grid" style={{ padding: '10px' }}>
                             <label htmlFor="operatorReport" >Operator Report</label>
                             <div className="col-lg-12 col-md-12 col-sm-12"></div>
@@ -123,7 +108,7 @@ class PIverification extends Component {
                                     <Checkbox inputId="binary" checked={this.state.pi_accept} onChange={e => this.setState({ pi_accept: e.checked })} />
                             </div>
                         </div>
-                        {!this.props.readOnly && <div className="p-grid" style={{ marginTop: '20px' }}>
+                        <div className="p-grid" style={{ marginTop: '20px' }}>
                             <div className="p-col-1">
                                 <Button disabled= {!this.state.comment} label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
                             </div>
@@ -131,7 +116,7 @@ class PIverification extends Component {
                                 <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }}
                                     onClick={(e) => { this.props.onCancel()}} />
                             </div>
-                        </div>}
+                        </div>
                     </div>  
                 </div>
             </>

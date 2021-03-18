@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { InputMask } from 'primereact/inputmask';
 import Validator from  '../../utils/validator';
+import Cleave from 'cleave.js/react';
 
 const BG_COLOR= '#f878788f';
 
@@ -12,33 +13,33 @@ export default class TimeInputMask extends Component {
 
   callbackUpdateAngle(e) {
     let isValid = false;
-    if(Validator.validateTime(e.value)){
-      e.originalEvent.target.style.backgroundColor = '';
+    if (Validator.validateTime(e.target.value)) {
+      e.target.style.backgroundColor = '';
       isValid = true;
-    }else{
-      e.originalEvent.target.style.backgroundColor = BG_COLOR;
+    } else {
+      e.target.style.backgroundColor = BG_COLOR;
     }
-    
+    e.target.style.border = "none";
     this.props.context.componentParent.updateAngle(
-      this.props.node.rowIndex,this.props.colDef.field,e.value,false,isValid
+      this.props.node.rowIndex,this.props.colDef.field,e.target.value,false,isValid
     );
     
   }
  
   afterGuiAttached(){
-    this.input.input.focus();
+    this.input.focus();
+    this.input.select();
   }
- 
+
   render() {
     return (
-        <InputMask 
-          value={this.props.value}
-          mask="99:99:99" 
-          placeholder="HH:mm:ss" 
+      <Cleave placeholder="HH:mm:ss.ssss" value={this.props.value}
+          options={{numericOnly: true, blocks: [2, 2, 2, 4],
+                    delimiters: [':', ':', '.'],
+                    delimiterLazyShow: false}}
           className="inputmask" 
-          onComplete={this.callbackUpdateAngle}
-          ref={input =>{this.input = input}}
-         />
+          htmlRef={(ref) => this.input = ref }
+          onChange={this.callbackUpdateAngle} />
     );
   }
 }

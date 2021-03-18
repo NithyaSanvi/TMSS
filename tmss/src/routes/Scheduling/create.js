@@ -22,6 +22,7 @@ import SchedulingConstraint from './Scheduling.Constraints';
 import Stations from './Stations';
 import { CustomDialog } from '../../layout/components/CustomDialog';
 import SchedulingSet from './schedulingset.create';
+import UtilService from '../../services/util.service';
 
 /**
  * Component to create a new SchedulingUnit from Observation strategy template
@@ -122,6 +123,7 @@ export class SchedulingUnitCreate extends Component {
         const projectSchedSets = _.filter(this.schedulingSets, {'project_id': projectName});
         let schedulingUnit = this.state.schedulingUnit;
         schedulingUnit.project = projectName;
+        schedulingUnit.scheduling_set_id = null;
         const selectedProject = _.filter(this.projects, {'name': projectName});
         this.setState({selectedProject: selectedProject, schedulingUnit: schedulingUnit, schedulingSets: projectSchedSets, validForm: this.validateForm('project'), isDirty: true});
     }
@@ -140,6 +142,7 @@ export class SchedulingUnitCreate extends Component {
                         properties: {}, definitions:{}
                      };
                      
+            // TODo: This schema reference resolving code has to be moved to common file and needs to rework
             for (const taskName of _.keys(tasks)) {
             const task = tasks[taskName];
             //Resolve task from the strategy template
@@ -168,7 +171,16 @@ export class SchedulingUnitCreate extends Component {
                        
                     }   catch(error) {
                         tempProperty = _.cloneDeep(taskTemplate.schema.properties[taskPaths[4]]);
-                        if (tempProperty.type === 'array') {
+                        if (tempProperty['$ref']) {
+                            tempProperty = await UtilService.resolveSchema(tempProperty);
+                            if (tempProperty.definitions && tempProperty.definitions[taskPaths[4]]) {
+                                schema.definitions = {...schema.definitions, ...tempProperty.definitions};
+                                tempProperty = tempProperty.definitions[taskPaths[4]];
+                            }   else if (tempProperty.properties && tempProperty.properties[taskPaths[4]]) {
+                                tempProperty = tempProperty.properties[taskPaths[4]];
+                            }
+                        }
+                        if (tempProperty.type === 'array' && taskPaths.length>6) {
                             tempProperty = tempProperty.items.properties[taskPaths[6]];
                         }
                         property = tempProperty;
@@ -223,8 +235,6 @@ export class SchedulingUnitCreate extends Component {
         }   else {
             this.setState({ constraintParamsOutput: jsonOutput, constraintValidEditor: err.length === 0, validForm: this.validateForm()});
         }
-
-        
     }
 
     /**
@@ -239,7 +249,7 @@ export class SchedulingUnitCreate extends Component {
      * @param {string} key 
      * @param {object} value 
      */
-    setSchedUnitParams(key, value) {
+    async setSchedUnitParams(key, value) {
         this.setState({ 
             touched: { 
                 ...this.state.touched,
@@ -249,9 +259,11 @@ export class SchedulingUnitCreate extends Component {
         let schedulingUnit = _.cloneDeep(this.state.schedulingUnit);
         schedulingUnit[key] = value;
         if  ( !this.state.isDirty && !_.isEqual(this.state.schedulingUnit, schedulingUnit) ) {
-            this.setState({schedulingUnit: schedulingUnit, validForm: this.validateForm(key), validEditor: this.validateEditor(), isDirty: true});
+            await this.setState({schedulingUnit: schedulingUnit});
+            this.setState({validForm: this.validateForm(key), validEditor: this.validateEditor(), isDirty: true});
         }   else {
-            this.setState({schedulingUnit: schedulingUnit, validForm: this.validateForm(key), validEditor: this.validateEditor()});
+            await this.setState({schedulingUnit: schedulingUnit});
+            this.setState({validForm: this.validateForm(key), validEditor: this.validateEditor()});
         }
         this.validateEditor();
     }
@@ -547,23 +559,25 @@ export class SchedulingUnitCreate extends Component {
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="schedSet" className="col-lg-2 col-md-2 col-sm-12">Scheduling Set <span style={{color:'red'}}>*</span></label>
-                            <div className="col-lg-3 col-md-3 col-sm-12">
+                            <div className="col-lg-3 col-md-3 col-sm-10">
                                 <Dropdown data-testid="schedSet" id="schedSet" optionLabel="name" optionValue="id" 
                                         tooltip="Scheduling set of the project" tooltipOptions={this.tooltipOptions}
                                         value={this.state.schedulingUnit.scheduling_set_id} 
                                         options={this.state.schedulingSets} 
                                         onChange={(e) => {this.setSchedUnitParams('scheduling_set_id',e.value)}} 
                                         placeholder="Select Scheduling Set" />
-
-                                        <Button label="" className="p-button-primary" icon="pi pi-plus" 
-                                        onClick={() => {this.setState({showAddSet: true})}}  
-                                        tooltip="Add new Scheduling Set"
-                                        style={{bottom: '2em', left: '25em'}}
-                                        disabled={this.state.schedulingUnit.project !== null ? false : true }/>
-
                                 <label className={(this.state.errors.scheduling_set_id && this.state.touched.scheduling_set_id) ?"error":"info"}>
                                     {(this.state.errors.scheduling_set_id && this.state.touched.scheduling_set_id) ? this.state.errors.scheduling_set_id : "Scheduling Set of the Project"}
                                 </label>
+                            </div>
+                            <div className="col-lg-1 col-md-1 col-sm-2">
+                                <Button label="" className="p-button-primary" icon="pi pi-plus" 
+                                        onClick={() => {this.setState({showAddSet: true})}}  
+                                        tooltip="Add new Scheduling Set"
+                                        style={{marginLeft: '-10px'}}
+                                        disabled={this.state.schedulingUnit.project !== null ? false : true }/>
+
+                                
                             </div>
                         </div>
                         <div className="p-field p-grid">

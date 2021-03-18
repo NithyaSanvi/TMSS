@@ -5,9 +5,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useRef} from 'react';
 import _ from 'lodash';
-import flatpickr from 'flatpickr';
+import UnitConverter from '../../utils/unit.converter'
 import $RefParser from "@apidevtools/json-schema-ref-parser";
 import "@fortawesome/fontawesome-free/css/all.css";
+import flatpickr from 'flatpickr';
 import "flatpickr/dist/flatpickr.css";
 const JSONEditor = require("@json-editor/json-editor").JSONEditor;
 
@@ -101,6 +102,9 @@ function Jeditor(props) {
 
     const init = async () => {
         const element = document.getElementById(props.id?props.id:'editor_holder');
+        if (element.firstChild) {
+            element.removeChild(element.firstChild);
+        }
         let schema = await resolveExternalRef();
         /** If any formatting is done at the parent/implementation component pass the resolved schema 
             and get the formatted schema like adding validation type, field ordering, etc.,*/
@@ -128,9 +132,9 @@ function Jeditor(props) {
                 }
             }
         }
-        
     // Customize datatype of certain properties like subbands, duration, etc.,
         getCustomProperties(schema.properties);
+        getCustomProperties(schema.definitions);
         schema.title = props.title;
         const subbandValidator = validateSubbandOutput;
         const timeValidator = validateTime;
@@ -150,7 +154,7 @@ function Jeditor(props) {
                     errors.push({
                         path: path,
                         property: 'validationType',
-                        message: 'Not a valid input. Mimimum: 00:00:00, Maximum:23:59:59'
+                        message: 'Not a valid input. Mimimum: 00:00:00.0000, Maximum:23:59:59.9999'
                     });
                 }
             }   else if (schema.validationType === "angle") {
@@ -158,7 +162,7 @@ function Jeditor(props) {
                     errors.push({
                         path: path,
                         property: 'validationType',
-                        message: 'Not a valid input. Mimimum: 00:00:00, Maximum:90:00:00'
+                        message: 'Not a valid input. Mimimum: 00:00:00.0000, Maximum:90:00:00.0000'
                     });
                 }
             } else if (schema.validationType === "distanceOnSky") {
@@ -213,10 +217,15 @@ function Jeditor(props) {
             }
         });
         editor.on('change', () => {setEditorOutput()});
+        while (element.childNodes.length > 1) {
+            element.removeChild(element.firstChild);
+        }
     };
 
     useEffect(() => {
-        init();
+        if (!editor) {
+            init();
+        }
     }, [props.schema]);
 
     /**
@@ -256,18 +265,19 @@ function Jeditor(props) {
         let newProperty = {
             type: "string",
             title: defProperty.title,
-            description: (defProperty.description + (isDegree?'(Degrees:Minutes:Seconds)':'(Hours:Minutes:Seconds)')),
-            default: "00:00:00",
+            description: (defProperty.description + (isDegree?'(Degrees:Minutes:Seconds.MilliSeconds)':'(Hours:Minutes:Seconds.MilliSeconds)')),
+            default: "00:00:00.0000",
             validationType: isDegree?'angle':'time',
             options: {
                 "grid_columns": 4,
                 "inputAttributes": {
-                    "placeholder": isDegree?"DD:mm:ss":"HH:mm:ss"
+                    "placeholder": isDegree?"DD:mm:ss.ssss":"HH:mm:ss.ssss"
                 },
                 "cleave": {
-                    date: true,
-                    datePattern: ['HH','mm','ss'],
-                    delimiter: ':'
+                    numericOnly: true,
+                    blocks: [2, 2, 2, 4],
+                    delimiters: isDegree ? [':', ':','.'] : [':', ':', '.'],
+                    delimiterLazyShow: true
                 }
             }
         }
@@ -358,15 +368,14 @@ function Jeditor(props) {
             const inputValue = editorInput[inputKey];
             if (inputValue instanceof Object) {
                 if (_.indexOf(pointingProps, inputKey) >= 0) {
-                    inputValue.angle1 = getAngleInput(inputValue.angle1);
-                    inputValue.angle2 = getAngleInput(inputValue.angle2, true);
+                    inputValue.angle1 = UnitConverter.getAngleInput(inputValue.angle1);
+                    inputValue.angle2 = UnitConverter.getAngleInput(inputValue.angle2, true);
                 }  else if (inputKey === 'subbands') {
                     editorInput[inputKey] = getSubbandInput(inputValue);
                 }  else {
                     updateInput(inputValue);
                 }
             }  else if (inputKey.toLowerCase() === 'duration') {
-                // editorInput[inputKey] = inputValue/60;
                 editorInput[inputKey] = getTimeInput(inputValue);
             }
         }
@@ -382,40 +391,19 @@ function Jeditor(props) {
             let outputValue = editorOutput[outputKey];
             if (outputValue instanceof Object) {
                 if (_.indexOf(pointingProps, outputKey) >= 0) {
-                    outputValue.angle1 = getAngleOutput(outputValue.angle1, false);
-                    outputValue.angle2 = getAngleOutput(outputValue.angle2, true);
+                    outputValue.angle1 = UnitConverter.getAngleOutput(outputValue.angle1, false);
+                    outputValue.angle2 = UnitConverter.getAngleOutput(outputValue.angle2, true);
                 } else {
                     updateOutput(outputValue);
                 }
             } else if (outputKey === 'subbands') {
                 editorOutput[outputKey] = getSubbandOutput(outputValue);
             } else if (outputKey.toLowerCase() === 'duration') {
-                // editorOutput[outputKey] = outputValue * 60;
                 const splitOutput = outputValue.split(':');
-                editorOutput[outputKey] = (splitOutput[0] * 3600 + splitOutput[1] * 60  + splitOutput[2]*1);
+                editorOutput[outputKey] = ((splitOutput[0] * 3600) + (splitOutput[1] * 60)  + parseInt(splitOutput[2]));
             }
         }
         return editorOutput;
-    }
-
-    /**
-     * Function to format angle values in the input of inital values
-     * @param {*} prpInput 
-     * @param {Boolean} isDegree 
-     */
-    function getAngleInput(prpInput, isDegree) {
-        const degrees = prpInput * 180 / Math.PI;
-        if (isDegree) {
-            const dd = Math.floor(prpInput * 180 / Math.PI);
-            const mm = Math.floor((degrees-dd) * 60);
-            const ss = +((degrees-dd-(mm/60)) * 3600).toFixed(0);
-            return (dd<10?`0${dd}`:`${dd}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`);
-        }   else {
-            const hh = Math.floor(degrees/15);
-            const mm = Math.floor((degrees - (hh*15))/15 * 60 );
-            const ss = +((degrees -(hh*15)-(mm*15/60))/15 * 3600).toFixed(0);
-            return (hh<10?`0${hh}`:`${hh}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`);
-        }
     }
 
     /**
@@ -456,37 +444,22 @@ function Jeditor(props) {
     }
 
     /**
-     * Converts the angle input to radians
-     * @param {String} prpOutput 
-     * @param {Boolean} isDegree 
-     */
-    function getAngleOutput(prpOutput, isDegree) {
-        /*if ('dd' in prpOutput) {
-            return ((prpOutput.dd + prpOutput.mm/60 + prpOutput.ss/3600)*Math.PI/180);
-        }   else {
-            return ((prpOutput.hh*15 + prpOutput.mm/4  + prpOutput.ss/240)*Math.PI/180);
-        }*/
-        const splitOutput = prpOutput.split(':');
-        if (isDegree) {
-            return ((splitOutput[0]*1 + splitOutput[1]/60 + splitOutput[2]/3600)*Math.PI/180);
-        }   else {
-            return ((splitOutput[0]*15 + splitOutput[1]/4  + splitOutput[2]/240)*Math.PI/180);
-        }
-    }
-
-    /**
      * Validate time entered as string in HH:mm:ss format
      * @param {String} prpOutput 
      */
     function validateTime(prpOutput) {
         const splitOutput = prpOutput.split(':');
+        const seconds = splitOutput[2]?splitOutput[2].split('.')[0].split('.')[0]:splitOutput[2];
+        let milliSeconds = prpOutput.split('.')[1] || '0000';
+        milliSeconds = milliSeconds.padEnd(4,0);
         if (splitOutput.length < 3) {
             return false;
         }   else {
-            if (parseInt(splitOutput[0]) > 23 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59) {
+            if (parseInt(splitOutput[0]) > 23 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59 )
+             {
                 return false;
             }
-            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(splitOutput[2]);
+            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(seconds) + milliSeconds/10000;
             if (timeValue >= 86400) {
                 return false;
             }
@@ -500,13 +473,16 @@ function Jeditor(props) {
      */
     function validateAngle(prpOutput) {
         const splitOutput = prpOutput.split(':');
+        const seconds = splitOutput[2]?splitOutput[2].split('.')[0].split('.')[0]:splitOutput[2];
+        let milliSeconds = prpOutput.split('.')[1] || '0000';
+        milliSeconds = milliSeconds.padEnd(4,0);
         if (splitOutput.length < 3) {
             return false;
         }   else {
-            if (parseInt(splitOutput[0]) > 90 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59) {
+            if (parseInt(splitOutput[0]) > 90 || parseInt(splitOutput[1])>59 || parseInt(seconds)>59) {
                 return false;
             }
-            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(splitOutput[2]);
+            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(seconds) + milliSeconds/10000;
             if (timeValue > 324000) {
                 return false;
             }

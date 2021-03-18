@@ -55,6 +55,7 @@ const ScheduleService = {
                     const schedulingUnitDraft = (await axios.get(`/api/scheduling_unit_draft/${schedulingUnit.draft_id}/`)).data;
                     schedulingUnit.draft_object = schedulingUnitDraft;
                     schedulingUnit.scheduling_set_id = schedulingUnitDraft.scheduling_set_id;
+                    schedulingUnit.scheduling_constraints_template_id = schedulingUnitDraft.scheduling_constraints_template_id;
                     schedulingUnit.scheduling_constraints_doc = schedulingUnitDraft.scheduling_constraints_doc?schedulingUnitDraft.scheduling_constraints_doc:{};
                 }   else {
                     // Fetch all blueprints data associated with draft to display the name
@@ -240,14 +241,13 @@ const ScheduleService = {
                 scheduletask['actionpath'] = '/task/view/draft/'+task['id'];
                 scheduletask['blueprint_draft'] = task['task_blueprints'];
                 scheduletask['status'] = task['status'];
-
               
                 //fetch task draft details
                 for(const key of commonkeys){
                     scheduletask[key] = task[key];
                 }
-                scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-                scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format("YYYY-MM-DD HH:mm:ss");
+                scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format("YYYY-MM-DD HH:mm:ss");
                 scheduletask['specifications_doc'] = task['specifications_doc'];
                 scheduletask.duration = moment.utc((scheduletask.duration || 0)*1000).format('HH:mm:ss'); 
                 scheduletask.produced_by = task.produced_by;
@@ -275,8 +275,8 @@ const ScheduleService = {
                     for(const key of commonkeys){
                         taskblueprint[key] = blueprint[key];
                     }
-                    taskblueprint['created_at'] = moment(blueprint['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-                    taskblueprint['updated_at'] = moment(blueprint['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                    taskblueprint['created_at'] = moment(blueprint['created_at'], moment.ISO_8601).format("YYYY-MM-DD HH:mm:ss");
+                    taskblueprint['updated_at'] = moment(blueprint['updated_at'], moment.ISO_8601).format("YYYY-MM-DD HH:mm:ss");
                     taskblueprint.duration = moment.utc((taskblueprint.duration || 0)*1000).format('HH:mm:ss'); 
                     taskblueprint.relative_start_time = moment.utc(taskblueprint.relative_start_time*1000).format('HH:mm:ss'); 
                     taskblueprint.relative_stop_time = moment.utc(taskblueprint.relative_stop_time*1000).format('HH:mm:ss'); 
@@ -658,7 +658,22 @@ const ScheduleService = {
             console.log(error.response.data);
             return error.response.data;
         }
-      }
+    },
+    /**
+     * Delete Scheduling Unit based on type
+     * @param {*} type 
+     * @param {*} id 
+     */
+    deleteSchedulingUnit: async function(type, id) {
+        try {
+            const url = type.toLowerCase() === 'blueprint'? `/api/scheduling_unit_blueprint/${id}`: `/api/scheduling_unit_draft/${id}`;
+            await axios.delete(url);
+            return true;
+        } catch(error) {
+            console.error(error);
+            return false;
+        }
+    }
 }
 
 export default ScheduleService;

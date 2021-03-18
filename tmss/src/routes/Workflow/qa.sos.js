@@ -16,26 +16,12 @@ class QAreportingSDCO extends Component {
         };
         this.Next = this.Next.bind(this);
         this.handleChange = this.handleChange.bind(this);
-        this.getQASOSDetails = this.getQASOSDetails.bind(this);
     }
 
     async componentDidMount() {
-        if (this.props.readOnly) {
-            this.getQASOSDetails()
-        } else {
-            const response = await WorkflowService.getQAReportingTo(this.props.process.qa_reporting_to);
-            this.setState({
-                content: response.operator_report
-            });
-        }
-    }
-
-    async getQASOSDetails() {
-        const response = await WorkflowService.getQAReportingSOS(this.props.process.qa_reporting_sos);
+        const response = await WorkflowService.getQAReportingTo(this.props.process.qa_reporting_to);
         this.setState({
-            content: response.sos_report,
-            sos_accept_show_pi: response.sos_accept_show_pi,
-            quality_within_policy: response.quality_within_policy
+            content: response.operator_report
         });
     }
 
@@ -84,14 +70,14 @@ class QAreportingSDCO extends Component {
                             <label htmlFor="qualityPolicy" className="col-lg-2 col-md-2 col-sm-12">Quality Policy</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
                                 <div className="p-field-checkbox">
-                                <Checkbox disabled={this.props.readOnly} inputId="quality_within_policy" checked={this.state.quality_within_policy} onChange={e => this.setState({quality_within_policy: e.checked})} />
+                                <Checkbox inputId="quality_within_policy" checked={this.state.quality_within_policy} onChange={e => this.setState({quality_within_policy: e.checked})} />
                                 </div>
                             </div>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
                             <label htmlFor="sdcoAccept" className="col-lg-2 col-md-2 col-sm-12">SDCO Accept</label>
                             <div className="col-lg-3 col-md-3 col-sm-12">
                                 <div className="p-field-checkbox">
-                                    <Checkbox disabled={this.props.readOnly} inputId="sos_accept_show_pi" checked={this.state.sos_accept_show_pi} onChange={e => this.setState({ sos_accept_show_pi: e.checked })} />
+                                    <Checkbox inputId="sos_accept_show_pi" checked={this.state.sos_accept_show_pi} onChange={e => this.setState({ sos_accept_show_pi: e.checked })} />
                                 </div>
                             </div>
                         </div>
@@ -111,15 +97,15 @@ class QAreportingSDCO extends Component {
                                     ]
                                 }}
                             />}
-                            {!this.state.showEditor && <div onClick={() => !this.props.readOnly && this.setState({ showEditor: !this.state.showEditor })} className="operator-report" dangerouslySetInnerHTML={{ __html: this.state.content }}></div>}
+                            {!this.state.showEditor && <div onClick={() => this.setState({ showEditor: !this.state.showEditor })} className="operator-report" dangerouslySetInnerHTML={{ __html: this.state.content }}></div>}
                         </div>
                     </div>
                     <div className="p-grid" style={{ marginTop: '20px' }}>
                         <div className="p-col-1">
-                            <Button label="Next" disabled={!this.state.content || this.props.readOnly} className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
+                            <Button label="Next" disabled= {!this.state.content} className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
                         </div>
                         <div className="p-col-1">
-                            <Button label="Cancel" disabled={this.props.readOnly} className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} 
+                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} 
                                 onClick={(e) => { this.props.onCancel()}} />
                         </div>
                     </div>

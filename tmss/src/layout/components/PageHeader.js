@@ -43,15 +43,16 @@ export default ({ title, subTitle, actions, ...props}) => {
                     if (action.type === 'button') {
                         return (
                             <button className="p-link" key={index} title={action.title || ''}>
-                                <i className={`fa ${action.icon}`}  
-                                    onMouseOver={(e) => onButtonMouseOver(e, action)}
-                                    onClick={(e) => onButtonClick(e, action)} />
+                                <i className={`fa ${action.disabled?'fa-disabled':''} ${action.icon}`}  
+                                    onMouseOver={(e) => action.disabled?'':onButtonMouseOver(e, action)}
+                                    onClick={(e) => action.disabled?'':onButtonClick(e, action)} />
                             </button>
                         );
                     }   else {
                         return (
-                            <Link key={index} className={action.classname} to={{ ...action.props }} title={action.title || ''} onClick={() => onClickLink(action)}>
-                                <i className={`fa ${action.icon}`}></i>
+                            <Link key={index} className={action.classname} to={action.disabled?{}:{ ...action.props }} 
+                                    title={action.title || ''} onClick={() => action.disabled?'':onClickLink(action)}>
+                                <i className={`fa ${action.disabled?'fa-disabled':''} ${action.icon}`}></i>
                             </Link>
                         );
                     }

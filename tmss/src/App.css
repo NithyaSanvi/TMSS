@@ -237,14 +237,7 @@ div[data-schemapath='root.$schema'] {
   outline: none !important;
   border:  none !important;
 }
-.today-clander-btn {
+
+.today-calendar-btn {
   display: none;
-}
-.workflow-header a span {
-  display: block !important;
-  height: auto !important;
-}
-.disableContainer {
-  pointer-events: none;
-  opacity: 0.7;
 }

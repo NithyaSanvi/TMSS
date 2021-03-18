@@ -1,25 +1,45 @@
-import React, {Component} from 'react';
-import {Link, Redirect} from 'react-router-dom'
+import React, { Component } from 'react';
+import { Link, Redirect } from 'react-router-dom'
 import moment from 'moment';
 import _ from 'lodash';
 import Jeditor from '../../components/JSONEditor/JEditor';
-
 import TaskService from '../../services/task.service';
+import UIConstants from '../../utils/ui.constants';
 import { Chips } from 'primereact/chips';
 import { Dialog } from 'primereact/dialog';
-
+import { CustomDialog } from '../../layout/components/CustomDialog';
+import { appGrowl } from '../../layout/components/AppGrowl';
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
 import TaskStatusLogs from './state_logs';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
 
 export class TaskView extends Component {
-    DATE_FORMAT = 'YYYY-MMM-DD HH:mm:ss';
+   // DATE_FORMAT = 'YYYY-MMM-DD HH:mm:ss';
     constructor(props) {
         super(props);
         this.state = {
-            isLoading: true
+            isLoading: true,
+            confirmDialogVisible: false,
+            hasBlueprint: true
         };
+        this.showIcon = false;
+        this.dialogType = "confirmation";
+        this.dialogHeader = "";
+        this.dialogMsg = "";
+        this.dialogContent = "";
+        this.callBackFunction = "";
+        this.dialogWidth = '40vw';
+        this.onClose = this.close;
+        this.onCancel =this.close;
+
         this.setEditorFunction = this.setEditorFunction.bind(this);
+        this.deleteTask = this.deleteTask.bind(this);
+        this.showConfirmation = this.showConfirmation.bind(this);
+        this.close = this.close.bind(this);
+        this.getDialogContent = this.getDialogContent.bind(this);
+        
         if (this.props.match.params.id) {
             this.state.taskId  = this.props.match.params.id;
         }
@@ -51,12 +71,12 @@ export class TaskView extends Component {
     }
 
     componentDidMount() {
-        const taskId = this.props.location.state?this.props.location.state.id:this.state.taskId;
-        let taskType = this.props.location.state?this.props.location.state.type:this.state.taskType;
-        taskType = taskType?taskType:'draft';
-        // let {taskId, taskType} = this.state;
-        // taskId = taskId?taskId:this.props.location.state.id;
-        // taskType = taskType?taskType:this.props.location.state.type;
+        // const taskId = this.props.location.state?this.props.location.state.id:this.state.taskId;
+        // let taskType = this.props.location.state?this.props.location.state.type:this.state.taskType;
+        // taskType = taskType?taskType:'draft';
+        let {taskId, taskType} = this.state;
+        taskId = taskId?taskId:this.props.location.state.id;
+        taskType = taskType?taskType:this.props.location.state.type;
 
         if (taskId && taskType) {
             this.getTaskDetails(taskId, taskType);
@@ -93,7 +113,11 @@ export class TaskView extends Component {
                             if (this.state.editorFunction) {
                                 this.state.editorFunction();
                             }
-                            this.setState({task: task, taskTemplate: taskTemplate, isLoading: false, taskId: taskId, taskType: taskType});
+                            if(taskType === 'draft' && task.task_blueprints_ids && task.task_blueprints_ids.length > 0) {
+                                this.setState({hasBlueprint: true, task: task, taskTemplate: taskTemplate, isLoading: false, taskId: taskId, taskType: taskType});
+                            }   else {
+                                this.setState({hasBlueprint: false, task: task, taskTemplate: taskTemplate, isLoading: false, taskId: taskId, taskType: taskType});
+                            }
                         });
                     
                 }   else {
@@ -101,7 +125,67 @@ export class TaskView extends Component {
                 }
             });
         }
-        
+    }
+
+    /**
+     * Show confirmation dialog
+     */
+    showConfirmation() {
+        this.dialogType = "confirmation";
+        this.dialogHeader = "Confirm to Delete Task";
+        this.showIcon = false;
+        this.dialogMsg = "Do you want to delete this Task?";
+        this.dialogWidth = '55vw';
+        this.dialogContent = this.getDialogContent;
+        this.callBackFunction = this.deleteTask;
+        this.onClose = this.close;
+        this.onCancel =this.close;
+        this.setState({confirmDialogVisible: true});
+    }
+
+    /**
+     * Prepare Task details to show on confirmation dialog
+     */
+    getDialogContent() {
+        let selectedTasks = [{suId: this.state.schedulingUnit.id, suName: this.state.schedulingUnit.name, taskId: this.state.task.id, 
+            controlId: this.state.task.subTaskID, taskName: this.state.task.name, status: this.state.task.status}];
+        return  <> 
+                   <DataTable value={selectedTasks} resizableColumns columnResizeMode="expand" className="card" style={{paddingLeft: '0em'}}>
+                        <Column field="suId" header="Scheduling Unit Id"></Column>
+                        <Column field="suName" header="Scheduling Unit Name"></Column>
+                        <Column field="taskId" header="Task Id"></Column>
+                        <Column field="controlId" header="Control Id"></Column>
+                        <Column field="taskName" header="Task Name"></Column>
+                        <Column field="status" header="Status"></Column>
+                    </DataTable>
+                </>
+    }
+
+    close() {
+        this.setState({confirmDialogVisible: false});
+    }
+
+    /**
+     * Delete Task
+     */
+    async deleteTask() {
+        let hasError = false;
+        if(!await TaskService.deleteTask(this.state.taskType, this.state.taskId)){
+            hasError = true;
+        }
+        if(hasError){
+            appGrowl.show({severity: 'error', summary: 'error', detail: 'Error while deleting Task'});
+            this.setState({confirmDialogVisible: false});
+        }   else {
+            appGrowl.show({severity: 'success', summary: 'Success', detail: 'Task deleted successfully'});
+            this.setState({confirmDialogVisible: false});
+            /* If the page is navigated to from another page of the app, goback to the origin origin else go to SU List page */
+            if (this.props.history.length > 2) {
+                this.props.history.goBack();
+            }   else {
+                this.setState({redirect: `/schedulingunit/view/${this.state.taskType}/${this.state.schedulingUnit.id}`});
+            }
+        }
     }
 
     render() {
@@ -132,6 +216,8 @@ export class TaskView extends Component {
             actions = [{    icon: 'fa-lock',
                             title: 'Cannot edit blueprint'}];
         }
+        actions.push({icon: 'fa fa-trash',title:this.state.hasBlueprint? 'Cannot delete Draft when Blueprint exists':'Delete Task',  
+                        type: 'button',  disabled: this.state.hasBlueprint, actOn: 'click', props:{ callback: this.showConfirmation}});
         actions.push({  icon: 'fa-window-close', link: this.props.history.goBack,
                         title:'Click to Close Task', props : { pathname:'/schedulingunit' }});
 
@@ -183,9 +269,9 @@ export class TaskView extends Component {
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Created At</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.task.created_at).format(this.DATE_FORMAT)}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.task.created_at).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
                             <label className="col-lg-2 col-md-2 col-sm-12">Updated At</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.task.updated_at).format(this.DATE_FORMAT)}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.task.updated_at).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Copies</label>
@@ -195,9 +281,9 @@ export class TaskView extends Component {
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Start Time</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.task.start?moment.utc(this.state.task.start).format(this.DATE_FORMAT):""}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.task.start_time?moment(this.state.task.start_time,moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT):""}</span>
                             <label className="col-lg-2 col-md-2 col-sm-12">End Time</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.task.end?moment.utc(this.state.task.end).format(this.DATE_FORMAT):""}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.task.end_time?moment(this.state.task.end_time,moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT):""}</span>
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Tags</label>
@@ -256,6 +342,11 @@ export class TaskView extends Component {
                         </div>
                     </React.Fragment>
                 }
+                 <CustomDialog type={this.dialogType} visible={this.state.confirmDialogVisible} width={this.dialogWidth}
+                    header={this.dialogHeader} message={this.dialogMsg} 
+                    content={this.dialogContent} onClose={this.onClose} onCancel={this.onCancel} onSubmit={this.callBackFunction}
+                    showIcon={this.showIcon} actions={this.actions}>
+                </CustomDialog>
             </React.Fragment>
         );
     }

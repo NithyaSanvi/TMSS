@@ -1,3 +1,5 @@
+import $RefParser from "@apidevtools/json-schema-ref-parser";
+import _ from 'lodash';
 const axios = require('axios');
 
 /**
@@ -79,7 +81,74 @@ const UtilService = {
       } catch(error) {
         console.error(error);
       }
-    }
+    },
+    resolveSchema: async function(schema) {
+      let properties = schema.properties;
+      schema.definitions = schema.definitions?schema.definitions:{};
+      if (properties) {
+          for (const propertyKey in properties) {
+              let property = properties[propertyKey];
+              if (property["$ref"] && !property["$ref"].startsWith("#")) {    // 1st level reference of the object
+                  const refUrl = property["$ref"];
+                  let newRef = refUrl.substring(refUrl.indexOf("#"));
+                  let defKey = refUrl.substring(refUrl.lastIndexOf("/")+1);
+                  schema.definitions[defKey] = (await $RefParser.resolve(refUrl)).get(newRef);
+                  property["$ref"] = newRef;
+                  if(schema.definitions[defKey].type && (schema.definitions[defKey].type === 'array'
+                      || schema.definitions[defKey].type === 'object')){
+                      let resolvedItems = await this.resolveSchema(schema.definitions[defKey]);
+                      if (resolvedItems.items && resolvedItems.items['$ref'] && _.keys(resolvedItems.definitions).length===1) {
+                          const resolvedRefKey = resolvedItems.items['$ref'];
+                          resolvedItems.items = resolvedItems.definitions[resolvedRefKey.substring(resolvedRefKey.lastIndexOf("/")+1)];
+                      } else {
+                        schema.definitions = {...schema.definitions, ...resolvedItems.definitions};
+                      }
+                      delete resolvedItems['definitions'];
+                  }
+              }   else if(property["type"] === "array") {             // reference in array items definition
+                  let resolvedItems = await this.resolveSchema(property["items"]);
+                  schema.definitions = {...schema.definitions, ...resolvedItems.definitions};
+                  delete resolvedItems['definitions'];
+                  property["items"] = resolvedItems;
+              }   else if(property["type"] === "object" && property.properties) {
+                  property = await this.resolveSchema(property);
+                  schema.definitions = {...schema.definitions, ...property.definitions};
+                  delete property['definitions'];
+              }
+              properties[propertyKey] = property;
+          }
+      }   else if (schema["oneOf"] || schema["anyOf"]) {             // Reference in OneOf/anyOf array
+          let defKey = schema["oneOf"]?"oneOf":"anyOf";
+          let resolvedOneOfList = []
+          for (const oneOfProperty of schema[defKey]) {
+              const resolvedOneOf = await this.resolveSchema(oneOfProperty);
+              resolvedOneOfList.push(resolvedOneOf);
+              if (resolvedOneOf.definitions) {
+                schema.definitions = {...schema.definitions, ...resolvedOneOf.definitions};
+              }
+          }
+          schema[defKey] = resolvedOneOfList;
+      }   else if (schema["$ref"] && !schema["$ref"].startsWith("#")) {   //reference in oneOf list item
+          const refUrl = schema["$ref"];
+          let newRef = refUrl.substring(refUrl.indexOf("#"));
+          let defKey = refUrl.substring(refUrl.lastIndexOf("/")+1);
+          schema.definitions[defKey] = (await $RefParser.resolve(refUrl)).get(newRef);
+          if (schema.definitions[defKey].properties || schema.definitions[defKey].type === "object"
+                || schema.definitions[defKey].type === "array") {
+              let property = await this.resolveSchema(schema.definitions[defKey]);
+              schema.definitions = {...schema.definitions, ...property.definitions};
+              delete property['definitions'];
+              schema.definitions[defKey] = property;
+          }
+          schema["$ref"] = newRef;
+      }   else if(schema["type"] === "array") {             // reference in array items definition
+          let resolvedItems = await this.resolveSchema(schema["items"]);
+          schema.definitions = {...schema.definitions, ...resolvedItems.definitions};
+          delete resolvedItems['definitions'];
+          schema["items"] = resolvedItems;
+      }
+      return schema;
+  }
 }
 
 export default UtilService;

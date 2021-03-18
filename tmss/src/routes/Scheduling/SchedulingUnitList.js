@@ -8,6 +8,11 @@ import _ from 'lodash';
 import ScheduleService from '../../services/schedule.service';
 import { Link } from 'react-router-dom';
 import WorkflowService from '../../services/workflow.service';
+import UIConstants from '../../utils/ui.constants';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { CustomDialog } from '../../layout/components/CustomDialog';
+import { appGrowl } from '../../layout/components/AppGrowl';
 
 class SchedulingUnitList extends Component{
     constructor(props){
@@ -27,10 +32,20 @@ class SchedulingUnitList extends Component{
         },
         project:"Project",
         name:"Name",
-        start_time:"Start Time",
-        stop_time:"End time",
-        duration:"Duration (HH:mm:ss)",
-       
+        start_time:{
+            name:"Start Time",
+            filter:"date",
+            format:UIConstants.CALENDAR_DATETIME_FORMAT
+        },
+        stop_time:{
+            name:"End time",
+            filter:"date",
+            format:UIConstants.CALENDAR_DATETIME_FORMAT
+        },
+        duration:{
+            name:"Duration (HH:mm:ss)",
+            format:UIConstants.CALENDAR_TIME_FORMAT
+        }
        };
         if (props.hideProjectColumn) {
             delete this.defaultcolumns['project'];
@@ -43,7 +58,7 @@ class SchedulingUnitList extends Component{
                 "Type",
                 // "Workflow Status",
                 "workflowStatus",
-                 "id",
+                 "suid",
                  "linked_bp_draft",
                  "Template ID",
                  "template_description",
@@ -83,7 +98,7 @@ class SchedulingUnitList extends Component{
                 //     filter: 'select'
                 // },
                 workflowStatus: 'Workflow Status',
-                id: "Scheduling Unit ID",
+                suid: "Scheduling Unit ID",
                 linked_bp_draft:"Linked Blueprint/ Draft ID",
                 template_description: "Template Description",
                 priority:"Priority",
@@ -96,8 +111,14 @@ class SchedulingUnitList extends Component{
                     name: "Cancelled",
                     filter: "switch",
                 },
-                created_at:"Created_At",
-                updated_at:"Updated_At"
+                created_at:{
+                    name:"Created_At",
+                    format:UIConstants.CALENDAR_DATETIME_FORMAT
+                },
+                updated_at:{
+                    name:"Updated_At",
+                    format:UIConstants.CALENDAR_DATETIME_FORMAT
+                }
             }],
             columnclassname: [{
                 "Scheduling Unit ID":"filter-input-50",
@@ -109,14 +130,24 @@ class SchedulingUnitList extends Component{
                 "Type": "filter-input-75",
                 "Status":"filter-input-100",
                 "Workflow Status":"filter-input-100",
-                "Scheduling unit ID":"filter-input-50",
                 "Stations (CS/RS/IS)":"filter-input-50",
                 "Tasks content (O/P/I)":"filter-input-50",
                 "Number of SAPs in the target observation":"filter-input-50"
             }],
             defaultSortColumn: [{id: "Name", desc: false}],
+            dialog: {header: 'Confirm', detail: 'Do you want to create a Scheduling Unit Blueprint?'},
+            //dialogVisible: false
         }
-       
+        this.selectedRows = [];
+        this.suDraftsList = []; // List of selected SU Drafts
+        this.suBlueprintList = []; // List of selected SU Blueprints
+        this.deletableDraftWithBlueprint = []; // List of deletable Scheduling Unit(s)
+        this.deletableSUForDialogContent = []; // List of deletable Scheduling Unit Draft/Blueprint to show in dialog 
+
+        this.checkAndDeleteSchedulingUnit = this.checkAndDeleteSchedulingUnit.bind(this);
+        this.deleteSchedulingUnit = this.deleteSchedulingUnit.bind(this);
+        this.getSchedulingDialogContent = this.getSchedulingDialogContent.bind(this);
+        this.closeDialog = this.closeDialog.bind(this);
         this.onRowSelection = this.onRowSelection.bind(this);
         this.reloadData = this.reloadData.bind(this);
         this.addTargetColumns = this.addTargetColumns.bind(this);
@@ -255,20 +286,19 @@ class SchedulingUnitList extends Component{
                             blueP.duration = moment.utc((blueP.duration || 0)*1000).format('HH:mm:ss');
                             blueP.type="Blueprint"; 
                             blueP['actionpath'] ='/schedulingunit/view/blueprint/'+blueP.id;
-                            blueP['created_at'] = moment(blueP['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-                            blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                            // blueP['created_at'] = moment(blueP['created_at'],  moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                            // blueP['updated_at'] = moment(blueP['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                            // blueP['start_time'] = moment(blueP['start_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                            // blueP['stop_time'] = moment(blueP['stop_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
                             blueP['task_content'] = this.getTaskTypeGroupCounts(blueP['task_blueprints']);
                             blueP['linked_bp_draft'] = this.getLinksList([blueP.draft_id], 'draft');
                             blueP['template_description'] = obsStrategyTemplate.description;
                             blueP['observation_strategy_template_id'] = obsStrategyTemplate.id;
                             blueP['station_group'] = this.getStationGroup(blueP).counts;
                             blueP.project = project.name;
-                            blueP.canSelect = false;
+                            blueP['suid'] =  blueP.id;
+                            blueP.canSelect = true;
                             blueP.suSet = suSet.name;
-                            // blueP.links = ['Project'];
-                            // blueP.linksURL = {
-                            //     'Project': `/project/view/${project.name}`
-                            // }
                             blueP.links = ['Project', 'id'];
                             blueP.linksURL = {
                                 'Project': `/project/view/${project.name}`,
@@ -280,8 +310,10 @@ class SchedulingUnitList extends Component{
                         scheduleunit['actionpath']='/schedulingunit/view/draft/'+scheduleunit.id;
                         scheduleunit['type'] = 'Draft';
                         scheduleunit['duration'] = moment.utc((scheduleunit.duration || 0)*1000).format('HH:mm:ss');
-                        scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-                        scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
+                        // scheduleunit['created_at'] = moment(scheduleunit['created_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                        // scheduleunit['updated_at'] = moment(scheduleunit['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                       // scheduleunit['start_time'] = moment(scheduleunit['start_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                       // scheduleunit['stop_time'] = moment(scheduleunit['stop_time'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
                         scheduleunit.project = project.name;
                         scheduleunit.canSelect = true;
                         scheduleunit.suSet = suSet.name;
@@ -289,10 +321,40 @@ class SchedulingUnitList extends Component{
                         scheduleunit.linksURL = {
                             'Project': `/project/view/${project.name}`,
                             'id': `/schedulingunit/view/draft/${scheduleunit.id}`
-                        }
+                        };
+                        scheduleunit['suid'] =  scheduleunit.id;
                         output.push(scheduleunit);
                     }
                 }
+               // const defaultColumns = this.defaultcolumns;
+                let optionalColumns = this.state.optionalcolumns[0];
+                let columnclassname = this.state.columnclassname[0];
+                output.map(su => {
+                    su.taskDetails = su.type==="Draft"?su.task_drafts:su.task_blueprints;
+                    const targetObserv = su.taskDetails.find(task => task.specifications_template.type_value==='observation' && task.specifications_doc.SAPs);
+                    // Constructing targets in single string to make it clear display 
+                    if (targetObserv && targetObserv.specifications_doc) {
+                        targetObserv.specifications_doc.SAPs.map((target, index) => {
+                            su[`target${index}angle1`] = UnitConverter.getAngleInput(target.digital_pointing.angle1);
+                            su[`target${index}angle2`] = UnitConverter.getAngleInput(target.digital_pointing.angle2,true);
+                            su[`target${index}referenceframe`] = target.digital_pointing.direction_type;
+                            optionalColumns[`target${index}angle1`] = `Target ${index + 1} - Angle 1`;
+                            optionalColumns[`target${index}angle2`] = `Target ${index + 1} - Angle 2`;
+                            optionalColumns[`target${index}referenceframe`] = {
+                                name: `Target ${index + 1} - Reference Frame`,
+                                filter: "select"
+                            };
+                            columnclassname[`Target ${index + 1} - Angle 1`] = "filter-input-75";
+                            columnclassname[`Target ${index + 1} - Angle 2`] = "filter-input-75";
+                            return target;
+                        });
+                    }
+                    return su;
+                });
+                this.setState({
+                    scheduleunit: output, isLoading: false, optionalColumns: [optionalColumns],
+                    columnclassname: [columnclassname]
+                });
                 this.addTargetColumns(output);
                 this.selectedRows = [];
             });
@@ -362,12 +424,157 @@ class SchedulingUnitList extends Component{
         this.getSchedulingUnitList();
     }
 
+    /**
+     * Check and delete the selected Scheduling Unit(s)
+     */
+    checkAndDeleteSchedulingUnit() {
+        this.suDraftsList = [];
+        this.suBlueprintList = [];
+        this.deletableDraftWithBlueprint = [];
+        this.deletableSUForDialogContent = [];
+        let tmpTotalSUBList = [];
+        let hasInvalidSUD = false;
+        if(this.selectedRows.length === 0) {
+            appGrowl.show({severity: 'info', summary: 'Select Row', detail: 'Select Scheduling Unit Draft/Blueprint to delete.'});
+        }   else {
+            //Filter SUB
+            this.suBlueprintList = _.filter(this.selectedRows, (schedulingUnit) => { return schedulingUnit.type.toLowerCase() === "blueprint" });
+            //Filter SUD
+            if (this.suBlueprintList && this.suBlueprintList.length > 0) {
+                this.suDraftsList = _.difference(this.selectedRows, this.suBlueprintList);
+            }   else {
+                this.suDraftsList = this.selectedRows;
+            }
+            //Find Deletable SU Drafts
+            if (this.suDraftsList && this.suDraftsList.length > 0) {
+                this.suDraftsList.map(sud => {
+                    if (sud.scheduling_unit_blueprints_ids && sud.scheduling_unit_blueprints_ids.length === 0) {
+                        this.deletableDraftWithBlueprint.push(sud);
+                        this.deletableSUForDialogContent.push(sud);
+                    }   else if (this.suBlueprintList && this.suBlueprintList.length > 0) {
+                        let tmpSUBList = _.filter(this.suBlueprintList, (sub => { return sub.draft_id === sud.id}));
+                        tmpTotalSUBList = (tmpSUBList && tmpSUBList.length > 0)?[...tmpTotalSUBList, ...tmpSUBList]: tmpTotalSUBList;
+                        if (sud.scheduling_unit_blueprints_ids && tmpSUBList && tmpSUBList.length === sud.scheduling_unit_blueprints_ids.length) {
+                            this.deletableDraftWithBlueprint.push(sud);
+                            this.deletableSUForDialogContent.push(sud);
+                            this.deletableSUForDialogContent = [...this.deletableSUForDialogContent, ...tmpSUBList];
+                        }   else {
+                            hasInvalidSUD = true;
+                            this.deletableSUForDialogContent = [...this.deletableSUForDialogContent, ...tmpSUBList];
+                        }
+                    }   else {
+                        hasInvalidSUD = true;
+                    }
+                });
+            }
+           // Find SUB which is not blongs to the selected SUD
+            if (this.suBlueprintList && this.suBlueprintList.length !== tmpTotalSUBList.length) {
+                this.deletableDraftWithBlueprint = [...this.deletableDraftWithBlueprint, ..._.difference(this.suBlueprintList, tmpTotalSUBList)];
+                this.deletableSUForDialogContent = [...this.deletableSUForDialogContent, ..._.difference(this.suBlueprintList, tmpTotalSUBList)];
+            }
+           
+            if (this.deletableDraftWithBlueprint.length === 0 && this.deletableSUForDialogContent.length === 0) {
+                appGrowl.show({severity: 'info', summary: 'Blueprint Exists', detail: "Blueprint(s) exist(s) for the selected Scheduling Unit Draft(s) and can not be deleted."});
+            }   else {
+                let dialog = this.state.dialog;
+                dialog.type = "confirmation";
+                dialog.header= "Confirm to Delete Scheduling Unit(s)";
+                if (hasInvalidSUD) {
+                    dialog.detail = "One or more selected Scheduling Unit Draft(s) having Blueprint(s) cannot be deleted. Do you want to ignore them and delete others?";
+                }   else {
+                    dialog.detail = "Do you want to delete the selected Scheduling Unit Draft/Blueprint?";
+                }
+                dialog.content = this.getSchedulingDialogContent;
+                dialog.actions = [{id: 'yes', title: 'Yes', callback: this.deleteSchedulingUnit, className:(this.props.project)?"dialog-btn": ""},
+                {id: 'no', title: 'No', callback: this.closeDialog, className:(this.props.project)?"dialog-btn": ""}];
+                dialog.onSubmit = this.deleteSchedulingUnit;
+                dialog.width = '55vw';
+                dialog.showIcon = false;
+                this.setState({dialog: dialog, dialogVisible: true});
+            }
+        }
+    }
+    
+    /**
+     * Prepare Scheduling Unit(s) details to show on confirmation dialog
+     */
+    getSchedulingDialogContent() {
+        let selectedSchedulingUnits = [];
+        let unselectedSchedulingUnits = [];
+        for(const su of this.deletableSUForDialogContent) {
+            selectedSchedulingUnits.push({suId: su.id, suName: su.name, 
+                suType: su.type,
+                sudbid: su.type.toLowerCase() === 'draft'? su.scheduling_unit_blueprints_ids.join(', '): su.draft_id});
+        }
+        let unselectedSUList = _.difference(this.selectedRows, this.deletableSUForDialogContent);
+        for(const su of unselectedSUList) {
+            unselectedSchedulingUnits.push({suId: su.id, suName: su.name, 
+                suType: su.type,
+                sudbid: su.type.toLowerCase() === 'draft'? su.scheduling_unit_blueprints_ids.join(', '): su.draft_id});
+        }
+
+        return  <> 
+                     {selectedSchedulingUnits.length > 0 &&
+                        <div style={{marginTop: '1em'}}>
+                            <b>Scheduling Unit(s) that can be deleted</b>
+                            <DataTable value={selectedSchedulingUnits} resizableColumns columnResizeMode="expand" className="card" style={{paddingLeft: '0em'}}>
+                                <Column field="suId" header="Id"></Column>
+                                <Column field="suName" header="Name"></Column>
+                                <Column field="suType" header="Type"></Column>
+                                <Column field="sudbid" header="Draft/Blueprint ID(s)"></Column>
+                            </DataTable>
+                        </div>
+                    }
+                    {unselectedSchedulingUnits.length > 0 &&
+                        <div style={{marginTop: '1em'}}>
+                            <b>Scheduling Unit(s) that will be ignored</b>
+                            <DataTable value={unselectedSchedulingUnits} resizableColumns columnResizeMode="expand" className="card" style={{paddingLeft: '0em'}}>
+                                <Column field="suId" header="Id"></Column>
+                                <Column field="suName" header="Name"></Column>
+                                <Column field="suType" header="Type"></Column>
+                                <Column field="sudbid" header="Draft/Blueprint ID(s)"></Column>
+                            </DataTable>
+                        </div>
+                    }
+                    
+                </>
+    }
+
+    /**
+     * Delete selected Scheduling Unit(s)
+     */
+    deleteSchedulingUnit() {
+        this.suDraftsWithBlueprintList = [];
+        let hasError = false;
+        for(const schedulingUnit of this.deletableDraftWithBlueprint) {
+            if( !ScheduleService.deleteSchedulingUnit(schedulingUnit.type, schedulingUnit.id)){
+                hasError = true;
+            }
+        }
+        if(hasError){
+            appGrowl.show({severity: 'error', summary: 'error', detail: 'Error while deleting scheduling Unit(s)'});
+        }   else {
+            appGrowl.show({severity: 'success', summary: 'Success', detail: 'Selected Scheduling Unit(s) deleted successfully'});
+        }
+        this.selectedRows = [];
+        this.setState({dialogVisible: false, isLoading: true});
+        this.componentDidMount();
+    }
+
+    /**
+     * Callback function to close the dialog prompted.
+     */
+    closeDialog() {
+        this.setState({dialogVisible: false});
+    }
+    
     render(){
         if (this.state.isLoading) {
             return <AppLoader/>
         }
         return(
             <>
+                
                {
                 /*
                     * Call View table to show table data, the parameters are,
@@ -379,7 +586,18 @@ class SchedulingUnitList extends Component{
                     paths - specify the path for navigation - Table will set "id" value for each row in action button
                     
                 */}
-               
+               <div className="delete-option">
+                    <div >
+                        <span className="p-float-label">
+                            {this.state.scheduleunit && this.state.scheduleunit.length > 0 &&
+                                <a href="#" onClick={this.checkAndDeleteSchedulingUnit}  title="Delete selected Scheduling Unit(s)">
+                                    <i class="fa fa-trash" aria-hidden="true" ></i>
+                                </a>
+                            }
+                        </span>
+                    </div>                           
+                </div>
+
                 {   (this.state.scheduleunit && this.state.scheduleunit.length>0)?
                     <ViewTable 
                         data={this.state.scheduleunit} 
@@ -396,8 +614,12 @@ class SchedulingUnitList extends Component{
                         allowRowSelection={this.props.allowRowSelection}
                         onRowSelection = {this.onRowSelection}
                     />
-                    :<div>No scheduling unit found </div>
+                    :<div>No Scheduling Unit found</div>
                  }  
+                  <CustomDialog type="confirmation" visible={this.state.dialogVisible}
+                        header={this.state.dialog.header} message={this.state.dialog.detail} actions={this.state.dialog.actions}
+                        content={this.state.dialog.content} width={this.state.dialog.width} showIcon={this.state.dialog.showIcon}
+                        onClose={this.closeDialog} onCancel={this.closeDialog} onSubmit={this.state.dialog.onSubmit}/>
             </>
         )
     }

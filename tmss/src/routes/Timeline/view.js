@@ -5,7 +5,8 @@ import _ from 'lodash';
 import Websocket from 'react-websocket';
 
 // import SplitPane, { Pane }  from 'react-split-pane';
-import {InputSwitch} from 'primereact/inputswitch';
+import { InputSwitch } from 'primereact/inputswitch';
+import { CustomPageSpinner } from '../../components/CustomPageSpinner';
 
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
@@ -15,6 +16,7 @@ import ViewTable from '../../components/ViewTable';
 import ProjectService from '../../services/project.service';
 import ScheduleService from '../../services/schedule.service';
 import UtilService from '../../services/util.service';
+import UIConstants from '../../utils/ui.constants';
 import TaskService from '../../services/task.service';
 
 import UnitConverter from '../../utils/unit.converter';
@@ -24,6 +26,9 @@ import { Dropdown } from 'primereact/dropdown';
 import { OverlayPanel } from 'primereact/overlaypanel';
 import { RadioButton } from 'primereact/radiobutton';
 import { TieredMenu } from 'primereact/tieredmenu';
+import { MultiSelect } from 'primereact/multiselect';
+//import { TRUE } from 'node-sass';
+
 
 // Color constant for SU status
 const SU_STATUS_COLORS = { "ERROR": "FF0000", "CANCELLED": "#00FF00", "DEFINED": "#00BCD4", 
@@ -62,6 +67,7 @@ export class TimelineView extends Component {
             suTaskList:[],
             isSummaryLoading: false,
             stationGroup: [],
+            selectedStationGroup: [], //Station Group(core,international,remote)
             reservationFilter: null,
             showSUs: true,
             showTasks: false
@@ -92,9 +98,12 @@ export class TimelineView extends Component {
         this.addNewData = this.addNewData.bind(this);
         this.updateExistingData = this.updateExistingData.bind(this);
         this.updateSchedulingUnit = this.updateSchedulingUnit.bind(this);
+         this.setSelectedStationGroup = this.setSelectedStationGroup.bind(this);
+        this.getStationsByGroupName = this.getStationsByGroupName.bind(this);
     }
 
     async componentDidMount() {
+        this.setState({ loader: true });
         // Fetch all details from server and prepare data to pass to timeline and table components
         const promises = [  ProjectService.getProjectList(), 
                             ScheduleService.getSchedulingUnitsExtended('blueprint'),
@@ -102,7 +111,8 @@ export class TimelineView extends Component {
                             ScheduleService.getSchedulingSets(),
                             UtilService.getUTC(),
                             ScheduleService.getStations('All'),
-                            TaskService.getSubtaskTemplates()] ;
+                            TaskService.getSubtaskTemplates(),
+                            ScheduleService.getMainGroupStations()];
         Promise.all(promises).then(async(responses) => {
             this.subtaskTemplates = responses[6];
             const projects = responses[0];
@@ -175,13 +185,17 @@ export class TimelineView extends Component {
                     this.suConstraintTemplates = suConstraintTemplates;
             });
             this.setState({suBlueprints: suBlueprints, suDrafts: suDrafts, group: group, suSets: suSets,
+                            loader: false,
                             projects: projects, suBlueprintList: suList,
                             items: items, currentUTC: currentUTC, isLoading: false,
                             currentStartTime: defaultStartTime, currentEndTime: defaultEndTime});
+            this.mainStationGroups = responses[7];
+            this.mainStationGroupOptions = Object.keys(responses[7]).map(value => ({ value }));
         });
-        // Get maingroup and its stations
-        ScheduleService.getMainGroupStations()
-            .then(stationGroups => {this.mainStationGroups = stationGroups});
+    }
+
+    setSelectedStationGroup(value) {
+        this.setState({ selectedStationGroup: value});
     }
 
     /**
@@ -393,7 +407,7 @@ export class TimelineView extends Component {
     groupSUStations(stationList) {
         let suStationGroups = {};
         for (const group in this.mainStationGroups) {
-            suStationGroups[group] = _.intersection(this.mainStationGroups[group], stationList);
+            suStationGroups[group] = _.intersection(this.mainStationGroups[group],stationList);
         }
         return suStationGroups;
     }
@@ -449,7 +463,7 @@ export class TimelineView extends Component {
         // On range change close the Details pane
         // this.closeSUDets();
         // console.log(_.orderBy(group, ["parent", "id"], ['asc', 'desc']));
-        return {group: this.stationView?this.allStationsGroup:_.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']), items: items};
+        return {group: this.stationView? this.getStationsByGroupName() : _.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']), items: items};
     }
 
     /**
@@ -622,7 +636,7 @@ export class TimelineView extends Component {
             let timelineItem = (this.state.showSUs || this.state.stationView)?this.getTimelineItem(suBlueprint):null;
             if (this.state.stationView) {
                 this.getStationItemGroups(suBlueprint, timelineItem, this.allStationsGroup, items);
-            }   else {
+             }   else {
                 if (timelineItem) {
                     items.push(timelineItem);
                     if (!_.find(group, {'id': suBlueprint.suDraft.id})) {
@@ -642,15 +656,25 @@ export class TimelineView extends Component {
             items = this.addStationReservations(items, this.state.currentStartTime, this.state.currentEndTime);
         }
         if (this.timeline) {
-            this.timeline.updateTimeline({group: this.state.stationView?this.allStationsGroup:_.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']), items: items});
+            this.timeline.updateTimeline({group: this.state.stationView ? this.getStationsByGroupName() : _.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']), items: items});
         }
+        
+    }
+
+    getStationsByGroupName() {      
+        let stations = [];
+        this.state.selectedStationGroup.forEach((group) => {
+            stations = [...stations, ...this.mainStationGroups[group]];
+        });
+        stations = stations.map(station => ({id: station, title: station}));
+        return stations;
     }
 
     setStationView(e) {
         this.closeSUDets();
-        this.setState({stationView: e.value});
+        const selectedGroups = _.keys(this.mainStationGroups);
+        this.setState({stationView: e.value, selectedStationGroup: selectedGroups});
     }
-
     showOptionMenu(event) {
         this.optionsMenu.toggle(event);
     }
@@ -821,6 +845,9 @@ export class TimelineView extends Component {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
         }
+         if (this.state.loader) {
+            return <AppLoader />
+        }
         const isSUDetsVisible = this.state.isSUDetsVisible;
         const isTaskDetsVisible = this.state.isTaskDetsVisible;
         const canExtendSUList = this.state.canExtendSUList;
@@ -839,7 +866,6 @@ export class TimelineView extends Component {
                         {icon: 'fa-calendar-alt',title:'Week View', props : { pathname: `/su/timelineview/week`}}
                     ]}
                 />
-                                        
                 { this.state.isLoading ? <AppLoader /> :
                         <div className="p-grid">
                             {/* SU List Panel */}
@@ -849,7 +875,15 @@ export class TimelineView extends Component {
                                     redirectNewWindow
                                     data={this.state.suBlueprintList} 
                                     defaultcolumns={[{name: "Name",
-                                                        start_time:"Start Time", stop_time:"End Time"}]}
+                                                        start_time:
+                                                        {
+                                                            name:"Start Time",
+                                                            format:UIConstants.CALENDAR_DATETIME_FORMAT
+                                                        },
+                                                         stop_time:{
+                                                             name:"End Time",
+                                                             format:UIConstants.CALENDAR_DATETIME_FORMAT}
+                                                        }]}
                                     optionalcolumns={[{project:"Project",description: "Description", duration:"Duration (HH:mm:ss)", actionpath: "actionpath"}]}
                                     columnclassname={[{"Start Time":"filter-input-50", "End Time":"filter-input-50",
                                                         "Duration (HH:mm:ss)" : "filter-input-50",}]}
@@ -875,20 +909,38 @@ export class TimelineView extends Component {
                                         <i className="pi pi-step-forward"></i>
                                     </button>
                                 </div> 
-                                <div className="timeline-view-toolbar">
-                                    <label>Station View</label>
-                                    <InputSwitch checked={this.state.stationView} onChange={(e) => {this.setStationView(e)}} />
+                            
+                                <div className={`timeline-view-toolbar ${this.state.stationView && 'alignTimeLineHeader'}`}>
+                                    <div  className="sub-header">
+                                        <label >Station View</label>
+                                        <InputSwitch checked={this.state.stationView} onChange={(e) => {this.setStationView(e)}} />                                       
+                                       { this.state.stationView && 
+                                            <>
+                                             <label style={{marginLeft: '20px'}}>Stations Group</label>
+                                             <MultiSelect data-testid="stations" id="stations" optionLabel="value" optionValue="value" 
+                                                style={{top:'2px'}}
+                                                tooltip="Select Stations"
+                                                value={this.state.selectedStationGroup} 
+                                                options={this.mainStationGroupOptions} 
+                                                placeholder="Select Group"
+                                                onChange={(e) => this.setSelectedStationGroup(e.value)}
+                                            />
+                                         </>
+                                        }
+                                    </div>
+                                
                                     {this.state.stationView &&
-                                    <>
-                                        <label style={{marginLeft: '15px'}}>Reservation</label>
+                                    <div className="sub-header">
+                                        <label style={{marginLeft: '20px'}}>Reservation</label>
                                         <Dropdown optionLabel="name" optionValue="name" 
-                                                    style={{fontSize: '10px', top: '-5px'}}
+                                                    style={{top:'2px'}}
                                                     value={this.state.reservationFilter} 
                                                     options={this.reservationReasons} 
                                                     filter showClear={true} filterBy="name"
                                                     onChange={(e) => {this.setReservationFilter(e.value)}} 
                                                     placeholder="Reason"/>
-                                    </>
+                                    
+                                    </div>
                                     }
                                     {!this.state.stationView &&
                                     <>
@@ -902,6 +954,7 @@ export class TimelineView extends Component {
                                     </>
                                     }
                                 </div>
+    
                                 <Timeline ref={(tl)=>{this.timeline=tl}} 
                                         group={this.state.group} 
                                         items={this.state.items}
@@ -922,8 +975,8 @@ export class TimelineView extends Component {
                                      style={{borderLeft: "1px solid #efefef", marginTop: "0px", backgroundColor: "#f2f2f2"}}>
                                     {this.state.isSummaryLoading?<AppLoader /> :
                                         <SchedulingUnitSummary schedulingUnit={suBlueprint} suTaskList={this.state.suTaskList}
+                                                redirectNewWindow        
                                                 constraintsTemplate={this.state.suConstraintTemplate}
-                                                redirectNewWindow
                                                 stationGroup={this.state.stationGroup}
                                                 closeCallback={this.closeSUDets}></SchedulingUnitSummary>
                                     }
@@ -961,9 +1014,9 @@ export class TimelineView extends Component {
                             <div className="col-7">{mouseOverItem.name}</div>
                         </>}
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>Start Time:</label>
-                        <div className="col-7">{mouseOverItem.start_time.format("YYYY-MM-DD HH:mm:ss")}</div>
+                        <div className="col-7">{mouseOverItem.start_time.format(UIConstants.CALENDAR_DATETIME_FORMAT)}</div>
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>End Time:</label>
-                        <div className="col-7">{mouseOverItem.end_time.format("YYYY-MM-DD HH:mm:ss")}</div>
+                        <div className="col-7">{mouseOverItem.end_time.format(UIConstants.CALENDAR_DATETIME_FORMAT)}</div>
                         {mouseOverItem.type==='SCHEDULE' &&
                         <>
                             <label className={`col-5 su-${mouseOverItem.status}-icon`}>Antenna Set:</label>
@@ -980,7 +1033,8 @@ export class TimelineView extends Component {
                 </OverlayPanel>
                 {!this.state.isLoading &&
                     <Websocket url={process.env.REACT_APP_WEBSOCKET_URL} onOpen={this.onConnect} onMessage={this.handleData} onClose={this.onDisconnect} /> }
-            </React.Fragment>
+               </React.Fragment>
+            
         );
     }
 
