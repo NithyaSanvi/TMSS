@@ -35,8 +35,9 @@ import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
 import { CustomPageSpinner } from '../../components/CustomPageSpinner';
 import { CustomDialog } from '../../layout/components/CustomDialog';
+import UtilService from '../../services/util.service';
 
-const DATE_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
+// const DATE_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 const BG_COLOR = '#f878788f';
 
 /**
@@ -377,8 +378,17 @@ export class SchedulingSetCreate extends Component {
    
     // TODO: This function should be modified or removed
     async getEmptySchedulingUnit(strategyId){
-        let suList = await ScheduleService.getSchedulingUnitDraft();
-        return [_.find(suList.data.results, {'observation_strategy_template_id': strategyId})];       
+        // let suList = await ScheduleService.getSchedulingUnitDraft();
+        // return [_.find(suList.data.results, {'observation_strategy_template_id': strategyId})];       
+        let emptySU = {name: "", description: ""};
+        let constraintTemplates = await ScheduleService.getSchedulingConstraintTemplates();
+        let constraintTemplate = constraintTemplates.length>0?constraintTemplates[0]:null;
+        emptySU['scheduling_constraints_template_id'] = constraintTemplate?constraintTemplate.id:null;
+        emptySU['scheduling_constraints_doc'] = {};
+        let strategy = _.find(this.observStrategies, ['id', strategyId]);
+        emptySU['requirements_doc'] = strategy?strategy.template:{};
+        emptySU['observation_strategy_template_id'] = strategyId;
+        return [emptySU];
     }
 
     /**
@@ -455,22 +465,33 @@ export class SchedulingSetCreate extends Component {
                 return { backgroundColor: ''};
             }
             }, };
-        cellProps['angle3'] = {isgroup: true, cellStyle: function(params) { if (params.value){
-            if (!params.colDef.field.startsWith('gdef') && !Number(params.value)) {
-				return { backgroundColor: BG_COLOR};
-			} 
-            else{
-				return { backgroundColor: ''};
-			}
-		} else {
-            return  (!params.colDef.field.startsWith('gdef')) ?{ backgroundColor: BG_COLOR} : { backgroundColor: ''}
-        }}}; 
+        cellProps['angle3'] = {isgroup: true, cellEditor: 'numericEditor',cellStyle: function(params) { 
+            // console.log(params);
+            // if (params.value){
+            //     console.log("params value - ", params.value);
+            //     console.log(Number(params.value));
+            //     if (!params.colDef.field.startsWith('gdef') && isNaN(params.value)) {
+            //         return { backgroundColor: BG_COLOR};
+            //     } 
+            //     else{
+            //         return { backgroundColor: ''};
+            //     }
+            // } else {
+            //     console.log("No Params value");
+            //     return  (!params.colDef.field.startsWith('gdef')) ?{ backgroundColor: BG_COLOR} : { backgroundColor: ''}
+            // }
+            if (isNaN(params.value)) {
+                return { backgroundColor: BG_COLOR};
+            }   else {
+                return { backgroundColor: ''};
+            }
+        }}; 
         cellProps['direction_type'] = {isgroup: true, cellEditor: 'agSelectCellEditor',default: schema.definitions.pointing.properties.direction_type.default,
             cellEditorParams: {
                 values: schema.definitions.pointing.properties.direction_type.enum,
             }, 
         };
-        cellProps['duration'] = { type:'numberValueColumn', cellStyle: function(params) {
+        cellProps['duration'] = { type:'numberValueColumn', cellEditor:'numericEditor', cellStyle: function(params) {
             if  (params.value){
                 if ( !Number(params.value)){
                     return { backgroundColor: BG_COLOR};
@@ -558,7 +579,7 @@ export class SchedulingSetCreate extends Component {
                
             {headerName: 'Between',field: 'between',cellRenderer: 'betweenRenderer',cellEditor: 'betweenEditor',valueSetter: 'newValueSetter'},
             {headerName: 'Not Between',field: 'notbetween',cellRenderer: 'betweenRenderer',cellEditor: 'betweenEditor',valueSetter: 'newValueSetter'},
-            {headerName: 'Daily',field: 'daily',cellEditor: 'multiselector', valueSetter: 'valueSetter'},
+            {headerName: 'Daily',field: 'daily',cellEditor: 'multiselector', valueSetter: function(params) {}},
             {
                 headerName: 'Sky',
                 children: [
@@ -703,7 +724,7 @@ export class SchedulingSetCreate extends Component {
         if(this.state.defaultStationGroups){
             let stationValue = '';
             this.state.defaultStationGroups.map(stationGroup =>{
-                stationValue += stationGroup.stations+':'+stationGroup.max_nr_missing+"|";
+                stationValue += stationGroup.stations+':'+ (stationGroup.max_nr_missing || 0)+"|";
             })
             defaultCellValues['stations'] = stationValue;
         }
@@ -828,6 +849,7 @@ export class SchedulingSetCreate extends Component {
                         properties: {}, definitions:{}
                      };
         let paramsOutput = {};
+        // TODo: This schema reference resolving code has to be moved to common file and needs to rework
         for (const taskName in tasks) {
             const task = tasks[taskName];
             if (task['specifications_template'] === 'target observation') {
@@ -851,7 +873,16 @@ export class SchedulingSetCreate extends Component {
                             tempProperty = $templateRefs.get(parameterRef);
                         }   catch(error) {
                             tempProperty = _.cloneDeep(taskTemplate.schema.properties[taskPaths[4]]);
-                            if (tempProperty.type === 'array') {
+                            if (tempProperty['$ref']) {
+                                tempProperty = await UtilService.resolveSchema(tempProperty);
+                                if (tempProperty.definitions && tempProperty.definitions[taskPaths[4]]) {
+                                    schema.definitions = {...schema.definitions, ...tempProperty.definitions};
+                                    tempProperty = tempProperty.definitions[taskPaths[4]];
+                                }   else if (tempProperty.properties && tempProperty.properties[taskPaths[4]]) {
+                                    tempProperty = tempProperty.properties[taskPaths[4]];
+                                }
+                            }
+                            if (tempProperty.type === 'array' && taskPaths.length>6) {
                                 tempProperty = tempProperty.items.properties[taskPaths[6]];
                             }
                             property = tempProperty;
@@ -882,9 +913,11 @@ export class SchedulingSetCreate extends Component {
                         properties: {}, definitions:{}
                      };
         let taskDrafts = [];
-        await ScheduleService.getTasksDraftBySchedulingUnitId(scheduleUnit.id).then(response =>{
-            taskDrafts = response.data.results;
-        }); 
+        if (scheduleUnit.id) {
+            await ScheduleService.getTasksDraftBySchedulingUnitId(scheduleUnit.id).then(response =>{
+                taskDrafts = response.data.results;
+            }); 
+        }
         
         for (const taskName in tasks)  {
             const task = tasks[taskName];
@@ -894,7 +927,7 @@ export class SchedulingSetCreate extends Component {
             }
             //Resolve task from the strategy template
             const $taskRefs = await $RefParser.resolve(task);
-
+            // TODo: This schema reference resolving code has to be moved to common file and needs to rework
             // Identify the task specification template of every task in the strategy template
             const taskTemplate = _.find(this.taskTemplates, {'name': task['specifications_template']});
             schema['$id'] = taskTemplate.schema['$id'];
@@ -914,7 +947,16 @@ export class SchedulingSetCreate extends Component {
                         tempProperty = $templateRefs.get(parameterRef);
                     }   catch(error) {
                         tempProperty = _.cloneDeep(taskTemplate.schema.properties[taskPaths[4]]);
-                        if (tempProperty.type === 'array') {
+                        if (tempProperty['$ref']) {
+                            tempProperty = await UtilService.resolveSchema(tempProperty);
+                            if (tempProperty.definitions && tempProperty.definitions[taskPaths[4]]) {
+                                schema.definitions = {...schema.definitions, ...tempProperty.definitions};
+                                tempProperty = tempProperty.definitions[taskPaths[4]];
+                            }   else if (tempProperty.properties && tempProperty.properties[taskPaths[4]]) {
+                                tempProperty = tempProperty.properties[taskPaths[4]];
+                            }
+                        }
+                        if (tempProperty.type === 'array' && taskPaths.length>6) {
                             tempProperty = tempProperty.items.properties[taskPaths[6]];
                         }
                         property = tempProperty;
@@ -1049,8 +1091,11 @@ export class SchedulingSetCreate extends Component {
     }
 
     async getObservationValueFromTask(scheduleunit) {
-        let res = await ScheduleService.getTasksDraftBySchedulingUnitId(scheduleunit.id);
-        let taskDrafts = res.data.results;
+        let taskDrafts = [];
+        if (scheduleunit.id) {
+            let res = await ScheduleService.getTasksDraftBySchedulingUnitId(scheduleunit.id);
+            taskDrafts = res.data.results;
+        }
         let tasksToUpdate = {};
         const observStrategy = _.find(this.observStrategies, {'id': scheduleunit.observation_strategy_template_id});
         const tasks = observStrategy.template.tasks;    
@@ -1171,14 +1216,14 @@ export class SchedulingSetCreate extends Component {
             }
            
             observationProps['stations'] = await this.getStationGrops(scheduleunit);
-            let constraint = scheduleunit.scheduling_constraints_doc;
+            let constraint = scheduleunit.id?scheduleunit.scheduling_constraints_doc:null;
             if (constraint){
                 if  (constraint.scheduler){
                     observationProps['scheduler'] = constraint.scheduler;
                 }
-                observationProps['timeat'] = this.isNotEmpty(constraint.time.at)?moment.utc(constraint.time.at).format(DATE_TIME_FORMAT): '';
-                observationProps['timeafter'] =  this.isNotEmpty(constraint.time.after)?moment.utc(constraint.time.after).format(DATE_TIME_FORMAT):'';
-                observationProps['timebefore'] = this.isNotEmpty(constraint.time.before)?moment.utc(constraint.time.before).format(DATE_TIME_FORMAT):'';
+                observationProps['timeat'] = this.isNotEmpty(constraint.time.at)?moment.utc(constraint.time.at).format(UIConstants.CALENDAR_DATETIME_FORMAT): '';
+                observationProps['timeafter'] =  this.isNotEmpty(constraint.time.after)?moment.utc(constraint.time.after).format(UIConstants.CALENDAR_DATETIME_FORMAT):'';
+                observationProps['timebefore'] = this.isNotEmpty(constraint.time.before)?moment.utc(constraint.time.before).format(UIConstants.CALENDAR_DATETIME_FORMAT):'';
                 if  (constraint.time.between){
                     observationProps['between'] = this.getBetweenStringValue(constraint.time.between);
                 }
@@ -1591,7 +1636,8 @@ export class SchedulingSetCreate extends Component {
                                     //column.colDef.cellStyle = { backgroundColor: BG_COLOR};
                                     //rowNoColumn.colDef.cellStyle = { backgroundColor: BG_COLOR};
                                 } else if(_.endsWith(column.colId, "angle3")){
-                                    if  (!Number(rowData[column.colId])){
+                                    // if  (!Number(rowData[column.colId])){
+                                    if (isNaN(rowData[column.colId])) {
                                         isValidRow = false;
                                         errorMsg += column.colDef.headerName+", ";
                                     }
@@ -1747,7 +1793,7 @@ export class SchedulingSetCreate extends Component {
                 observStrategy.template.parameters.forEach(async(param, index) => {
                     let key = observStrategy.template.parameters[index]['refs'][0];
                     let fieldValue = paramsOutput['param_' + index];
-                    let value = (key.endsWith('duration'))? fieldValue['param_' + index] : fieldValue;
+                    let value = (key.endsWith('duration'))? parseInt(fieldValue['param_' + index]) : fieldValue;
                    $refs.set(observStrategy.template.parameters[index]['refs'][0], value);
                 });
                 if ( suRow.id === 0) {
@@ -1798,18 +1844,18 @@ export class SchedulingSetCreate extends Component {
                 }  
                 else  {
                     //mandatory
-                    constraint.time.at = `${moment(suRow.timeat).format("YYYY-MM-DDTHH:mm:ss.SSSSS", { trim: false })}Z`;
+                    constraint.time.at = `${moment(suRow.timeat).format(UIConstants.UTC_DATE_TIME_MS_FORMAT, { trim: false })}Z`;
                     //optional
                     if (!this.isNotEmpty(suRow.timeafter)) {
                         delete constraint.time.after;
                     } else {
-                        constraint.time.after = `${moment(suRow.timeafter).format("YYYY-MM-DDTHH:mm:ss.SSSSS", { trim: false })}Z`;
+                        constraint.time.after = `${moment(suRow.timeafter).format(UIConstants.UTC_DATE_TIME_MS_FORMAT, { trim: false })}Z`;
                     }
                    
                     if (!this.isNotEmpty(suRow.timebefore)) {
                         delete constraint.time.before;
                     } else {
-                        constraint.time.before = `${moment(suRow.timebefore).format("YYYY-MM-DDTHH:mm:ss.SSSSS", { trim: false })}Z`;
+                        constraint.time.before = `${moment(suRow.timebefore).format(UIConstants.UTC_DATE_TIME_MS_FORMAT, { trim: false })}Z`;
                     }
                 }
 
@@ -1906,7 +1952,7 @@ export class SchedulingSetCreate extends Component {
      * @param {*} value 
      */
     isNotEmpty(value){
-        if (/* !value ||*/ value === 'undefined' /* || value.length === 0 */){
+        if ( value === null || value === undefined || value.length === 0 ){
             return false;
         } else {
             return true;
@@ -1921,8 +1967,8 @@ export class SchedulingSetCreate extends Component {
         let returnDate = '';
         if  (dates){
             dates.forEach(utcDateArray => {
-                returnDate += moment.utc(utcDateArray.from).format(DATE_TIME_FORMAT)+",";
-                returnDate += moment.utc(utcDateArray.to).format(DATE_TIME_FORMAT)+"|";
+                returnDate += moment.utc(utcDateArray.from).format(UIConstants.CALENDAR_DATETIME_FORMAT)+",";
+                returnDate += moment.utc(utcDateArray.to).format(UIConstants.CALENDAR_DATETIME_FORMAT)+"|";
             })
         }
        return returnDate;
@@ -1939,8 +1985,8 @@ export class SchedulingSetCreate extends Component {
                 let betweendate = _.split(betweenDates, ",");
                 let dateres = {};
                 if  (betweendate && betweendate.length === 2){
-                    dateres['from'] = `${moment(betweendate[0]).format("YYYY-MM-DDTHH:mm:SS.SSSSS", { trim: false })}Z`;
-                    dateres['to'] = `${moment(betweendate[1]).format("YYYY-MM-DDTHH:mm:SS.SSSSS", { trim: false })}Z`;
+                    dateres['from'] = `${moment(betweendate[0]).format(UIConstants.UTC_DATE_TIME_MS_FORMAT, { trim: false })}Z`;
+                    dateres['to'] = `${moment(betweendate[1]).format(UIConstants.UTC_DATE_TIME_MS_FORMAT, { trim: false })}Z`;
                     returnDate.push(dateres);
                 }
             })
@@ -2371,16 +2417,17 @@ export class SchedulingSetCreate extends Component {
                                             options={this.state.schedulingSets} 
                                             onChange={(e) => {this.setSchedulingSetParams('scheduling_set_id',e.value)}} 
                                             placeholder="Select Scheduling Set" />
-                                    <Button label="" className="p-button-primary" icon="pi pi-plus" 
-                                        onClick={this.showAddSchedulingSet}  
-                                        tooltip="Add new Scheduling Set"
-                                        style={{bottom: '2em', left: '25em'}}
-                                        disabled={this.state.schedulingUnit.project !== null ? false : true }/>
                                     <label className={this.state.errors.scheduling_set_id ?"error":"info"}>
                                         {this.state.errors.scheduling_set_id ? this.state.errors.scheduling_set_id : "Scheduling Set of the Project"}
                                     </label>
                                 </div>
-
+                                <div className="col-lg-1 col-md-1 col-sm-12">
+                                    <Button label="" className="p-button-primary" icon="pi pi-plus" 
+                                        onClick={this.showAddSchedulingSet}  
+                                        tooltip="Add new Scheduling Set"
+                                        style={{marginLeft: '-10px'}}
+                                        disabled={this.state.schedulingUnit.project !== null ? false : true }/>
+                                </div>
                             </div>
                             <div className="p-field p-grid">
                                 <label htmlFor="observStrategy" className="col-lg-2 col-md-2 col-sm-12">Observation Strategy <span style={{color:'red'}}>*</span></label>

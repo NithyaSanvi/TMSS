@@ -3,10 +3,12 @@ import moment from 'moment';
 import _ from 'lodash';
 import Jeditor from '../../components/JSONEditor/JEditor'; 
 import UnitConversion from '../../utils/unit.converter';
+import UIConstants from '../../utils/ui.constants';
 /* eslint-disable react-hooks/exhaustive-deps */
 
 export default (props) => {
-    const { parentFunction = () => {} } = props;
+    let editorFunction = null;
+    const { parentFunction = (editorFn) => { editorFunction = editorFn;} } = props;
     const [constraintSchema, setConstraintSchema] = useState();
     const [initialValue, setInitialValue] = useState();
     //SU Constraint Editor Property Order,format and validation
@@ -73,7 +75,7 @@ export default (props) => {
         propertyValue.skipFormat = true;
         propertyValue.options = {
             "inputAttributes": {
-                "placeholder": "mm/dd/yyyy,--:--:--"
+                "placeholder": "YYYY-MM-DD HH:mm:ss"
               },
             "flatpickr": {
                 "inlineHideInput": true,
@@ -161,32 +163,34 @@ export default (props) => {
         // For DateTime
         for (let key in initValue.time) {
             if (typeof initValue.time[key] === 'string') {
-                initValue.time[key] = moment(new Date((initValue.time[key] || '').replace('Z', ''))).format("YYYY-MM-DD HH:mm:ss");
+                initValue.time[key] = moment(new Date((initValue.time[key] || '').replace('Z', ''))).format(UIConstants.CALENDAR_DATETIME_FORMAT);
             } else {
                 initValue.time[key].forEach(time => {
                     for (let subKey in time) {
-                        time[subKey] = moment(new Date((time[subKey] || '').replace('Z', ''))).format("YYYY-MM-DD HH:mm:ss");
+                        time[subKey] = moment(new Date((time[subKey] || '').replace('Z', ''))).format(UIConstants.CALENDAR_DATETIME_FORMAT);
                     }
                     return true;
                 })
             }
         }
-      if (!initValue.time.at) {
+        if (!initValue.time.at) {
           initValue.time.at= '';
-       }
-       if (!initValue.time.after) {
-        initValue.time.after= '';
-       }
-       if (!initValue.time.before) {
-        initValue.time.before= '';
-       }
-     
-       /*   for (let type in initValue.sky.transit_offset) {
+        }
+        if (!initValue.time.after) {
+            initValue.time.after= '';
+        }
+        if (!initValue.time.before) {
+            initValue.time.before= '';
+        }
+        
+    /*   for (let type in initValue.sky.transit_offset) {
             initValue.sky.transit_offset[type] = initValue.sky.transit_offset[type] / 60;
         }*/
         UnitConversion.radiansToDegree(initValue.sky);
         setInitialValue(initValue);
-        }
+    }
+
+    let jeditor = null;
 
     useEffect(() => {
         if (!props.constraintTemplate) {
@@ -196,21 +200,28 @@ export default (props) => {
             modifyInitiValue();
         }
         constraintStrategy();
+        if (editorFunction) {
+            editorFunction();
+        }
     }, [props.constraintTemplate, props.initValue]);
+
+    if (constraintSchema && !jeditor) {
+        jeditor = React.createElement(Jeditor, {
+                        id: "constraint_editor",
+                        title: "Scheduling Constraints specification",
+                        schema: constraintSchema.schema,
+                        callback: onEditForm,
+                        initValue: initialValue,
+                        disabled: props.disable,
+                        formatOutput: props.formatOutput,
+                        parentFunction: parentFunction,
+                        defintionFormatter: configureDefinitions
+                    });
+    }
 
     return (
         <>
-            {constraintSchema && React.createElement(Jeditor, {
-                id: "constraint_editor",
-                title: "Scheduling Constraints specification",
-                schema: constraintSchema.schema,
-                callback: onEditForm,
-                initValue: initialValue,
-                disabled: props.disable,
-                formatOutput: props.formatOutput,
-                parentFunction: parentFunction,
-                defintionFormatter: configureDefinitions
-            })}
+            {constraintSchema?jeditor:""}
         </>
     );
 };

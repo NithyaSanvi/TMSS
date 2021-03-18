@@ -112,7 +112,7 @@ export default class NumericEditor extends Component {
     event = event || window.event;
     return typeof event.which === 'undefined' ? event.keyCode : event.which;
   }
-
+  
   isCharNumeric(charStr) {
     return !!/^\d*\.?\d*$/.test(charStr);
   }
@@ -122,6 +122,7 @@ export default class NumericEditor extends Component {
     const charStr = event.key ? event.key : String.fromCharCode(charCode);
     return `${event.target.value + charStr}`.split('.').length <= 2 && this.isCharNumeric(charStr);
   }
+
 
   render() {
     return (

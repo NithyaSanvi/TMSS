@@ -182,3 +182,14 @@ body .p-paginator {
 .p-multiselect-header {
   width: 12em;
 }
+.delete-option {
+  display: inherit;
+  text-align: right;
+  position: relative;
+  top: 0.25em;
+  margin-right: 0.05em;
+  float: right;
+}
+.dialog-delete-msg {
+  padding-left: 1em;
+}

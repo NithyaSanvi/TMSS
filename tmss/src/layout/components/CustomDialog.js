@@ -41,7 +41,7 @@ export class CustomDialog extends Component {
                                 {/* Action button based on the 'actions' props */}
                                 {this.props.actions && this.props.actions.map((action, index) => {
                                     return (
-                                        <Button key={action.id} label={action.title} onClick={action.callback} />
+                                        <Button key={action.id} label={action.title} onClick={action.callback} className= {(action.className)? action.className: "" }/>
                                     );
                                 })}
                                 </div>
@@ -54,7 +54,7 @@ export class CustomDialog extends Component {
                                         </span>
                                     </div>
                                 }
-                                <div className="col-lg-10 col-md-10 col-sm-10">
+                                <div className= {(showIcon)? "col-lg-10 col-md-10 col-sm-10":"dialog-delete-msg"}>
                                     {/* Display message passed */}
                                     {this.props.message?this.props.message:""}
                                     {/* Render subcomponent passed as function */}

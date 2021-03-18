@@ -21,6 +21,7 @@ import 'react-calendar-timeline/lib/Timeline.css';
 import { Calendar } from 'primereact/calendar';
 import { Checkbox } from 'primereact/checkbox';
 import { ProgressSpinner } from 'primereact/progressspinner';
+import { CustomPageSpinner } from '../CustomPageSpinner';
 import UIConstants from '../../utils/ui.constants';
 
 // Label formats for day headers based on the interval label width
@@ -93,7 +94,7 @@ export class CalendarTimeline extends Component {
         timeHeaderLabelVisibile: true,
         currentUTC: props.currentUTC || moment().utc(),             // Current UTC for clock display
         currentLST: null,                                           // Current LST for clock display
-        cursorLST: moment().format('HH:mm:ss'),                     // Holds the LST value for the cursot position in the timeline
+        cursorLST: moment().format(UIConstants.CALENDAR_TIME_FORMAT),                     // Holds the LST value for the cursot position in the timeline
         lastCursorPosition: null,                                   // To track the last cursor position and fetch the data from server if changed
         utcLSTMap:{},                                               // JSON object to hold LST values fetched from server for UTC and show LST value in cursor label
         lstDateHeaderMap: {},                                       // JSON object to hold header value for the LST axis in required format like 'HH' or 'MM' or others
@@ -167,10 +168,6 @@ export class CalendarTimeline extends Component {
 
     shouldComponentUpdate() {
         return true;
-    }
-
-    componentDidUpdate() {
-        // console.log("Component Updated");
     }
 
     /**
@@ -1217,7 +1214,7 @@ export class CalendarTimeline extends Component {
         }
     }
 
-    async changeWeek(direction) {
+  async changeWeek(direction) {
         this.setState({isWeekLoading: true});
         let startDate = this.state.group[1].value.clone().add(direction * 7, 'days');
         let endDate = this.state.group[this.state.group.length-1].value.clone().add(direction * 7, 'days').hours(23).minutes(59).seconds(59);
@@ -1248,6 +1245,7 @@ export class CalendarTimeline extends Component {
      * @param {Object} props 
      */
     async updateTimeline(props) {
+        this.setState({ showSpinner: true });
         let group =  DEFAULT_GROUP.concat(props.group);
         if (!this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL) {
             props.items = await this.addStationSunTimes(this.state.defaultStartTime, this.state.defaultEndTime, props.group, props.items);
@@ -1256,12 +1254,13 @@ export class CalendarTimeline extends Component {
         }   else if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW) {
             props.items = await this.addWeekSunTimes(this.state.defaultStartTime, this.state.defaultEndTime, group, props.items);
         }
-        this.setState({group: group, items: _.orderBy(props.items, ['type'], ['desc'])});
+        this.setState({group: group, showSpinner: false, items: _.orderBy(props.items, ['type'], ['desc'])});
     }
 
     render() {
         return (
             <React.Fragment>
+                <CustomPageSpinner visible={this.state.showSpinner} />
                 {/* Toolbar for the timeline */}
                 <div className={`p-fluid p-grid timeline-toolbar ${this.props.className}`}>
                     {/* Clock Display */}
@@ -1274,7 +1273,7 @@ export class CalendarTimeline extends Component {
                         </div>
                         {this.state.currentLST && 
                             <div style={{marginTop: "0px"}}>
-                                <label style={{marginBottom: "0px"}}>LST:</label><span>{this.state.currentLST.format("HH:mm:ss")}</span>
+                                <label style={{marginBottom: "0px"}}>LST:</label><span>{this.state.currentLST.format(UIConstants.CALENDAR_TIME_FORMAT)}</span>
                             </div>
                         }
                     </div>
@@ -1290,7 +1289,7 @@ export class CalendarTimeline extends Component {
                         {this.state.allowDateSelection &&
                         <>
                         {/* <span className="p-float-label"> */}
-                        <Calendar id="range" placeholder="Select Date Range" selectionMode="range" showIcon={!this.state.zoomRange}
+                        <Calendar id="range" placeholder="Select Date Range" selectionMode="range" dateFormat="yy-mm-dd" showIcon={!this.state.zoomRange}
                                 value={this.state.zoomRange} onChange={(e) => this.setZoomRange( e.value )} readOnlyInput />
                         {/* <label htmlFor="range">Select Date Range</label>
                         </span> */}

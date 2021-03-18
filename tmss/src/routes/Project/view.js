@@ -13,12 +13,12 @@ import ProjectService from '../../services/project.service';
 import UnitConverter from '../../utils/unit.converter';
 import SchedulingUnitList from './../Scheduling/SchedulingUnitList';
 import SUBCreator from '../Scheduling/sub.create';
+import UIConstants from '../../utils/ui.constants';
 
 /**
  * Component to view the details of a project
  */
 export class ProjectView extends Component {
-    DATE_FORMAT = 'YYYY-MMM-DD HH:mm:ss';
     constructor(props) {
         super(props);
         this.state = {
@@ -103,7 +103,8 @@ export class ProjectView extends Component {
             }
             case 'Create SUB': {
                 if (this.subCreator) {
-                    this.subCreator.checkAndCreateBlueprint(this.suList);
+                    const suBlueprintList = _.filter(this.suList.selectedRows, (schedulingUnit) => { return schedulingUnit.type.toLowerCase() === "blueprint"});
+                    this.subCreator.checkBlueprint(this.suList, (suBlueprintList && suBlueprintList.length > 0)? true : false);
                 }
                 break;
             }
@@ -141,9 +142,9 @@ export class ProjectView extends Component {
                             </div>
                             <div className="p-grid">
                                 <label className="col-lg-2 col-md-2 col-sm-12">Created At</label>
-                                <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.project.created_at).format(this.DATE_FORMAT)}</span>
+                                <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.project.created_at).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
                                 <label className="col-lg-2 col-md-2 col-sm-12">Updated At</label>
-                                <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.project.updated_at).format(this.DATE_FORMAT)}</span>
+                                <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc(this.state.project.updated_at).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
                             </div>
                             <div className="p-grid">
                                 <label className="col-lg-2 col-md-2 col-sm-12">Trigger Priority</label>

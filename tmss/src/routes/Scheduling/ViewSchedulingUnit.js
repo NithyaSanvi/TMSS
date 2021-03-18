@@ -3,12 +3,15 @@ import 'primeflex/primeflex.css';
 import { Chips } from 'primereact/chips';
 import { Link } from 'react-router-dom';
 
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+
 import AppLoader from "./../../layout/components/AppLoader";
 import PageHeader from '../../layout/components/PageHeader';
 import ViewTable from './../../components/ViewTable';
 import ScheduleService from '../../services/schedule.service';
 import moment from 'moment';
-import _ from 'lodash';
+import _, { initial } from 'lodash';
 import SchedulingConstraint from './Scheduling.Constraints';
 import { Dialog } from 'primereact/dialog';
 import TaskStatusLogs from '../Task/state_logs';
@@ -16,11 +19,11 @@ import Stations from './Stations';
 import { Redirect } from 'react-router-dom';
 import { CustomDialog } from '../../layout/components/CustomDialog';
 import { CustomPageSpinner } from '../../components/CustomPageSpinner';
-import { Growl } from 'primereact/components/growl/Growl';
+import { appGrowl } from '../../layout/components/AppGrowl';
 import Schedulingtaskrelation from './Scheduling.task.relation';
 import UnitConverter from '../../utils/unit.converter';
 import TaskService from '../../services/task.service';
-
+import UIConstants from '../../utils/ui.constants';
 
 class ViewSchedulingUnit extends Component{
     constructor(props){
@@ -76,13 +79,18 @@ class ViewSchedulingUnit extends Component{
                 description:"Description",
                 start_time:{
                     name:"Start Time",
-                    filter: "date"
+                    filter: "date",
+                    format:UIConstants.CALENDAR_DATETIME_FORMAT
                 },
                 stop_time:{
                     name:"End Time",
-                    filter: "date"
+                    filter: "date",
+                    format:UIConstants.CALENDAR_DATETIME_FORMAT
                 },
-                duration:"Duration (HH:mm:ss)",
+                duration:{
+                    name:"Duration (HH:mm:ss)",
+                    format:UIConstants.CALENDAR_TIME_FORMAT
+                },
                 relative_start_time:"Relative Start Time (HH:mm:ss)",
                 relative_stop_time:"Relative End Time (HH:mm:ss)",
                 noOfOutputProducts: "#Dataproducts",
@@ -100,11 +108,13 @@ class ViewSchedulingUnit extends Component{
                 url:"API URL",
                 created_at:{
                     name: "Created at",
-                    filter: "date"
+                    filter:"date",
+                    format:UIConstants.CALENDAR_DATETIME_FORMAT
                 },
                 updated_at:{
                     name: "Updated at",
-                    filter: "date"
+                    filter: "date",
+                    format:UIConstants.CALENDAR_DATETIME_FORMAT
                 },
                 actionpath:"actionpath"
             }],
@@ -128,16 +138,25 @@ class ViewSchedulingUnit extends Component{
             }],
             stationGroup: [],
             dialog: {header: 'Confirm', detail: 'Do you want to create a Scheduling Unit Blueprint?'},
-            dialogVisible: false
+            dialogVisible: false,
+            actions: []
         }
         this.actions = [];
         this.stations = [];
         this.constraintTemplates = [];
+        this.selectedRows = [];
+
+        this.confirmDeleteTasks = this.confirmDeleteTasks.bind(this);
+        this.onRowSelection = this.onRowSelection.bind(this);
+        this.deleteTasks = this.deleteTasks.bind(this);
+        this.deleteSchedulingUnit = this.deleteSchedulingUnit.bind(this);
+        this.getTaskDialogContent = this.getTaskDialogContent.bind(this);
+        this.getSUDialogContent = this.getSUDialogContent.bind(this);
         this.checkAndCreateBlueprint = this.checkAndCreateBlueprint.bind(this);
         this.createBlueprintTree = this.createBlueprintTree.bind(this);
         this.closeDialog = this.closeDialog.bind(this);
         this.showTaskRelationDialog = this.showTaskRelationDialog.bind(this);
-        
+        this.showDeleteSUConfirmation = this.showDeleteSUConfirmation.bind(this);
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -147,8 +166,7 @@ class ViewSchedulingUnit extends Component{
             this.getSchedulingUnitDetails(this.props.match.params.type, this.props.match.params.id);
        }
     }
-    
-    
+        
     showTaskRelationDialog() {
         this.setState({ showTaskRelationDialog: !this.state.showTaskRelationDialog});
     }
@@ -176,9 +194,9 @@ class ViewSchedulingUnit extends Component{
         ScheduleService.getSchedulingUnitExtended(schedule_type, schedule_id)
             .then(async(schedulingUnit) =>{
                 if (schedulingUnit) {
-                    ScheduleService.getSchedulingConstraintTemplates().then((response) => {
-                        this.constraintTemplates = response;
-                        this.setState({ constraintSchema:  this.constraintTemplates.find(i => i.id === schedulingUnit.scheduling_constraints_template_id) })
+                    ScheduleService.getSchedulingConstraintTemplate(schedulingUnit.scheduling_constraints_template_id)
+                        .then((template) => {
+                        this.setState({constraintTemplate: template})
                     });
                     if (schedulingUnit.draft_id) {
                         await ScheduleService.getSchedulingUnitDraftById(schedulingUnit.draft_id).then((response) => {
@@ -199,6 +217,11 @@ class ViewSchedulingUnit extends Component{
                         task.size = 0;
                         task.dataSizeOnDisk = 0;
                         task.noOfOutputProducts = 0;
+                        // task.stop_time = moment(task.stop_time).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                        // task.start_time = moment(task.start_time).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                        // task.created_at =  moment(task.created_at).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                        // task.updated_at =  moment(task.updated_at).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                        task.canSelect = task.tasktype.toLowerCase() === 'blueprint' ? true:(task.tasktype.toLowerCase() === 'draft' && task.blueprint_draft.length === 0)?true:false;
                         if (dataProducts.length && dataProducts[0].length) {
                             task.dataProducts = dataProducts[0];
                             task.noOfOutputProducts = dataProducts[0].length;
@@ -210,6 +233,7 @@ class ViewSchedulingUnit extends Component{
                         task.subTaskID = subTaskIds.length ? subTaskIds[0].id : ''; 
                         return task;
                     }));
+                   
                     const targetObservation = _.find(tasks, (task)=> {return task.template.type_value==='observation' && task.tasktype.toLowerCase()===schedule_type && task.specifications_doc.station_groups});
                     this.setState({
                         scheduleunitId: schedule_id,
@@ -221,33 +245,45 @@ class ViewSchedulingUnit extends Component{
                         redirect: null,
                         dialogVisible: false,
                         ingestGroup});
+                    this.selectedRows = [];
+                    // Add Action menu
+                    this.getActionMenu(schedule_type);
                 }   else {
                     this.setState({
                         isLoading: false,
+                        redirect: "/not-found"
                     });
                 }
             });
-            this.actions = [
-                {icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', link: this.props.history.goBack} 
-            ];
-            if (this.props.match.params.type === 'draft') {
-                this.actions.unshift({icon:'fa-file-import', title: 'Data Products To Ingest', type:'button',
-                actOn:'click', props : { callback: this.showTaskRelationDialog}
-                });
-                this.actions.unshift({icon: 'fa-edit', title: 'Click to edit',  props : { pathname:`/schedulingunit/edit/${ this.props.match.params.id}`}
-                });
-                this.actions.unshift({icon:'fa-stamp', title: 'Create Blueprint', type:'button',
-                actOn:'click', props : { callback: this.checkAndCreateBlueprint},
-                });
-               
-            } else {
-                this.actions.unshift({icon: 'fa-sitemap',title :'View Workflow',props :{pathname:`/schedulingunit/${this.props.match.params.id}/workflow`}});
-                this.actions.unshift({icon: 'fa-lock', title: 'Cannot edit blueprint'});
-            }
-           
-           
         }
 
+    /**
+     * Get action menus for page header
+     */
+    getActionMenu(schedule_type) {
+        this.actions =[];
+        let canDelete = (this.state.scheduleunit &&
+                            (!this.state.scheduleunit.scheduling_unit_blueprints_ids || this.state.scheduleunit.scheduling_unit_blueprints_ids.length === 0));
+        this.actions.push({icon: 'fa fa-trash',title:!canDelete? 'Cannot delete Draft when Blueprint exists':'Scheduling Unit',  
+                        type: 'button',  disabled: !canDelete, actOn: 'click', props:{ callback: this.showDeleteSUConfirmation}});
+        
+        this.actions.push({icon: 'fa-window-close',title:'Click to Close Scheduling Unit View', link: this.props.history.goBack} );
+        if (this.props.match.params.type === 'draft') {
+            this.actions.unshift({icon:'fa-file-import', title: 'Data Products To Ingest', type:'button',
+            actOn:'click', props : { callback: this.showTaskRelationDialog}
+            });
+            this.actions.unshift({icon: 'fa-edit', title: 'Click to edit',  props : { pathname:`/schedulingunit/edit/${ this.props.match.params.id}`}
+            });
+            this.actions.unshift({icon:'fa-stamp', title: 'Create Blueprint', type:'button',
+            actOn:'click', props : { callback: this.checkAndCreateBlueprint},
+            });
+        } else {
+            this.actions.unshift({icon: 'fa-sitemap',title :'View Workflow',props :{pathname:`/schedulingunit/${this.props.match.params.id}/workflow`}});
+            this.actions.unshift({icon: 'fa-lock', title: 'Cannot edit blueprint'});
+        }
+        this.setState({actions: this.actions});
+    }
+    
     /**
      * Formatting the task_drafts and task_blueprints in draft view to pass to the ViewTable component
      * @param {Object} schedulingUnit - scheduling_unit_draft object from extended API call loaded with tasks(draft & blueprint) along with their template and subtasks
@@ -262,17 +298,14 @@ class ViewSchedulingUnit extends Component{
             scheduletask['actionpath'] = '/task/view/draft/'+task['id'];
             scheduletask['blueprint_draft'] = _.map(task['task_blueprints'], 'url');
             scheduletask['status'] = task['status'];
-            
             //fetch task draft details
             for(const key of commonkeys){
                 scheduletask[key] = task[key];
             }
-            scheduletask['created_at'] = moment(task['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-            scheduletask['updated_at'] = moment(task['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
             scheduletask['specifications_doc'] = task['specifications_doc'];
-            scheduletask.duration = moment.utc((scheduletask.duration || 0)*1000).format('HH:mm:ss'); 
-            scheduletask.relative_start_time = moment.utc(scheduletask.relative_start_time*1000).format('HH:mm:ss'); 
-            scheduletask.relative_stop_time = moment.utc(scheduletask.relative_stop_time*1000).format('HH:mm:ss'); 
+            scheduletask.duration = moment.utc((scheduletask.duration || 0)*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
+            scheduletask.relative_start_time = moment.utc(scheduletask.relative_start_time*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
+            scheduletask.relative_stop_time = moment.utc(scheduletask.relative_stop_time*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
             scheduletask.template = task.specifications_template;
             scheduletask.type_value = task.specifications_template.type_value;
             scheduletask.produced_by = task.produced_by;
@@ -288,11 +321,11 @@ class ViewSchedulingUnit extends Component{
                 for(const key of commonkeys){
                     taskblueprint[key] = blueprint[key];
                 }
-                taskblueprint['created_at'] = moment(blueprint['created_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-                taskblueprint['updated_at'] = moment(blueprint['updated_at'], moment.ISO_8601).format("YYYY-MMM-DD HH:mm:ss");
-                taskblueprint.duration = moment.utc((taskblueprint.duration || 0)*1000).format('HH:mm:ss'); 
-                taskblueprint.relative_start_time = moment.utc(taskblueprint.relative_start_time*1000).format('HH:mm:ss'); 
-                taskblueprint.relative_stop_time = moment.utc(taskblueprint.relative_stop_time*1000).format('HH:mm:ss'); 
+                taskblueprint['created_at'] = moment(blueprint['created_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                taskblueprint['updated_at'] = moment(blueprint['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                taskblueprint.duration = moment.utc((taskblueprint.duration || 0)*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
+                taskblueprint.relative_start_time = moment.utc(taskblueprint.relative_start_time*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
+                taskblueprint.relative_stop_time = moment.utc(taskblueprint.relative_stop_time*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
                 taskblueprint.template = scheduletask.template;
                 taskblueprint.subTasks = blueprint.subtasks;
                 for (const subtask of taskblueprint.subTasks) {
@@ -328,7 +361,7 @@ class ViewSchedulingUnit extends Component{
             taskBlueprint['blueprint_draft'] = taskBlueprint['draft'];
             taskBlueprint['relative_start_time'] = 0;
             taskBlueprint['relative_stop_time'] = 0;
-            taskBlueprint.duration = moment.utc((taskBlueprint.duration || 0)*1000).format('HH:mm:ss');
+            taskBlueprint.duration = moment.utc((taskBlueprint.duration || 0)*1000).format(UIConstants.CALENDAR_TIME_FORMAT);
             taskBlueprint.template = taskBlueprint.specifications_template;
             for (const subtask of taskBlueprint.subtasks) {
                 subtask.subTaskTemplate = _.find(this.subtaskTemplates, ['id', subtask.specifications_template_id]);
@@ -343,7 +376,7 @@ class ViewSchedulingUnit extends Component{
         if(type === 'draft')
             return ScheduleService.getTasksBySchedulingUnit(scheduleunit.id, true, true, true);
         else
-        return ScheduleService.getTaskBPWithSubtaskTemplateOfSU(scheduleunit);
+            return ScheduleService.getTaskBPWithSubtaskTemplateOfSU(scheduleunit);
     }
     
     getScheduleUnit(type, id){
@@ -359,8 +392,14 @@ class ViewSchedulingUnit extends Component{
     checkAndCreateBlueprint() {
         if (this.state.scheduleunit) {
             let dialog = this.state.dialog;
+            dialog.header = "Confirm";
+            dialog.onSubmit = this.createBlueprintTree;
+            dialog.content = null;
+            dialog.width = null;
             if (this.state.scheduleunit.scheduling_unit_blueprints.length>0) {
                 dialog.detail = "Blueprint(s) already exist for this Scheduling Unit. Do you want to create another one?";
+            }   else {
+                dialog.detail ="Do you want to create a Scheduling Unit Blueprint?";
             }
             dialog.actions = [{id: 'yes', title: 'Yes', callback: this.createBlueprintTree},
                                 {id: 'no', title: 'No', callback: this.closeDialog}];
@@ -375,7 +414,7 @@ class ViewSchedulingUnit extends Component{
         this.setState({dialogVisible: false, showSpinner: true});
         ScheduleService.createSchedulingUnitBlueprintTree(this.state.scheduleunit.id)
             .then(blueprint => {
-                this.growl.show({severity: 'success', summary: 'Success', detail: 'Blueprint created successfully!'});
+                appGrowl.show({severity: 'success', summary: 'Success', detail: 'Blueprint created successfully!'});
                 this.setState({showSpinner: false, redirect: `/schedulingunit/view/blueprint/${blueprint.id}`, isLoading: true});
             });
     }
@@ -387,15 +426,127 @@ class ViewSchedulingUnit extends Component{
         this.setState({dialogVisible: false});
     }
    
+    onRowSelection(selectedRows) {
+        this.selectedRows = selectedRows;
+    }
+    
+    /**
+     * Confirmation dialog for delete task(s)
+     */
+    confirmDeleteTasks() {
+        if(this.selectedRows.length === 0) {
+            appGrowl.show({severity: 'info', summary: 'Select Row', detail: 'Select Task to delete.'});
+        }   else {
+            let dialog = this.state.dialog;
+            dialog.type = "confirmation";
+            dialog.header= "Confirm to Delete Task(s)";
+            dialog.detail = "Do you want to delete the selected Task(s)?";
+            dialog.content = this.getTaskDialogContent;
+            dialog.actions = [{id: 'yes', title: 'Yes', callback: this.deleteTasks},
+            {id: 'no', title: 'No', callback: this.closeDialog}];
+            dialog.onSubmit = this.deleteTasks;
+            dialog.width = '55vw';
+            dialog.showIcon = false;
+            this.setState({dialog: dialog, dialogVisible: true});
+        }
+    }
+    
+    showDeleteSUConfirmation() {
+        let dialog = this.state.dialog;
+        dialog.type = "confirmation";
+        dialog.header= "Confirm to Delete Scheduling Unit";
+        dialog.detail = "Do you want to delete this Scheduling Unit?";
+        dialog.content = this.getSUDialogContent;
+        dialog.actions = [{id: 'yes', title: 'Yes', callback: this.deleteSchedulingUnit},
+        {id: 'no', title: 'No', callback: this.closeDialog}];
+        dialog.onSubmit = this.deleteSchedulingUnit;
+        dialog.width = '55vw';
+        dialog.showIcon = false;
+        this.setState({dialog: dialog, dialogVisible: true});
+    }
+
+    /**
+     * Prepare Task(s) details to show on confirmation dialog
+     */
+    getTaskDialogContent() {
+        let selectedTasks = [];
+        for(const obj of this.selectedRows) {
+            selectedTasks.push({id:obj.id, suId: this.state.scheduleunit.id, suName: this.state.scheduleunit.name, 
+                taskId: obj.id, controlId: obj.subTaskID, taskName: obj.name, status: obj.status});
+        }   
+        return  <>  
+                <DataTable value={selectedTasks} resizableColumns columnResizeMode="expand" className="card" style={{paddingLeft: '0em'}}>
+                    <Column field="suId" header="Scheduling Unit Id"></Column>
+                    <Column field="suName" header="Scheduling Unit Name"></Column>
+                    <Column field="taskId" header="Task Id"></Column>
+                    <Column field="controlId" header="Control Id"></Column>
+                    <Column field="taskName" header="Task Name"></Column>
+                    <Column field="status" header="Status"></Column>
+                </DataTable>
+        </>
+    }
+
+    /**
+     * Prepare Scheduling Unit details to show on confirmation dialog
+     */
+    getSUDialogContent() {
+        let selectedTasks = [{suId: this.state.scheduleunit.id, suName: this.state.scheduleunit.name, suType: (this.state.scheduleunit.draft)?'Blueprint': 'Draft'}];
+        return  <>  
+             <DataTable value={selectedTasks} resizableColumns columnResizeMode="expand" className="card" style={{paddingLeft: '0em'}}>
+                <Column field="suId" header="Scheduling Unit Id"></Column>
+                <Column field="suName" header="Scheduling Unit Name"></Column>
+                <Column field="suType" header="Type"></Column>
+            </DataTable>
+        </>
+    }
+
+    /**
+     * Delete Task(s)
+     */
+    async deleteTasks() {
+        let hasError = false;
+        for(const task of this.selectedRows) {
+            if(!await TaskService.deleteTask(task.tasktype, task.id)) {
+                hasError = true;
+            }
+        }
+        if(hasError){
+            appGrowl.show({severity: 'error', summary: 'error', detail: 'Error while deleting Task(s)'});
+            this.setState({dialogVisible: false});
+        }   else {
+            this.selectedRows = [];
+            this.setState({dialogVisible: false});
+            this.componentDidMount();
+            appGrowl.show({severity: 'success', summary: 'Success', detail: 'Task(s) deleted successfully'});
+        }
+    }
+
+     /**
+     * Delete Scheduling Unit
+     */
+    async deleteSchedulingUnit() {
+        let hasError = false;
+        if(!await ScheduleService.deleteSchedulingUnit(this.state.scheduleunitType, this.state.scheduleunit.id)) {
+            hasError = true;
+        }
+        if(hasError){
+            appGrowl.show({severity: 'error', summary: 'error', detail: 'Error while deleting scheduling Unit'});
+            this.setState({dialogVisible: false});
+        }   else {
+            this.selectedRows = [];
+            appGrowl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit is deleted successfully'});
+            this.setState({dialogVisible: false, redirect: '/schedulingunit'});
+        }
+    }
+        
     render(){
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
         }
         return(
 		   <>   
-                <Growl ref={(el) => this.growl = el} />
                 <PageHeader location={this.props.location} title={'Scheduling Unit - Details'} 
-                            actions={this.actions}/>
+                            actions={this.state.actions}/>
 				{ this.state.isLoading ? <AppLoader/> :this.state.scheduleunit &&
 			    <>
 		            <div className="main-content">
@@ -407,19 +558,19 @@ class ViewSchedulingUnit extends Component{
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Created At</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{moment(this.state.scheduleunit.created_at).format("YYYY-MMM-DD HH:mm:SS")}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.created_at && moment(this.state.scheduleunit.created_at,moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
                             <label className="col-lg-2 col-md-2 col-sm-12">Updated At</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{moment(this.state.scheduleunit.updated_at).format("YYYY-MMM-DD HH:mm:SS")}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.created_at && moment(this.state.scheduleunit.updated_at,moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12">Start Time</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.start_time && moment(this.state.scheduleunit.start_time).format("YYYY-MMM-DD HH:mm:SS")}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.start_time && moment(this.state.scheduleunit.start_time).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
                             <label className="col-lg-2 col-md-2 col-sm-12">End Time</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.stop_time && moment(this.state.scheduleunit.stop_time).format("YYYY-MMM-DD HH:mm:SS")}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.stop_time && moment(this.state.scheduleunit.stop_time).format(UIConstants.CALENDAR_DATETIME_FORMAT)}</span>
                         </div>
                         <div className="p-grid">
                             <label className="col-lg-2 col-md-2 col-sm-12" >Duration (HH:mm:ss)</label>
-                            <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc((this.state.scheduleunit.duration?this.state.scheduleunit.duration:0)*1000).format('HH:mm:ss')}</span>
+                            <span className="col-lg-4 col-md-4 col-sm-12">{moment.utc((this.state.scheduleunit.duration?this.state.scheduleunit.duration:0)*1000).format(UIConstants.CALENDAR_TIME_FORMAT)}</span>
                             <label className="col-lg-2 col-md-2 col-sm-12">Template ID</label>
                             <span className="col-lg-4 col-md-4 col-sm-12">{this.state.scheduleunit.observation_strategy_template_id}</span>
                         </div>
@@ -478,7 +629,19 @@ class ViewSchedulingUnit extends Component{
                     paths - specify the path for navigation - Table will set "id" value for each row in action button
                     
                 */}
-                {this.state.isLoading ? <AppLoader/> :this.state.schedule_unit_task.length>0 &&
+    
+                <div className="delete-option">
+                    <div >
+                        <span className="p-float-label">
+                            {this.state.schedule_unit_task && this.state.schedule_unit_task.length > 0 &&
+                                <a href="#" onClick={this.confirmDeleteTasks}  title="Delete selected Task(s)">
+                                    <i class="fa fa-trash" aria-hidden="true" ></i>
+                                </a>
+                            }
+                        </span>
+                    </div>                           
+                </div>
+                {this.state.isLoading ? <AppLoader/> : (this.state.schedule_unit_task.length>0 )?
                     <ViewTable 
                         data={this.state.schedule_unit_task} 
                         defaultcolumns={this.state.defaultcolumns}
@@ -491,16 +654,33 @@ class ViewSchedulingUnit extends Component{
                         paths={this.state.paths}
                         unittest={this.state.unittest}
                         tablename="scheduleunit_task_list"
+                        allowRowSelection={true}
+                        onRowSelection = {this.onRowSelection}
                     />
+                    :<div>No Tasks found</div>
                 }
                  
-                {<Stations
-                    stationGroup={this.state.stationGroup}
-                    targetObservation={this.state.targetObservation}
-                    view
-                />}
+                {!this.state.isLoading  &&
+                    <>
+                    {(this.state.stationGroup && this.state.stationGroup.length > 0 )?
+                        <Stations
+                            stationGroup={this.state.stationGroup}
+                            targetObservation={this.state.targetObservation}
+                            view
+                        />
+                        :<>
+                        <div style={{marginTop: "10px"}}>
+                            <h3>Station Groups</h3>
+                        </div>
+                        <div>No Station Groups Specified</div>
+                        </>
+                    }
 
-                {this.state.scheduleunit && this.state.scheduleunit.scheduling_constraints_doc && <SchedulingConstraint disable constraintTemplate={this.state.constraintSchema} initValue={this.state.scheduleunit.scheduling_constraints_doc} />}
+                    {this.state.scheduleunit && this.state.scheduleunit.scheduling_constraints_doc && 
+                        <SchedulingConstraint disable constraintTemplate={this.state.constraintTemplate} 
+                                initValue={this.state.scheduleunit.scheduling_constraints_doc} />}
+                    </>
+                }
                 {this.state.showStatusLogs &&
                     <Dialog header={`Status change logs - ${this.state.task?this.state.task.name:""}`} 
                             visible={this.state.showStatusLogs} maximizable maximized={false} position="left" style={{ width: '50vw' }} 
@@ -509,9 +689,11 @@ class ViewSchedulingUnit extends Component{
                     </Dialog>
                  }
                 {/* Dialog component to show messages and get confirmation */}
+                
                 <CustomDialog type="confirmation" visible={this.state.dialogVisible}
                         header={this.state.dialog.header} message={this.state.dialog.detail} actions={this.state.dialog.actions}
-                        onClose={this.closeDialog} onCancel={this.closeDialog} onSubmit={this.createBlueprintTree}></CustomDialog>
+                        content={this.state.dialog.content} width={this.state.dialog.width} showIcon={this.state.dialog.showIcon}
+                        onClose={this.closeDialog} onCancel={this.closeDialog} onSubmit={this.state.dialog.onSubmit}/>
                         
                 {/* Show spinner during backend API call */}
                 <CustomPageSpinner visible={this.state.showSpinner} />

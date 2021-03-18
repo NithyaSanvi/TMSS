@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Redirect } from 'react-router-dom';
 import _ from 'lodash';
+import moment from 'moment';
 import { Growl } from 'primereact/components/growl/Growl';
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
@@ -234,6 +235,7 @@ export class ReservationCreate extends Component {
     saveReservation(){
         let reservation = this.state.reservation;
         let project = this.projects.find(project => project.name === reservation.project);
+        reservation['start_time'] = moment(reservation['start_time']).format(UIConstants.CALENDAR_DATETIME_FORMAT);
         reservation['duration'] = ( reservation['duration'] === ''? null: UnitService.getHHmmssToSecs(reservation['duration']));
         reservation['project']=  project ? project.url: null;
         reservation['specifications_template']= this.reservationTemplates[0].url;
@@ -355,10 +357,9 @@ export class ReservationCreate extends Component {
                                     <label htmlFor="reservationName" className="col-lg-2 col-md-2 col-sm-12">From Date <span style={{color:'red'}}>*</span></label>
                                     <div className="col-lg-3 col-md-3 col-sm-12">
                                         <Calendar 
-                                            d dateFormat="dd-M-yy"
+                                            d dateFormat="yy-mm-dd"
                                             value= {this.state.reservation.start_time}
                                             onChange= {e => this.setParams('start_time',e.value)}
-                                            onBlur= {e => this.setParams('start_time',e.value)}
                                             data-testid="start_time"
                                             tooltip="Moment at which the reservation starts from, that is, when its reservation can run." tooltipOptions={this.tooltipOptions}
                                             showIcon={true}

@@ -238,7 +238,7 @@ export default (props) => {
         <div className={`p-field p-grid grouping p-fluid ${props.isSummary && 'p-col-12'}`} style={{height: props.height}}>
             <fieldset>
                 <legend>
-                    <label>Stations<span style={{color:'red'}}>*</span></label>
+                    <label>Station Groups<span style={{color:'red'}}>*</span></label>
                 </legend>
                 {!props.isSummary && <>
                     {!props.view && <div className="col-sm-12 p-field p-grid" data-testid="stations">
@@ -272,7 +272,7 @@ export default (props) => {
                                                 className={(state[i] && state[i].error) ?'input-error':''}
                                                 tooltip="Max No. of Missing Stations" tooltipOptions={tooltipOptions} maxLength="128"
                                                 placeholder="Max No. of Missing Stations"
-                                                value={state[i] ? state[i].missing_StationFields : ''}
+                                                value={state[i] ? (state[i].missing_StationFields || 0) : '0'}
                                                 disabled={props.view}
                                                 onChange={(e) => setNoOfmissing_StationFields(i, e.target.value)}/>
                                             {(state[i] && state[i].error) && <span className="error-message">{state[i].missing_StationFields ? `Max. no of missing stations is ${state[i] ? state[i].stations.length : 0}` : 'Max. no of missing stations required'}</span>}

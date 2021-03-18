@@ -146,24 +146,6 @@ const TaskService = {
         console.error(error);
       }
     },
-    getTaskDraftList: async function() {
-      try {
-        const url = `/api/task_draft`;
-        const response = await axios.get(url);
-        return response.data.results;
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    getTaskBlueprintList: async function() {
-      try {
-        const url = `/api/task_blueprint`;
-        const response = await axios.get(url);
-        return response.data.results;
-      } catch (error) {
-        console.error(error);
-      }
-    },
     getAllSubtaskStatusLogs: async function() {
       try {
         const count = (await axios.get('/api/subtask_state_log')).data.count;
@@ -243,6 +225,21 @@ const TaskService = {
 
       }
       return taskRelations;
+    },
+    /**
+     * Delete task based on task type
+     * @param {*} type 
+     * @param {*} id 
+     */
+    deleteTask: async function(type, id) {
+        try {
+            const url = type.toLowerCase() === 'blueprint'? `/api/task_blueprint/${id}`: `/api/task_draft/${id}`;
+            await axios.delete(url);
+            return true;
+        } catch(error) {
+            console.error(error);
+            return false;
+        }
     }
 }
 

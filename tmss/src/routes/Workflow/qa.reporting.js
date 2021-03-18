@@ -21,16 +21,6 @@ class QAreporting extends Component{
         this.handleChange = this.handleChange.bind(this);
     }
 
-    async componentDidMount() {
-        if (this.props.readOnly) {
-            const response = await WorkflowService.getQAReportingTo(this.props.process.qa_reporting_to);
-            this.setState({
-                content: response.operator_report,
-                operator_accept: response.operator_accept
-            });
-        }
-    }
-
     /**
      * Method will trigger on click next buton
      * here onNext props coming from parent, where will handle redirection to other page
@@ -79,7 +69,6 @@ class QAreporting extends Component{
                     <div className="col-lg-12 col-md-12 col-sm-12"></div>
                     <SunEditor enableToolbar={true}
                         setDefaultStyle="min-height: 250px; height: auto;"
-                        setContents={this.state.content}
                         onChange={ this.handleChange }
                         setOptions={{
                             buttonList: [
@@ -95,7 +84,7 @@ class QAreporting extends Component{
                         <label htmlFor="operator_accept " className="p-checkbox-label">Operator Accept</label>
                     </div>
             </div>
-            {!this.props.readOnly && <div className="p-grid p-justify-start">
+            <div className="p-grid p-justify-start">
                 <div className="p-col-1">
                 <Button disabled= {!this.state.content} label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
                 </div>
@@ -103,7 +92,7 @@ class QAreporting extends Component{
                     <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '88px' }} 
                                 onClick={(e) => { this.props.onCancel()}} />
                 </div>
-            </div>}
+            </div>
         </>
     )
 };

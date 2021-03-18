@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import {Calendar} from 'primereact/calendar';
 import moment from 'moment';
+import UIConstants from '../../utils/ui.constants';
 
-const DATE_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
+//const DATE_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 
 export default class CustomDateComp extends Component {
   constructor(props) {
@@ -25,7 +26,7 @@ export default class CustomDateComp extends Component {
   }
   
   isCancelAfterEnd(){
-    let date = (this.state.date !== '' && this.state.date !== 'undefined')? moment(this.state.date).format(DATE_TIME_FORMAT) :'';
+    let date = (this.state.date !== '' && this.state.date !== 'undefined')? moment(this.state.date).format(UIConstants.CALENDAR_DATETIME_FORMAT) :'';
     this.props.context.componentParent.updateTime(
       this.props.node.rowIndex,this.props.colDef.field, date
     );
@@ -34,15 +35,15 @@ export default class CustomDateComp extends Component {
   render() {
     return (
          <Calendar
-              d dateFormat="dd-M-yy"
+              d dateFormat = {UIConstants.CALENDAR_DATE_FORMAT}
               value= {this.state.date}
               onChange= {e => {this.updateDateChanges(e)}}
-              // onBlur= {e => {this.updateDateChanges(e)}}
-              //data-testid="start"
+             // onBlur= {e => {this.updateDateChanges(e)}}
+             //data-testid="start"
+              todayButtonClassName="today-calendar-btn"
               showButtonBar
               showTime= {true}
               showSeconds= {true}
-              todayButtonClassName="today-clander-btn"
               hourFormat= "24"
               showIcon= {false} inline
           />
@@ -50,8 +51,8 @@ export default class CustomDateComp extends Component {
   }
 
 
-  updateDateChanges(e){
-    this.setState({date : e.value || ''});
+  updateDateChanges(e){  
+    this.setState({date : e.value || ''});  
   }
 
   ondatechange(e){

@@ -46,7 +46,7 @@ class App extends Component {
                         {label: 'Project', icon: 'fab fa-fw fa-wpexplorer', to:'/project',section: 'project'},
                         {label: 'Scheduling Units', icon: 'pi pi-fw pi-calendar', to:'/schedulingunit',section: 'schedulingunit'},
                         {label: 'Timeline', icon: 'pi pi-fw pi-clock', to:'/su/timelineview',section: 'su/timelineview'},
-                        {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task'}
+                        //   {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task'},
                     ];
     }
 
@@ -136,7 +136,7 @@ class App extends Component {
             'layout-mobile-sidebar-active': this.state.mobileMenuActive			
         });
         const AppBreadCrumbWithRouter = withRouter(AppBreadcrumb);
-        console.log(this.props);
+        //console.log(this.props);
         return (
         <React.Fragment>
             <div className="App">

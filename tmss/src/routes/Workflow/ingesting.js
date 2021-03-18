@@ -31,7 +31,7 @@ class Ingesting extends Component {
                                 <a rel="noopener noreferrer" href="http://lexar003.control.lofar:9632/" target="_blank">View Ingest Monitoring &nbsp;<span class="fas fa-desktop"></span></a>
                             </label>
                         </div>
-                        {!this.props.readOnly && <div className="p-grid p-justify-start">
+                        <div className="p-grid p-justify-start">
                         <div className="p-col-1">
                             <Button label="Next" className="p-button-primary" icon="pi pi-check"  onClick={ this.onSave }/>
                         </div>
@@ -39,7 +39,7 @@ class Ingesting extends Component {
                             <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }}
                                 onClick={(e) => { this.props.onCancel()}} />
                         </div>
-                        </div>}
+                        </div>
                     </div>
                </>
            )
