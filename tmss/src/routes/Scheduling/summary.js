@@ -91,6 +91,9 @@ export class SchedulingUnitSummary extends Component {
                             if (object) {
                                 newObject[objectKey.replace(/_/g, ' ')] = object;
                             }
+                            if ((objectKey === 'min_target_elevation' || objectKey === 'min_calibrator_elevation') && constraint[objectKey] % 1 !== 0) {
+                                newObject[objectKey.replace(/_/g, ' ')] = newObject[objectKey.replace(/_/g, ' ')].toFixed(2);
+                            }
                         }
                         constraint = (!_.isEmpty(newObject))? newObject:null;
                     }
