@@ -2,13 +2,17 @@ import React, {Component} from 'react';
 import {Redirect} from 'react-router-dom'
 import moment from 'moment';
 import _ from 'lodash';
+import { Dialog } from 'primereact/dialog';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
 import TaskService from '../../services/task.service';
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
 import ViewTable from '../../components/ViewTable';
 import UIConstants from '../../utils/ui.constants';
 import TaskStatusLogs from './state_logs';
-import { Dialog } from 'primereact/dialog';
+import { appGrowl } from '../../layout/components/AppGrowl';
+import { CustomDialog } from '../../layout/components/CustomDialog';
 
 export class TaskList extends Component {
     constructor(props) {
@@ -45,6 +49,7 @@ export class TaskList extends Component {
                  "Created at",
                  "Updated at"
              ],
+             dialog: {},
             defaultcolumns: [ {
                 status_logs: "Status Logs",
                 status:{
@@ -116,6 +121,13 @@ export class TaskList extends Component {
                 "BluePrint / Task Draft link":"filter-input-50",
             }]
         };
+        this.selectedRows = [];
+
+        this.confirmDeleteTasks = this.confirmDeleteTasks.bind(this);
+        this.onRowSelection = this.onRowSelection.bind(this);
+        this.deleteTasks = this.deleteTasks.bind(this);
+        this.closeDialog = this.closeDialog.bind(this);
+        this.getTaskDialogContent = this.getTaskDialogContent.bind(this);
     }
 
     subtaskComponent = (task)=> {
@@ -180,27 +192,6 @@ export class TaskList extends Component {
             scheduletask.produced_by_ids = task.produced_by_ids;
             scheduletask.schedulingUnitId = task.scheduling_unit_draft_id;
             scheduletask.schedulingUnitName = task.scheduling_unit_draft_name;
-            for(const blueprint of task['task_blueprints']){
-                let taskblueprint = {};
-                taskblueprint['tasktype'] = 'Blueprint';
-                taskblueprint['actionpath'] = '/task/view/blueprint/'+blueprint['id'];
-                taskblueprint['blueprint_draft'] = blueprint['draft'];
-                taskblueprint['status'] = blueprint['status'];
-
-                for(const key of commonkeys){
-                    taskblueprint[key] = blueprint[key];
-                }
-                taskblueprint['created_at'] = moment(blueprint['created_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                taskblueprint['updated_at'] = moment(blueprint['updated_at'], moment.ISO_8601).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-                taskblueprint.duration = moment.utc((taskblueprint.duration || 0)*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
-                taskblueprint.relative_start_time = moment.utc(taskblueprint.relative_start_time*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
-                taskblueprint.relative_stop_time = moment.utc(taskblueprint.relative_stop_time*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
-                taskblueprint.template = scheduletask.template;
-                taskblueprint.schedulingUnitId = task.scheduling_unit_draft_id;
-                taskblueprint.subTasks = blueprint.subtasks;
-                //Add Blue print details to array
-                scheduletasklist.push(taskblueprint);
-            }
             //Add Task Draft details to array
             scheduletasklist.push(scheduletask);
         }
@@ -218,6 +209,77 @@ export class TaskList extends Component {
         });
     }
 
+    /**
+     * Prepare Task(s) details to show on confirmation dialog
+     */
+    getTaskDialogContent() {
+        let selectedTasks = [];
+        for(const obj of this.selectedRows) {
+            debugger
+            selectedTasks.push({id:obj.id, suId: obj.schedulingUnitId, suName: obj.schedulingUnitName, 
+                taskId: obj.id, controlId: obj.subTaskID, taskName: obj.name, status: obj.status});
+        }   
+        return  <>  
+                <DataTable value={selectedTasks} resizableColumns columnResizeMode="expand" className="card" style={{paddingLeft: '0em'}}>
+                    <Column field="suId" header="Scheduling Unit Id"></Column>
+                    <Column field="taskId" header="Task Id"></Column>
+                    <Column field="taskName" header="Task Name"></Column>
+                    <Column field="status" header="Status"></Column>
+                </DataTable>
+        </>
+    }
+
+    confirmDeleteTasks() {
+        debugger
+        if(this.selectedRows.length === 0) {
+            appGrowl.show({severity: 'info', summary: 'Select Row', detail: 'Select Task to delete.'});
+        }   else {
+            let dialog = {};
+            dialog.type = "confirmation";
+            dialog.header= "Confirm to Delete Task(s)";
+            dialog.detail = "Do you want to delete the selected Task(s)?";
+            dialog.content = this.getTaskDialogContent;
+            dialog.actions = [{id: 'yes', title: 'Yes', callback: this.deleteTasks},
+            {id: 'no', title: 'No', callback: this.closeDialog}];
+            dialog.onSubmit = this.deleteTasks;
+            dialog.width = '55vw';
+            dialog.showIcon = false;
+            this.setState({dialog: dialog, dialogVisible: true});
+        }
+    }
+
+    /**
+     * Delete Task(s)
+     */
+    async deleteTasks() {
+        let hasError = false;
+        for(const task of this.selectedRows) {
+            if(!await TaskService.deleteTask(task.tasktype, task.id)) {
+                hasError = true;
+            }
+        }
+        if(hasError){
+            appGrowl.show({severity: 'error', summary: 'error', detail: 'Error while deleting Task(s)'});
+            this.setState({dialogVisible: false});
+        }   else {
+            this.selectedRows = [];
+            this.setState({dialogVisible: false});
+            this.componentDidMount();
+            appGrowl.show({severity: 'success', summary: 'Success', detail: 'Task(s) deleted successfully'});
+        }
+    }
+
+    /**
+     * Callback function to close the dialog prompted.
+     */
+    closeDialog() {
+        this.setState({dialogVisible: false});
+    }
+
+    onRowSelection(selectedRows) {
+        this.selectedRows = selectedRows;
+    }
+
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -227,19 +289,32 @@ export class TaskList extends Component {
             <React.Fragment>
                 <PageHeader location={this.props.location} title={'Task - List'} />
                 {this.state.isLoading? <AppLoader /> :
-                    <ViewTable 
-                        data={this.state.tasks} 
-                        defaultcolumns={this.state.defaultcolumns}
-                        optionalcolumns={this.state.optionalcolumns}
-                        columnclassname={this.state.columnclassname}
-                        columnOrders={this.state.columnOrders}
-                        defaultSortColumn={this.state.defaultSortColumn}
-                        showaction="true"
-                        keyaccessor="id"
-                        paths={this.state.paths}
-                        unittest={this.state.unittest}
-                        tablename="scheduleunit_task_list"
-                    />
+                    <>
+                         <div className="delete-option">
+                            <div >
+                                <span className="p-float-label">
+                                    <a href="#" onClick={this.confirmDeleteTasks}  title="Delete selected Task(s)">
+                                        <i class="fa fa-trash" aria-hidden="true" ></i>
+                                    </a>
+                                </span>
+                            </div>                           
+                        </div>
+                        <ViewTable 
+                            data={this.state.tasks} 
+                            defaultcolumns={this.state.defaultcolumns}
+                            optionalcolumns={this.state.optionalcolumns}
+                            columnclassname={this.state.columnclassname}
+                            columnOrders={this.state.columnOrders}
+                            defaultSortColumn={this.state.defaultSortColumn}
+                            showaction="true"
+                            keyaccessor="id"
+                            paths={this.state.paths}
+                            unittest={this.state.unittest}
+                            tablename="scheduleunit_task_list"
+                            allowRowSelection={true}
+                            onRowSelection = {this.onRowSelection}
+                        />
+                    </>
                 }
                 {this.state.showStatusLogs &&
                     <Dialog header={`Status change logs - ${this.state.task?this.state.task.name:""}`} 
@@ -248,7 +323,12 @@ export class TaskList extends Component {
                             <TaskStatusLogs taskId={this.state.task.id}></TaskStatusLogs>
                     </Dialog>
                 }
-            </React.Fragment>
+
+                <CustomDialog type="confirmation" visible={this.state.dialogVisible}
+                    header={this.state.dialog.header} message={this.state.dialog.detail} actions={this.state.dialog.actions}
+                    content={this.state.dialog.content} width={this.state.dialog.width} showIcon={this.state.dialog.showIcon}
+                    onClose={this.closeDialog} onCancel={this.closeDialog} onSubmit={this.state.dialog.onSubmit}/>
+                </React.Fragment>
         );
     }
 } 
