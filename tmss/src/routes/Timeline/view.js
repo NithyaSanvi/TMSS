@@ -872,7 +872,6 @@ export class TimelineView extends Component {
                             <div className={isSUDetsVisible || isTaskDetsVisible || (canExtendSUList && !canShrinkSUList)?"col-lg-4 col-md-4 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":"col-lg-6 col-md-6 col-sm-12")}
                                  style={{position: "inherit", borderRight: "5px solid #efefef", paddingTop: "10px"}}>
                                 <ViewTable 
-                                    redirectNewWindow
                                     data={this.state.suBlueprintList} 
                                     defaultcolumns={[{name: "Name",
                                                         start_time:
@@ -975,7 +974,6 @@ export class TimelineView extends Component {
                                      style={{borderLeft: "1px solid #efefef", marginTop: "0px", backgroundColor: "#f2f2f2"}}>
                                     {this.state.isSummaryLoading?<AppLoader /> :
                                         <SchedulingUnitSummary schedulingUnit={suBlueprint} suTaskList={this.state.suTaskList}
-                                                redirectNewWindow        
                                                 constraintsTemplate={this.state.suConstraintTemplate}
                                                 stationGroup={this.state.stationGroup}
                                                 closeCallback={this.closeSUDets}></SchedulingUnitSummary>

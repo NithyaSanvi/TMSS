@@ -665,7 +665,6 @@ export class WeekTimelineView extends Component {
                                      style={{borderLeft: "1px solid #efefef", marginTop: "0px", backgroundColor: "#f2f2f2"}}>
                                     {this.state.isSummaryLoading?<AppLoader /> :
                                         <SchedulingUnitSummary schedulingUnit={suBlueprint} suTaskList={this.state.suTaskList}
-                                                redirectNewWindow
                                                 constraintsTemplate={this.state.suConstraintTemplate}
                                                 closeCallback={this.closeSUDets}
                                                 stationGroup={this.state.stationGroup}
