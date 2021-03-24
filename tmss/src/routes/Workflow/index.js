@@ -118,7 +118,7 @@ export default (props) => {
             else if (workflowLastTask.status.toLowerCase() === 'done' || workflowLastTask.status.toLowerCase() === 'finished') {
                 await getDataProductDetails(taskList);
                 // setDisableNextButton(true);
-                setCurrentStep(8);
+                setCurrentStep(9);
             }
             setLoader(false); 
         });
@@ -215,8 +215,9 @@ export default (props) => {
                                                  onError={showMessage} task={getIngestTask()} />
                             </TabPanel>
                             <TabPanel header="Unpin Data" disabled={currentStep < 8} headerClassName="workflow-header">
-                                <DataProduct onNext={onNext} onCancel={onCancel} onError={showMessage} readOnly={ currentStep !== 8 } 
-                                                tasks={tasks} schedulingUnit={schedulingUnit} />
+                                <DataProduct onNext={onNext} onCancel={onCancel} id={QASUProcess.id} onError={showMessage} readOnly={ currentStep !== 8 } 
+                                                tasks={tasks} getCurrentTaskDetails={getCurrentTaskDetails}  
+                                                schedulingUnit={schedulingUnit} />
                             </TabPanel>
                             <TabPanel header="Done" disabled={currentStep < 9} headerClassName="workflow-header">
                                 <Done onNext={onNext} onCancel={onCancel} onError={showMessage} readOnly={ currentStep !== 9 } />

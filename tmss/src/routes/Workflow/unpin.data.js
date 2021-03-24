@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import ViewTable from './../../components/ViewTable';
+import WorkflowService from '../../services/workflow.service';
 
-export default ({ tasks, schedulingUnit, onCancel }) => {
+export default ({ tasks, schedulingUnit, onCancel, getCurrentTaskDetails }) => {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const defaultcolumns = [ {
         name: "Name",
@@ -20,6 +21,27 @@ export default ({ tasks, schedulingUnit, onCancel }) => {
     const toggleDialog = () => {
         setShowConfirmDialog(!showConfirmDialog)
     };
+
+    /**
+     * Method will trigger on click next buton
+     * here onNext props coming from parent, where will handle redirection to other page
+     */
+    const Next = async () => {
+        const currentWorkflowTask = await this.props.getCurrentTaskDetails();
+        const promise = [];
+        if (currentWorkflowTask && !currentWorkflowTask.fields.owner) {
+            promise.push(WorkflowService.updateAssignTo(currentWorkflowTask.pk, { owner: this.state.assignTo }));
+        }
+        promise.push(WorkflowService.updateQA_Perform(this.props.id, {}));
+        Promise.all(promise).then((responses) => {
+            if (responses.indexOf(null)<0) {
+                this.props.onNext();
+            }   else {
+                this.props.onError();
+            } 
+        });
+        setShowConfirmDialog(false)
+    }
 
     return (
         <div className="p-fluid mt-2">
@@ -51,7 +73,7 @@ export default ({ tasks, schedulingUnit, onCancel }) => {
                 <Dialog header={'Confirm'} visible={showConfirmDialog} style={{ width: '40vw' }} inputId="confirm_dialog"
                     modal={true} onHide={() => setShowConfirmDialog(false)}
                     footer={<div>
-                        <Button key="back" onClick={() => setShowConfirmDialog(false)} label="Yes" />
+                        <Button key="back" onClick={Next} label="Yes" />
                         <Button key="submit" type="primary" onClick={() => setShowConfirmDialog(false)} label="No" />
                     </div>
                     } >
