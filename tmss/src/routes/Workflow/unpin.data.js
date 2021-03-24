@@ -4,7 +4,7 @@ import { Dialog } from 'primereact/dialog';
 import ViewTable from './../../components/ViewTable';
 import WorkflowService from '../../services/workflow.service';
 
-export default ({ tasks, schedulingUnit, onCancel, getCurrentTaskDetails }) => {
+export default ({ tasks, schedulingUnit, onCancel, ...props }) => {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const defaultcolumns = [ {
         name: "Name",
@@ -27,17 +27,17 @@ export default ({ tasks, schedulingUnit, onCancel, getCurrentTaskDetails }) => {
      * here onNext props coming from parent, where will handle redirection to other page
      */
     const Next = async () => {
-        const currentWorkflowTask = await this.props.getCurrentTaskDetails();
+        const currentWorkflowTask = await props.getCurrentTaskDetails();
         const promise = [];
         if (currentWorkflowTask && !currentWorkflowTask.fields.owner) {
-            promise.push(WorkflowService.updateAssignTo(currentWorkflowTask.pk, { owner: this.state.assignTo }));
+            promise.push(WorkflowService.updateAssignTo(currentWorkflowTask.pk, { owner: '' }));
         }
-        promise.push(WorkflowService.updateQA_Perform(this.props.id, {}));
+        promise.push(WorkflowService.updateQA_Perform(props.id, {}));
         Promise.all(promise).then((responses) => {
             if (responses.indexOf(null)<0) {
-                this.props.onNext();
+                props.onNext();
             }   else {
-                this.props.onError();
+                props.onError();
             } 
         });
         setShowConfirmDialog(false)

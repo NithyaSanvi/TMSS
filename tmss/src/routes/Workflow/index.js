@@ -216,7 +216,7 @@ export default (props) => {
                             </TabPanel>
                             <TabPanel header="Unpin Data" disabled={currentStep < 8} headerClassName="workflow-header">
                                 <DataProduct onNext={onNext} onCancel={onCancel} id={QASUProcess.id} onError={showMessage} readOnly={ currentStep !== 8 } 
-                                                tasks={tasks} getCurrentTaskDetails={getCurrentTaskDetails}  
+                                                tasks={tasks} getCurrentTaskDetails={getCurrentTaskDetails}  onError={showMessage} 
                                                 schedulingUnit={schedulingUnit} />
                             </TabPanel>
                             <TabPanel header="Done" disabled={currentStep < 9} headerClassName="workflow-header">
