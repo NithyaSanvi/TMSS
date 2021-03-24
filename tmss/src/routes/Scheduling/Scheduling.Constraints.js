@@ -4,6 +4,7 @@ import _ from 'lodash';
 import Jeditor from '../../components/JSONEditor/JEditor'; 
 import UnitConversion from '../../utils/unit.converter';
 import UIConstants from '../../utils/ui.constants';
+import UtilService from '../../services/util.service';
 /* eslint-disable react-hooks/exhaustive-deps */
 
 export default (props) => {
@@ -11,6 +12,7 @@ export default (props) => {
     const { parentFunction = (editorFn) => { editorFunction = editorFn;} } = props;
     const [constraintSchema, setConstraintSchema] = useState();
     const [initialValue, setInitialValue] = useState();
+    const [systemTime, setSystemTime] = useState();
     //SU Constraint Editor Property Order,format and validation
     const configureProperties = (properties) => {
         for (const propertyKey in properties) {
@@ -69,7 +71,8 @@ export default (props) => {
         }
     };
     //DateTime flatPicker component enabled with seconds
-    const setDateTimeOption = (propertyValue) => {
+    const setDateTimeOption = async(propertyValue) => {
+        const systemTime = moment.utc((await UtilService.getUTC()));
         propertyValue.format = 'datetime-local';
         propertyValue.validationType = 'dateTime';
         propertyValue.skipFormat = true;
@@ -83,6 +86,9 @@ export default (props) => {
                 "enableSeconds": true,
                 "time_24hr": true,
                 "allowInput": true,
+                "defaultDate": systemTime.format(UIConstants.CALENDAR_DEFAULTDATE_FORMAT),
+                "defaultHour": systemTime.hour(),
+                "defaultMinute": systemTime.minutes()
            }          
         };
     };
@@ -101,7 +107,7 @@ export default (props) => {
             } else if(definitionName === 'timewindow') {
                 for (let property in schema.definitions.timewindow.properties) {
                     if(property === 'to' || property === 'from'){
-                        setDateTimeOption(schema.definitions.timewindow.properties[property]);
+                        // setDateTimeOption(schema.definitions.timewindow.properties[property]);
                         if (property === 'from') {
                             schema.definitions.timewindow.properties[property].propertyOrder = 1;
                         } else {
@@ -148,7 +154,9 @@ export default (props) => {
         }
     }
 
-    const constraintStrategy = () => {
+    const constraintStrategy = async() => {
+        const currentSystemTime = moment.utc(await UtilService.getUTC())
+        setSystemTime(currentSystemTime);
         // const constraintTemplate = { ...props.constraintTemplate }
         const constraintTemplate = _.cloneDeep(props.constraintTemplate);
         if (constraintTemplate.schema) {
@@ -196,6 +204,9 @@ export default (props) => {
         if (!props.constraintTemplate) {
             return;
         }
+        UtilService.getUTC().then(utcTime => {
+            setSystemTime(moment.utc(utcTime));
+        });
         if (props.initValue) {
             modifyInitiValue();
         }

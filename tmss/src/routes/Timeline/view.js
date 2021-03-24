@@ -845,9 +845,9 @@ export class TimelineView extends Component {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
         }
-         if (this.state.loader) {
-            return <AppLoader />
-        }
+        //  if (this.state.loader) {
+        //     return <AppLoader />
+        // }
         const isSUDetsVisible = this.state.isSUDetsVisible;
         const isTaskDetsVisible = this.state.isTaskDetsVisible;
         const canExtendSUList = this.state.canExtendSUList;

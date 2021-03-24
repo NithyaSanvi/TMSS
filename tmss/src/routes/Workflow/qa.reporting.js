@@ -5,7 +5,6 @@ import 'suneditor/dist/css/suneditor.min.css'; // Import Sun Editor's CSS File
 import { Dropdown } from 'primereact/dropdown';
 import WorkflowService from '../../services/workflow.service';
 import { Checkbox } from 'primereact/checkbox';
-
 //import katex from 'katex' // for mathematical operations on sun editor this component should be added
 //import 'katex/dist/katex.min.css'
 
@@ -16,20 +15,10 @@ class QAreporting extends Component{
         this.state={
             content: '',
             assignTo: '',
-            operator_accept: true
+            operator_accept: false,
         };
         this.Next = this.Next.bind(this);
         this.handleChange = this.handleChange.bind(this);
-    }
-
-    async componentDidMount() {
-        if (this.props.readOnly) {
-            const QAreportingresponse = await WorkflowService.getQAReportingTo(this.props.process.qa_reporting_to);
-            this.setState({
-                content: QAreportingresponse.operator_report,
-                operator_accept: QAreportingresponse.operator_accept
-            });
-        }
     }
 
     /**
@@ -66,45 +55,44 @@ class QAreporting extends Component{
     render() {
         return (
         <>
-           <div>
-            <div className={`p-fluid-grid ${this.props.readOnly ? 'disableContainer' : ''}`}>
-                <div className="p-field p-grid" style={{ paddingLeft: '-10px' }}>
+            <div className="p-fluid">
+                <div className="p-field p-grid">
                     <label htmlFor="assignTo" className="col-lg-2 col-md-2 col-sm-12">Assign To</label>
                     <div className="col-lg-3 col-md-3 col-sm-12" data-testid="assignTo" >
                     <Dropdown inputId="assignToValue" value={this.state.assignTo} optionLabel="value" optionValue="id" onChange={(e) => this.setState({assignTo: e.value})}
                             options={[{ value: 'User 1', id: 1 }, { value: 'User 2', id: 2 }, { value: 'User 3', id: 3 }]}
                             placeholder="Assign To" />
                     </div>
-                </div>                
-                <div className="p-field p-grid" style={{ padding: '12px' }}>
+                </div>
+                <div className="p-grid" style={{ padding: '10px' }}>
                     <label htmlFor="comments" >Comments<span style={{color:'red'}}>*</span></label>
                     <div className="col-lg-12 col-md-12 col-sm-12"></div>
                     <SunEditor enableToolbar={true}
                         setDefaultStyle="min-height: 250px; height: auto;"
                         onChange={ this.handleChange }
-                        setContents={this.state.content}
                         setOptions={{
                             buttonList: [
                                 ['undo', 'redo', 'bold', 'underline', 'fontColor', 'table', 'link', 'image', 'video', 'italic', 'strike', 'subscript',
                                     'superscript', 'outdent', 'indent', 'fullScreen', 'showBlocks', 'codeView', 'preview', 'print', 'removeFormat']
                             ]
                         }} />
-                </div>            
-                <div className="p-col-12">
-                    <Checkbox inputId="operator_accept" onChange={e => this.setState({operator_accept: e.checked})} checked={this.state.operator_accept}></Checkbox>
-                    <label htmlFor="operator_accept " style={{paddingLeft:"5px"}}>The data quality adheres to policy (Operator evaluation)</label>
-                </div>            
+                </div>
             </div>
-            {!this.props.readOnly && <div className="p-grid p-justify-start">
+            <div className="p-grid">
+                    <div className="p-col-12">
+                        <Checkbox inputId="operator_accept" onChange={e => this.setState({operator_accept: e.checked})} checked={this.state.operator_accept}></Checkbox>
+                        <label htmlFor="operator_accept " className="p-checkbox-label">Operator Accept</label>
+                    </div>
+            </div>
+            <div className="p-grid p-justify-start">
                 <div className="p-col-1">
-                <Button disabled={!this.state.content || this.props.readOnly} label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
+                <Button disabled= {!this.state.content} label="Next" className="p-button-primary" icon="pi pi-check" onClick={ this.Next } />
                 </div>
                 <div className="p-col-1">
                     <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '88px' }} 
                                 onClick={(e) => { this.props.onCancel()}} />
                 </div>
-            </div>}
-        </div>
+            </div>
         </>
     )
 };

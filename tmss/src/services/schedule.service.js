@@ -493,9 +493,10 @@ const ScheduleService = {
     updateSUDraftFromObservStrategy: async function(observStrategy,schedulingUnit,tasks,tasksToUpdate,station_groups) {
         try {
             delete schedulingUnit['duration'];
-           
+            schedulingUnit['isSUUpdated'] = false;
             schedulingUnit = await this.updateSchedulingUnitDraft(schedulingUnit);
             if (!schedulingUnit.error) {
+                schedulingUnit['isSUUpdated'] = true;
                 for (const taskToUpdate in tasksToUpdate) {
                     let task = tasks.find(task => { return task.name === taskToUpdate});
                     task.specifications_doc = observStrategy.template.tasks[taskToUpdate].specifications_doc;
@@ -515,6 +516,7 @@ const ScheduleService = {
             return schedulingUnit;
         }   catch(error) {
             console.error(error);
+            schedulingUnit['isSUUpdated'] = false;
             return {
                 error: true,
                 message: 'Unable to Update Task Drafts'

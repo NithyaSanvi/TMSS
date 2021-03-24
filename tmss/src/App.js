@@ -8,6 +8,9 @@ import {AppFooter } from './layout/components/AppFooter';
 import {RoutedContent} from './routes';
 import {AppBreadcrumb } from "./layout/components/AppBreadcrumb";
 import {withRouter } from 'react-router';
+import handleResponse from "./response.handler"
+import { setAppGrowl } from './layout/components/AppGrowl';
+import { Growl } from 'primereact/components/growl/Growl';
 
 import 'primeicons/primeicons.css';
 import 'primereact/resources/themes/nova-light/theme.css';
@@ -45,8 +48,9 @@ class App extends Component {
                         {label: 'Cycle', icon:'pi pi-fw pi-spinner', to:'/cycle',section: 'cycle'},
                         {label: 'Project', icon: 'fab fa-fw fa-wpexplorer', to:'/project',section: 'project'},
                         {label: 'Scheduling Units', icon: 'pi pi-fw pi-calendar', to:'/schedulingunit',section: 'schedulingunit'},
+                        {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task'},
                         {label: 'Timeline', icon: 'pi pi-fw pi-clock', to:'/su/timelineview',section: 'su/timelineview'},
-                        //   {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task'},
+                      
                     ];
     }
 
@@ -139,6 +143,7 @@ class App extends Component {
         //console.log(this.props);
         return (
         <React.Fragment>
+            <Growl ref={(el) => setAppGrowl(el)} />
             <div className="App">
                 {/* <div className={wrapperClass} onClick={this.onWrapperClick}> */}
                 <div className={wrapperClass}>
@@ -177,4 +182,4 @@ class App extends Component {
     }
 }
 
-export default App;
+export default handleResponse(App);

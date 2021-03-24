@@ -53,6 +53,24 @@ const TaskService = {
         console.error(error);
       }
     },
+    getTaskDraftList: async function() {
+      try {
+        const url = `/api/task_draft`;
+        const response = await axios.get(url);
+        return response.data.results;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    getTaskBlueprintList: async function() {
+      try {
+        const url = `/api/task_blueprint`;
+        const response = await axios.get(url);
+        return response.data.results;
+      } catch (error) {
+        console.error(error);
+      }
+    },
     updateTask: async function(type, task) {
       try {
         const response = await axios.put(('/api/task_draft/' + task.id + "/"), task);
