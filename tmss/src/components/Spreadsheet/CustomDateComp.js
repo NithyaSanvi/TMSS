@@ -1,11 +1,7 @@
 import React, { Component } from 'react';
-import Flatpickr from "react-flatpickr";
 import {Calendar} from 'primereact/calendar';
 import moment from 'moment';
 import UIConstants from '../../utils/ui.constants';
-import UtilService from '../../services/util.service';
-
-import "flatpickr/dist/flatpickr.css";
 
 //const DATE_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 
@@ -20,13 +16,9 @@ export default class CustomDateComp extends Component {
   componentDidMount(){
     let parentRows = this.props.agGridReact.props.rowData[this.props.node.rowIndex];
     let parentCellData = parentRows[this.props.colDef.field];
-    UtilService.getUTC()
-    .then(systemTime => {
-      this.setState({
-        date:parentCellData,
-        systemTime: moment.utc(systemTime)
-      })
-    });
+    this.setState({
+      date:parentCellData
+    })
   }
 
   isPopup() {
@@ -41,30 +33,30 @@ export default class CustomDateComp extends Component {
   }
 
   render() {
-    return this.state.systemTime?(
-        <Flatpickr
-            data-enable-time 
-            options={{
-                    "inline": true,
-                    "enableSeconds": true,
-                    "time_24hr": true,
-                    "defaultDate": this.state.systemTime?this.state.systemTime.format(UIConstants.CALENDAR_DEFAULTDATE_FORMAT):"",
-                    "defaultHour": this.state.systemTime?this.state.systemTime.hours():12,
-                    "defaultMinute": this.state.systemTime?this.state.systemTime.minutes():0
-                    }}
-            value={this.state.date}
-            onChange= {value => {this.updateDateChanges(value[0]?value[0]:this.state.date)}}
-        />
-    ):"";
+    return (
+         <Calendar
+              d dateFormat = {UIConstants.CALENDAR_DATE_FORMAT}
+              value= {this.state.date}
+              onChange= {e => {this.updateDateChanges(e)}}
+             // onBlur= {e => {this.updateDateChanges(e)}}
+             //data-testid="start"
+              todayButtonClassName="today-calendar-btn"
+              showButtonBar
+              showTime= {true}
+              showSeconds= {true}
+              hourFormat= "24"
+              showIcon= {false} inline
+          />
+        );
   }
 
 
   updateDateChanges(e){  
-    this.setState({date : e || ''});  
+    this.setState({date : e.value || ''});  
   }
 
   ondatechange(e){
-    this.setState({date : e}); 
+    this.setState({date : e.value}); 
   }
    
   getDate() {

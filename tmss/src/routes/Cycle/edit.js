@@ -318,7 +318,7 @@ export class CycleEdit extends Component {
                         this.saveCycleQuota(cycle);
                     }   else {
                         this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to update Cycle'});
-                        //this.setState({errors: cycle});
+                        this.setState({errors: cycle});
                     }
                 });
         }
@@ -373,7 +373,7 @@ export class CycleEdit extends Component {
         if (_.keys(quotaError).length === 0) {
             dialog = {header: 'Success', detail: 'Cycle updated successfully.'};
         }   else {
-            dialog = {header: 'Error', detail: 'Cycle updated successfully but resource allocation not updated properly.'};
+            dialog = {header: 'Error', detail: 'Cycle updated successfully but resource allocation not updated properly. Try again!'};
         }
         this.setState({dialogVisible: true, dialog: dialog});
     }

@@ -9,7 +9,7 @@ import {NotFound} from '../layout/components/NotFound';
 import {ProjectList, ProjectCreate, ProjectView, ProjectEdit} from './Project';
 import {Dashboard} from './Dashboard';
 import {Scheduling} from './Scheduling';
-import {TaskEdit, TaskView, DataProduct, TaskList} from './Task';
+import {TaskEdit, TaskView, DataProduct} from './Task';
 import ViewSchedulingUnit from './Scheduling/ViewSchedulingUnit'
 import SchedulingUnitCreate from './Scheduling/create';
 import EditSchedulingUnit from './Scheduling/edit';
@@ -41,9 +41,9 @@ export const routes = [
         title: 'Scheduling Unit - Add'
     },{
         path: "/task",
-        component: TaskList,
+        component: TaskView,
         name: 'Task',
-        title: 'Task-List'
+        title: 'Task-View'
     },{
         path: "/task/view",
         component: TaskView,

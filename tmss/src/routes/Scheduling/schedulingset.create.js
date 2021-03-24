@@ -5,7 +5,6 @@ import UIConstants from '../../utils/ui.constants';
 import { CustomDialog } from '../../layout/components/CustomDialog';
 import ScheduleService from '../../services/schedule.service';
 import { Growl } from 'primereact/components/growl/Growl';
-import { appGrowl } from './../../layout/components/AppGrowl';
 
 export class SchedulingSet extends Component {
 
@@ -33,13 +32,13 @@ export class SchedulingSet extends Component {
                                 schedulingSet['generator_doc'] = {};
                                 schedulingSet['scheduling_unit_drafts'] = [];
                                 const suSet = await ScheduleService.saveSchedulingSet(schedulingSet);                         
-                                if (suSet.id && suSet.id !== null) {
-                                    appGrowl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Set is created successfully.'});
+                                if (suSet.id !== null) {
+                                    this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Set is created successfully.'});
                                     this.setState({suSet: suSet, dialogVisible: true, });
                                     this.props.onCancel();
-                                } /*  else {
+                                }   else {
                                     this.growl.show({severity: 'error', summary: 'Error Occured', detail: schedulingSet.message || 'Unable to save Scheduling Set'});
-                                } */
+                                }
                             }
                         }},
                          {id:"no", title: 'Cancel', callback: this.props.onCancel} ];

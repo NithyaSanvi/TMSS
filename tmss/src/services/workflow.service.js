@@ -92,6 +92,14 @@ const WorkflowService = {
         }   catch(error) {
             console.error('[workflow.services.qa_pi_verification]',error);
         }
+    },
+    getQADecideAcceptance: async (id) => {
+        try {
+            const response = await axios.get(`/workflow_api/scheduling_unit_flow/qa_decide_acceptance/${id}`);
+            return response.data;
+        }   catch(error) {
+            console.error('[workflow.services.qa_decide_acceptance]',error);
+        }
     }
 }
 

@@ -39,13 +39,12 @@ class ProcessingDone extends Component {
                                 </div>
                             </div>
                          </div>
-                        <div className="p-grid p-justify-start">
-                        <div className="p-col-1">
-                            <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} 
-                                onClick={(e) => {this.props.onCancel()}} />
-                        </div>
-                        </div>
-                
+                        {!this.props.readOnly && <div className="p-grid p-justify-start">
+                            <div className="p-col-1">
+                                <Button label="Cancel" className="p-button-danger" icon="pi pi-times"  style={{ width : '90px' }} 
+                                    onClick={(e) => {this.props.onCancel()}} />
+                            </div>
+                        </div>}
                     </>
             )
    };

@@ -3,3 +3,6 @@
     vertical-align: middle;
     margin-top: 0px; 
   }
+  .p-checkbox + label {
+    vertical-align: unset;
+  }

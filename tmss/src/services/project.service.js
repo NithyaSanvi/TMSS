@@ -68,14 +68,10 @@ const ProjectService = {
     saveProject: async function(project, projectQuota) {
       try {
         const response = await axios.post(('/api/project/'), project);
-        project = response.data;
-        project['isQuotaCreated'] = true;
-        for (let  quota of projectQuota) {
+        project = response.data
+        for (let quota of projectQuota) {
           quota.project = project.url;
-          let response = await this.saveProjectQuota(quota);
-          if (response.status > 299) {
-              project['isQuotaCreated'] = false;
-          }
+          this.saveProjectQuota(quota);
         }
         return response.data;
       } catch (error) {
@@ -87,33 +83,29 @@ const ProjectService = {
     updateProject: async function(id, project) {
       try {
         const response = await axios.put((`/api/project/${id}/`), project);
-        project = response.data;
-        project['isUpdated'] = true;
-        return project;
+        return response.data;
       } catch (error) {
+        // console.log(error);
         console.log(error.response.data);
-        project = error.response.data;
-        project['isUpdated'] = false;
-        return project;
+        return error.response.data;
       }
     },
     saveProjectQuota: async function(projectQuota) {
       try {
         const response = await axios.post(('/api/project_quota/'), projectQuota);
-        return response;
+        return response.data;
       } catch (error) {
         console.error(error);
-        return error.response;
+        return null;
       }
     },
     updateProjectQuota: async function(projectQuota) {
-      const response = null;
       try {
         const response = await axios.put(`/api/project_quota/${projectQuota.id}/`, projectQuota);
         return response.data;
       } catch (error) {
         console.error(error);
-        return response;
+        return null;
       }
     },
     deleteProjectQuota: async function(projectQuota) {

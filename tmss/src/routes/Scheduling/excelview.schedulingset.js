@@ -1723,13 +1723,12 @@ export class SchedulingSetCreate extends Component {
     async saveSU() {
         let newSUCount = 0;
         let existingSUCount = 0;
-        let isUpdated = true;
         try{
             this.setState({
                // saveDialogVisible: false,
                 confirmDialogVisible: false,
                 showSpinner: true
-            });
+            })
          
             let newSU = this.state.schedulingUnit;
             let parameters = this.state.schedulingUnitList[0]['requirements_doc'].parameters;
@@ -1912,10 +1911,7 @@ export class SchedulingSetCreate extends Component {
                     if(taskdata){
                         taskDrafts = taskdata.data.results;
                     }
-                    let updateSu = await ScheduleService.updateSUDraftFromObservStrategy(observStrategy, newSU, taskDrafts, this.state.tasksToUpdate, tmpStationGroups);
-                    if (updateSu && !updateSu.isSUUpdated) {
-                        isUpdated = false;
-                    } 
+                    await ScheduleService.updateSUDraftFromObservStrategy(observStrategy, newSU, taskDrafts, this.state.tasksToUpdate, tmpStationGroups);
                     existingSUCount++;
                 }
                 else if  (suRow.id === 0 && this.isNotEmpty(suRow.suname) && this.isNotEmpty(suRow.sudesc)){
@@ -1925,10 +1921,7 @@ export class SchedulingSetCreate extends Component {
                         scheduling_constraints_template_id: newSU['scheduling_constraints_template_id'],
                         scheduling_set_id: newSU['scheduling_set_id']
                     }
-                    let updateSu = await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, newSchedulueUnit, newConstraint, tmpStationGroups);
-                    if (updateSu && !updateSu.isSUUpdated) {
-                        isUpdated = false;
-                    }
+                    await ScheduleService.saveSUDraftFromObservStrategy(observStrategy, newSchedulueUnit, newConstraint, tmpStationGroups);
                     newSUCount++;
                 }
             }
@@ -1939,13 +1932,7 @@ export class SchedulingSetCreate extends Component {
                 this.dialogType = "success";
                 this.dialogHeader = "Success";
                 this.showIcon = true;
-                if (isUpdated) {
-                    this.dialogMsg = '['+newSUCount+'] Scheduling Units are created & ['+existingSUCount+'] Scheduling Units are updated successfully.';
-                }   else {
-                    this.dialogHeader = "Warning";
-                    this.dialogMsg = '['+newSUCount+'] Scheduling Units are created & ['+existingSUCount+'] Scheduling Units are updated successfully, and there are some Schedule Unit/Task failed to create/update';
-                }
-                
+                this.dialogMsg = '['+newSUCount+'] Scheduling Units are created & ['+existingSUCount+'] Scheduling Units are updated successfully.';
                 this.dialogContent = "";
                 this.onCancel = this.close;
                 this.onClose = this.close;
@@ -1957,7 +1944,6 @@ export class SchedulingSetCreate extends Component {
             }
         }catch(err){
             this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to create/update Scheduling Units'});
-            this.setState({showSpinner: false});
         }
     }
   
