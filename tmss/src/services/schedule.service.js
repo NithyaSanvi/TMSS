@@ -71,6 +71,30 @@ const ScheduleService = {
         }
         return schedulingUnit;
     },
+    getScheduleUnitDraftExtended: async function() {
+        const { data } = await axios.get(`/api/scheduling_unit_draft_extended/`);
+        for (const schedulingUnit of data.results) {
+            schedulingUnit.blueprintList = (await this.getBlueprintsByschedulingUnitId(schedulingUnit.id)).data.results;
+            const schedulingSet = (await axios.get(`/api/scheduling_set/${schedulingUnit.scheduling_set_id}`)).data;
+            schedulingUnit.scheduling_set_object = schedulingSet;
+            schedulingUnit.scheduling_set = schedulingSet.url;
+        }
+        return data.results;
+    },
+    getScheduleUnitBlueprintExtended: async function() {
+        const { data } = await axios.get(`/api/scheduling_unit_blueprint_extended/`);
+        for (const schedulingUnit of data.results) {
+            const schedulingUnitDraft = (await axios.get(`/api/scheduling_unit_draft/${schedulingUnit.draft_id}/`)).data;
+            schedulingUnit.draft_object = schedulingUnitDraft;
+            schedulingUnit.scheduling_set_id = schedulingUnitDraft.scheduling_set_id;
+            schedulingUnit.scheduling_constraints_template_id = schedulingUnitDraft.scheduling_constraints_template_id;
+            schedulingUnit.scheduling_constraints_doc = schedulingUnitDraft.scheduling_constraints_doc?schedulingUnitDraft.scheduling_constraints_doc:{};
+            const schedulingSet = (await axios.get(`/api/scheduling_set/${schedulingUnit.scheduling_set_id}`)).data;
+            schedulingUnit.scheduling_set_object = schedulingSet;
+            schedulingUnit.scheduling_set = schedulingSet.url;
+        }
+        return data.results;
+    },
     //>>>>>> TODO: Remove this method by using/modifying other functions with additional parameters
     getTaskBPWithSubtaskTemplate: async function(id) {
         let result;
