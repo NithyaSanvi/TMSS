@@ -13,8 +13,6 @@ import UIConstants from '../../utils/ui.constants';
 import TaskStatusLogs from './state_logs';
 import { appGrowl } from '../../layout/components/AppGrowl';
 import { CustomDialog } from '../../layout/components/CustomDialog';
-import ScheduleService from '../../services/schedule.service';
-import UnitConverter from '../../utils/unit.converter';
 
 export class TaskList extends Component {
     constructor(props) {
@@ -128,7 +126,7 @@ export class TaskList extends Component {
             }]
         };
         this.selectedRows = [];
-        this.subtaskTemplates = [];
+
         this.confirmDeleteTasks = this.confirmDeleteTasks.bind(this);
         this.onRowSelection = this.onRowSelection.bind(this);
         this.deleteTasks = this.deleteTasks.bind(this);
@@ -149,23 +147,19 @@ export class TaskList extends Component {
      * Formatting the task_blueprints in blueprint view to pass to the ViewTable component
      * @param {Object} schedulingUnit - scheduling_unit_blueprint object from extended API call loaded with tasks(blueprint) along with their template and subtasks
      */
-    getFormattedTaskBlueprints(schedulingUnit) {
+    getFormattedTaskBlueprints(tasks) {
         let taskBlueprintsList = [];
-        for(const taskBlueprint of schedulingUnit.task_blueprints) {
+        for(const taskBlueprint of tasks) {
             taskBlueprint['status_logs'] = this.subtaskComponent(taskBlueprint);
             taskBlueprint['tasktype'] = 'Blueprint';
             taskBlueprint['actionpath'] = '/task/view/blueprint/'+taskBlueprint['id'];
             taskBlueprint['blueprint_draft'] = taskBlueprint['draft'];
             taskBlueprint['relative_start_time'] = 0;
             taskBlueprint['relative_stop_time'] = 0;
-            taskBlueprint.duration = moment.utc((taskBlueprint.duration || 0)*1000).format(UIConstants.CALENDAR_TIME_FORMAT);
-            taskBlueprint.template = taskBlueprint.specifications_template; 
-            taskBlueprint.schedulingUnitName = schedulingUnit.name;
-            for (const subtask of taskBlueprint.subtasks) {
-                subtask.subTaskTemplate = _.find(this.subtaskTemplates, ['id', subtask.specifications_template_id]);
-            }
-            taskBlueprint.schedulingUnitId = taskBlueprint.scheduling_unit_blueprint_id;
+            taskBlueprint.duration = moment.utc((taskBlueprint.duration || 0)*1000).format(UIConstants.CALENDAR_TIME_FORMAT); 
             taskBlueprint.subTasks = taskBlueprint.subtasks;
+            taskBlueprint.schedulingUnitId = taskBlueprint.scheduling_unit_blueprint_id;
+            taskBlueprint.schedulingUnitName = taskBlueprint.scheduling_unit_blueprint_name;            
             taskBlueprintsList.push(taskBlueprint);
         }
         return taskBlueprintsList;
@@ -175,11 +169,11 @@ export class TaskList extends Component {
      * Formatting the task_drafts and task_blueprints in draft view to pass to the ViewTable component
      * @param {Object} schedulingUnit - scheduling_unit_draft object from extended API call loaded with tasks(draft & blueprint) along with their template and subtasks
      */
-    getFormattedTaskDrafts(schedulingUnit) {
+    getFormattedTaskDrafts(tasks) {
         let scheduletasklist=[];
         // Common keys for Task and Blueprint
         let commonkeys = ['id','created_at','description','name','tags','updated_at','url','do_cancel','relative_start_time','relative_stop_time','start_time','stop_time','duration','status'];
-        for(const task of schedulingUnit.task_drafts){
+        for(const task of tasks){
             let scheduletask = {};
             scheduletask['tasktype'] = 'Draft';
             scheduletask['actionpath'] = '/task/view/draft/'+task['id'];
@@ -199,71 +193,21 @@ export class TaskList extends Component {
             scheduletask.produced_by = task.produced_by;
             scheduletask.produced_by_ids = task.produced_by_ids;
             scheduletask.schedulingUnitId = task.scheduling_unit_draft_id;
-            scheduletask.schedulingUnitName = schedulingUnit.name;
+            scheduletask.schedulingUnitName = task.scheduling_unit_draft_name;
                         //Add Task Draft details to array
             scheduletasklist.push(scheduletask);
         }
         return scheduletasklist;
     }
 
-    async formatDataProduct(tasks) {
-        await Promise.all(tasks.map(async task => {
-            task.status_logs = task.tasktype === "Blueprint"?this.subtaskComponent(task):"";
-            //Displaying SubTask ID of the 'control' Task
-            const subTaskIds = task.subTasks?task.subTasks.filter(sTask => sTask.subTaskTemplate.name.indexOf('control') >= 0):[];
-            const promise = [];
-            subTaskIds.map(subTask => promise.push(ScheduleService.getSubtaskOutputDataproduct(subTask.id)));
-            const dataProducts = promise.length > 0? await Promise.all(promise):[];
-            task.dataProducts = [];
-            task.size = 0;
-            task.dataSizeOnDisk = 0;
-            task.noOfOutputProducts = 0;
-            // task.stop_time = moment(task.stop_time).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-            // task.start_time = moment(task.start_time).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-            // task.created_at =  moment(task.created_at).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-            // task.updated_at =  moment(task.updated_at).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-            task.canSelect = task.tasktype.toLowerCase() === 'blueprint' ? true:(task.tasktype.toLowerCase() === 'draft' && task.blueprint_draft.length === 0)?true:false;
-            if (dataProducts.length && dataProducts[0].length) {
-                task.dataProducts = dataProducts[0];
-                task.noOfOutputProducts = dataProducts[0].length;
-                task.size = _.sumBy(dataProducts[0], 'size');
-                task.dataSizeOnDisk = _.sumBy(dataProducts[0], function(product) { return product.deletedSince?0:product.size});
-                task.size = UnitConverter.getUIResourceUnit('bytes', (task.size));
-                task.dataSizeOnDisk = UnitConverter.getUIResourceUnit('bytes', (task.dataSizeOnDisk));
-            }
-            task.subTaskID = subTaskIds.length ? subTaskIds[0].id : ''; 
-            return task;
-        }));
-        return tasks;
-    }
-
-    async componentDidMount() {
-        this.subtaskTemplates = await TaskService.getSubtaskTemplates()
+    componentDidMount() {
         const promises = [
-            // TaskService.getTaskDraftList(),
-            // TaskService.getTaskBlueprintList(),
-            ScheduleService.getScheduleUnitDraftExtended(),
-            ScheduleService.getScheduleUnitBlueprintExtended()
+            TaskService.getTaskDraftList(),
+            TaskService.getTaskBlueprintList(),
         ];
-        Promise.all(promises).then(async (responses) => {
-            let allTasks = [];
+        Promise.all(promises).then((responses) => {
            // this.subTaskTemplates = responses[2];
-            // this.setState({ tasks: [...this.getFormattedTaskDrafts(responses[0]), ...this.getFormattedTaskBlueprints(responses[1])], isLoading: false});
-            for (const schedulingUnit of responses[0]) {
-                let tasks = schedulingUnit.task_drafts?(await this.getFormattedTaskDrafts(schedulingUnit)):this.getFormattedTaskBlueprints(schedulingUnit);
-                let ingestGroup = tasks.map(task => ({name: task.name, canIngest: task.canIngest, type_value: task.type_value, id: task.id }));
-                ingestGroup = _.groupBy(_.filter(ingestGroup, 'type_value'), 'type_value');
-                tasks = await this.formatDataProduct(tasks);
-                allTasks = [...allTasks, ...tasks];
-            }
-            for (const schedulingUnit of responses[1]) {
-                let tasks = schedulingUnit.task_drafts?(await this.getFormattedTaskDrafts(schedulingUnit)):this.getFormattedTaskBlueprints(schedulingUnit);
-                let ingestGroup = tasks.map(task => ({name: task.name, canIngest: task.canIngest, type_value: task.type_value, id: task.id }));
-                ingestGroup = _.groupBy(_.filter(ingestGroup, 'type_value'), 'type_value');
-                tasks = await this.formatDataProduct(tasks);
-                allTasks = [...allTasks, ...tasks];
-            }
-            this.setState({ tasks: allTasks,  isLoading: false });
+            this.setState({ tasks: [...this.getFormattedTaskDrafts(responses[0]), ...this.getFormattedTaskBlueprints(responses[1])], isLoading: false});
         });
     }
 
