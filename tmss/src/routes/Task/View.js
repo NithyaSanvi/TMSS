@@ -74,9 +74,9 @@ export class TaskView extends Component {
         // const taskId = this.props.location.state?this.props.location.state.id:this.state.taskId;
         // let taskType = this.props.location.state?this.props.location.state.type:this.state.taskType;
         // taskType = taskType?taskType:'draft';
-        const taskId = this.props.location.state?this.props.location.state.id:this.state.taskId;
-        let taskType = this.props.location.state?this.props.location.state.type:this.state.taskType;
-        taskType = taskType?taskType:'draft';
+        let {taskId, taskType} = this.state;
+        taskId = taskId?taskId:this.props.location.state.id;
+        taskType = taskType?taskType:this.props.location.state.type;
 
         if (taskId && taskType) {
             this.getTaskDetails(taskId, taskType);
