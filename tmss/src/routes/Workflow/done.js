@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 
 class Done extends Component {
 render(){
@@ -9,7 +10,7 @@ render(){
 
 <label>This scheduling unit has been fully handled. No further action is required.</label>
 
-<label>Please find the data in the Long Term Archive https://lta.lofar.eu/ if it was ingested or revisit the Quality Assessment report <link to TO report page></link></label>
+<label>Please find the data in the Long Term Archive https://lta.lofar.eu/ if it was ingested or revisit the Quality Assessment report <Link onClick={this.props.reportingPage}>QA Reporting</Link></label>
 </div>
 </>
     )

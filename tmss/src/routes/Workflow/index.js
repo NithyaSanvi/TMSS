@@ -144,6 +144,10 @@ export default (props) => {
         props.history.goBack();
     }
 
+    const qaReorting = () => {
+        setCurrentStep(3)
+    };
+
     //TODO: Need to customize this function to have different messages.
     const showMessage = () => {
         growl.show({severity: 'error', summary: 'Unable to proceed', detail: 'Please clear your browser cookies and try again'});
@@ -220,7 +224,7 @@ export default (props) => {
                                                 schedulingUnit={schedulingUnit} />
                             </TabPanel>
                             <TabPanel header="Done" disabled={currentStep < 9} headerClassName="workflow-header">
-                                <Done onNext={onNext} onCancel={onCancel} onError={showMessage} readOnly={ currentStep !== 9 } />
+                                <Done onNext={onNext} onCancel={onCancel} onError={showMessage} reportingPage={qaReorting} readOnly={ currentStep !== 9 } />
                             </TabPanel>
                         </TabView>
                     </div>
