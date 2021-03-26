@@ -30,6 +30,7 @@ class SchedulingUnitList extends Component{
             name: "Template ID",
             filter: "select"
         },
+        id: "ID",
         project:"Project",
         name:"Name",
         start_time:{
