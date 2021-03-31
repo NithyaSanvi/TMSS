@@ -3,10 +3,10 @@ import { Redirect} from 'react-router-dom';
 import { BrowserRouter as Router } from 'react-router-dom';
 import classNames from 'classnames';
 import {AppTopbar} from './layout/components/AppTopbar';
-import {AppMenu} from './layout/components/AppMenu';
+import AppMenu from './layout/components/AppMenu';
 import {AppFooter } from './layout/components/AppFooter';
 import {RoutedContent} from './routes';
-import {AppBreadcrumb } from "./layout/components/AppBreadcrumb";
+import AppBreadcrumb from "./layout/components/AppBreadcrumb";
 import {withRouter } from 'react-router';
 
 import 'primeicons/primeicons.css';
@@ -19,6 +19,14 @@ import './App.css';
 import Auth from'./authenticate/auth';
 import { Login } from './authenticate/login';
 
+import pubsub from './utils/pubSub';
+import { CustomDialog } from './layout/components/CustomDialog';
+const {  publish, subscribe } = pubsub();
+
+export {
+    publish,
+    subscribe
+};
 class App extends Component {
     constructor() {
         super();
@@ -40,6 +48,8 @@ class App extends Component {
         this.setPageTitle = this.setPageTitle.bind(this);
         this.loggedIn = this.loggedIn.bind(this);
         this.logout = this.logout.bind(this);
+        this.toggleEditToggle = this.toggleEditToggle.bind(this);
+        this.setEditDialogCallback = this.setEditDialogCallback.bind(this);
 
         this.menu = [ {label: 'Dashboard', icon: 'pi pi-fw pi-home', to:'/dashboard',section: 'dashboard'},
                         {label: 'Cycle', icon:'pi pi-fw pi-spinner', to:'/cycle',section: 'cycle'},
@@ -127,6 +137,44 @@ class App extends Component {
         this.setState({authenticated: false, redirect:"/"});
     }
 
+    toggleEditToggle() {
+        this.setState({ showEditDialog: !this.state.showEditDialog });
+    }
+
+    setEditDialogCallback(callback) {
+        this.setState({ callback })
+    }
+
+    componentDidMount() {
+        subscribe('edit-dirty', (flag) => {
+            this.setState({ isEditDirty: flag });
+        });
+    }
+
+    close = () => {
+        this.setState({showDirtyDialog: false});
+    }
+    /**
+     * Cancel edit and redirect to Cycle View page
+     */
+    cancelEdit = () => {
+        this.setState({ isEditDirty: false, showDirtyDialog: false });
+        this.state.toPathCallback();
+    }
+
+    toggleEditDirtyDialog = (callback) => {
+        this.setState({ showDirtyDialog: true, toPathCallback: callback });
+    }
+
+    onBreadcrumbClick = (callback) => {
+        if (this.state.isEditDirty) {
+            this.toggleEditDirtyDialog(callback);
+            return;
+        }
+        callback();
+    }
+
+    
     render() {
         const wrapperClass = classNames('layout-wrapper', {
             'layout-overlay': this.state.layoutMode === 'overlay',
@@ -135,44 +183,48 @@ class App extends Component {
             'layout-overlay-sidebar-active': this.state.overlayMenuActive && this.state.layoutMode === 'overlay',
             'layout-mobile-sidebar-active': this.state.mobileMenuActive			
         });
-        const AppBreadCrumbWithRouter = withRouter(AppBreadcrumb);
         //console.log(this.props);
         return (
-        <React.Fragment>
-            <div className="App">
-                {/* <div className={wrapperClass} onClick={this.onWrapperClick}> */}
-                <div className={wrapperClass}>
-                    
-                    {/* Load main routes and application only if the application is authenticated */}
-                    {this.state.authenticated &&
-                    <>
-                        <AppTopbar onToggleMenu={this.onToggleMenu} isLoggedIn={this.state.authenticated} onLogout={this.logout}></AppTopbar>
-                        <Router basename={ this.state.currentPath }>
-                            <AppMenu model={this.menu} onMenuItemClick={this.onMenuItemClick} layoutMode={this.state.la} active={this.state.menuActive}/>
-                            <div className="layout-main">
-                                {this.state.redirect &&
-                                    <Redirect to={{pathname: this.state.redirect}} />}
-                                <AppBreadCrumbWithRouter setPageTitle={this.setPageTitle} />
-                                <RoutedContent />
-                            </div>
-                        </Router>
-                        <AppFooter></AppFooter>
-                    </>
-                    }
+            <React.Fragment>
+                <div className="App">
+                    {/* <div className={wrapperClass} onClick={this.onWrapperClick}> */}
+                    <div className={wrapperClass}>
+                        
+                        {/* Load main routes and application only if the application is authenticated */}
+                        {this.state.authenticated &&
+                        <>
+                            <AppTopbar onToggleMenu={this.onToggleMenu} isLoggedIn={this.state.authenticated} onLogout={this.logout}></AppTopbar>
+                            <Router basename={ this.state.currentPath }>
+                                <AppMenu model={this.menu} toggleEditDirtyDialog={this.toggleEditDirtyDialog} isEditDirty={this.state.isEditDirty} onMenuItemClick={this.onMenuItemClick} layoutMode={this.state.la} active={this.state.menuActive}/>
+                                <div className="layout-main">
+                                    {this.state.redirect &&
+                                        <Redirect to={{pathname: this.state.redirect}} />}
+                                    <AppBreadcrumb setPageTitle={this.setPageTitle} section={this.state.currentMenu} onBreadcrumbClick={this.onBreadcrumbClick} />
+                                    <RoutedContent />
+                                </div>
+                            </Router>
+                            <AppFooter></AppFooter>
+                        </>
+                        }
 
-                    {/* If not authenticated, show only login page */}
-                    {!this.state.authenticated &&
-                    <>
-                        <Router basename={ this.state.currentPath }>
-                            <Redirect to={{pathname: "/login"}} />
-                            <Login onLogin={this.loggedIn} />
-                        </Router>
-                    </>
-                    }
-                    
+                        {/* If not authenticated, show only login page */}
+                        {!this.state.authenticated &&
+                            <>
+                                <Router basename={ this.state.currentPath }>
+                                    <Redirect to={{pathname: "/login"}} />
+                                    <Login onLogin={this.loggedIn} />
+                                </Router>
+                            </>
+                        }
+
+                        <CustomDialog type="confirmation" visible={this.state.showDirtyDialog} width="40vw"
+                            header={'Edit Cycle'} message={'Do you want to leave this page? Your changes may not be saved.'} 
+                            content={''} onClose={this.close} onCancel={this.close} onSubmit={this.cancelEdit}>
+                        </CustomDialog>
+                        
+                    </div>
                 </div>
-            </div>
-        </React.Fragment>
+            </React.Fragment>
         );
     }
 }
