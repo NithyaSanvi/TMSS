@@ -34,6 +34,7 @@
     "prop-types": "^15.7.2",
     "react": "^16.13.1",
     "react-app-polyfill": "^1.0.6",
+    "react-beforeunload": "^2.4.0",
     "react-bootstrap": "^1.0.1",
     "react-bootstrap-datetimepicker": "0.0.22",
     "react-calendar-timeline": "^0.27.0",

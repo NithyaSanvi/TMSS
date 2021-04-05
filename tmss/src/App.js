@@ -8,7 +8,7 @@ import {AppFooter } from './layout/components/AppFooter';
 import {RoutedContent} from './routes';
 import AppBreadcrumb from "./layout/components/AppBreadcrumb";
 import {withRouter } from 'react-router';
-
+import { Beforeunload } from 'react-beforeunload';
 import 'primeicons/primeicons.css';
 import 'primereact/resources/themes/nova-light/theme.css';
 import 'primereact/resources/primereact.css';
@@ -147,7 +147,18 @@ class App extends Component {
 
     componentDidMount() {
         subscribe('edit-dirty', (flag) => {
-            this.setState({ isEditDirty: flag });
+            this.setState({ isEditDirty: flag }, () => {
+                if (flag) {
+                    window.addEventListener("beforeunload", function (e) {
+                        var confirmationMessage = "\o/";
+                    
+                        (e || window.event).returnValue = confirmationMessage; //Gecko + IE
+                        return "asdad";    
+                    });
+                } else {
+                    window.removeEventListener('beforeunload');
+                }
+            });
         });
     }
 
@@ -185,46 +196,49 @@ class App extends Component {
         });
         //console.log(this.props);
         return (
-            <React.Fragment>
-                <div className="App">
-                    {/* <div className={wrapperClass} onClick={this.onWrapperClick}> */}
-                    <div className={wrapperClass}>
-                        
-                        {/* Load main routes and application only if the application is authenticated */}
-                        {this.state.authenticated &&
-                        <>
-                            <AppTopbar onToggleMenu={this.onToggleMenu} isLoggedIn={this.state.authenticated} onLogout={this.logout}></AppTopbar>
-                            <Router basename={ this.state.currentPath }>
-                                <AppMenu model={this.menu} toggleEditDirtyDialog={this.toggleEditDirtyDialog} isEditDirty={this.state.isEditDirty} onMenuItemClick={this.onMenuItemClick} layoutMode={this.state.la} active={this.state.menuActive}/>
-                                <div className="layout-main">
-                                    {this.state.redirect &&
-                                        <Redirect to={{pathname: this.state.redirect}} />}
-                                    <AppBreadcrumb setPageTitle={this.setPageTitle} section={this.state.currentMenu} onBreadcrumbClick={this.onBreadcrumbClick} />
-                                    <RoutedContent />
-                                </div>
-                            </Router>
-                            <AppFooter></AppFooter>
-                        </>
-                        }
-
-                        {/* If not authenticated, show only login page */}
-                        {!this.state.authenticated &&
+            // Not Working
+            <Beforeunload onBeforeunload={() => "You'll lose your data!"}>
+                <React.Fragment>
+                    <div className="App">
+                        {/* <div className={wrapperClass} onClick={this.onWrapperClick}> */}
+                        <div className={wrapperClass}>
+                            
+                            {/* Load main routes and application only if the application is authenticated */}
+                            {this.state.authenticated &&
                             <>
+                                <AppTopbar onToggleMenu={this.onToggleMenu} isLoggedIn={this.state.authenticated} onLogout={this.logout}></AppTopbar>
                                 <Router basename={ this.state.currentPath }>
-                                    <Redirect to={{pathname: "/login"}} />
-                                    <Login onLogin={this.loggedIn} />
+                                    <AppMenu model={this.menu} toggleEditDirtyDialog={this.toggleEditDirtyDialog} isEditDirty={this.state.isEditDirty} onMenuItemClick={this.onMenuItemClick} layoutMode={this.state.la} active={this.state.menuActive}/>
+                                    <div className="layout-main">
+                                        {this.state.redirect &&
+                                            <Redirect to={{pathname: this.state.redirect}} />}
+                                        <AppBreadcrumb setPageTitle={this.setPageTitle} section={this.state.currentMenu} onBreadcrumbClick={this.onBreadcrumbClick} />
+                                        <RoutedContent />
+                                    </div>
                                 </Router>
+                                <AppFooter></AppFooter>
                             </>
-                        }
+                            }
 
-                        <CustomDialog type="confirmation" visible={this.state.showDirtyDialog} width="40vw"
-                            header={'Edit Cycle'} message={'Do you want to leave this page? Your changes may not be saved.'} 
-                            content={''} onClose={this.close} onCancel={this.close} onSubmit={this.cancelEdit}>
-                        </CustomDialog>
-                        
+                            {/* If not authenticated, show only login page */}
+                            {!this.state.authenticated &&
+                                <>
+                                    <Router basename={ this.state.currentPath }>
+                                        <Redirect to={{pathname: "/login"}} />
+                                        <Login onLogin={this.loggedIn} />
+                                    </Router>
+                                </>
+                            }
+
+                            <CustomDialog type="confirmation" visible={this.state.showDirtyDialog} width="40vw"
+                                header={'Edit Cycle'} message={'Do you want to leave this page? Your changes may not be saved.'} 
+                                content={''} onClose={this.close} onCancel={this.close} onSubmit={this.cancelEdit}>
+                            </CustomDialog>
+                            
+                        </div>
                     </div>
-                </div>
-            </React.Fragment>
+                </React.Fragment>
+            </Beforeunload>
         );
     }
 }
