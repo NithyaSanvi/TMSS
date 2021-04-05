@@ -100,7 +100,7 @@ const CycleService = {
         return response.data;
       } catch (error) {
         console.log(error.response.data);
-        return error.response.data;
+        //return error.response.data;
       }
     },
     deleteCycleQuota: async function(cycleQuota) {

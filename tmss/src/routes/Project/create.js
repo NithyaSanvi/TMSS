@@ -325,12 +325,17 @@ export class ProjectCreate extends Component {
             }
             ProjectService.saveProject(this.state.project, this.defaultResourcesEnabled?projectQuota:[])
                 .then(project => {
+                    
                     if (project.url) {
                         let dialog = {};
-                        if (this.defaultResourcesEnabled) {
-                            dialog = {header: 'Success', detail: 'Project saved successfully. Do you want to create another project?'};
+                        if (project.isQuotaCreated) {
+                            if (this.defaultResourcesEnabled) {
+                                dialog = {header: 'Success', detail: 'Project saved successfully. Do you want to create another project?'};
+                            }   else {
+                                dialog = {header: 'Success', detail: 'Project saved successfully with default Resource allocations. Do you want to view and edit them?'};
+                            }
                         }   else {
-                            dialog = {header: 'Success', detail: 'Project saved successfully with default Resource allocations. Do you want to view and edit them?'};
+                            dialog = {header: 'Warning', detail: 'Project saved successfully, but resource allocation not saved.'};
                         }
                         this.setState({project:project, dialogVisible: true, dialog: dialog, isDirty: false});
                     }   else {

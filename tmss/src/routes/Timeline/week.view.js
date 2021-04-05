@@ -23,12 +23,18 @@ import SchedulingUnitSummary from '../Scheduling/summary';
 import UIConstants from '../../utils/ui.constants';
 import { OverlayPanel } from 'primereact/overlaypanel';
 import { TieredMenu } from 'primereact/tieredmenu';
+import { InputSwitch } from 'primereact/inputswitch';
+import { Dropdown } from 'primereact/dropdown';
+import ReservationSummary from './reservation.summary';
 
 // Color constant for status
 const STATUS_COLORS = { "ERROR": "FF0000", "CANCELLED": "#00FF00", "DEFINED": "#00BCD4", 
                         "SCHEDULABLE":"#0000FF", "SCHEDULED": "#abc", "OBSERVING": "#bcd",
                         "OBSERVED": "#cde", "PROCESSING": "#cddc39", "PROCESSED": "#fed",
                         "INGESTING": "#edc", "FINISHED": "#47d53d"};
+
+const RESERVATION_COLORS = {"true-true":{bgColor:"lightgrey", color:"#585859"}, "true-false":{bgColor:'#585859', color:"white"},
+                            "false-true":{bgColor:"#9b9999", color:"white"}, "false-false":{bgColor:"black", color:"white"}};
 
 /**
  * Scheduling Unit timeline view component to view SU List and timeline
@@ -50,10 +56,13 @@ export class WeekTimelineView extends Component {
             selectedItem: null,
             suTaskList:[],
             isSummaryLoading: false,
-            stationGroup: []
+            stationGroup: [],
+            reservationEnabled: true
         }
         this.STATUS_BEFORE_SCHEDULED = ['defining', 'defined', 'schedulable'];  // Statuses before scheduled to get station_group
         this.mainStationGroups = {};
+        this.reservations = [];
+        this.reservationReasons = [];
         this.optionsMenu = React.createRef();
         this.menuOptions = [ {label:'Add Reservation', icon: "fa fa-", command: () => {this.selectOptionMenu('Add Reservation')}}, 
                             {label:'Reservation List', icon: "fa fa-", command: () => {this.selectOptionMenu('Reservation List')}},
@@ -65,9 +74,12 @@ export class WeekTimelineView extends Component {
         this.closeSUDets = this.closeSUDets.bind(this);
         this.onItemMouseOver = this.onItemMouseOver.bind(this);
         this.onItemMouseOut = this.onItemMouseOut.bind(this);
+        this.showSUSummary = this.showSUSummary.bind(this);
+        this.showReservationSummary = this.showReservationSummary.bind(this);
         this.dateRangeCallback = this.dateRangeCallback.bind(this);
         this.resizeSUList = this.resizeSUList.bind(this);
         this.suListFilterCallback = this.suListFilterCallback.bind(this);
+        this.addWeekReservations = this.addWeekReservations.bind(this);
         this.handleData = this.handleData.bind(this);
         this.addNewData = this.addNewData.bind(this);
         this.updateExistingData = this.updateExistingData.bind(this);
@@ -75,21 +87,33 @@ export class WeekTimelineView extends Component {
     }
 
     async componentDidMount() {
+        UtilService.getReservationTemplates().then(templates => {
+            this.reservationTemplate = templates.length>0?templates[0]:null;
+            if (this.reservationTemplate) {
+                let reasons = this.reservationTemplate.schema.properties.activity.properties.type.enum;
+                for (const reason of reasons) {
+                    this.reservationReasons.push({name: reason});
+                }
+            }
+        });
+        
         // Fetch all details from server and prepare data to pass to timeline and table components
         const promises = [  ProjectService.getProjectList(), 
                             ScheduleService.getSchedulingUnitsExtended('blueprint'),
                             ScheduleService.getSchedulingUnitDraft(),
                             ScheduleService.getSchedulingSets(),
                             UtilService.getUTC(),
-                            TaskService.getSubtaskTemplates()] ;
+                            TaskService.getSubtaskTemplates(),
+                            UtilService.getReservations()] ;
         Promise.all(promises).then(async(responses) => {
             this.subtaskTemplates = responses[5];
             const projects = responses[0];
             const suBlueprints = _.sortBy(responses[1], 'name');
             const suDrafts = responses[2].data.results;
             const suSets = responses[3]
-            const group = [], items = [];
+            let group = [], items = [];
             const currentUTC = moment.utc(responses[4]);
+            this.reservations = responses[6];
             const defaultStartTime = moment.utc().day(-2).hour(0).minutes(0).seconds(0);
             const defaultEndTime = moment.utc().day(8).hour(23).minutes(59).seconds(59);
             for (const count of _.range(11)) {
@@ -150,6 +174,9 @@ export class WeekTimelineView extends Component {
                     }
                 }
             }
+            if (this.state.reservationEnabled) {
+                items = this.addWeekReservations(items, defaultStartTime, defaultEndTime, currentUTC);
+            }
             // Get all scheduling constraint templates
             ScheduleService.getSchedulingConstraintTemplates()
                 .then(suConstraintTemplates => {
@@ -200,7 +227,19 @@ export class WeekTimelineView extends Component {
      * Callback function to pass to Timeline component for item click.
      * @param {Object} item 
      */
-    onItemClick(item) {
+     onItemClick(item) {
+        if (item.type === "SCHEDULE") { 
+            this.showSUSummary(item);
+        }   else if (item.type === "RESERVATION") {
+            this.showReservationSummary(item);
+        }
+    }
+
+    /**
+     * To load SU summary and show
+     * @param {Object} item - Timeline SU item object.
+     */
+    showSUSummary(item) {
         if (this.state.isSUDetsVisible && item.id===this.state.selectedItem.id) {
             this.closeSUDets();
         }   else {
@@ -243,10 +282,18 @@ export class WeekTimelineView extends Component {
     }
 
     /**
+     * To load and show Reservation summary
+     * @param {Object} item 
+     */
+     showReservationSummary(item) {
+        this.setState({selectedItem: item, isReservDetsVisible: true, isSUDetsVisible: false});
+    }
+
+    /**
      * Closes the SU details section
      */
     closeSUDets() {
-        this.setState({isSUDetsVisible: false, canExtendSUList: true, canShrinkSUList: false});
+        this.setState({isSUDetsVisible: false, isReservDetsVisible: false, canExtendSUList: true, canShrinkSUList: false});
     }
 
     /**
@@ -263,23 +310,36 @@ export class WeekTimelineView extends Component {
      * @param {Object} item
      */
     onItemMouseOver(evt, item) {
-        const itemSU = _.find(this.state.suBlueprints, {id: parseInt(item.id.split("-")[0])});
-        const itemStations = itemSU.stations;
-        const itemStationGroups = this.groupSUStations(itemStations);
-        item.stations = {groups: "", counts: ""};
-        for (const stationgroup of _.keys(itemStationGroups)) {
-            let groups = item.stations.groups;
-            let counts = item.stations.counts;
-            if (groups) {
-                groups = groups.concat("/");
-                counts = counts.concat("/");
+        if (item.type === "SCHEDULE") {
+            const itemSU = _.find(this.state.suBlueprints, {id: parseInt(item.id.split("-")[0])});
+            const itemStations = itemSU.stations;
+            const itemStationGroups = this.groupSUStations(itemStations);
+            item.stations = {groups: "", counts: ""};
+            for (const stationgroup of _.keys(itemStationGroups)) {
+                let groups = item.stations.groups;
+                let counts = item.stations.counts;
+                if (groups) {
+                    groups = groups.concat("/");
+                    counts = counts.concat("/");
+                }
+                groups = groups.concat(stationgroup.substring(0,1).concat('S'));
+                counts = counts.concat(itemStationGroups[stationgroup].length);
+                item.stations.groups = groups;
+                item.stations.counts = counts;
+                item.suStartTime = moment.utc(itemSU.start_time);
+                item.suStopTime = moment.utc(itemSU.stop_time);
             }
-            groups = groups.concat(stationgroup.substring(0,1).concat('S'));
-            counts = counts.concat(itemStationGroups[stationgroup].length);
-            item.stations.groups = groups;
-            item.stations.counts = counts;
-            item.suStartTime = moment.utc(itemSU.start_time);
-            item.suStopTime = moment.utc(itemSU.stop_time);
+        }   else {
+            const reservation = _.find(this.reservations, {'id': parseInt(item.id.split("-")[1])});
+            const reservStations = reservation.specifications_doc.resources.stations;
+            const reservStationGroups = this.groupSUStations(reservStations);
+            item.name = reservation.name;
+            item.contact = reservation.specifications_doc.activity.contact
+            item.activity_type = reservation.specifications_doc.activity.type;
+            item.stations = reservStations;
+            item.planned = reservation.specifications_doc.activity.planned;
+            item.displayStartTime = moment.utc(reservation.start_time);
+            item.displayEndTime = reservation.duration?moment.utc(reservation.stop_time):null;
         }
         this.popOver.toggle(evt);
         this.setState({mouseOverItem: item});
@@ -361,6 +421,9 @@ export class WeekTimelineView extends Component {
                             items.push(await this.getTimelineItem(suBlueprint, currentUTC));
                         }
                     } 
+                }
+                if (this.state.reservationEnabled) {
+                    items = this.addWeekReservations(items, startTime, endTime, currentUTC);
                 }
             }   else {
                 suBlueprintList = _.clone(this.state.suBlueprints);
@@ -578,16 +641,147 @@ export class WeekTimelineView extends Component {
         });
     }
 
+    async showReservations(e) {
+        await this.setState({reservationEnabled: e.value});
+        let updatedItemGroupData = await this.dateRangeCallback(this.state.startTime, this.state.endTime, true);
+        this.timeline.updateTimeline(updatedItemGroupData);
+    }
+
+    /**
+     * Add Week Reservations during the visible timeline period
+     * @param {Array} items 
+     * @param {moment} startTime
+     * @param {moment} endTime
+     */
+     addWeekReservations(items, startTime, endTime, currentUTC) {
+        let reservations = this.reservations;
+        for (const reservation of reservations) {
+            const reservationStartTime = moment.utc(reservation.start_time);
+            const reservationEndTime = reservation.duration?reservationStartTime.clone().add(reservation.duration, 'seconds'):endTime;
+            const reservationSpec = reservation.specifications_doc;
+            if ( (reservationStartTime.isSame(startTime) 
+                    || reservationStartTime.isSame(endTime)                       
+                    || reservationStartTime.isBetween(startTime, endTime)
+                    || reservationEndTime.isSame(startTime) 
+                    || reservationEndTime.isSame(endTime)                       
+                    || reservationEndTime.isBetween(startTime, endTime)
+                    || (reservationStartTime.isSameOrBefore(startTime)
+                    && reservationEndTime.isSameOrAfter(endTime)))
+                    && (!this.state.reservationFilter ||                                        // No reservation filter added
+                        reservationSpec.activity.type === this.state.reservationFilter) ) {     // Reservation reason == Filtered reaseon
+                reservation.stop_time = reservationEndTime;
+                let splitReservations = this.splitReservations(reservation, startTime, endTime, currentUTC);
+                for (const splitReservation of splitReservations) {
+                    items.push(this.getReservationItem(splitReservation, currentUTC));
+                }
+                
+            }
+        }
+        return items;
+    }
+
+    /**
+     * Function to check if a reservation is for more than a day and split it to multiple objects to display in each day
+     * @param {Object} reservation - Reservation object
+     * @param {moment} startTime - moment object of the start datetime of the week view
+     * @param {moment} endTime  - moment object of the end datetime of the week view
+     * @returns 
+     */
+    splitReservations(reservation, startTime, endTime) {
+        const reservationStartTime = moment.utc(reservation.start_time);
+        let weekStartDate = moment(startTime).add(-1, 'day').startOf('day');
+        let weekEndDate = moment(endTime).add(1, 'day').startOf('day');
+        let splitReservations = [];
+        while(weekStartDate.add(1, 'days').diff(weekEndDate) < 0) {
+            const dayStart = weekStartDate.clone().startOf('day');
+            const dayEnd = weekStartDate.clone().endOf('day');
+            let splitReservation = null;
+            if (reservationStartTime.isSameOrBefore(dayStart) && 
+                (reservation.stop_time.isBetween(dayStart, dayEnd) ||
+                    reservation.stop_time.isSameOrAfter(dayEnd))) {
+                splitReservation = _.cloneDeep(reservation);
+                splitReservation.start_time = moment.utc(dayStart.format("YYYY-MM-DD HH:mm:ss"));
+            }   else if(reservationStartTime.isBetween(dayStart, dayEnd)) {
+                splitReservation = _.cloneDeep(reservation);
+                splitReservation.start_time = reservationStartTime;                
+            }
+            if (splitReservation) {
+                if (!reservation.stop_time || reservation.stop_time.isSameOrAfter(dayEnd)) {
+                    splitReservation.end_time = weekStartDate.clone().hour(23).minute(59).seconds(59);
+                }   else if (reservation.stop_time.isSameOrBefore(dayEnd)) {
+                    splitReservation.end_time = weekStartDate.clone().hour(reservation.stop_time.hours()).minutes(reservation.stop_time.minutes()).seconds(reservation.stop_time.seconds);
+                }
+                splitReservations.push(splitReservation);
+            }
+        }
+        return splitReservations;
+    }
+
+    /**
+     * Get reservation timeline item. If the reservation doesn't have duration, item endtime should be week endtime.
+     * @param {Object} reservation 
+     * @param {moment} endTime 
+     */
+    getReservationItem(reservation, displayDate) {
+        const reservationSpec = reservation.specifications_doc;
+        const group = moment.utc(reservation.start_time).format("MMM DD ddd");
+        const blockColor = RESERVATION_COLORS[this.getReservationType(reservationSpec.schedulability)];
+        let item = { id: `Res-${reservation.id}-${group}`,
+                        start_time: moment.utc(`${displayDate.format('YYYY-MM-DD')} ${reservation.start_time.format('HH:mm:ss')}`),
+                        end_time: moment.utc(`${displayDate.format('YYYY-MM-DD')} ${reservation.end_time.format('HH:mm:ss')}`),
+                        name: reservationSpec.activity.type, project: reservation.project_id,
+                        group: group,
+                        type: 'RESERVATION',
+                        title: `${reservationSpec.activity.type}${reservation.project_id?("-"+ reservation.project_id):""}`,
+                        desc: reservation.description,
+                        duration: reservation.duration?UnitConverter.getSecsToHHmmss(reservation.duration):"Unknown",
+                        bgColor: blockColor.bgColor, selectedBgColor: blockColor.bgColor, color: blockColor.color
+                    };
+        return item;
+    }
+
+    /**
+     * Get the schedule type from the schedulability object. It helps to get colors of the reservation blocks
+     * according to the type.
+     * @param {Object} schedulability 
+     */
+     getReservationType(schedulability) {
+        if (schedulability.manual && schedulability.dynamic) {
+            return 'true-true';
+        }   else if (!schedulability.manual && !schedulability.dynamic) {
+            return 'false-false';
+        }   else if (schedulability.manual && !schedulability.dynamic) {
+            return 'true-false';
+        }   else {
+            return 'false-true';
+        }
+    }
+
+    /**
+     * Set reservation filter
+     * @param {String} filter 
+     */
+    async setReservationFilter(filter) {
+        await this.setState({reservationFilter: filter});
+        let updatedItemGroupData = await this.dateRangeCallback(this.state.startTime, this.state.endTime, true);
+        this.timeline.updateTimeline(updatedItemGroupData);
+    }
+
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
         }
         const isSUDetsVisible = this.state.isSUDetsVisible;
+        const isReservDetsVisible = this.state.isReservDetsVisible;
         const canExtendSUList = this.state.canExtendSUList;
         const canShrinkSUList = this.state.canShrinkSUList;
-        let suBlueprint = null;
+        let suBlueprint = null, reservation = null;
         if (isSUDetsVisible) {
             suBlueprint = _.find(this.state.suBlueprints, {id: parseInt(this.state.selectedItem.id.split('-')[0])});
+        }
+        if (isReservDetsVisible) {
+            reservation = _.find(this.reservations, {id: parseInt(this.state.selectedItem.id.split('-')[1])});
+            reservation.project = this.state.selectedItem.project;
         }
         const mouseOverItem = this.state.mouseOverItem;
         return (
@@ -609,9 +803,9 @@ export class WeekTimelineView extends Component {
                         </div> */}
                         <div className="p-grid">
                             {/* SU List Panel */}
-                            <div className={isSUDetsVisible || (canExtendSUList && !canShrinkSUList)?"col-lg-4 col-md-4 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":"col-lg-6 col-md-6 col-sm-12")}
+                            <div className={isSUDetsVisible || isReservDetsVisible || (canExtendSUList && !canShrinkSUList)?"col-lg-4 col-md-4 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":"col-lg-6 col-md-6 col-sm-12")}
                                  style={{position: "inherit", borderRight: "5px solid #efefef", paddingTop: "10px"}}>
-                                <ViewTable 
+                                <ViewTable viewInNewWindow
                                     data={this.state.suBlueprintList} 
                                     defaultcolumns={[{name: "Name",
                                                         start_time:"Start Time", stop_time:"End Time"}]}
@@ -628,7 +822,7 @@ export class WeekTimelineView extends Component {
                                 />
                             </div>
                             {/* Timeline Panel */}
-                            <div className={isSUDetsVisible || (!canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-7 col-md-7 col-sm-12":"col-lg-8 col-md-8 col-sm-12")}>
+                            <div className={isSUDetsVisible || isReservDetsVisible || (!canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-7 col-md-7 col-sm-12":"col-lg-8 col-md-8 col-sm-12")}>
                                 {/* Panel Resize buttons */}
                                 <div className="resize-div">
                                     <button className="p-link resize-btn" disabled={!this.state.canShrinkSUList} 
@@ -642,6 +836,28 @@ export class WeekTimelineView extends Component {
                                         <i className="pi pi-step-forward"></i>
                                     </button>
                                 </div> 
+                                <div className={`timeline-view-toolbar ${this.state.reservationEnabled && 'alignTimeLineHeader'}`}>
+                                    <div  className="sub-header">
+                                        <label >Show Reservations</label>
+                                        <InputSwitch checked={this.state.reservationEnabled} onChange={(e) => {this.showReservations(e)}} />                                       
+                                       
+                                    </div>
+                                
+                                    {this.state.reservationEnabled &&
+                                    <div className="sub-header">
+                                        <label style={{marginLeft: '20px'}}>Reservation</label>
+                                        <Dropdown optionLabel="name" optionValue="name" 
+                                                    style={{top:'2px'}}
+                                                    value={this.state.reservationFilter} 
+                                                    options={this.reservationReasons} 
+                                                    filter showClear={true} filterBy="name"
+                                                    onChange={(e) => {this.setReservationFilter(e.value)}} 
+                                                    placeholder="Reason"/>
+                                    
+                                    </div>
+                                    }
+                                </div>
+
                                 <Timeline ref={(tl)=>{this.timeline=tl}} 
                                         group={this.state.group} 
                                         items={this.state.items}
@@ -665,6 +881,7 @@ export class WeekTimelineView extends Component {
                                      style={{borderLeft: "1px solid #efefef", marginTop: "0px", backgroundColor: "#f2f2f2"}}>
                                     {this.state.isSummaryLoading?<AppLoader /> :
                                         <SchedulingUnitSummary schedulingUnit={suBlueprint} suTaskList={this.state.suTaskList}
+                                                viewInNewWindow
                                                 constraintsTemplate={this.state.suConstraintTemplate}
                                                 closeCallback={this.closeSUDets}
                                                 stationGroup={this.state.stationGroup}
@@ -672,13 +889,20 @@ export class WeekTimelineView extends Component {
                                     }
                                 </div>
                             }  
-                        
+                            {this.state.isReservDetsVisible &&
+                                <div className="col-lg-3 col-md-3 col-sm-12" 
+                                     style={{borderLeft: "1px solid #efefef", marginTop: "0px", backgroundColor: "#f2f2f2"}}>
+                                    {this.state.isSummaryLoading?<AppLoader /> :
+                                        <ReservationSummary reservation={reservation} location={this.props.location} closeCallback={this.closeSUDets}></ReservationSummary>
+                                    }
+                                </div>
+                            }
                         </div>
                     </>
                 }
                 {/* SU Item Tooltip popover with SU status color */}
                 <OverlayPanel className="timeline-popover" ref={(el) => this.popOver = el} dismissable>
-                {mouseOverItem &&
+                {mouseOverItem  && mouseOverItem.type == "SCHEDULE" &&
                     <div className={`p-grid su-${mouseOverItem.status}`} style={{width: '350px'}}>
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>Project:</label>
                         <div className="col-7">{mouseOverItem.project}</div>
@@ -698,6 +922,37 @@ export class WeekTimelineView extends Component {
                         <div className="col-7">{mouseOverItem.status}</div>
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>Duration:</label>
                         <div className="col-7">{mouseOverItem.duration}</div>
+                    </div>
+                }
+                {(mouseOverItem && mouseOverItem.type == "RESERVATION") &&
+                    <div className={`p-grid`} style={{width: '350px', backgroundColor: mouseOverItem.bgColor, color: mouseOverItem.color}}>
+                        <h3 className={`col-12`}>Reservation Overview</h3>
+                        <hr></hr>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Name:</label>
+                        <div className="col-7">{mouseOverItem.name}</div>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Description:</label>
+                        <div className="col-7">{mouseOverItem.desc}</div>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Type:</label>
+                        <div className="col-7">{mouseOverItem.activity_type}</div>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Stations:</label>
+                        {/* <div className="col-7"><ListBox options={mouseOverItem.stations} /></div> */}
+                        <div className="col-7 station-list">
+                            {mouseOverItem.stations.map((station, index) => (
+                                <div key={`stn-${index}`}>{station}</div>
+                            ))}
+                        </div>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Project:</label>
+                        <div className="col-7">{mouseOverItem.project?mouseOverItem.project:"-"}</div>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Start Time:</label>
+                        <div className="col-7">{mouseOverItem.displayStartTime.format(UIConstants.CALENDAR_DATETIME_FORMAT)}</div>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>End Time:</label>
+                        <div className="col-7">{mouseOverItem.displayEndTime?mouseOverItem.displayEndTime.format(UIConstants.CALENDAR_DATETIME_FORMAT):'Unknown'}</div>
+                        {/* <label className={`col-5`} style={{color: mouseOverItem.color}}>Stations:</label>
+                        <div className="col-7">{mouseOverItem.stations.groups}:{mouseOverItem.stations.counts}</div> */}
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Duration:</label>
+                        <div className="col-7">{mouseOverItem.duration}</div>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Planned:</label>
+                        <div className="col-7">{mouseOverItem.planned?'Yes':'No'}</div>
                     </div>
                 }
                 </OverlayPanel>

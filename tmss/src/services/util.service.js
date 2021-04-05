@@ -64,6 +64,19 @@ const UtilService = {
         return  null;
       }
     },
+    /**
+     * 
+     * @param {String} timestamps - Date in 'YYYY-MM-DD' format. Multiples dates are separated by commas (2020-08-15, 2021-01-26).
+     */
+    getAllStationSunTimings: async(timestamps) => {
+      try {
+        let allStations = (await axios.get("/api/station_groups/stations/1/All")).data.stations;
+        let allStationSuntimes = (await axios.get(`/api/util/sun_rise_and_set?stations=${allStations.join(",")}&timestamps=${timestamps}`)).data;
+        return allStationSuntimes;
+      } catch(error) {
+        console.error(error);
+      }
+    },
     /** Gets all reservations in the system */
     getReservations: async() => {
       try {

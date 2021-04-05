@@ -18,7 +18,7 @@ import PageHeader from '../../layout/components/PageHeader';
 import CycleService from '../../services/cycle.service';
 import UnitConverter from '../../utils/unit.converter';
 import UIConstants from '../../utils/ui.constants';
-import { publish } from '../../App';
+
 
 
 export class CycleEdit extends Component {
@@ -163,7 +163,7 @@ export class CycleEdit extends Component {
             let resources = this.state.resources?this.state.resources:[];
             resources.push(newResource[0]);
             if ( !this.state.isDirty && !_.isEqual(this.state.resourceList, resourceList)) {
-                this.setState({resources: resources, resourceList: resourceList, newResource: null, isDirty: true}, () => publish('edit-dirty', true));
+                this.setState({resources: resources, resourceList: resourceList, newResource: null, isDirty: true});
             }   else {
                 this.setState({resources: resources, resourceList: resourceList, newResource: null});
             }
@@ -183,7 +183,7 @@ export class CycleEdit extends Component {
         resourceList.push(removedResource[0]);
         delete cycleQuota[name];
         if ( !this.state.isDirty && !_.isEqual(this.state.cycleQuota, cycleQuota)) {
-            this.setState({resourceList: resourceList, resources: resources, cycleQuota: cycleQuota, isDirty: true}, () => publish('edit-dirty', true));
+            this.setState({resourceList: resourceList, resources: resources, cycleQuota: cycleQuota, isDirty: true});
         }   else {
             this.setState({resourceList: resourceList, resources: resources, cycleQuota: cycleQuota});
         }
@@ -209,7 +209,7 @@ export class CycleEdit extends Component {
         }
         if ( !this.state.isDirty && !_.isEqual(this.state.cycle, cycle)) {
             await this.setState({cycle: cycle});
-            this.setState({validForm: this.validateForm(key), isDirty: true}, () => publish('edit-dirty', true));
+            this.setState({validForm: this.validateForm(key), isDirty: true});
         }   else {
             await await this.setState({cycle: cycle});
             this.setState({validForm: this.validateForm(key)});
@@ -239,7 +239,7 @@ export class CycleEdit extends Component {
             cycleQuota[key] = 0;
         }
         if ( !this.state.isDirty && !_.isEqual(this.state.cycleQuota, cycleQuota)) {
-            this.setState({cycleQuota: cycleQuota, isDirty: true}, () => publish('edit-dirty', true));
+            this.setState({cycleQuota: cycleQuota, isDirty: true});
         }   else {
             this.setState({cycleQuota: cycleQuota});
         }
@@ -311,14 +311,14 @@ export class CycleEdit extends Component {
             let stoptime =  _.replace(this.state.cycle['stop'],'00:00:00', '23:59:59');
             cycle['start'] = moment(cycle['start']).format(UIConstants.UTC_DATE_TIME_FORMAT);
             cycle['stop'] = moment(stoptime).format(UIConstants.UTC_DATE_TIME_FORMAT);
-            this.setState({cycle: cycle, isDirty: false}, () => publish('edit-dirty', false));
+            this.setState({cycle: cycle, isDirty: false});
             CycleService.updateCycle(this.props.match.params.id, this.state.cycle)
                 .then(async (cycle) => { 
                     if (cycle && this.state.cycle.updated_at !== cycle.updated_at) {
                         this.saveCycleQuota(cycle);
                     }   else {
                         this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to update Cycle'});
-                        this.setState({errors: cycle});
+                        //this.setState({errors: cycle});
                     }
                 });
         }
@@ -373,7 +373,7 @@ export class CycleEdit extends Component {
         if (_.keys(quotaError).length === 0) {
             dialog = {header: 'Success', detail: 'Cycle updated successfully.'};
         }   else {
-            dialog = {header: 'Error', detail: 'Cycle updated successfully but resource allocation not updated properly. Try again!'};
+            dialog = {header: 'Error', detail: 'Cycle updated successfully but resource allocation not updated properly.'};
         }
         this.setState({dialogVisible: true, dialog: dialog});
     }
@@ -396,7 +396,6 @@ export class CycleEdit extends Component {
      * Cancel edit and redirect to Cycle View page
      */
     cancelEdit() {
-        publish('edit-dirty', false);
         this.props.history.goBack();
     }
 

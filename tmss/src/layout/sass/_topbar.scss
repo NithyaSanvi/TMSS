@@ -118,9 +118,10 @@
         color: $topbarItemColor;
         @include transition(color $transitionDuration);
 
-        span {
+        // Search type dropdown arrow looks bigger in topbar,
+       /* span {
             font-size: 2em;
-        }
+        }*/
 
         &:hover {
             color: $topbarItemHoverColor;
@@ -144,3 +145,29 @@
 .top-right-bar button {
     padding-left: 5px;
 }
+
+.find-object-search {
+    padding-top: 0px;
+   
+}
+
+.find-object-search-input {
+    border-inline-start-width: 0px;
+    border-inline-end-width: 2em !important;
+    width: 11em;
+}
+
+.find-object-search-btn {
+    display: inline-block;
+    right: 27px;
+    position: relative;
+    top: 6px;
+    color: darkblue;
+}
+
+.find-object-type {
+    width: 12em;
+    right:1em;
+}
+
+ 

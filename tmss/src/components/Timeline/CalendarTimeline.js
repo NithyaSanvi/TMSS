@@ -170,6 +170,10 @@ export class CalendarTimeline extends Component {
         return true;
     }
 
+    componentWillUnmount() {
+        this.componentUnmounting = true;        // Variable to check and terminate any API calls in loop
+    }
+
     /**
      * Sets current UTC and LST time either from the server or locally.
      * @param {boolean} systemClock - to differetiate whether tosync with server or local update
@@ -719,7 +723,7 @@ export class CalendarTimeline extends Component {
                 zIndex: item.type==="SUNTIME"?79:80
               },
               onMouseDown: () => {
-                  if (item.type !== "SUNTIME" && item.type !== "RESERVATION") {
+                  if (item.type !== "SUNTIME") {
                     this.onItemClick(item);
                   } else {
 
@@ -814,7 +818,9 @@ export class CalendarTimeline extends Component {
      * @param {Object} item 
      */
     onItemMouseOver(evt, item) {
-        if ((item.type==="SCHEDULE" || item.type==="TASK") && this.props.itemMouseOverCallback) {
+        if ((item.type==="SCHEDULE" || item.type==="TASK" || item.type==="RESERVATION") 
+                && this.props.itemMouseOverCallback) {
+            this.setState({mouseEvent: true});
             this.props.itemMouseOverCallback(evt, item);
         }
     }
@@ -824,7 +830,9 @@ export class CalendarTimeline extends Component {
      * @param {Object} item 
      */
     onItemMouseOut(evt, item) {
-        if ((item.type==="SCHEDULE" || item.type==="TASK") && this.props.itemMouseOutCallback) {
+        if ((item.type==="SCHEDULE" || item.type==="TASK"|| item.type==="RESERVATION") 
+                && this.props.itemMouseOutCallback) {
+            this.setState({mouseEvent: true});
             this.props.itemMouseOutCallback(evt);
         }
     }
@@ -835,13 +843,14 @@ export class CalendarTimeline extends Component {
      * @param {moment} endTime 
      */
     async changeDateRange(startTime, endTime, refreshData) {
-        if (this.props.showSunTimings && this.state.viewType===UIConstants.timeline.types.NORMAL) {
+        if (this.props.showSunTimings && this.state.viewType===UIConstants.timeline.types.NORMAL && !this.loadingNormalSuntimes) {
             this.setNormalSuntimings(startTime, endTime);
         }
         const result = await this.props.dateRangeCallback(startTime, endTime, refreshData);
-        if (!this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL) {
+        if (!this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL && !this.loadingStationSunTimes) {
             result.items = await this.addStationSunTimes(startTime, endTime, result.group, result.items);
-        }   else if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW) {
+            result.items = _.orderBy(result.items, ['type'], ['desc']);
+        }   else if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW && !this.loadingWeekSunTimes) {
             let group = DEFAULT_GROUP.concat(result.group);
             result.items = await this.addWeekSunTimes(startTime, endTime, group, result.items);
         }
@@ -853,14 +862,16 @@ export class CalendarTimeline extends Component {
      * @param {moment} startTime 
      * @param {moment} endTime 
      */
-    setNormalSuntimings(startTime, endTime) {
+    async setNormalSuntimings(startTime, endTime) {
         let sunRiseTimings = [], sunSetTimings = [], sunTimeMap={};
         const noOfDays = endTime.diff(startTime, 'days');
-        for (const number of _.range(noOfDays+3)) {                     // Added 3 to have suntimes of day before start time and day after end time so that for small time duration also, suntimes will be available.
-            let prevStartTime = startTime.clone().add(-1, 'days');
-            const date = prevStartTime.clone().add(number, 'days').hours(12).minutes(0).seconds(0);
-            const formattedDate = date.format("YYYY-MM-DD");
-            UtilService.getSunTimings(formattedDate).then(timings => {
+        if (!this.loadingNormalSuntimes) {
+            this.loadingNormalSuntimes = true;
+            for (const number of _.range(noOfDays+3)) {                     // Added 3 to have suntimes of day before start time and day after end time so that for small time duration also, suntimes will be available.
+                let prevStartTime = startTime.clone().add(-1, 'days');
+                const date = prevStartTime.clone().add(number, 'days').hours(12).minutes(0).seconds(0);
+                const formattedDate = date.format("YYYY-MM-DD");
+                let timings = await UtilService.getSunTimings(formattedDate);
                 if (timings) {
                     const sunriseStartTime = moment.utc(timings.sun_rise.start.split('.')[0]);
                     const sunriseEndTime = moment.utc(timings.sun_rise.end.split('.')[0]);
@@ -877,7 +888,10 @@ export class CalendarTimeline extends Component {
                     sunTimeMap[formattedDate] = {sunrise: sunriseTime, sunset: sunsetTime};
                     this.setState({sunRiseTimings: sunRiseTimings, sunSetTimings: sunSetTimings, sunTimeMap: sunTimeMap});
                 }
-            });
+                if (number === (noOfDays+2)) {
+                    this.loadingNormalSuntimes = false;
+                }
+            }
         }
     }
 
@@ -891,78 +905,84 @@ export class CalendarTimeline extends Component {
     async addStationSunTimes(startTime, endTime, stationGroup, items) {
         const noOfDays = endTime.diff(startTime, 'days');
         let sunItems = _.cloneDeep(items);
+        this.loadingStationSunTimes = true;
         for (const number of _.range(noOfDays+1)) {
             for (const station of stationGroup) {
-                const date = startTime.clone().add(number, 'days').hours(12).minutes(0).seconds(0);
-                const timings = await UtilService.getSunTimings(date.format("YYYY-MM-DD"), station.id);
-                if (timings) {
-                    let sunriseItem = { id: `sunrise-${number}-${station.id}`, 
-                                        group: station.id,
-                                        // title: `${timings.sun_rise.start} to ${timings.sun_rise.end}`,
-                                        title: "",
-                                        project: "",
-                                        name: "",
-                                        duration: "",
-                                        start_time: moment.utc(timings.sun_rise.start),
-                                        end_time: moment.utc(timings.sun_rise.end),
-                                        bgColor: "yellow",
-                                        selectedBgColor: "yellow",
-                                        type: "SUNTIME"};
-                    sunItems.push(sunriseItem);
-                    let sunsetItem = _.cloneDeep(sunriseItem);
-                    sunsetItem.id = `sunset-${number}-${station.id}`;
-                    // sunsetItem.title = `${timings.sun_set.start} to ${timings.sun_set.end}`;
-                    sunsetItem.title = "";
-                    sunsetItem.start_time = moment.utc(timings.sun_set.start);
-                    sunsetItem.end_time = moment.utc(timings.sun_set.end);
-                    sunsetItem.bgColor = "orange";
-                    sunsetItem.selectedBgColor = "orange";
-                    sunItems.push(sunsetItem);
-                    let befSunriseItem = _.cloneDeep(sunriseItem);
-                    befSunriseItem.id = `bef-sunrise-${number}-${station.id}`;
-                    // sunsetItem.title = `${timings.sun_set.start} to ${timings.sun_set.end}`;
-                    befSunriseItem.title = "";
-                    befSunriseItem.start_time = moment.utc(timings.sun_rise.start).hours(0).minutes(0).seconds(0);
-                    befSunriseItem.end_time = moment.utc(timings.sun_rise.start);
-                    befSunriseItem.bgColor = "grey";
-                    befSunriseItem.selectedBgColor = "grey";
-                    sunItems.push(befSunriseItem);
-                    let afterSunsetItem = _.cloneDeep(sunriseItem);
-                    afterSunsetItem.id = `aft-sunset-${number}-${station.id}`;
-                    // sunsetItem.title = `${timings.sun_set.start} to ${timings.sun_set.end}`;
-                    afterSunsetItem.title = "";
-                    afterSunsetItem.start_time = moment.utc(timings.sun_set.end);
-                    afterSunsetItem.end_time = moment.utc(timings.sun_set.end).hours(23).minutes(59).seconds(59);
-                    afterSunsetItem.bgColor = "grey";
-                    afterSunsetItem.selectedBgColor = "grey";
-                    sunItems.push(afterSunsetItem);
-                    let dayItem = _.cloneDeep(sunriseItem);
-                    dayItem.id = `day-${number}-${station.id}`;
-                    // sunsetItem.title = `${timings.sun_set.start} to ${timings.sun_set.end}`;
-                    dayItem.title = "";
-                    dayItem.start_time = moment.utc(timings.sun_rise.end);
-                    dayItem.end_time = moment.utc(timings.sun_set.start);
-                    dayItem.bgColor = "white";
-                    dayItem.selectedBgColor = "white";
-                    sunItems.push(dayItem);
+                if (!this.componentUnmounting) {
+                    const date = startTime.clone().add(number, 'days').hours(12).minutes(0).seconds(0);
+                    const timings = await UtilService.getSunTimings(date.format("YYYY-MM-DD"), station.id);
+                    if (timings) {
+                        let sunriseItem = { id: `sunrise-${number}-${station.id}`, 
+                                            group: station.id,
+                                            // title: `${timings.sun_rise.start} to ${timings.sun_rise.end}`,
+                                            title: "",
+                                            project: "",
+                                            name: "",
+                                            duration: "",
+                                            start_time: moment.utc(timings.sun_rise.start),
+                                            end_time: moment.utc(timings.sun_rise.end),
+                                            bgColor: "yellow",
+                                            selectedBgColor: "yellow",
+                                            type: "SUNTIME"};
+                        sunItems.push(sunriseItem);
+                        let sunsetItem = _.cloneDeep(sunriseItem);
+                        sunsetItem.id = `sunset-${number}-${station.id}`;
+                        // sunsetItem.title = `${timings.sun_set.start} to ${timings.sun_set.end}`;
+                        sunsetItem.title = "";
+                        sunsetItem.start_time = moment.utc(timings.sun_set.start);
+                        sunsetItem.end_time = moment.utc(timings.sun_set.end);
+                        sunsetItem.bgColor = "orange";
+                        sunsetItem.selectedBgColor = "orange";
+                        sunItems.push(sunsetItem);
+                        let befSunriseItem = _.cloneDeep(sunriseItem);
+                        befSunriseItem.id = `bef-sunrise-${number}-${station.id}`;
+                        // sunsetItem.title = `${timings.sun_set.start} to ${timings.sun_set.end}`;
+                        befSunriseItem.title = "";
+                        befSunriseItem.start_time = moment.utc(timings.sun_rise.start).hours(0).minutes(0).seconds(0);
+                        befSunriseItem.end_time = moment.utc(timings.sun_rise.start);
+                        befSunriseItem.bgColor = "grey";
+                        befSunriseItem.selectedBgColor = "grey";
+                        sunItems.push(befSunriseItem);
+                        let afterSunsetItem = _.cloneDeep(sunriseItem);
+                        afterSunsetItem.id = `aft-sunset-${number}-${station.id}`;
+                        // sunsetItem.title = `${timings.sun_set.start} to ${timings.sun_set.end}`;
+                        afterSunsetItem.title = "";
+                        afterSunsetItem.start_time = moment.utc(timings.sun_set.end);
+                        afterSunsetItem.end_time = moment.utc(timings.sun_set.end).hours(23).minutes(59).seconds(59);
+                        afterSunsetItem.bgColor = "grey";
+                        afterSunsetItem.selectedBgColor = "grey";
+                        sunItems.push(afterSunsetItem);
+                        let dayItem = _.cloneDeep(sunriseItem);
+                        dayItem.id = `day-${number}-${station.id}`;
+                        // sunsetItem.title = `${timings.sun_set.start} to ${timings.sun_set.end}`;
+                        dayItem.title = "";
+                        dayItem.start_time = moment.utc(timings.sun_rise.end);
+                        dayItem.end_time = moment.utc(timings.sun_set.start);
+                        dayItem.bgColor = "white";
+                        dayItem.selectedBgColor = "white";
+                        sunItems.push(dayItem);
+                    }   else {
+                        /* If no sunrise and sunset, show it as night time. Later it should be done as either day or night. */
+                        let befSunriseItem = { id: `bef-sunrise-${number}-${station.id}`, 
+                                            group: station.id,
+                                            // title: `${timings.sun_rise.start} to ${timings.sun_rise.end}`,
+                                            title: "",
+                                            project: "",
+                                            name: "",
+                                            duration: "",
+                                            start_time: moment.utc(date.format("YYYY-MM-DD 00:00:00")),
+                                            end_time: moment.utc(date.format("YYYY-MM-DD 23:59:59")),
+                                            bgColor: "grey",
+                                            selectedBgColor: "grey",
+                                            type: "SUNTIME"};
+                        sunItems.push(befSunriseItem);
+                    }
                 }   else {
-                    /* If no sunrise and sunset, show it as night time. Later it should be done as either day or night. */
-                    let befSunriseItem = { id: `bef-sunrise-${number}-${station.id}`, 
-                                        group: station.id,
-                                        // title: `${timings.sun_rise.start} to ${timings.sun_rise.end}`,
-                                        title: "",
-                                        project: "",
-                                        name: "",
-                                        duration: "",
-                                        start_time: moment.utc(date.format("YYYY-MM-DD 00:00:00")),
-                                        end_time: moment.utc(date.format("YYYY-MM-DD 23:59:59")),
-                                        bgColor: "grey",
-                                        selectedBgColor: "grey",
-                                        type: "SUNTIME"};
-                    sunItems.push(befSunriseItem);
+                    break;
                 }
             }
         }
+        this.loadingStationSunTimes = false;
         if (!this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL) {
             items = sunItems;
         }
@@ -978,6 +998,7 @@ export class CalendarTimeline extends Component {
      */
     async addWeekSunTimes(startTime, endTime, weekGroup, items) {
         let sunItems = _.cloneDeep(items);
+        this.loadingWeekSunTimes = true;
         for (const weekDay of weekGroup) {
             if (weekDay.value) {
                 const timings = await UtilService.getSunTimings(weekDay.value.format("YYYY-MM-DD"), 'CS001');
@@ -1028,6 +1049,7 @@ export class CalendarTimeline extends Component {
                     sunItems.push(afterSunsetItem);
                 }
             }
+            this.loadingWeekSunTimes = false;
         }
         if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW) {
             items = _.orderBy(sunItems, ['type'], ['desc']);
@@ -1245,22 +1267,26 @@ export class CalendarTimeline extends Component {
      * @param {Object} props 
      */
     async updateTimeline(props) {
-        this.setState({ showSpinner: true });
-        let group =  DEFAULT_GROUP.concat(props.group);
-        if (!this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL) {
-            props.items = await this.addStationSunTimes(this.state.defaultStartTime, this.state.defaultEndTime, props.group, props.items);
-        }   else if(this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL) {
-            this.setNormalSuntimings(this.state.defaultStartTime, this.state.defaultEndTime);
-        }   else if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW) {
-            props.items = await this.addWeekSunTimes(this.state.defaultStartTime, this.state.defaultEndTime, group, props.items);
+        if (!this.state.mouseEvent) { // No need to update timeline items for mouseover and mouseout events
+            // this.setState({ showSpinner: true });
+            let group =  DEFAULT_GROUP.concat(props.group);
+            if (!this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL && !this.loadingStationSunTimes) {
+                props.items = await this.addStationSunTimes(this.state.defaultStartTime, this.state.defaultEndTime, props.group, props.items);
+            }   else if(this.props.showSunTimings && this.state.viewType === UIConstants.timeline.types.NORMAL && !this.loadingNormalSuntimes) {
+                this.setNormalSuntimings(this.state.defaultStartTime, this.state.defaultEndTime);
+            }   else if (this.state.viewType === UIConstants.timeline.types.WEEKVIEW && !this.loadingWeekSunTimes) {
+                props.items = await this.addWeekSunTimes(this.state.defaultStartTime, this.state.defaultEndTime, group, props.items);
+            }
+            this.setState({group: group, showSpinner: false, items: _.orderBy(props.items, ['type'], ['desc'])});
+        }   else {
+            this.setState({mouseEvent: false});
         }
-        this.setState({group: group, showSpinner: false, items: _.orderBy(props.items, ['type'], ['desc'])});
     }
 
     render() {
         return (
             <React.Fragment>
-                <CustomPageSpinner visible={this.state.showSpinner} />
+                {/* <CustomPageSpinner visible={this.state.showSpinner} /> */}
                 {/* Toolbar for the timeline */}
                 <div className={`p-fluid p-grid timeline-toolbar ${this.props.className}`}>
                     {/* Clock Display */}
@@ -1345,7 +1371,7 @@ export class CalendarTimeline extends Component {
                             <div className='col-1 su-legend su-finished' title="Finished">Finished</div>
                         </div>
                     </div>
-                    {!this.props.showSunTimings && this.state.viewType===UIConstants.timeline.types.NORMAL &&
+                    {!this.props.showSunTimings && 
                     <div className="col-3">
                         <div style={{fontWeight:'500', height: '25px'}}>Station Reservation</div>
                         <div className="p-grid">

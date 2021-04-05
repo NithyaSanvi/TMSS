@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import ViewTable from './../../components/ViewTable';
+import { Link } from 'react-router-dom';
 import WorkflowService from '../../services/workflow.service';
 
 export default ({ tasks, schedulingUnit, onCancel, ...props }) => {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  //  const [QASUProcess, setQASUProcess] = useState();
     const defaultcolumns = [ {
         name: "Name",
         totalDataSize:"Total Data Size(TB)", 
@@ -21,12 +23,11 @@ export default ({ tasks, schedulingUnit, onCancel, ...props }) => {
     const toggleDialog = () => {
         setShowConfirmDialog(!showConfirmDialog)
     };
-
-    /**
+     /**
      * Method will trigger on click next buton
      * here onNext props coming from parent, where will handle redirection to other page
      */
-    const Next = async () => {
+      const Next = async () => {
         const currentWorkflowTask = await props.getCurrentTaskDetails();
         const promise = [];
         if (currentWorkflowTask && !currentWorkflowTask.fields.owner) {

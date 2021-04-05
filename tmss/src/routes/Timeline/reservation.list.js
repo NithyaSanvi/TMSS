@@ -30,7 +30,7 @@ export class ReservationList extends Component{
                     filter: "fromdatetime",
                     format:UIConstants.CALENDAR_DATETIME_FORMAT
                 },
-                end_time: {
+                stop_time: {
                     name: "End Time",
                     filter: "todatetime",
                     format:UIConstants.CALENDAR_DATETIME_FORMAT
@@ -118,19 +118,17 @@ export class ReservationList extends Component{
                 reservation = this.mergeResourceWithReservation( reservation, response.specifications_doc.effects );
                 reservation = this.mergeResourceWithReservation( reservation, response.specifications_doc.schedulability );
                 if (response.specifications_doc.resources.stations ) {
-                    reservation['stations'] = response.specifications_doc.resources.stations.join();
+                    reservation['stations'] = response.specifications_doc.resources.stations.join(', ');
                 } else {
                     reservation['stations'] = '';
                 }
                 if(reservation.duration === null || reservation.duration === ''){
                     reservation.duration = 'Unknown';
-                    reservation['end_time']= 'Unknown';
+                    reservation['stop_time']= 'Unknown';
                 } else {
                     let duration = reservation.duration;
                     reservation.duration = UnitService.getSecsToHHmmss(reservation.duration);
-                    let endDate = moment(reservation.start_time);
-                    endDate = moment(endDate).add(duration, 's');
-                    reservation['end_time']= moment(endDate).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                    reservation['stop_time']= moment(reservation['stop_time']).format(UIConstants.CALENDAR_DATETIME_FORMAT);
                 }
                 reservation['start_time']= moment(reservation['start_time']).format(UIConstants.CALENDAR_DATETIME_FORMAT);
                 this.reservations.push(reservation);
@@ -177,9 +175,9 @@ export class ReservationList extends Component{
                     let cycle_End_time = moment.utc(moment(cycle['stop']).format("YYYY-MM-DD"));  
                     this.state.reservationsList.forEach( reservation => {
                         let res_Start_time = moment.utc(moment(reservation['start_time']).format("YYYY-MM-DD"));  
-                        let res_End_time = moment.utc(moment(reservation['end_time']).format("YYYY-MM-DD"));  
+                        let res_End_time = moment.utc(moment(reservation['stop_time']).format("YYYY-MM-DD"));  
                         if (cycle_Start_time.isSameOrBefore(res_Start_time) && cycle_End_time.isSameOrAfter(res_Start_time)) {
-                            if ( reservation['end_time'] === 'Unknown'|| cycle_End_time.isSameOrAfter(res_End_time)) {
+                            if ( reservation['stop_time'] === 'Unknown'|| cycle_End_time.isSameOrAfter(res_End_time)) {
                                 const tmpList = _.filter(reservationList, function(o) { return o.id === reservation.id });
                                 if( tmpList.length === 0) {
                                     reservationList.push(reservation);
@@ -216,7 +214,7 @@ export class ReservationList extends Component{
             await this.state.reservationsList.forEach( reservation => {
                 let res_Start_time =  moment.utc(moment(reservation['start_time'])).valueOf();
                 let res_End_time = 'Unknown';
-                if(reservation['end_time'] === 'Unknown') {
+                if(reservation['stop_time'] === 'Unknown') {
                     if(res_Start_time <= fEndTime){
                         const tmpList = _.filter(reservationList, function(o) { return o.id === reservation.id });
                         if( tmpList.length === 0) {
@@ -225,7 +223,7 @@ export class ReservationList extends Component{
                     }
                 } 
                 else {
-                    res_End_time = moment.utc(moment(reservation['end_time'])).valueOf();
+                    res_End_time = moment.utc(moment(reservation['stop_time'])).valueOf();
                     if(res_Start_time <= fStartTime && res_End_time >= fStartTime) {
                         const tmpList = _.filter(reservationList, function(o) { return o.id === reservation.id });
                         if( tmpList.length === 0) {

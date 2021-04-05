@@ -130,7 +130,7 @@ class DecideAcceptance extends Component {
                         </div>
 
                         <div className="p-fluid-grid" style={{ padding: '2px' }}>
-                          <label htmlFor="addline"  style={{paddingLeft:"2px"}}>Submitting this form will start the ingest (if not auto-ingested) and data removal of unpinned data.</label>
+                          <label htmlFor="addline"  style={{paddingLeft:"2px"},{color:"black"}}>Submitting this form will start the ingest (if not auto-ingested) and data removal of unpinned data.</label>
                         </div>                                 
                     </div>
                     {!this.props.readOnly && <div className="p-grid" style={{ marginTop: '20px' }}>

@@ -6,7 +6,7 @@ import { Growl } from 'primereact/components/growl/Growl';
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
 import UIConstants from '../../utils/ui.constants';
-import { Calendar } from 'primereact/calendar';
+import Flatpickr from "react-flatpickr";
 import { InputMask } from 'primereact/inputmask';
 import { Dropdown } from 'primereact/dropdown';
 import {InputText } from 'primereact/inputtext';
@@ -18,6 +18,9 @@ import ProjectService from '../../services/project.service';
 import ReservationService from '../../services/reservation.service';
 import UnitService from '../../utils/unit.converter';
 import Jeditor from '../../components/JSONEditor/JEditor';
+import UtilService from '../../services/util.service';
+
+import "flatpickr/dist/flatpickr.css";
 
 /**
  * Component to create a new Reservation
@@ -38,15 +41,14 @@ export class ReservationCreate extends Component {
             reservation: { 
                 name: '',
                 description: '', 
-                start_time: '',
-                duration: '',
+                start_time: null,
+                stop_time: null,
                 project: (props.match?props.match.params.project:null) || null,
             },
             errors: {},                             // Validation Errors
             validFields: {},                        // For Validation
             validForm: false,                       // To enable Save Button
-            validEditor: false, 
-            durationError: false,
+            validEditor: false
         };
         this.projects = [];                         // All projects to load project dropdown
         this.reservationTemplates = [];
@@ -78,9 +80,11 @@ export class ReservationCreate extends Component {
     async initReservation() {
         const promises = [  ProjectService.getProjectList(),
                             ReservationService.getReservationTemplates(),
+                            UtilService.getUTC()
                         ];
         let emptyProjects = [{url: null, name: "Select Project"}];
        Promise.all(promises).then(responses => {
+            let systemTime = moment.utc(responses[2]);
             this.projects = emptyProjects.concat(responses[0]);
             this.reservationTemplates = responses[1];
 
@@ -95,8 +99,9 @@ export class ReservationCreate extends Component {
                 paramsSchema: schema,
                 isLoading: false,
                 reservationTemplate: reservationTemplate,
+                systemTime: systemTime
             });
-            });    
+        });    
         
     }
     
@@ -136,13 +141,6 @@ export class ReservationCreate extends Component {
      * @param {any} value 
      */
     setParams(key, value, type) {
-        if(key === 'duration' && !this.validateDuration( value)) {
-            this.setState({
-                durationError: true,
-                isDirty: true
-            })
-            return;
-        }
         let reservation = this.state.reservation;
         switch(type) {
             case 'NUMBER': {
@@ -154,23 +152,9 @@ export class ReservationCreate extends Component {
                 break;
             }
         }
-        this.setState({reservation: reservation, validForm: this.validateForm(key), durationError: false, isDirty: true});
+        this.setState({reservation: reservation, validForm: this.validateForm(key), isDirty: true});
     }
      
-    /**
-     * Validate Duration, it allows max 99:59:59
-     * @param {*} duration 
-     */
-    validateDuration(duration) {
-        const splitOutput = duration.split(':');
-        if (splitOutput.length < 3) {
-            return false;
-        } else if (parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59) {
-            return false;
-        }
-        return true;
-    }
-
     /**
      * Validation function to validate the form or field based on the form rules.
      * If no argument passed for fieldName, validates all fields in the form.
@@ -209,12 +193,38 @@ export class ReservationCreate extends Component {
                 }
             }
         }
-        
         this.setState({errors: errors, validFields: validFields});
         if (Object.keys(validFields).length === Object.keys(this.formRules).length) {
             validForm = true;
+            delete errors['start_time'];
+            delete errors['stop_time'];
+        }
+        if (!this.validateDates(this.state.reservation.start_time, this.state.reservation.stop_time)) {
+            validForm = false;
+            if (!fieldName || fieldName === 'start_time') {
+                errors['start_time'] = "From Date cannot be same or after To Date";
+                delete errors['stop_time'];
+            }
+            if (!fieldName || fieldName === 'stop_time') {
+                errors['stop_time'] = "To Date cannot be same or before From Date";
+                delete errors['start_time'];
+            }
+            this.setState({errors: errors});
         }
         return validForm;
+    }
+
+    /**
+     * Function to validate if stop_time is always later than start_time if exists.
+     * @param {Date} fromDate 
+     * @param {Date} toDate 
+     * @returns boolean
+     */
+    validateDates(fromDate, toDate) {
+        if (fromDate && toDate && moment(toDate).isSameOrBefore(moment(fromDate))) {
+            return false;
+        }
+        return true;
     }
 
     setEditorOutput(jsonOutput, errors) {
@@ -232,21 +242,21 @@ export class ReservationCreate extends Component {
         }
     }
 
-    saveReservation(){
+    async saveReservation(){
         let reservation = this.state.reservation;
         let project = this.projects.find(project => project.name === reservation.project);
         reservation['start_time'] = moment(reservation['start_time']).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-        reservation['duration'] = ( reservation['duration'] === ''? null: UnitService.getHHmmssToSecs(reservation['duration']));
+        reservation['stop_time'] = reservation['stop_time']?moment(reservation['stop_time']).format(UIConstants.CALENDAR_DATETIME_FORMAT):reservation['stop_time'];
         reservation['project']=  project ? project.url: null;
         reservation['specifications_template']= this.reservationTemplates[0].url;
         reservation['specifications_doc']= this.paramsOutput;
-        reservation = ReservationService.saveReservation(reservation); 
-        if (reservation && reservation !== null){
+        reservation = await ReservationService.saveReservation(reservation); 
+        if (reservation && reservation.id){
             const dialog = {header: 'Success', detail: 'Reservation is created successfully. Do you want to create another Reservation?'};
             this.setState({ dialogVisible: true, dialog: dialog,  paramsOutput: {}, showDialog: false, isDirty: false})
-        }  else {
+        }/*  else {
             this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to save Reservation', showDialog: false, isDirty: false});
-        }
+        }*/
     }
 
     /**
@@ -257,7 +267,7 @@ export class ReservationCreate extends Component {
             name: '',
             description: '', 
             start_time: '',
-            duration: '',
+            stop_time: '',
             project: '',
         }
         this.setState({
@@ -354,39 +364,61 @@ export class ReservationCreate extends Component {
                                 </div>
                             </div>
                             <div className="p-field p-grid">
-                                    <label htmlFor="reservationName" className="col-lg-2 col-md-2 col-sm-12">From Date <span style={{color:'red'}}>*</span></label>
+                                    <label className="col-lg-2 col-md-2 col-sm-12">From Date <span style={{color:'red'}}>*</span></label>
                                     <div className="col-lg-3 col-md-3 col-sm-12">
-                                        <Calendar 
-                                            d dateFormat="yy-mm-dd"
-                                            value= {this.state.reservation.start_time}
-                                            onChange= {e => this.setParams('start_time',e.value)}
-                                            data-testid="start_time"
-                                            tooltip="Moment at which the reservation starts from, that is, when its reservation can run." tooltipOptions={this.tooltipOptions}
-                                            showIcon={true}
-                                            showTime= {true}
-                                            showSeconds= {true}
-                                            hourFormat= "24"
-                                        />
-                                    
-                                        <label className={this.state.errors.from?"error":"info"}>
-                                            {this.state.errors.start_time ? this.state.errors.start_time : ""}
+                                        <Flatpickr data-enable-time data-input options={{
+                                                    "inlineHideInput": true,
+                                                    "wrap": true,
+                                                    "enableSeconds": true,
+                                                    "time_24hr": true,
+                                                    "minuteIncrement": 1,
+                                                    "allowInput": true,
+                                                    "defaultDate": this.state.systemTime.format(UIConstants.CALENDAR_DEFAULTDATE_FORMAT),
+                                                    "defaultHour": this.state.systemTime.hours(),
+                                                    "defaultMinute": this.state.systemTime.minutes()
+                                                    }}
+                                                    title="Start of this reservation"
+                                                    value={this.state.reservation.start_time}
+                                                    onChange= {value => {this.setParams('start_time', value[0]?value[0]:this.state.reservation.start_time);
+                                                        this.setReservationParams('start_time', value[0]?value[0]:this.state.reservation.start_time)}} >
+                                            <input type="text" data-input className={`p-inputtext p-component ${this.state.errors.start_time && this.state.touched.start_time?'input-error':''}`} />
+                                            <i className="fa fa-calendar" data-toggle style={{position: "absolute", marginLeft: '-25px', marginTop:'5px', cursor: 'pointer'}} ></i>
+                                            <i className="fa fa-times" style={{position: "absolute", marginLeft: '-50px', marginTop:'5px', cursor: 'pointer'}} 
+                                                onClick={e => {this.setParams('start_time', ''); this.setReservationParams('start_time', '')}}></i>
+                                        </Flatpickr>
+                                        <label className={this.state.errors.start_time && this.state.touched.start_time?"error":"info"}>
+                                            {this.state.errors.start_time && this.state.touched.start_time ? this.state.errors.start_time : ""}
                                         </label>
                                     </div>
                                     <div className="col-lg-1 col-md-1 col-sm-12"></div>
                              
-                                    <label htmlFor="duration" className="col-lg-2 col-md-2 col-sm-12">Duration </label>
-                                    <div className="col-lg-3 col-md-3 col-sm-12" data-testid="duration" >
-                                        <InputMask 
-                                            value={this.state.reservation.duration} 
-                                            mask="99:99:99" 
-                                            placeholder="HH:mm:ss" 
-                                            onChange= {e => this.setParams('duration',e.value)}
-                                            ref={input =>{this.input = input}}
-                                            />
-                                        <label className="error">
-                                            {this.state.durationError ? 'Invalid duration, Maximum:99:59:59.' : ""}
+                                    <label className="col-lg-2 col-md-2 col-sm-12">To Date</label>
+                                    <div className="col-lg-3 col-md-3 col-sm-12">
+                                        <Flatpickr data-enable-time data-input options={{
+                                                    "inlineHideInput": true,
+                                                    "wrap": true,
+                                                    "enableSeconds": true,
+                                                    "time_24hr": true,
+                                                    "minuteIncrement": 1,
+                                                    "allowInput": true,
+                                                    "minDate": this.state.reservation.start_time?this.state.reservation.start_time.toDate:'',
+                                                    "defaultDate": this.state.systemTime.format(UIConstants.CALENDAR_DEFAULTDATE_FORMAT),
+                                                    "defaultHour": this.state.systemTime.hours(),
+                                                    "defaultMinute": this.state.systemTime.minutes()
+                                                    }}
+                                                    title="End of this reservation. If empty, then this reservation is indefinite."
+                                                    value={this.state.reservation.stop_time}
+                                                    onChange= {value => {this.setParams('stop_time', value[0]?value[0]:this.state.reservation.stop_time);
+                                                                            this.setReservationParams('stop_time', value[0]?value[0]:this.state.reservation.stop_time)}} >
+                                            <input type="text" data-input className={`p-inputtext p-component ${this.state.errors.stop_time && this.state.touched.stop_time?'input-error':''}`} />
+                                            <i className="fa fa-calendar" data-toggle style={{position: "absolute", marginLeft: '-25px', marginTop:'5px', cursor: 'pointer'}} ></i>
+                                            <i className="fa fa-times" style={{position: "absolute", marginLeft: '-50px', marginTop:'5px', cursor: 'pointer'}} 
+                                                onClick={e => {this.setParams('stop_time', ''); this.setReservationParams('stop_time', '')}}></i>
+                                        </Flatpickr>
+                                        <label className={this.state.errors.stop_time && this.state.touched.stop_time?"error":"info"}>
+                                            {this.state.errors.stop_time && this.state.touched.stop_time ? this.state.errors.stop_time : ""}
                                         </label>
-                                    </div>     
+                                    </div>
                                 </div>
 
                                 <div className="p-field p-grid">

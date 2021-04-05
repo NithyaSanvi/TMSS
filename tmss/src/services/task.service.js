@@ -2,31 +2,39 @@ const axios = require('axios');
 
 const TaskService = {
     getTaskDetails: async function (taskType, taskId) {
-        try {
-          const url = taskType === 'blueprint'? '/api/task_blueprint/': '/api/task_draft/';
-          const response = await axios.get(url + taskId);
-          response.data.predecessors = [];
-          response.data.successors = [];
-          if (taskType === 'blueprint') {
-            response.data.blueprints = [];
-          } else {
-            response.data.draftName = null;
-          }
-          return this.getTaskRelationsByTask(taskType, response.data)
-                  .then(relations => {
-                    response.data.predecessors = relations.predecessors;
-                    response.data.successors = relations.successors;
-                    if (taskType === 'draft') {
-                      response.data.blueprints = relations.blueprints;
-                    } else {
-                      response.data.draftObject = relations.draft;
-                    }
-                    return response.data;
-                  });
-          
-        } catch (error) {
-          console.error(error);
+      try {
+        const responseData = await this.getTask(taskType, taskId); 
+        responseData.predecessors = [];
+        responseData.successors = [];
+        if (taskType === 'blueprint') {
+          responseData.blueprints = [];
+        } else {
+          responseData.draftName = null;
         }
+        return this.getTaskRelationsByTask(taskType, responseData)
+            .then(relations => {
+            responseData.predecessors = relations.predecessors;
+            responseData.successors = relations.successors;
+            if (taskType === 'draft') {
+              responseData.blueprints = relations.blueprints;
+            } else {
+              responseData.draftObject = relations.draft;
+            }
+            return responseData;
+        });
+        
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    getTask : async function (taskType, taskId) {
+      try {
+        const url = taskType === 'blueprint'? '/api/task_blueprint/': '/api/task_draft/';
+        const response = await axios.get(url + taskId);
+        return response.data;
+      } catch (error) {
+        console.error(error);
+      }
     },
     getTaskTemplate: async function(templateId) {
       try {
@@ -49,6 +57,24 @@ const TaskService = {
         const url = `/api/scheduling_unit_${type}/${id}`;
         const response = await axios.get(url);
         return response.data;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    getTaskDraftList: async function() {
+      try {
+        const url = `/api/task_draft`;
+        const response = await axios.get(url);
+        return response.data.results;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    getTaskBlueprintList: async function() {
+      try {
+        const url = `/api/task_blueprint`;
+        const response = await axios.get(url);
+        return response.data.results;
       } catch (error) {
         console.error(error);
       }

@@ -966,22 +966,26 @@ function ViewTable(props) {
     columns.push({
       Header: 'Action',
       id: 'Action',
-      accessor: props.keyaccessor,
+     // accessor: props.keyaccessor,
       Cell: props => <button className='p-link' onClick={navigateTo(props)} ><i className="fa fa-eye" style={{ cursor: 'pointer' }}></i></button>,
       disableFilters: true,
       disableSortBy: true,
-      isVisible: defaultdataheader.includes(props.keyaccessor),
+      isVisible: true//defaultdataheader.includes(props.keyaccessor),
     })
   }
 
-  const navigateTo = (props) => () => {
-    if (props.cell.row.values['actionpath']) {
-      return history.push({
-        pathname: props.cell.row.values['actionpath'],
-        state: {
-          "id": props.value,
-        }
-      })
+  const navigateTo = (cellProps) => () => {
+    if (cellProps.cell.row.values['actionpath']) {
+      if (!props.viewInNewWindow) {
+        return history.push({
+          pathname: cellProps.cell.row.values['actionpath'],
+          state: {
+            "id": cellProps.value,
+          }
+        })
+      } else {
+        window.open(cellProps.cell.row.values['actionpath'] , '_blank');
+      }
     }
     // Object.entries(props.paths[0]).map(([key,value]) =>{})
   }

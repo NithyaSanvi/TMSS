@@ -22,6 +22,7 @@ import TaskService from '../../services/task.service';
 import UnitConverter from '../../utils/unit.converter';
 import Validator from '../../utils/validator';
 import SchedulingUnitSummary from '../Scheduling/summary';
+import ReservationSummary from './reservation.summary';
 import { Dropdown } from 'primereact/dropdown';
 import { OverlayPanel } from 'primereact/overlaypanel';
 import { RadioButton } from 'primereact/radiobutton';
@@ -88,6 +89,7 @@ export class TimelineView extends Component {
         this.onItemMouseOver = this.onItemMouseOver.bind(this);
         this.onItemMouseOut = this.onItemMouseOut.bind(this);
         this.showSUSummary = this.showSUSummary.bind(this);
+        this.showReservationSummary = this.showReservationSummary.bind(this);
         this.showTaskSummary = this.showTaskSummary.bind(this);
         this.closeSUDets = this.closeSUDets.bind(this);
         this.dateRangeCallback = this.dateRangeCallback.bind(this);
@@ -295,6 +297,8 @@ export class TimelineView extends Component {
     onItemClick(item) {
         if (item.type === "SCHEDULE") { 
             this.showSUSummary(item);
+        }   else if (item.type === "RESERVATION") {
+            this.showReservationSummary(item);
         }   else {
             this.showTaskSummary(item);
         }
@@ -350,6 +354,14 @@ export class TimelineView extends Component {
     }
 
     /**
+     * To load and show Reservation summary
+     * @param {Object} item 
+     */
+    showReservationSummary(item) {
+        this.setState({selectedItem: item, isReservDetsVisible: true, isSUDetsVisible: false});
+    }
+
+    /**
      * To load task summary and show
      * @param {Object} item - Timeline task item object 
      */
@@ -361,7 +373,7 @@ export class TimelineView extends Component {
      * Closes the SU details section
      */
     closeSUDets() {
-        this.setState({isSUDetsVisible: false, isTaskDetsVisible: false, canExtendSUList: true, canShrinkSUList: false});
+        this.setState({isSUDetsVisible: false, isReservDetsVisible: false, isTaskDetsVisible: false, canExtendSUList: true, canShrinkSUList: false});
     }
 
     /**
@@ -378,23 +390,34 @@ export class TimelineView extends Component {
      * @param {Object} item
      */
     onItemMouseOver(evt, item) {
-        const itemSU = _.find(this.state.suBlueprints, {id: (item.suId?item.suId:item.id)});
-        const itemStations = this.getSUStations(itemSU);
-        const itemStationGroups = this.groupSUStations(itemStations);
-        item.stations = {groups: "", counts: ""};
-        item.suName = itemSU.name;
-        for (const stationgroup of _.keys(itemStationGroups)) {
-            let groups = item.stations.groups;
-            let counts = item.stations.counts;
-            if (groups) {
-                groups = groups.concat("/");
-                counts = counts.concat("/");
+        if (item.type === "SCHEDULE" || item.type === "TASK") {
+            const itemSU = _.find(this.state.suBlueprints, {id: (item.suId?item.suId:item.id)});
+            const itemStations = this.getSUStations(itemSU);
+            const itemStationGroups = this.groupSUStations(itemStations);
+            item.stations = {groups: "", counts: ""};
+            item.suName = itemSU.name;
+            for (const stationgroup of _.keys(itemStationGroups)) {
+                let groups = item.stations.groups;
+                let counts = item.stations.counts;
+                if (groups) {
+                    groups = groups.concat("/");
+                    counts = counts.concat("/");
+                }
+                // Get station group 1st character and append 'S' to get CS,RS,IS 
+                groups = groups.concat(stationgroup.substring(0,1).concat('S'));
+                counts = counts.concat(itemStationGroups[stationgroup].length);
+                item.stations.groups = groups;
+                item.stations.counts = counts;
             }
-            // Get station group 1st character and append 'S' to get CS,RS,IS 
-            groups = groups.concat(stationgroup.substring(0,1).concat('S'));
-            counts = counts.concat(itemStationGroups[stationgroup].length);
-            item.stations.groups = groups;
-            item.stations.counts = counts;
+        }   else {
+            const reservation = _.find(this.reservations, {'id': parseInt(item.id.split("-")[1])});
+            const reservStations = reservation.specifications_doc.resources.stations;
+            const reservStationGroups = this.groupSUStations(reservStations);
+            item.name = reservation.name;
+            item.contact = reservation.specifications_doc.activity.contact
+            item.activity_type = reservation.specifications_doc.activity.type;
+            item.stations = reservStations;
+            item.planned = reservation.specifications_doc.activity.planned;
         }
         this.popOver.toggle(evt);
         this.setState({mouseOverItem: item});
@@ -463,7 +486,8 @@ export class TimelineView extends Component {
         // On range change close the Details pane
         // this.closeSUDets();
         // console.log(_.orderBy(group, ["parent", "id"], ['asc', 'desc']));
-        return {group: this.stationView? this.getStationsByGroupName() : _.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']), items: items};
+        group = this.state.stationView ? this.getStationsByGroupName() : _.orderBy(_.uniqBy(group, 'id'),["parent", "start"], ['asc', 'asc']);
+        return {group: group, items: items};
     }
 
     /**
@@ -845,16 +869,21 @@ export class TimelineView extends Component {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
         }
-         if (this.state.loader) {
-            return <AppLoader />
-        }
+        //  if (this.state.loader) {
+        //     return <AppLoader />
+        // }
         const isSUDetsVisible = this.state.isSUDetsVisible;
+        const isReservDetsVisible = this.state.isReservDetsVisible;
         const isTaskDetsVisible = this.state.isTaskDetsVisible;
         const canExtendSUList = this.state.canExtendSUList;
         const canShrinkSUList = this.state.canShrinkSUList;
-        let suBlueprint = null;
+        let suBlueprint = null, reservation = null;
         if (isSUDetsVisible) {
             suBlueprint = _.find(this.state.suBlueprints, {id:  this.state.stationView?parseInt(this.state.selectedItem.id.split('-')[0]):this.state.selectedItem.id});
+        }
+        if (isReservDetsVisible) {
+            reservation = _.find(this.reservations, {id: parseInt(this.state.selectedItem.id.split('-')[1])});
+            reservation.project = this.state.selectedItem.project;
         }
         let mouseOverItem = this.state.mouseOverItem;
         return (
@@ -869,9 +898,10 @@ export class TimelineView extends Component {
                 { this.state.isLoading ? <AppLoader /> :
                         <div className="p-grid">
                             {/* SU List Panel */}
-                            <div className={isSUDetsVisible || isTaskDetsVisible || (canExtendSUList && !canShrinkSUList)?"col-lg-4 col-md-4 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":"col-lg-6 col-md-6 col-sm-12")}
+                            <div className={isSUDetsVisible || isReservDetsVisible || isTaskDetsVisible || (canExtendSUList && !canShrinkSUList)?"col-lg-4 col-md-4 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":"col-lg-6 col-md-6 col-sm-12")}
                                  style={{position: "inherit", borderRight: "5px solid #efefef", paddingTop: "10px"}}>
                                 <ViewTable 
+                                    viewInNewWindow
                                     data={this.state.suBlueprintList} 
                                     defaultcolumns={[{name: "Name",
                                                         start_time:
@@ -894,7 +924,7 @@ export class TimelineView extends Component {
                                 />
                             </div>
                             {/* Timeline Panel */}
-                            <div className={isSUDetsVisible || isTaskDetsVisible || (!canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-7 col-md-7 col-sm-12":"col-lg-8 col-md-8 col-sm-12")}>
+                            <div className={isSUDetsVisible || isReservDetsVisible || isTaskDetsVisible || (!canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-7 col-md-7 col-sm-12":"col-lg-8 col-md-8 col-sm-12")}>
                                 {/* Panel Resize buttons */}
                                 <div className="resize-div">
                                     <button className="p-link resize-btn" disabled={!this.state.canShrinkSUList} 
@@ -974,6 +1004,7 @@ export class TimelineView extends Component {
                                      style={{borderLeft: "1px solid #efefef", marginTop: "0px", backgroundColor: "#f2f2f2"}}>
                                     {this.state.isSummaryLoading?<AppLoader /> :
                                         <SchedulingUnitSummary schedulingUnit={suBlueprint} suTaskList={this.state.suTaskList}
+                                                viewInNewWindow        
                                                 constraintsTemplate={this.state.suConstraintTemplate}
                                                 stationGroup={this.state.stationGroup}
                                                 closeCallback={this.closeSUDets}></SchedulingUnitSummary>
@@ -988,12 +1019,20 @@ export class TimelineView extends Component {
                                     }
                                 </div>
                             }
+                            {this.state.isReservDetsVisible &&
+                                <div className="col-lg-3 col-md-3 col-sm-12" 
+                                     style={{borderLeft: "1px solid #efefef", marginTop: "0px", backgroundColor: "#f2f2f2"}}>
+                                    {this.state.isSummaryLoading?<AppLoader /> :
+                                        <ReservationSummary reservation={reservation} closeCallback={this.closeSUDets}></ReservationSummary>
+                                    }
+                                </div>
+                            }
                         </div>
                     
                 }
                 {/* SU Item Tooltip popover with SU status color */}
                 <OverlayPanel className="timeline-popover" ref={(el) => this.popOver = el} dismissable>
-                {mouseOverItem &&
+                {(mouseOverItem && (["SCHEDULE", "TASK"].indexOf(mouseOverItem.type)>=0)) &&
                     <div className={`p-grid su-${mouseOverItem.status}`} style={{width: '350px'}}>
                         <h3 className={`col-12 su-${mouseOverItem.status}-icon`}>{mouseOverItem.type==='SCHEDULE'?'Scheduling Unit ':'Task '}Overview</h3>
                         <hr></hr>
@@ -1026,6 +1065,37 @@ export class TimelineView extends Component {
                         <div className="col-7">{mouseOverItem.status}</div>
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>Duration:</label>
                         <div className="col-7">{mouseOverItem.duration}</div>
+                    </div>
+                }
+                {(mouseOverItem && mouseOverItem.type == "RESERVATION") &&
+                    <div className={`p-grid`} style={{width: '350px', backgroundColor: mouseOverItem.bgColor, color: mouseOverItem.color}}>
+                        <h3 className={`col-12`}>Reservation Overview</h3>
+                        <hr></hr>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Name:</label>
+                        <div className="col-7">{mouseOverItem.name}</div>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Description:</label>
+                        <div className="col-7">{mouseOverItem.desc}</div>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Type:</label>
+                        <div className="col-7">{mouseOverItem.activity_type}</div>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Stations:</label>
+                        {/* <div className="col-7"><ListBox options={mouseOverItem.stations} /></div> */}
+                        <div className="col-7 station-list">
+                            {mouseOverItem.stations.map((station, index) => (
+                                <div key={`stn-${index}`}>{station}</div>
+                            ))}
+                        </div>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Project:</label>
+                        <div className="col-7">{mouseOverItem.project?mouseOverItem.project:"-"}</div>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Start Time:</label>
+                        <div className="col-7">{mouseOverItem.start_time.format(UIConstants.CALENDAR_DATETIME_FORMAT)}</div>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>End Time:</label>
+                        <div className="col-7">{mouseOverItem.end_time.format(UIConstants.CALENDAR_DATETIME_FORMAT)}</div>
+                        {/* <label className={`col-5`} style={{color: mouseOverItem.color}}>Stations:</label>
+                        <div className="col-7">{mouseOverItem.stations.groups}:{mouseOverItem.stations.counts}</div> */}
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Duration:</label>
+                        <div className="col-7">{mouseOverItem.duration}</div>
+                        <label className={`col-5`} style={{color: mouseOverItem.color}}>Planned:</label>
+                        <div className="col-7">{mouseOverItem.planned?'Yes':'No'}</div>
                     </div>
                 }
                 </OverlayPanel>

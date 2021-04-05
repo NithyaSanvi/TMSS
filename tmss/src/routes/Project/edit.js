@@ -335,7 +335,7 @@ export class ProjectEdit extends Component {
             // project['archive_subdirectory'] = (project['archive_subdirectory'].substr(-1) === '/' ? project['archive_subdirectory'] : `${project['archive_subdirectory']}/`).toLowerCase();
             ProjectService.updateProject(this.props.match.params.id, project)
                 .then(async (project) => { 
-                    if (project && this.state.project.updated_at !== project.updated_at) {
+                    if (project && project.isUpdated && this.state.project.updated_at !== project.updated_at) {
                         this.saveProjectQuota(project);
                     }   else {
                         this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to update Project'});
@@ -381,20 +381,20 @@ export class ProjectEdit extends Component {
         }
         for (const projectQuota of updatingProjectQuota) {
             const updatedProjectQuota = await ProjectService.updateProjectQuota(projectQuota);
-            if (!updatedProjectQuota) {
+            if (!updatedProjectQuota || (updatedProjectQuota.status && updatedProjectQuota.status > 299)) {
                 quotaError[projectQuota.resource_type_id] = true;
             }
         }
         for (const projectQuota of newProjectQuota) {
             const createdProjectQuota = await ProjectService.saveProjectQuota(projectQuota);
-            if (!createdProjectQuota) {
+            if (!createdProjectQuota || (createdProjectQuota.status && createdProjectQuota.status > 299)) {
                 quotaError[projectQuota.resource_type_id] = true;
             }
         }
         if (_.keys(quotaError).length === 0) {
             dialog = {header: 'Success', detail: 'Project updated successfully.'};
         }   else {
-            dialog = {header: 'Error', detail: 'Project updated successfully but resource allocation not updated properly. Try again!'};
+            dialog = {header: 'Error', detail: 'Project updated successfully but resource allocation not updated properly.'};
         }
         this.setState({dialogVisible: true, dialog: dialog, isDirty: false});
     }
