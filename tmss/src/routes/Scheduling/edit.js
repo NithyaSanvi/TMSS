@@ -15,6 +15,7 @@ import PageHeader from '../../layout/components/PageHeader';
 import Jeditor from '../../components/JSONEditor/JEditor';
 import UnitConversion from '../../utils/unit.converter';
 import Stations from './Stations';
+import { publish } from '../../App';
 
 import ProjectService from '../../services/project.service';
 import ScheduleService from '../../services/schedule.service';
@@ -228,7 +229,7 @@ export class EditSchedulingUnit extends Component {
         if  ( !this.state.isDirty && this.state.constraintParamsOutput && !_.isEqual(this.state.constraintParamsOutput, this.constraintParamsOutput) ) {
             this.setState({ constraintParamsOutput: jsonOutput, 
                 constraintValidEditor: err.length === 0,
-                validForm: this.validateForm(), isDirty: true});
+                validForm: this.validateForm(), isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({ constraintParamsOutput: jsonOutput, 
                 constraintValidEditor: err.length === 0,
@@ -253,7 +254,7 @@ export class EditSchedulingUnit extends Component {
         let schedulingUnit = _.cloneDeep(this.state.schedulingUnit);
         schedulingUnit[key] = value;
         if  ( !this.state.isDirty && !_.isEqual(this.state.schedulingUnit, schedulingUnit) ) {
-            this.setState({schedulingUnit: schedulingUnit, validForm: this.validateForm(key), validEditor: this.validateEditor(), isDirty: true});
+            this.setState({schedulingUnit: schedulingUnit, validForm: this.validateForm(key), validEditor: this.validateEditor(), isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({schedulingUnit: schedulingUnit, validForm: this.validateForm(key), validEditor: this.validateEditor()});
         }
@@ -390,7 +391,7 @@ export class EditSchedulingUnit extends Component {
         }   else {
             this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Template Missing.'});
         }
-        this.setState({isDirty: false});
+        this.setState({isDirty: false},() => publish('edit-dirty', false));
     }
     
     /**
@@ -425,11 +426,11 @@ export class EditSchedulingUnit extends Component {
         if  ( !this.state.isDirty ) {
             if (selectedStation && !_.isEqual(selectedStation, selectedStations)){
                 this.setState({...state, selectedStations, missingStationFieldsErrors, customSelectedStations }, () => {
-                    this.setState({ validForm: this.validateForm(), isDirty: true });
+                    this.setState({ validForm: this.validateForm(), isDirty: true },() => publish('edit-dirty', true));
                 });
             }   else if (customStation && !_.isEqual(customStation, customSelectedStations)){
                 this.setState({...state, selectedStations, missingStationFieldsErrors, customSelectedStations }, () => {
-                    this.setState({ validForm: this.validateForm(), isDirty: true });
+                    this.setState({ validForm: this.validateForm(), isDirty: true },() => publish('edit-dirty', true));
                 });
             }   else {
                 this.setState({...state, selectedStations, missingStationFieldsErrors, customSelectedStations }, () => {

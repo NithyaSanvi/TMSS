@@ -3,15 +3,11 @@ import { Redirect} from 'react-router-dom';
 import { BrowserRouter as Router } from 'react-router-dom';
 import classNames from 'classnames';
 import {AppTopbar} from './layout/components/AppTopbar';
-import {AppMenu} from './layout/components/AppMenu';
+import AppMenu from './layout/components/AppMenu';
 import {AppFooter } from './layout/components/AppFooter';
 import {RoutedContent} from './routes';
-import {AppBreadcrumb } from "./layout/components/AppBreadcrumb";
-import {withRouter } from 'react-router';
-import handleResponse from "./response.handler"
-import { setAppGrowl } from './layout/components/AppGrowl';
-import { Growl } from 'primereact/components/growl/Growl';
-
+import AppBreadcrumb from "./layout/components/AppBreadcrumb";
+import { Beforeunload } from 'react-beforeunload';
 import 'primeicons/primeicons.css';
 import 'primereact/resources/themes/nova-light/theme.css';
 import 'primereact/resources/primereact.css';
@@ -22,9 +18,18 @@ import './App.css';
 import Auth from'./authenticate/auth';
 import { Login } from './authenticate/login';
 
+import pubsub from './utils/pubSub';
+import { CustomDialog } from './layout/components/CustomDialog';
+const {  publish, subscribe } = pubsub();
+
+export {
+    publish,
+    subscribe
+};
 class App extends Component {
     constructor() {
         super();
+        this.isBackButtonClicked = false;
         this.state = {
         layoutMode: 'static',
         currentMenu: '',
@@ -34,8 +39,7 @@ class App extends Component {
         overlayMenuActive: localStorage.getItem('overlayMenuActive') === 'true' ? true : false,
         mobileMenuActive: localStorage.getItem('mobileMenuActive') === 'true' ? true : false,
         authenticated: Auth.isAuthenticated(),
-        redirect: (Auth.isAuthenticated() && window.location.pathname === "/login")?"/":window.location.pathname,
-        findObjectPlaceholder: 'Sub Task',
+        redirect: (Auth.isAuthenticated() && window.location.pathname === "/login")?"/":window.location.pathname
         };
         this.onWrapperClick = this.onWrapperClick.bind(this);
         this.onToggleMenu = this.onToggleMenu.bind(this);
@@ -44,15 +48,15 @@ class App extends Component {
         this.setPageTitle = this.setPageTitle.bind(this);
         this.loggedIn = this.loggedIn.bind(this);
         this.logout = this.logout.bind(this);
-        this.setSearchField = this.setSearchField.bind(this);
+        this.toggleEditToggle = this.toggleEditToggle.bind(this);
+        this.setEditDialogCallback = this.setEditDialogCallback.bind(this);
 
         this.menu = [ {label: 'Dashboard', icon: 'pi pi-fw pi-home', to:'/dashboard',section: 'dashboard'},
                         {label: 'Cycle', icon:'pi pi-fw pi-spinner', to:'/cycle',section: 'cycle'},
                         {label: 'Project', icon: 'fab fa-fw fa-wpexplorer', to:'/project',section: 'project'},
                         {label: 'Scheduling Units', icon: 'pi pi-fw pi-calendar', to:'/schedulingunit',section: 'schedulingunit'},
-                        {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task'},
                         {label: 'Timeline', icon: 'pi pi-fw pi-clock', to:'/su/timelineview',section: 'su/timelineview'},
-                      
+                        //   {label: 'Tasks', icon: 'pi pi-fw pi-check-square', to:'/task'},
                     ];
     }
 
@@ -63,9 +67,8 @@ class App extends Component {
                 mobileMenuActive: false
             });
         }
-
         this.menuClick = false;
-    }
+    }    
 
     onToggleMenu(event) {
         this.menuClick = true;
@@ -133,19 +136,68 @@ class App extends Component {
         this.setState({authenticated: false, redirect:"/"});
     }
 
-    /**
-     * Set search param
-     * @param {*} key 
-     * @param {*} value 
-     */
-    setSearchField(key, value) {
-        this.setState({
-            objectType: key, 
-            findObjectId: value, 
-            redirect:"/find/object/"+key+"/"+value
+    toggleEditToggle() {
+        this.setState({ showEditDialog: !this.state.showEditDialog });
+    }
+
+    setEditDialogCallback(callback) {
+        this.setState({ callback })
+    }
+
+    componentDidMount() {
+        subscribe('edit-dirty', (flag) => {
+            this.setState({ isEditDirty: flag }, () => {
+                if (flag) {
+                    window.history.pushState(null, null, window.location.pathname);
+                     window.addEventListener('popstate', this.onBackButtonEvent);
+                    
+                }
+            });
         });
     }
 
+    onBackButtonEvent = (e) => {
+        e.preventDefault();
+    
+        if (!this.isBackButtonClicked) {
+            if (window.confirm("Do you want to leave this page? Your changes may not be saved.")) {
+                this.isBackButtonClicked = true;
+                // Your custom logic to page transition, like react-router-dom history.push()
+            }
+            else {
+                window.history.pushState(null, null, window.location.pathname);
+                this.isBackButtonClicked = false;
+            }
+        }
+    }
+
+    componentWillUnmount = () => {
+        window.removeEventListener('popstate', this.onBackButtonEvent);
+    }
+
+    close = () => {
+        this.setState({showDirtyDialog: false});
+    }
+    /**
+     * Cancel edit and redirect to Cycle View page
+     */
+    cancelEdit = () => {
+        this.setState({ isEditDirty: false, showDirtyDialog: false });
+        this.state.toPathCallback();
+    }
+
+    toggleEditDirtyDialog = (callback) => {
+        this.setState({ showDirtyDialog: true, toPathCallback: callback });
+    }
+
+    onBreadcrumbClick = (callback) => {
+        if (this.state.isEditDirty) {
+            this.toggleEditDirtyDialog(callback);
+            return;
+        }
+        callback();
+    }
+    
     render() {
         const wrapperClass = classNames('layout-wrapper', {
             'layout-overlay': this.state.layoutMode === 'overlay',
@@ -154,52 +206,53 @@ class App extends Component {
             'layout-overlay-sidebar-active': this.state.overlayMenuActive && this.state.layoutMode === 'overlay',
             'layout-mobile-sidebar-active': this.state.mobileMenuActive			
         });
-        const AppBreadCrumbWithRouter = withRouter(AppBreadcrumb);
         //console.log(this.props);
         return (
-        <React.Fragment>
-            <Growl ref={(el) => setAppGrowl(el)} />
-            <div className="App">
-                {/* <div className={wrapperClass} onClick={this.onWrapperClick}> */}
-                <div className={wrapperClass}>
-                    
-                    {/* Load main routes and application only if the application is authenticated */}
-                    {this.state.authenticated &&
-                    <>
-                        <AppTopbar 
-                            onToggleMenu={this.onToggleMenu} 
-                            isLoggedIn={this.state.authenticated} 
-                            onLogout={this.logout} 
-                            setSearchField={this.setSearchField}
-                        />
-                        <Router basename={ this.state.currentPath }>
-                            <AppMenu model={this.menu} onMenuItemClick={this.onMenuItemClick} layoutMode={this.state.la} active={this.state.menuActive}/>
-                            <div className="layout-main">
-                                {this.state.redirect &&
-                                    <Redirect to={{pathname: this.state.redirect }}/> }
-                                <AppBreadCrumbWithRouter setPageTitle={this.setPageTitle} />
-                                <RoutedContent />
-                            </div>
-                        </Router>
-                        <AppFooter></AppFooter>
-                    </>
-                    }
+            <Beforeunload onBeforeunload={() => "You'll lose your data!"}>
+                <React.Fragment>
+                    <div className="App">
+                        {/* <div className={wrapperClass} onClick={this.onWrapperClick}> */}
+                        <div className={wrapperClass}>
+                            
+                            {/* Load main routes and application only if the application is authenticated */}
+                            {this.state.authenticated &&
+                            <>
+                                <AppTopbar onToggleMenu={this.onToggleMenu} isLoggedIn={this.state.authenticated} onLogout={this.logout}></AppTopbar>
+                                <Router basename={ this.state.currentPath }>
+     
+                                    <AppMenu model={this.menu} toggleEditDirtyDialog={this.toggleEditDirtyDialog} isEditDirty={this.state.isEditDirty} onMenuItemClick={this.onMenuItemClick} layoutMode={this.state.la} active={this.state.menuActive}/>
+                                    <div className="layout-main">
+                                        {this.state.redirect &&
+                                            <Redirect to={{pathname: this.state.redirect}} />}
+                                        <AppBreadcrumb setPageTitle={this.setPageTitle} section={this.state.currentMenu} onBreadcrumbClick={this.onBreadcrumbClick} />
+                                        <RoutedContent />
+                                    </div>
+                                </Router>
+                                <AppFooter></AppFooter>
+                            </>
+                            }
 
-                    {/* If not authenticated, show only login page */}
-                    {!this.state.authenticated &&
-                    <>
-                        <Router basename={ this.state.currentPath }>
-                            <Redirect to={{pathname: "/login"}} />
-                            <Login onLogin={this.loggedIn} />
-                        </Router>
-                    </>
-                    }
-                    
-                </div>
-            </div>
-        </React.Fragment>
+                            {/* If not authenticated, show only login page */}
+                            {!this.state.authenticated &&
+                                <>
+                                    <Router basename={ this.state.currentPath }>
+                                        <Redirect to={{pathname: "/login"}} />
+                                        <Login onLogin={this.loggedIn} />
+                                    </Router>
+                                </>
+                            }
+
+                            <CustomDialog type="confirmation" visible={this.state.showDirtyDialog} width="40vw"
+                                header={'Edit Cycle'} message={'Do you want to leave this page? Your changes may not be saved.'} 
+                                content={''} onClose={this.close} onCancel={this.close} onSubmit={this.cancelEdit}>
+                            </CustomDialog>
+                            
+                        </div>
+                    </div>
+                </React.Fragment>
+            </Beforeunload>
         );
     }
 }
 
-export default handleResponse(App);
+export default App;

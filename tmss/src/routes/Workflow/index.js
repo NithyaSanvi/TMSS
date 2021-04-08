@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { TabView,TabPanel } from 'primereact/tabview';
 import PageHeader from '../../layout/components/PageHeader';
 import {Growl} from 'primereact/components/growl/Growl';
 import { Link } from 'react-router-dom';
@@ -12,7 +11,6 @@ import QAsos from './qa.sos';
 import PIverification from './pi.verification';
 import DecideAcceptance from './decide.acceptance';
 import Ingesting from './ingesting';
-import Done from './done';
 import DataProduct from './unpin.data';
 import UnitConverter from '../../utils/unit.converter';
 import AppLoader from '../../layout/components/AppLoader';
@@ -26,25 +24,22 @@ const RedirectionMap = {
     'qa reporting sos':4,
     'pi verification':5,
     'decide acceptance':6,
-    'ingesting':7,
-    'unpin data':8,
-    'end':9
+    'ingest done':7,
+    'unpin data':8
  };
 
 //Workflow Page Title 
-const pageTitle = ['Waiting To Be Scheduled','Scheduled','QA Reporting (TO)', 'QA Reporting (SDCO)', 'PI Verification', 'Decide Acceptance','Ingesting','Unpin Data','Done'];
+const pageTitle = ['Waiting To Be Scheduled','Scheduled','QA Reporting (TO)', 'QA Reporting (SDCO)', 'PI Verification', 'Decide Acceptance','Ingest','Unpin Data'];
 
 export default (props) => {
     let growl;
     // const [disableNextButton, setDisableNextButton] = useState(false);
     const [loader, setLoader] = useState(false);
     const [state, setState] = useState({});
-    const [currentProcessStep, setCurrentProcessStep] = useState();
     const [tasks, setTasks] = useState([]);
     const [QASUProcess, setQASUProcess] = useState();
     const [currentStep, setCurrentStep] = useState();
     const [schedulingUnit, setSchedulingUnit] = useState();
-    const [showIngestTab, setShowIngestTab] = useState(false);
     // const [ingestTask, setInjestTask] = useState({});
     // const [QASchedulingTask, setQASchdulingTask] = useState([]);
 
@@ -58,7 +53,6 @@ export default (props) => {
             const SUB = responses[0];
             setSchedulingUnit(responses[0]);
             setTasks(SUB.task_blueprints);
-            setShowIngestTab(SUB.task_blueprints.filter(i => i.specifications_template.name === 'ingest').length ? true : false);
             getStatusUpdate(SUB.task_blueprints);
         });
     }, []);
@@ -112,28 +106,20 @@ export default (props) => {
             // const workflowLastTask = responses[1].find(task => task.process === suQAProcess.id);
             const workflowLastTask = (_.orderBy(suQAProcessTasks, ['id'], ['desc']))[0];
             setCurrentStep(RedirectionMap[workflowLastTask.flow_task.toLowerCase()]);
-            setCurrentProcessStep(RedirectionMap[workflowLastTask.flow_task.toLowerCase()]);
             // Need to cross check below if condition if it fails in next click
             if (workflowLastTask.status === 'NEW') {
                 setCurrentStep(RedirectionMap[workflowLastTask.flow_task.toLowerCase()]);
-                setCurrentProcessStep(RedirectionMap[workflowLastTask.flow_task.toLowerCase()]);
             } //else {
             //     setCurrentStep(3);
             // }
             else if (workflowLastTask.status.toLowerCase() === 'done' || workflowLastTask.status.toLowerCase() === 'finished') {
                 await getDataProductDetails(taskList);
                 // setDisableNextButton(true);
-                setCurrentStep(9);
-                setCurrentProcessStep(9);
+                setCurrentStep(8);
             }
-            
             setLoader(false); 
         });
     }
-
-    const qaReporting = () => {
-        setCurrentStep(3)
-    };
 
     const getIngestTask = () => {
         return tasks.find(task => task.specifications_template.type_value==='ingest')
@@ -192,48 +178,25 @@ export default (props) => {
                                 </label>
                             </div>
                         </div>}
-                        <TabView activeIndex={currentStep - 1} key={currentStep}>
-                            <TabPanel header="Waiting To Be Scheduled" disabled={currentProcessStep < 1} headerClassName="workflow-header">
-                            <Scheduled onNext={onNext} onCancel={onCancel} readOnly={ currentProcessStep !== 1 }
-                                    schedulingUnit={schedulingUnit} /*disableNextButton={disableNextButton}*/ />
-                            </TabPanel>
-                            <TabPanel header="Scheduled" disabled={currentProcessStep < 2} headerClassName="workflow-header">
-                            <ProcessingDone onNext={onNext} onCancel={onCancel} readOnly={ currentProcessStep !== 2 }
-                                    schedulingUnit={schedulingUnit}  />
-                            </TabPanel>
-                            <TabPanel header="QA Reporting (TO)" disabled={currentProcessStep < 3} headerClassName="workflow-header">
-                            <QAreporting onNext={onNext} onCancel={onCancel} id={QASUProcess.id} readOnly={ currentProcessStep !== 3 } 
-                                                process={QASUProcess} getCurrentTaskDetails={getCurrentTaskDetails}
-                                                onError={showMessage} />
-                            </TabPanel>
-                            <TabPanel header="QA Reporting (SDCO)" disabled={currentProcessStep < 4} headerClassName="workflow-header">
-                            <QAsos onNext={onNext} onCancel={onCancel} id={QASUProcess.id} readOnly={ currentProcessStep !== 4 }
+                        {currentStep === 1 && <Scheduled onNext={onNext} onCancel={onCancel} 
+                                                schedulingUnit={schedulingUnit} /*disableNextButton={disableNextButton}*/ />}
+                        {currentStep === 2 && <ProcessingDone onNext={onNext} onCancel={onCancel} 
+                                                schedulingUnit={schedulingUnit}  />}
+                        {currentStep === 3 && <QAreporting onNext={onNext} onCancel={onCancel} id={QASUProcess.id} 
+                                                getCurrentTaskDetails={getCurrentTaskDetails} onError={showMessage} />}
+                        {currentStep === 4 && <QAsos onNext={onNext} onCancel={onCancel} id={QASUProcess.id} 
                                                 process={QASUProcess} getCurrentTaskDetails={getCurrentTaskDetails} 
-                                                onError={showMessage} />
-                            </TabPanel>
-                            <TabPanel header="PI Verification" disabled={currentProcessStep < 5} headerClassName="workflow-header">
-                            <PIverification onNext={onNext} onCancel={onCancel} id={QASUProcess.id} readOnly={ currentProcessStep !== 5 } 
+                                                onError={showMessage} />}
+                        {currentStep === 5 && <PIverification onNext={onNext} onCancel={onCancel} id={QASUProcess.id} 
                                                 process={QASUProcess} getCurrentTaskDetails={getCurrentTaskDetails} 
-                                                onError={showMessage} />
-                            </TabPanel>
-                            <TabPanel header="Decide Acceptance" disabled={currentProcessStep < 6} headerClassName="workflow-header">
-                            <DecideAcceptance onNext={onNext} onCancel={onCancel} id={QASUProcess.id} readOnly={ currentProcessStep !== 6 }
+                                                onError={showMessage} />}
+                        {currentStep === 6 && <DecideAcceptance onNext={onNext} onCancel={onCancel} id={QASUProcess.id} 
                                                 process={QASUProcess} getCurrentTaskDetails={getCurrentTaskDetails} 
-                                                onError={showMessage} />
-                            </TabPanel>
-                            <TabPanel header="Ingesting" disabled={currentProcessStep < 7} headerClassName={`workflow-header ${!showIngestTab && 'hide-tab'}`}>
-                                <Ingesting onNext={onNext} onCancel={onCancel} id={QASUProcess.id} readOnly={ currentProcessStep !== 7 } 
-                                                 onError={showMessage} task={getIngestTask()} />
-                            </TabPanel>
-                            <TabPanel header="Unpin Data" disabled={currentProcessStep < 8} headerClassName="workflow-header">
-                                <DataProduct onNext={onNext} onCancel={onCancel} id={QASUProcess.id} onError={showMessage} readOnly={ currentProcessStep !== 8 } 
-                                                tasks={tasks} getCurrentTaskDetails={getCurrentTaskDetails}  onError={showMessage} 
-                                                schedulingUnit={schedulingUnit} />
-                            </TabPanel>
-                            <TabPanel header="Done" disabled={currentProcessStep < 9} headerClassName="workflow-header">
-                             <Done onNext={onNext} onCancel={onCancel} onError={showMessage} reportingPage={qaReporting} readOnly={ currentProcessStep !== 9 } />
-                            </TabPanel>
-                        </TabView>
+                                                onError={showMessage} />}
+                        {currentStep === 7 && <Ingesting onNext={onNext} onCancel={onCancel} id={QASUProcess.id} 
+                                                 onError={showMessage} task={getIngestTask()} />}
+                        {currentStep === 8 && <DataProduct onNext={onNext} onCancel={onCancel} onError={showMessage} 
+                                                tasks={tasks} schedulingUnit={schedulingUnit} />}
                     </div>
                 </>
             }

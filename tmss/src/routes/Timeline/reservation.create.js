@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Redirect } from 'react-router-dom';
 import _ from 'lodash';
+import { publish } from '../../App';
 import moment from 'moment';
 import { Growl } from 'primereact/components/growl/Growl';
 import AppLoader from '../../layout/components/AppLoader';
@@ -117,7 +118,7 @@ export class ReservationCreate extends Component {
             this.setState({reservation: reservation, validForm: this.validateForm(key), validEditor: this.validateEditor(), touched: { 
                 ...this.state.touched,
                 [key]: true
-            }, isDirty: true});
+            }, isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({reservation: reservation, validForm: this.validateForm(key), validEditor: this.validateEditor(),touched: { 
                 ...this.state.touched,
@@ -152,7 +153,7 @@ export class ReservationCreate extends Component {
                 break;
             }
         }
-        this.setState({reservation: reservation, validForm: this.validateForm(key), isDirty: true});
+        this.setState({reservation: reservation, validForm: this.validateForm(key), isDirty: true},() => publish('edit-dirty', true));
     }
      
     /**
@@ -234,7 +235,7 @@ export class ReservationCreate extends Component {
             this.setState({ paramsOutput: jsonOutput, 
                 validEditor: errors.length === 0,
                 validForm: this.validateForm(),
-                isDirty: true});
+                isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({ paramsOutput: jsonOutput, 
                 validEditor: errors.length === 0,
@@ -253,7 +254,7 @@ export class ReservationCreate extends Component {
         reservation = await ReservationService.saveReservation(reservation); 
         if (reservation && reservation.id){
             const dialog = {header: 'Success', detail: 'Reservation is created successfully. Do you want to create another Reservation?'};
-            this.setState({ dialogVisible: true, dialog: dialog,  paramsOutput: {}, showDialog: false, isDirty: false})
+            this.setState({ dialogVisible: true, dialog: dialog,  paramsOutput: {}, showDialog: false, isDirty: false},() => publish('edit-dirty', false))
         }/*  else {
             this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to save Reservation', showDialog: false, isDirty: false});
         }*/

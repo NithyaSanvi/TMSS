@@ -2,12 +2,9 @@ import React, { useState } from 'react';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import ViewTable from './../../components/ViewTable';
-import { Link } from 'react-router-dom';
-import WorkflowService from '../../services/workflow.service';
 
-export default ({ tasks, schedulingUnit, onCancel, ...props }) => {
+export default ({ tasks, schedulingUnit, onCancel }) => {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  //  const [QASUProcess, setQASUProcess] = useState();
     const defaultcolumns = [ {
         name: "Name",
         totalDataSize:"Total Data Size(TB)", 
@@ -23,26 +20,6 @@ export default ({ tasks, schedulingUnit, onCancel, ...props }) => {
     const toggleDialog = () => {
         setShowConfirmDialog(!showConfirmDialog)
     };
-     /**
-     * Method will trigger on click next buton
-     * here onNext props coming from parent, where will handle redirection to other page
-     */
-      const Next = async () => {
-        const currentWorkflowTask = await props.getCurrentTaskDetails();
-        const promise = [];
-        if (currentWorkflowTask && !currentWorkflowTask.fields.owner) {
-            promise.push(WorkflowService.updateAssignTo(currentWorkflowTask.pk, { owner: '' }));
-        }
-        promise.push(WorkflowService.updateQA_Perform(props.id, {}));
-        Promise.all(promise).then((responses) => {
-            if (responses.indexOf(null)<0) {
-                props.onNext();
-            }   else {
-                props.onError();
-            } 
-        });
-        setShowConfirmDialog(false)
-    }
 
     return (
         <div className="p-fluid mt-2">
@@ -62,9 +39,9 @@ export default ({ tasks, schedulingUnit, onCancel, ...props }) => {
                 defaultpagesize={tasks.length}
              />
            <div className="p-grid p-justify-start mt-2">
-                {!props.readOnly && <div className="p-col-1">
+                <div className="p-col-1">
                     <Button label="Delete" className="p-button-primary" icon="pi pi-trash" onClick={toggleDialog} />
-                </div>}
+                </div>
                 <div className="p-col-1">
                     <Button label="Cancel" className="p-button-danger" icon="pi pi-times" style={{ width: '90px' }}
                             onClick={(e) => { onCancel()}} />
@@ -74,7 +51,7 @@ export default ({ tasks, schedulingUnit, onCancel, ...props }) => {
                 <Dialog header={'Confirm'} visible={showConfirmDialog} style={{ width: '40vw' }} inputId="confirm_dialog"
                     modal={true} onHide={() => setShowConfirmDialog(false)}
                     footer={<div>
-                        <Button key="back" onClick={Next} label="Yes" />
+                        <Button key="back" onClick={() => setShowConfirmDialog(false)} label="Yes" />
                         <Button key="submit" type="primary" onClick={() => setShowConfirmDialog(false)} label="No" />
                     </div>
                     } >

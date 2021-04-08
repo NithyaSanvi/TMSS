@@ -1,8 +1,8 @@
  import React, { Component } from 'react';
-import {NavLink} from 'react-router-dom'
-import PropTypes from 'prop-types';
+ import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import { Button } from 'primereact/button';
+import { withRouter } from 'react-router-dom/cjs/react-router-dom.min';
 
 class AppSubmenu extends Component {
 
@@ -29,10 +29,16 @@ class AppSubmenu extends Component {
     }
     
     onMenuItemClick(event, item, index) {
+        event.preventDefault();
         //avoid processing disabled items
         if(item.disabled) {
             event.preventDefault();
             return true;
+        }
+
+        if (this.props.isEditDirty) {
+            this.props.toggleEditDirtyDialog(() => this.props.history.push(item.to));
+            return;
         }
                         
         //execute command
@@ -51,6 +57,7 @@ class AppSubmenu extends Component {
                 item: item
             });
         }
+        this.props.history.push(item.to);
     }
     
     componentDidMount() {
@@ -90,9 +97,11 @@ class AppSubmenu extends Component {
 
 		if (item.to) {
 			return (
-				<NavLink activeClassName="active-route" to={item.to} onClick={(e) => this.onMenuItemClick(e, item, i)} exact target={item.target}>
+				//<NavLink activeClassName="active-route" to={item.to} onClick={(e) => this.onMenuItemClick(e, item, i)} exact target={item.target}>
+				<a activeClassName="active-route" onClick={(e) => this.onMenuItemClick(e, item, i)} exact target={item.target}>
                     {content}
-                </NavLink>
+               {/* </NavLink> */}
+                </a>
 			)
 		}
 		else {
@@ -115,7 +124,7 @@ class AppSubmenu extends Component {
                 <li className={styleClass} key={i}>
                     {item.items && this.props.root===true && <div className='arrow'></div>}
                     {this.renderLink(item, i)}
-                    <AppSubmenu items={item.items} onMenuItemClick={this.props.onMenuItemClick}/>
+                    <AppSubmenu toggleEditDirtyDialog={this.props.toggleEditDirtyDialog} isEditDirty={this.props.isEditDirty} history={this.props.history} items={item.items} onMenuItemClick={this.props.onMenuItemClick}/>
                 </li>
             );
             
@@ -142,9 +151,12 @@ export class AppMenu extends Component {
             <div className={'layout-sidebar layout-sidebar-light'} >
                 <div className="layout-menu-container">
                     {/* <AppSubmenu items={this.props.model} permissions={authenticationService.currentUserValue.permissions} className="layout-menu" onMenuItemClick={this.props.onMenuItemClick} root={true}/> */}
-                    <AppSubmenu items={this.props.model} className="layout-menu" onMenuItemClick={this.props.onMenuItemClick} root={true}/>
+                    <AppSubmenu toggleEditDirtyDialog={this.props.toggleEditDirtyDialog} isEditDirty={this.props.isEditDirty} history={this.props.history} items={this.props.model} className="layout-menu" onMenuItemClick={this.props.onMenuItemClick} root={true}/>
+             
                 </div>
             </div>
         );
     }
 }
+
+export default withRouter(AppMenu)

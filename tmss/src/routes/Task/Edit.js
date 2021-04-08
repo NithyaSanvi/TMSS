@@ -9,6 +9,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import { CustomDialog } from '../../layout/components/CustomDialog';
 import Jeditor from '../../components/JSONEditor/JEditor';
+import { publish } from '../../App';
 
 import TaskService from '../../services/task.service';
 import AppLoader from "./../../layout/components/AppLoader";
@@ -78,7 +79,7 @@ export class TaskEdit extends Component {
         const taskValue = this.state.task[key];
         task[key] = value;
         if  ( !this.state.isDirty && taskValue && !_.isEqual(taskValue, value) ) {
-            this.setState({task: task, validForm: this.validateForm(), isDirty: true});
+            this.setState({task: task, validForm: this.validateForm(), isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({task: task, validForm: this.validateForm()});
         }
@@ -105,7 +106,7 @@ export class TaskEdit extends Component {
 		
         task.specifications_template = template.url;
         this.setState({taskSchema: null});
-        this.setState({task: task, taskSchema: template.schema, isDirty: true});
+        this.setState({task: task, taskSchema: template.schema, isDirty: true},() => publish('edit-dirty', true));
 		 
         this.state.editorFunction();
     }
@@ -136,7 +137,7 @@ export class TaskEdit extends Component {
      * Function to call the servie and pass the values to save
      */
     saveTask() {
-        this.setState({isDirty: false});
+        this.setState({isDirty: false},() => publish('edit-dirty', true));
         let task = this.state.task;
         task.specifications_doc = this.templateOutput[task.specifications_template_id];
         // Remove read only properties from the object before sending to API

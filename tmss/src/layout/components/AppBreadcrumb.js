@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import {Link, matchPath} from 'react-router-dom';
 import { routes } from '../../routes';
+import { withRouter } from 'react-router-dom/cjs/react-router-dom.min';
 export class AppBreadcrumb extends Component {
     
     static propTypes = {
@@ -17,6 +18,10 @@ export class AppBreadcrumb extends Component {
 
     componentDidUpdate(prev) {
         if (prev.location.pathname !== this.props.location.pathname) {
+            if (this.props.section !== prev.section) {
+                this.onRoute(true);
+                return;
+            }
             this.onRoute();
         }
     }
@@ -25,7 +30,7 @@ export class AppBreadcrumb extends Component {
         this.onRoute();
     }
 
-    onRoute() {
+    onRoute(reset) {
         const { breadcrumbs } = this.state;
         const { setPageTitle } = this.props;
         const currentRoute = routes.find(route => matchPath(this.props.location.pathname, {path: route.path, exact: true, strict: true}));
@@ -34,7 +39,7 @@ export class AppBreadcrumb extends Component {
 			return;
         }
         setPageTitle(currentRoute.pageTitle);
-        if (!breadcrumbs.length) {
+        if (!breadcrumbs.length || reset) {
             this.setState({ breadcrumbs: [{...this.props.location, name: currentRoute.name}] });
             return;
         }
@@ -46,7 +51,7 @@ export class AppBreadcrumb extends Component {
         this.setState({ breadcrumbs: breadcrumbs.slice(0, index+1) });
     }
 
-    onNavigate(item) {
+    onNavigate = (item) => {
         this.props.history.push({
             pathname: item.pathname,
             state: item.state
@@ -62,7 +67,7 @@ export class AppBreadcrumb extends Component {
                     <span key={"bc_" + index} >
                         <li className="pi pi-chevron-right b-separator"></li>
                         {index !== breadcrumbs.length - 1 ? 
-                            <span className="b-link" onClick={() => this.onNavigate(item)}>{item.name}</span> 
+                            <span className="b-link" onClick={() => this.props.onBreadcrumbClick(() => this.onNavigate(item))}>{item.name}</span> 
                             : <span className="b-text">{item.name}</span>}
                     </span>
                 ))}
@@ -70,3 +75,5 @@ export class AppBreadcrumb extends Component {
         );
     }
 }
+
+export default React.memo(withRouter(AppBreadcrumb));

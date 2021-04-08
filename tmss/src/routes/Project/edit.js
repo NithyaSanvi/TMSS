@@ -13,6 +13,7 @@ import { Dialog } from 'primereact/components/dialog/Dialog';
 import { Growl } from 'primereact/components/growl/Growl';
 import { CustomDialog } from '../../layout/components/CustomDialog';
 import { ResourceInputList } from './ResourceInputList';
+import { publish } from '../../App';
 
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
@@ -181,7 +182,7 @@ export class ProjectEdit extends Component {
             resources.push(newResource[0]);
             console.log(resources);
             if  ( !this.state.isDirty && !_.isEqual(this.state.resourceList, resourceList) ) {
-                this.setState({resources: resources, resourceList: resourceList, newResource: null, isDirty: true});
+                this.setState({resources: resources, resourceList: resourceList, newResource: null, isDirty: true},() => publish('edit-dirty', true));
             }   else {
                 this.setState({resources: resources, resourceList: resourceList, newResource: null});
             }
@@ -200,7 +201,7 @@ export class ProjectEdit extends Component {
         resourceList.push(removedResource[0]);
         delete projectQuota[name];
         if  ( !this.state.isDirty && !_.isEqual(this.state.projectQuota, projectQuota) ) {
-            this.setState({resourceList: resourceList, resources: resources, projectQuota: projectQuota, isDirty: true});
+            this.setState({resourceList: resourceList, resources: resources, projectQuota: projectQuota, isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({resourceList: resourceList, resources: resources, projectQuota: projectQuota});
         }
@@ -244,7 +245,7 @@ export class ProjectEdit extends Component {
             validForm = this.validateForm('archive_subdirectory');
         }
         if  ( !this.state.isDirty && !_.isEqual(this.state.project, project) ) {
-            this.setState({project: project, validForm: validForm, isDirty: true});
+            this.setState({project: project, validForm: validForm, isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({project: project, validForm: validForm});
         }
@@ -274,7 +275,7 @@ export class ProjectEdit extends Component {
             projectQuota[key] = 0;
         }
         if  ( !this.state.isDirty && !_.isEqual(previousValue, projectQuota[key]) ) {
-            this.setState({projectQuota: projectQuota, isDirty: true});
+            this.setState({projectQuota: projectQuota, isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({projectQuota: projectQuota});
         }
@@ -396,7 +397,7 @@ export class ProjectEdit extends Component {
         }   else {
             dialog = {header: 'Error', detail: 'Project updated successfully but resource allocation not updated properly.'};
         }
-        this.setState({dialogVisible: true, dialog: dialog, isDirty: false});
+        this.setState({dialogVisible: true, dialog: dialog, isDirty: false},() => publish('edit-dirty', false));
     }
 
     /**

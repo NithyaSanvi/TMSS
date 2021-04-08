@@ -966,11 +966,11 @@ function ViewTable(props) {
     columns.push({
       Header: 'Action',
       id: 'Action',
-     // accessor: props.keyaccessor,
+      accessor: props.keyaccessor,
       Cell: props => <button className='p-link' onClick={navigateTo(props)} ><i className="fa fa-eye" style={{ cursor: 'pointer' }}></i></button>,
       disableFilters: true,
       disableSortBy: true,
-      isVisible: true//defaultdataheader.includes(props.keyaccessor),
+      isVisible: defaultdataheader.includes(props.keyaccessor),
     })
   }
 

@@ -10,7 +10,8 @@ import { Dialog } from 'primereact/components/dialog/Dialog';
 import { Growl } from 'primereact/components/growl/Growl';
 import { ResourceInputList } from './ResourceInputList';
 import { CustomDialog } from '../../layout/components/CustomDialog';
-import moment from 'moment'
+import moment from 'moment';
+import { publish } from '../../App';
 import _ from 'lodash';
 
 import AppLoader from '../../layout/components/AppLoader';
@@ -124,7 +125,7 @@ export class CycleCreate extends Component {
             let resources = this.state.resources;
             resources.push(newResource[0]);
             if  ( !this.state.isDirty && !_.isEqual(this.state.resourceList, resourceList) ) {
-                this.setState({resources: resources, resourceList: resourceList, newResource: null, isDirty: true});
+                this.setState({resources: resources, resourceList: resourceList, newResource: null, isDirty: true},() => publish('edit-dirty', true));
             }   else {
                 this.setState({resources: resources, resourceList: resourceList, newResource: null});
             }
@@ -144,7 +145,7 @@ export class CycleCreate extends Component {
         resourceList = _.sortBy(resourceList, 'name');
         delete cycleQuota[name];
         if  ( !this.state.isDirty && !_.isEqual(this.state.cycleQuota, cycleQuota) ) {
-            this.setState({resourceList: resourceList, resources: resources, cycleQuota: cycleQuota, isDirty: true});
+            this.setState({resourceList: resourceList, resources: resources, cycleQuota: cycleQuota, isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({resourceList: resourceList, resources: resources, cycleQuota: cycleQuota});
         }
@@ -169,7 +170,7 @@ export class CycleCreate extends Component {
         }
         if  ( !this.state.isDirty && !_.isEqual(this.state.cycle, cycle) ) {
             await this.setState({cycle: cycle});
-            await this.setState({validForm: this.validateForm(key), isDirty: true});
+            await this.setState({validForm: this.validateForm(key), isDirty: true},() => publish('edit-dirty', true));
         }   else {
             await this.setState({cycle: cycle});
             await this.setState({validForm: this.validateForm(key)});
@@ -200,7 +201,7 @@ export class CycleCreate extends Component {
         }
 
         if  ( !this.state.isDirty && !_.isEqual(this.state.cycleQuota, cycleQuota) ) {
-            this.setState({cycleQuota: cycleQuota, isDirty: true});
+            this.setState({cycleQuota: cycleQuota, isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({cycleQuota: cycleQuota});
         }
@@ -280,7 +281,7 @@ export class CycleCreate extends Component {
             let stoptime =  _.replace(this.state.cycle['stop'],'00:00:00', '23:59:59');
             cycle['start'] = moment(cycle['start']).format(UIConstants.UTC_DATE_TIME_FORMAT);
             cycle['stop'] = moment(stoptime).format(UIConstants.UTC_DATE_TIME_FORMAT);
-            this.setState({cycle: cycle, isDirty: false});
+            this.setState({cycle: cycle, isDirty: false},() => publish('edit-dirty', false));
             for (const resource in this.state.cycleQuota) {
                 let resourceType = _.find(this.state.resources, {'name': resource});
                 if(resourceType){

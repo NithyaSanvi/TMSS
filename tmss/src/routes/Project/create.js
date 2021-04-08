@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Redirect } from 'react-router-dom';
 import _ from 'lodash';
+import { publish } from '../../App';
 import { InputText } from 'primereact/inputtext';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputTextarea } from 'primereact/inputtextarea';
@@ -163,7 +164,7 @@ export class ProjectCreate extends Component {
             let resources = this.state.resources;
             resources.push(newResource[0]);
             if  ( !this.state.isDirty && !_.isEqual(this.state.resourceList, resourceList) ) {
-                this.setState({resources: resources, resourceList: resourceList, newResource: null, isDirty: true});
+                this.setState({resources: resources, resourceList: resourceList, newResource: null, isDirty: true},() => publish('edit-dirty', true));
             }   else {
                 this.setState({resources: resources, resourceList: resourceList, newResource: null});
             }
@@ -183,7 +184,7 @@ export class ProjectCreate extends Component {
         resourceList = _.sortBy(resourceList, 'name');
         delete projectQuota[name];
         if  ( !this.state.isDirty && !_.isEqual(this.state.projectQuota, projectQuota) ) {
-            this.setState({resourceList: resourceList, resources: resources, projectQuota: projectQuota, isDirty: true});
+            this.setState({resourceList: resourceList, resources: resources, projectQuota: projectQuota, isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({resourceList: resourceList, resources: resources, projectQuota: projectQuota});
         }
@@ -228,7 +229,7 @@ export class ProjectCreate extends Component {
             validForm = this.validateForm('archive_subdirectory');
         }
         if  ( !this.state.isDirty && !_.isEqual(this.state.project, project) ) {
-            this.setState({project: project, validForm: validForm, isDirty: true});
+            this.setState({project: project, validForm: validForm, isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({project: project, validForm: validForm});
         }
@@ -257,7 +258,7 @@ export class ProjectCreate extends Component {
             projectQuota[key] = 0;
         }
         if  ( !this.state.isDirty && !_.isEqual(previousValue, projectQuota[key]) ) {
-            this.setState({projectQuota: projectQuota, isDirty: true});
+            this.setState({projectQuota: projectQuota, isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({projectQuota: projectQuota});
         }
@@ -337,10 +338,10 @@ export class ProjectCreate extends Component {
                         }   else {
                             dialog = {header: 'Warning', detail: 'Project saved successfully, but resource allocation not saved.'};
                         }
-                        this.setState({project:project, dialogVisible: true, dialog: dialog, isDirty: false});
+                        this.setState({project:project, dialogVisible: true, dialog: dialog, isDirty: false},() => publish('edit-dirty', false));
                     }   else {
                         this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to save Project'});
-                        this.setState({errors: project, isDirty: false});
+                        this.setState({errors: project, isDirty: false},() => publish('edit-dirty', false));
                     }
                 });
         }

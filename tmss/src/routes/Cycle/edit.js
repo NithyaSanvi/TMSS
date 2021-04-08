@@ -12,6 +12,7 @@ import { Dialog } from 'primereact/components/dialog/Dialog';
 import { Growl } from 'primereact/components/growl/Growl';
 
 import { ResourceInputList } from './ResourceInputList';
+import { publish } from '../../App';
 import { CustomDialog } from '../../layout/components/CustomDialog';
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
@@ -163,7 +164,7 @@ export class CycleEdit extends Component {
             let resources = this.state.resources?this.state.resources:[];
             resources.push(newResource[0]);
             if ( !this.state.isDirty && !_.isEqual(this.state.resourceList, resourceList)) {
-                this.setState({resources: resources, resourceList: resourceList, newResource: null, isDirty: true});
+                this.setState({resources: resources, resourceList: resourceList, newResource: null, isDirty: true},() => publish('edit-dirty', true));
             }   else {
                 this.setState({resources: resources, resourceList: resourceList, newResource: null});
             }
@@ -183,7 +184,7 @@ export class CycleEdit extends Component {
         resourceList.push(removedResource[0]);
         delete cycleQuota[name];
         if ( !this.state.isDirty && !_.isEqual(this.state.cycleQuota, cycleQuota)) {
-            this.setState({resourceList: resourceList, resources: resources, cycleQuota: cycleQuota, isDirty: true});
+            this.setState({resourceList: resourceList, resources: resources, cycleQuota: cycleQuota, isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({resourceList: resourceList, resources: resources, cycleQuota: cycleQuota});
         }
@@ -209,7 +210,7 @@ export class CycleEdit extends Component {
         }
         if ( !this.state.isDirty && !_.isEqual(this.state.cycle, cycle)) {
             await this.setState({cycle: cycle});
-            this.setState({validForm: this.validateForm(key), isDirty: true});
+            this.setState({validForm: this.validateForm(key), isDirty: true},() => publish('edit-dirty', true));
         }   else {
             await await this.setState({cycle: cycle});
             this.setState({validForm: this.validateForm(key)});
@@ -239,7 +240,7 @@ export class CycleEdit extends Component {
             cycleQuota[key] = 0;
         }
         if ( !this.state.isDirty && !_.isEqual(this.state.cycleQuota, cycleQuota)) {
-            this.setState({cycleQuota: cycleQuota, isDirty: true});
+            this.setState({cycleQuota: cycleQuota, isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({cycleQuota: cycleQuota});
         }
@@ -396,6 +397,7 @@ export class CycleEdit extends Component {
      * Cancel edit and redirect to Cycle View page
      */
     cancelEdit() {
+        publish('edit-dirty', false);
         this.props.history.goBack();
     }
 

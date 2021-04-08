@@ -3,6 +3,7 @@ import { Redirect } from 'react-router-dom';
 import _ from 'lodash';
 import $RefParser from "@apidevtools/json-schema-ref-parser";
 import moment from 'moment';
+import { publish } from '../../App';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Dropdown } from 'primereact/dropdown';
@@ -125,7 +126,7 @@ export class SchedulingUnitCreate extends Component {
         schedulingUnit.project = projectName;
         schedulingUnit.scheduling_set_id = null;
         const selectedProject = _.filter(this.projects, {'name': projectName});
-        this.setState({selectedProject: selectedProject, schedulingUnit: schedulingUnit, schedulingSets: projectSchedSets, validForm: this.validateForm('project'), isDirty: true});
+        this.setState({selectedProject: selectedProject, schedulingUnit: schedulingUnit, schedulingSets: projectSchedSets, validForm: this.validateForm('project'), isDirty: true},() => publish('edit-dirty', true));
     }
     
     /**
@@ -200,7 +201,7 @@ export class SchedulingUnitCreate extends Component {
             }
             
         }
-        this.setState({observStrategy: observStrategy, paramsSchema: schema, paramsOutput: paramsOutput, stationGroup: station_group, isDirty: true});
+        this.setState({observStrategy: observStrategy, paramsSchema: schema, paramsOutput: paramsOutput, stationGroup: station_group, isDirty: true},() => publish('edit-dirty', true));
 
         // Function called to clear the JSON Editor fields and reload with new schema
         if (this.state.editorFunction) {
@@ -231,7 +232,7 @@ export class SchedulingUnitCreate extends Component {
         // condition goes here..
         this.constraintValidEditor = err.length === 0;
         if  ( !this.state.isDirty && this.state.constraintParamsOutput && !_.isEqual(this.state.constraintParamsOutput, jsonOutput) ) {
-            this.setState({ constraintParamsOutput: jsonOutput, constraintValidEditor: err.length === 0, validForm: this.validateForm(), isDirty: true});
+            this.setState({ constraintParamsOutput: jsonOutput, constraintValidEditor: err.length === 0, validForm: this.validateForm(), isDirty: true},() => publish('edit-dirty', true));
         }   else {
             this.setState({ constraintParamsOutput: jsonOutput, constraintValidEditor: err.length === 0, validForm: this.validateForm()});
         }
@@ -260,7 +261,7 @@ export class SchedulingUnitCreate extends Component {
         schedulingUnit[key] = value;
         if  ( !this.state.isDirty && !_.isEqual(this.state.schedulingUnit, schedulingUnit) ) {
             await this.setState({schedulingUnit: schedulingUnit});
-            this.setState({validForm: this.validateForm(key), validEditor: this.validateEditor(), isDirty: true});
+            this.setState({validForm: this.validateForm(key), validEditor: this.validateEditor(), isDirty: true},() => publish('edit-dirty', true));
         }   else {
             await this.setState({schedulingUnit: schedulingUnit});
             this.setState({validForm: this.validateForm(key), validEditor: this.validateEditor()});
@@ -393,7 +394,7 @@ export class SchedulingUnitCreate extends Component {
         if (!schedulingUnit.error) {
             // this.growl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Unit and tasks created successfully!'});
             const dialog = {header: 'Success', detail: 'Scheduling Unit and Tasks are created successfully. Do you want to create another Scheduling Unit?'};
-            this.setState({schedulingUnit: schedulingUnit, dialogVisible: true, dialog: dialog, isDirty: false});
+            this.setState({schedulingUnit: schedulingUnit, dialogVisible: true, dialog: dialog, isDirty: false},() => publish('edit-dirty', false));
         }   else {
             this.growl.show({severity: 'error', summary: 'Error Occured', detail: schedulingUnit.message || 'Unable to save Scheduling Unit/Tasks'});
         }
@@ -468,11 +469,11 @@ export class SchedulingUnitCreate extends Component {
         if  ( !this.state.isDirty ) {
             if (selectedStation && !_.isEqual(selectedStation, selectedStations)){
                 this.setState({...state, selectedStations, missing_StationFieldsErrors, customSelectedStations }, () => {
-                    this.setState({ validForm: this.validateForm(), isDirty: true });
+                    this.setState({ validForm: this.validateForm(), isDirty: true },() => publish('edit-dirty', true));
                 });
             }   else if (customStation && !_.isEqual(customStation, customSelectedStations)){
                 this.setState({...state, selectedStations, missing_StationFieldsErrors, customSelectedStations }, () => {
-                    this.setState({ validForm: this.validateForm(), isDirty: true });
+                    this.setState({ validForm: this.validateForm(), isDirty: true },() => publish('edit-dirty', true));
                 });
             }   else {
                 this.setState({...state, selectedStations, missing_StationFieldsErrors, customSelectedStations }, () => {

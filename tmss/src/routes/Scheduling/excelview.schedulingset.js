@@ -16,6 +16,7 @@ import BetweenRenderer from '../../components/Spreadsheet/BetweenRenderer';
 import MultiSelector from '../../components/Spreadsheet/MultiSelector';
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
+import { publish } from '../../App';
 
 import ProjectService from '../../services/project.service';
 import ScheduleService from '../../services/schedule.service';
@@ -278,7 +279,7 @@ export class SchedulingSetCreate extends Component {
      * @param {object} value 
      */
     async setSchedulingSetParams(key, value) {
-        this.setState({isAGLoading: true, copyHeader: false, confirmDialogVisible: false, isDirty: false});
+        this.setState({isAGLoading: true, copyHeader: false, confirmDialogVisible: false, isDirty: false},() => publish('edit-dirty', false));
         let schedulingUnit = this.state.schedulingUnit;
         schedulingUnit[key] = value;
 
@@ -349,7 +350,7 @@ export class SchedulingSetCreate extends Component {
      * @param {number} strategyId 
      */
     async changeStrategy(strategyId) {
-        await this.setState({noOfSU: 10, isAGLoading: true, copyHeader: false, rowData: [], confirmDialogVisible: false, isDirty: false});
+        await this.setState({noOfSU: 10, isAGLoading: true, copyHeader: false, rowData: [], confirmDialogVisible: false, isDirty: false},() => publish('edit-dirty', false));
         const observStrategy = _.find(this.observStrategies, {'id': strategyId});
         let schedulingUnitList= await ScheduleService.getSchedulingBySet(this.state.selectedSchedulingSetId);
         schedulingUnitList = _.filter(schedulingUnitList,{'observation_strategy_template_id': strategyId}) ;
@@ -2343,7 +2344,7 @@ export class SchedulingSetCreate extends Component {
      */
     cellValueChageEvent(params) {
         if( params.value && !_.isEqual(params.value, params.oldValue)) {
-            this.setState({isDirty: true});
+            this.setState({isDirty: true},() => publish('edit-dirty', true));
         }
     }
 
