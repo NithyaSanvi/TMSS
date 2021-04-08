@@ -93,7 +93,7 @@ class PIverification extends Component {
         return (
             <>
              <div>
-                  <div className={`p-fluid-grid ${this.props.readOnly ? 'disableContainer' : ''}`}>
+                  <div className={`p-fluid-grid`}>
                         <div className="p-fluid-grid">
                             <label htmlFor="operatorReport" style={{ padding: '2px' }} >Operator Report</label>
                             <div className="col-lg-12 col-md-12 col-sm-12"></div>
@@ -114,6 +114,7 @@ class PIverification extends Component {
                             <div className="col-lg-12 col-md-12 col-sm-12"></div>
                             <SunEditor setDefaultStyle="min-height: 150px; height: auto;" enableToolbar={true}
                                 setContents={this.state.comment}
+                                disable={this.props.readOnly}
                                 onChange={this.onChangePIComment}
                                 setOptions={{
                                     buttonList: [
@@ -128,7 +129,7 @@ class PIverification extends Component {
                             <Checkbox disabled inputId="sos_accept_show_pi" checked={this.state.sos_accept_show_pi} onChange={e => this.setState({ sos_accept_show_pi: e.checked })} />
                             <label htmlFor="sdcoAccept" style={{paddingLeft:"5px"}}>The data quality adheres to policy (SDCO evaluation)</label>
                             <div className="col-lg-1 col-md-1 col-sm-12"></div>
-                            <Checkbox inputId="binary" checked={this.state.pi_accept} onChange={e => this.setState({ pi_accept: e.checked })} />
+                            <Checkbox disabled={this.props.readOnly} inputId="binary" checked={this.state.pi_accept} onChange={e => this.setState({ pi_accept: e.checked })} />
                             <label htmlFor="piAccept" style={{paddingLeft:"5px"}} >As PI / contact author I accept this data</label>
                             {!this.props.readOnly && <div className="p-grid" style={{ marginTop: '20px' }}>
                                 <div className="p-col-1">

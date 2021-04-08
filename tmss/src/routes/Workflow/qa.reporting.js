@@ -67,11 +67,11 @@ class QAreporting extends Component{
         return (
         <>
            <div>
-            <div className={`p-fluid-grid ${this.props.readOnly ? 'disableContainer' : ''}`}>
+            <div className={`p-fluid-grid`}>
                 <div className="p-field p-grid" style={{ paddingLeft: '-10px' }}>
                     <label htmlFor="assignTo" className="col-lg-2 col-md-2 col-sm-12">Assign To</label>
                     <div className="col-lg-3 col-md-3 col-sm-12" data-testid="assignTo" >
-                    <Dropdown inputId="assignToValue" value={this.state.assignTo} optionLabel="value" optionValue="id" onChange={(e) => this.setState({assignTo: e.value})}
+                    <Dropdown disabled={this.props.readOnly} inputId="assignToValue" value={this.state.assignTo} optionLabel="value" optionValue="id" onChange={(e) => this.setState({assignTo: e.value})}
                             options={[{ value: 'User 1', id: 1 }, { value: 'User 2', id: 2 }, { value: 'User 3', id: 3 }]}
                             placeholder="Assign To" />
                     </div>
@@ -83,6 +83,7 @@ class QAreporting extends Component{
                         setDefaultStyle="min-height: 250px; height: auto;"
                         onChange={ this.handleChange }
                         setContents={this.state.content}
+                        disable={this.props.readOnly}
                         setOptions={{
                             buttonList: [
                                 ['undo', 'redo', 'bold', 'underline', 'fontColor', 'table', 'link', 'image', 'video', 'italic', 'strike', 'subscript',
@@ -91,7 +92,7 @@ class QAreporting extends Component{
                         }} />
                 </div>            
                 <div className="p-col-12">
-                    <Checkbox inputId="operator_accept" onChange={e => this.setState({operator_accept: e.checked})} checked={this.state.operator_accept}></Checkbox>
+                    <Checkbox inputId="operator_accept" disabled={this.props.readOnly} onChange={e => this.setState({operator_accept: e.checked})} checked={this.state.operator_accept}></Checkbox>
                     <label htmlFor="operator_accept " style={{paddingLeft:"5px"}}>The data quality adheres to policy (Operator evaluation)</label>
                 </div>            
             </div>

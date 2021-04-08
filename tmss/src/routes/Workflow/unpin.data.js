@@ -62,9 +62,9 @@ export default ({ tasks, schedulingUnit, onCancel, ...props }) => {
                 defaultpagesize={tasks.length}
              />
            <div className="p-grid p-justify-start mt-2">
-                <div className="p-col-1">
+                {!props.readOnly && <div className="p-col-1">
                     <Button label="Delete" className="p-button-primary" icon="pi pi-trash" onClick={toggleDialog} />
-                </div>
+                </div>}
                 <div className="p-col-1">
                     <Button label="Cancel" className="p-button-danger" icon="pi pi-times" style={{ width: '90px' }}
                             onClick={(e) => { onCancel()}} />

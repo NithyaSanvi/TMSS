@@ -16,7 +16,7 @@ class Ingesting extends Component {
         return(
                <>
                    
-                    <div className={`p-fluid-grid ${this.props.readOnly ? 'disableContainer' : ''}`}>
+                    <div className={`p-fluid-grid`}>
                             <label htmlFor="ingestTaskStatus" className="col-lg-2 col-md-2 col-sm-12">Ingest Task Status</label>
                             <div className="col-lg-2 col-md-2 col-sm-12">
                              <span>{this.props.task.status}</span>

@@ -25,7 +25,8 @@ class QAreportingSDCO extends Component {
         } else {
             const response = await WorkflowService.getQAReportingTo(this.props.process.qa_reporting_to);
             this.setState({
-                content: response.operator_report
+                content: response.operator_report,
+                operator_accept: response.operator_accept
             });
         }
     }
@@ -60,7 +61,7 @@ class QAreportingSDCO extends Component {
         if (currentWorkflowTask && !currentWorkflowTask.fields.owner) {
             promise.push(WorkflowService.updateAssignTo(currentWorkflowTask.pk, { owner: this.state.assignTo }));
         }
-        promise.push(WorkflowService.updateQA_Perform(this.props.id, {"sos_report": this.state.content, "sos_accept_show_pi": this.state.sos_accept_show_pi, "quality_within_policy": this.state.quality_within_policy}));
+        promise.push(WorkflowService.updateQA_Perform(this.props.id, {"sos_report": this.state.content, "sos_accept_show_pi": this.state.sos_accept_show_pi, "quality_within_policy": this.state.quality_within_policy, "operator_accept": this.state.operator_accept}));
         Promise.all(promise).then((responses) => {
             if (responses.indexOf(null)<0) {
                 this.props.onNext({ report: this.state.content });
@@ -79,12 +80,15 @@ class QAreportingSDCO extends Component {
         return (
             <>
                 <div>                    
-                    <div className={`p-fluid-grid ${this.props.readOnly ? 'disableContainer' : ''}`}>
-                        <Checkbox inputId="quality_within_policy" checked={this.state.quality_within_policy} onChange={e => this.setState({quality_within_policy: e.checked})} />
+                    <div className={`p-fluid-grid`}>
+                        <Checkbox inputId="quality_within_policy" disabled={this.props.readOnly} checked={this.state.quality_within_policy} onChange={e => this.setState({quality_within_policy: e.checked})} />
                         <label htmlFor="qualityPolicy"  style={{paddingLeft:"5px"}}>The data quality adheres to policy (Operator evaluation)</label>
                         <div className="col-lg-1 col-md-1 col-sm-12"></div>
-                        <Checkbox inputId="sos_accept_show_pi" checked={this.state.sos_accept_show_pi} onChange={e => this.setState({ sos_accept_show_pi: e.checked })} />
-                        <label htmlFor="sdcoAccept" style={{paddingLeft:"5px"}}>The data quality adheres to policy (SDCO evaluation)</label>                                            
+                        <Checkbox inputId="sos_accept_show_pi" disabled={this.props.readOnly} checked={this.state.sos_accept_show_pi} onChange={e => this.setState({ sos_accept_show_pi: e.checked })} />
+                        <label htmlFor="sdcoAccept" style={{paddingLeft:"5px"}}>The data quality adheres to policy (SDCO evaluation)</label>
+                        <div className="col-lg-1 col-md-1 col-sm-12"></div>             
+                        <Checkbox inputId="operator_accept" checked={this.state.operator_accept} disabled />
+                        <label htmlFor="operator_accept" style={{paddingLeft:"5px"}}>The data quality adheres to policy (Operator Accept)</label>                                            
                         <div className="p-grid" style={{ padding: '10px' }}>
                             <label htmlFor="operatorReport">Operator Report {!this.state.showEditor && <span className="con-edit">(Click content to edit)</span>}<span style={{color:'red'}}>*</span></label>
                             <div className="col-lg-12 col-md-12 col-sm-12"></div>
