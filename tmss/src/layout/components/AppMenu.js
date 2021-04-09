@@ -37,7 +37,7 @@ class AppSubmenu extends Component {
         }
 
         if (this.props.isEditDirty) {
-            this.props.toggleEditDirtyDialog(() => this.props.history.push(item.to));
+            this.props.toggleDirtyDialog(() => this.props.history.push(item.to));
             return;
         }
                         
@@ -124,7 +124,7 @@ class AppSubmenu extends Component {
                 <li className={styleClass} key={i}>
                     {item.items && this.props.root===true && <div className='arrow'></div>}
                     {this.renderLink(item, i)}
-                    <AppSubmenu toggleEditDirtyDialog={this.props.toggleEditDirtyDialog} isEditDirty={this.props.isEditDirty} history={this.props.history} items={item.items} onMenuItemClick={this.props.onMenuItemClick}/>
+                    <AppSubmenu toggleDirtyDialog={this.props.toggleDirtyDialog} isEditDirty={this.props.isEditDirty} history={this.props.history} items={item.items} onMenuItemClick={this.props.onMenuItemClick}/>
                 </li>
             );
             
@@ -151,7 +151,7 @@ export class AppMenu extends Component {
             <div className={'layout-sidebar layout-sidebar-light'} >
                 <div className="layout-menu-container">
                     {/* <AppSubmenu items={this.props.model} permissions={authenticationService.currentUserValue.permissions} className="layout-menu" onMenuItemClick={this.props.onMenuItemClick} root={true}/> */}
-                    <AppSubmenu toggleEditDirtyDialog={this.props.toggleEditDirtyDialog} isEditDirty={this.props.isEditDirty} history={this.props.history} items={this.props.model} className="layout-menu" onMenuItemClick={this.props.onMenuItemClick} root={true}/>
+                    <AppSubmenu toggleDirtyDialog={this.props.toggleDirtyDialog} isEditDirty={this.props.isEditDirty} history={this.props.history} items={this.props.model} className="layout-menu" onMenuItemClick={this.props.onMenuItemClick} root={true}/>
              
                 </div>
             </div>

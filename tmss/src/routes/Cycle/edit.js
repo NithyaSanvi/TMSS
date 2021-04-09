@@ -164,7 +164,8 @@ export class CycleEdit extends Component {
             let resources = this.state.resources?this.state.resources:[];
             resources.push(newResource[0]);
             if ( !this.state.isDirty && !_.isEqual(this.state.resourceList, resourceList)) {
-                this.setState({resources: resources, resourceList: resourceList, newResource: null, isDirty: true},() => publish('edit-dirty', true));
+                this.setState({resources: resources, resourceList: resourceList, newResource: null, isDirty: true});
+                publish('edit-dirty', true);
             }   else {
                 this.setState({resources: resources, resourceList: resourceList, newResource: null});
             }
@@ -184,7 +185,8 @@ export class CycleEdit extends Component {
         resourceList.push(removedResource[0]);
         delete cycleQuota[name];
         if ( !this.state.isDirty && !_.isEqual(this.state.cycleQuota, cycleQuota)) {
-            this.setState({resourceList: resourceList, resources: resources, cycleQuota: cycleQuota, isDirty: true},() => publish('edit-dirty', true));
+            this.setState({resourceList: resourceList, resources: resources, cycleQuota: cycleQuota, isDirty: true});
+            publish('edit-dirty', true)
         }   else {
             this.setState({resourceList: resourceList, resources: resources, cycleQuota: cycleQuota});
         }

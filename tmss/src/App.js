@@ -7,7 +7,6 @@ import AppMenu from './layout/components/AppMenu';
 import {AppFooter } from './layout/components/AppFooter';
 import {RoutedContent} from './routes';
 import AppBreadcrumb from "./layout/components/AppBreadcrumb";
-import { Beforeunload } from 'react-beforeunload';
 import 'primeicons/primeicons.css';
 import 'primereact/resources/themes/nova-light/theme.css';
 import 'primereact/resources/primereact.css';
@@ -49,7 +48,6 @@ class App extends Component {
         this.loggedIn = this.loggedIn.bind(this);
         this.logout = this.logout.bind(this);
         this.toggleEditToggle = this.toggleEditToggle.bind(this);
-        this.setEditDialogCallback = this.setEditDialogCallback.bind(this);
 
         this.menu = [ {label: 'Dashboard', icon: 'pi pi-fw pi-home', to:'/dashboard',section: 'dashboard'},
                         {label: 'Cycle', icon:'pi pi-fw pi-spinner', to:'/cycle',section: 'cycle'},
@@ -140,31 +138,35 @@ class App extends Component {
         this.setState({ showEditDialog: !this.state.showEditDialog });
     }
 
-    setEditDialogCallback(callback) {
-        this.setState({ callback })
-    }
-
     componentDidMount() {
+        window.onpopstate = e => {
+            debugger
+        }
         subscribe('edit-dirty', (flag) => {
             this.setState({ isEditDirty: flag }, () => {
                 if (flag) {
-                    window.history.pushState(null, null, window.location.pathname);
-                     window.addEventListener('popstate', this.onBackButtonEvent);
-                    
+                    window.addEventListener("beforeunload", function (e) {
+                        var confirmationMessage = "\o/";
+                        (e || window.event).returnValue = confirmationMessage; //Gecko + IE
+                        return confirmationMessage;   
+                        // this.toggleDirtyDialog() ;
+                    });
+                } else {
+                    window.removeEventListener('beforeunload');
                 }
             });
         });
+       
     }
 
     onBackButtonEvent = (e) => {
         e.preventDefault();
-    
-        if (!this.isBackButtonClicked) {
+        
+        if (this.state.isEditDirty) {
             if (window.confirm("Do you want to leave this page? Your changes may not be saved.")) {
                 this.isBackButtonClicked = true;
                 // Your custom logic to page transition, like react-router-dom history.push()
-            }
-            else {
+            } else {
                 window.history.pushState(null, null, window.location.pathname);
                 this.isBackButtonClicked = false;
             }
@@ -172,7 +174,7 @@ class App extends Component {
     }
 
     componentWillUnmount = () => {
-        window.removeEventListener('popstate', this.onBackButtonEvent);
+        // window.removeEventListener('popstate', this.onBackButtonEvent);
     }
 
     close = () => {
@@ -186,13 +188,13 @@ class App extends Component {
         this.state.toPathCallback();
     }
 
-    toggleEditDirtyDialog = (callback) => {
+    toggleDirtyDialog = (callback) => {
         this.setState({ showDirtyDialog: true, toPathCallback: callback });
     }
 
     onBreadcrumbClick = (callback) => {
         if (this.state.isEditDirty) {
-            this.toggleEditDirtyDialog(callback);
+            this.toggleDirtyDialog(callback);
             return;
         }
         callback();
@@ -208,49 +210,47 @@ class App extends Component {
         });
         //console.log(this.props);
         return (
-            <Beforeunload onBeforeunload={() => "You'll lose your data!"}>
-                <React.Fragment>
-                    <div className="App">
-                        {/* <div className={wrapperClass} onClick={this.onWrapperClick}> */}
-                        <div className={wrapperClass}>
-                            
-                            {/* Load main routes and application only if the application is authenticated */}
-                            {this.state.authenticated &&
+            <React.Fragment>
+                <div className="App">
+                    {/* <div className={wrapperClass} onClick={this.onWrapperClick}> */}
+                    <div className={wrapperClass}>
+                        
+                        {/* Load main routes and application only if the application is authenticated */}
+                        {this.state.authenticated &&
+                        <>
+                            <AppTopbar onToggleMenu={this.onToggleMenu} isLoggedIn={this.state.authenticated} onLogout={this.logout}></AppTopbar>
+                            <Router basename={ this.state.currentPath }>
+    
+                                <AppMenu model={this.menu} toggleDirtyDialog={this.toggleDirtyDialog} isEditDirty={this.state.isEditDirty} onMenuItemClick={this.onMenuItemClick} layoutMode={this.state.la} active={this.state.menuActive}/>
+                                <div className="layout-main">
+                                    {this.state.redirect &&
+                                        <Redirect to={{pathname: this.state.redirect}} />}
+                                    <AppBreadcrumb setPageTitle={this.setPageTitle} section={this.state.currentMenu} onBreadcrumbClick={this.onBreadcrumbClick} />
+                                    <RoutedContent />
+                                </div>
+                            </Router>
+                            <AppFooter></AppFooter>
+                        </>
+                        }
+
+                        {/* If not authenticated, show only login page */}
+                        {!this.state.authenticated &&
                             <>
-                                <AppTopbar onToggleMenu={this.onToggleMenu} isLoggedIn={this.state.authenticated} onLogout={this.logout}></AppTopbar>
                                 <Router basename={ this.state.currentPath }>
-     
-                                    <AppMenu model={this.menu} toggleEditDirtyDialog={this.toggleEditDirtyDialog} isEditDirty={this.state.isEditDirty} onMenuItemClick={this.onMenuItemClick} layoutMode={this.state.la} active={this.state.menuActive}/>
-                                    <div className="layout-main">
-                                        {this.state.redirect &&
-                                            <Redirect to={{pathname: this.state.redirect}} />}
-                                        <AppBreadcrumb setPageTitle={this.setPageTitle} section={this.state.currentMenu} onBreadcrumbClick={this.onBreadcrumbClick} />
-                                        <RoutedContent />
-                                    </div>
+                                    <Redirect to={{pathname: "/login"}} />
+                                    <Login onLogin={this.loggedIn} />
                                 </Router>
-                                <AppFooter></AppFooter>
                             </>
-                            }
+                        }
 
-                            {/* If not authenticated, show only login page */}
-                            {!this.state.authenticated &&
-                                <>
-                                    <Router basename={ this.state.currentPath }>
-                                        <Redirect to={{pathname: "/login"}} />
-                                        <Login onLogin={this.loggedIn} />
-                                    </Router>
-                                </>
-                            }
-
-                            <CustomDialog type="confirmation" visible={this.state.showDirtyDialog} width="40vw"
-                                header={'Edit Cycle'} message={'Do you want to leave this page? Your changes may not be saved.'} 
-                                content={''} onClose={this.close} onCancel={this.close} onSubmit={this.cancelEdit}>
-                            </CustomDialog>
-                            
-                        </div>
+                        <CustomDialog type="confirmation" visible={this.state.showDirtyDialog} width="40vw"
+                            header={'Confirmation'} message={'Do you want to leave this page? Your changes may not be saved.'} 
+                            content={''} onClose={this.close} onCancel={this.close} onSubmit={this.cancelEdit}>
+                        </CustomDialog>
+                        
                     </div>
-                </React.Fragment>
-            </Beforeunload>
+                </div>
+            </React.Fragment>
         );
     }
 }
