@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import { InputMask } from 'primereact/inputmask';
 import Validator from  '../../utils/validator';
 import Cleave from 'cleave.js/react';
 
@@ -33,10 +32,8 @@ export default class TimeInputMask extends Component {
 
   render() {
     return (
-      <Cleave placeholder="HH:mm:ss.ssss" value={this.props.value}
-          options={{numericOnly: true, blocks: [2, 2, 2, 4],
-                    delimiters: [':', ':', '.'],
-                    delimiterLazyShow: false}}
+      <Cleave placeholder="Hour/Radian" value={this.props.value}
+          title="Enter in hms or hours or radians"
           className="inputmask" 
           htmlRef={(ref) => this.input = ref }
           onChange={this.callbackUpdateAngle} />

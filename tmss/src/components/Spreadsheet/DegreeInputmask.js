@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import { InputMask } from 'primereact/inputmask';
 import Validator from  '../../utils/validator';
 import Cleave from 'cleave.js/react';
 
@@ -35,10 +34,8 @@ export default class DegreeInputMask extends Component {
 
   render() {
     return (
-      <Cleave placeholder="DD:mm:ss.ssss" value={this.props.value}
-          options={{numericOnly: true, blocks: [2, 2, 2, 4],
-                    delimiters: [':', ':', '.'],
-                    delimiterLazyShow: false}}
+      <Cleave placeholder="Degree/Radian" value={this.props.value}
+          title="Enter in dms or degrees or radians"
           className="inputmask" 
           htmlRef={(ref) => this.input = ref }
           onChange={this.callbackUpdateAngle} />

@@ -1338,7 +1338,7 @@ export class SchedulingSetCreate extends Component {
             row = this.state.commonRowData[0];
             row[field] = value;
             row['isValid'] = isValid;
-            row[field+'value'] = UnitConverter.getAngleOutput(value,isDegree);
+            row[field+'value'] = UnitConverter.parseAngle(value);
             tmpRowData = this.state.commonRowData;
             tmpRowData[0] = row;
             await this.setState({
@@ -1349,7 +1349,7 @@ export class SchedulingSetCreate extends Component {
             row = this.state.rowData[rowIndex];
             row[field] = value;
             row['isValid'] = isValid;
-            row[field+'value'] = UnitConverter.getAngleOutput(value,isDegree);
+            row[field+'value'] = UnitConverter.parseAngle(value);
             tmpRowData = this.state.rowData;
             tmpRowData[rowIndex] = row;
             await this.setState({
@@ -1753,13 +1753,13 @@ export class SchedulingSetCreate extends Component {
                                 validRow = false;
                                 return;
                             }
-                            paramOutput[key] = UnitConverter.getAngleOutput(suRow[result[key]],false);
+                            paramOutput[key] = UnitConverter.parseAngle(suRow[result[key]]);
                         } else if (key === 'angle2'){
                             if  (!Validator.validateAngle(suRow[result[key]])){
                                 validRow = false;
                                 return;
                             }
-                            paramOutput[key] = UnitConverter.getAngleOutput(suRow[result[key]],true);
+                            paramOutput[key] = UnitConverter.parseAngle(suRow[result[key]]);
                         }  else if (key === 'angle3'){
                             paramOutput[key] = Number(suRow[result[key]]);
 

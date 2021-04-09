@@ -5,7 +5,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useRef} from 'react';
 import _ from 'lodash';
-import UnitConverter from '../../utils/unit.converter'
+import UnitConverter from '../../utils/unit.converter';
+import Validator from '../../utils/validator';
 import $RefParser from "@apidevtools/json-schema-ref-parser";
 import "@fortawesome/fontawesome-free/css/all.css";
 import flatpickr from 'flatpickr';
@@ -137,8 +138,8 @@ function Jeditor(props) {
         getCustomProperties(schema.definitions);
         schema.title = props.title;
         const subbandValidator = validateSubbandOutput;
-        const timeValidator = validateTime;
-        const angleValidator = validateAngle;
+        const timeValidator = Validator.validateTime;
+        const angleValidator = Validator.validateAngle;
         JSONEditor.defaults.custom_validators.push((schema, value, path) => {
             const errors = [];
             if (schema.validationType === "subband_list") {
@@ -154,7 +155,7 @@ function Jeditor(props) {
                     errors.push({
                         path: path,
                         property: 'validationType',
-                        message: 'Not a valid input. Mimimum: 00:00:00.0000, Maximum:23:59:59.9999'
+                        message: 'Not a valid input. Mimimum: 00:00:00.0000hours or 0, Maximum:23:59:59.9999hours or 6.2831'
                     });
                 }
             }   else if (schema.validationType === "angle") {
@@ -162,7 +163,7 @@ function Jeditor(props) {
                     errors.push({
                         path: path,
                         property: 'validationType',
-                        message: 'Not a valid input. Mimimum: 00:00:00.0000, Maximum:90:00:00.0000'
+                        message: 'Not a valid input. Mimimum: -90:00:00.0000degrees 0r -1.57079632679489661923, Maximum:90:00:00.0000degrees or 1.57079632679489661923'
                     });
                 }
             } else if (schema.validationType === "distanceOnSky") {
@@ -265,19 +266,15 @@ function Jeditor(props) {
         let newProperty = {
             type: "string",
             title: defProperty.title,
-            description: (defProperty.description + (isDegree?'(Degrees:Minutes:Seconds.MilliSeconds)':'(Hours:Minutes:Seconds.MilliSeconds)')),
-            default: "00:00:00.0000",
+            description: (defProperty.description + (isDegree?
+                            "(Supported Formats: '10d15m10.1234s', '10:15:10.1234degrees', '10.2528degrees', '0.1789')":
+                            "(Supported Formats: '10h15m10.1234s', '10:15:10.1234hours', '10.4187hours', '2.7276')")),
+            default: "0",
             validationType: isDegree?'angle':'time',
             options: {
                 "grid_columns": 4,
                 "inputAttributes": {
-                    "placeholder": isDegree?"DD:mm:ss.ssss":"HH:mm:ss.ssss"
-                },
-                "cleave": {
-                    numericOnly: true,
-                    blocks: [2, 2, 2, 4],
-                    delimiters: isDegree ? [':', ':','.'] : [':', ':', '.'],
-                    delimiterLazyShow: true
+                    "placeholder": isDegree?"Degrees or Radian":"Hours or Radian"
                 }
             }
         }
@@ -391,8 +388,8 @@ function Jeditor(props) {
             let outputValue = editorOutput[outputKey];
             if (outputValue instanceof Object) {
                 if (_.indexOf(pointingProps, outputKey) >= 0) {
-                    outputValue.angle1 = UnitConverter.getAngleOutput(outputValue.angle1, false);
-                    outputValue.angle2 = UnitConverter.getAngleOutput(outputValue.angle2, true);
+                    outputValue.angle1 = UnitConverter.parseAngle(outputValue.angle1);
+                    outputValue.angle2 = UnitConverter.parseAngle(outputValue.angle2);
                 } else {
                     updateOutput(outputValue);
                 }
@@ -441,53 +438,6 @@ function Jeditor(props) {
         const mm = Math.floor((seconds - hh*3600) / 60 );
         const ss = +((seconds -(hh*3600)-(mm*60)) / 1);
         return (hh<10?`0${hh}`:`${hh}`) + ':' + (mm<10?`0${mm}`:`${mm}`) + ':' + (ss<10?`0${ss}`:`${ss}`);
-    }
-
-    /**
-     * Validate time entered as string in HH:mm:ss format
-     * @param {String} prpOutput 
-     */
-    function validateTime(prpOutput) {
-        const splitOutput = prpOutput.split(':');
-        const seconds = splitOutput[2]?splitOutput[2].split('.')[0].split('.')[0]:splitOutput[2];
-        let milliSeconds = prpOutput.split('.')[1] || '0000';
-        milliSeconds = milliSeconds.padEnd(4,0);
-        if (splitOutput.length < 3) {
-            return false;
-        }   else {
-            if (parseInt(splitOutput[0]) > 23 || parseInt(splitOutput[1])>59 || parseInt(splitOutput[2])>59 )
-             {
-                return false;
-            }
-            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(seconds) + milliSeconds/10000;
-            if (timeValue >= 86400) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Validate angle input to not exceed 90 degrees
-     * @param {String} prpOutput 
-     */
-    function validateAngle(prpOutput) {
-        const splitOutput = prpOutput.split(':');
-        const seconds = splitOutput[2]?splitOutput[2].split('.')[0].split('.')[0]:splitOutput[2];
-        let milliSeconds = prpOutput.split('.')[1] || '0000';
-        milliSeconds = milliSeconds.padEnd(4,0);
-        if (splitOutput.length < 3) {
-            return false;
-        }   else {
-            if (parseInt(splitOutput[0]) > 90 || parseInt(splitOutput[1])>59 || parseInt(seconds)>59) {
-                return false;
-            }
-            const timeValue = parseInt(splitOutput[0]*60*60) + parseInt(splitOutput[1]*60) + parseInt(seconds) + milliSeconds/10000;
-            if (timeValue > 324000) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
