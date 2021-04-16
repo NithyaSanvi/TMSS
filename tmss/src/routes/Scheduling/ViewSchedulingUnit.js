@@ -414,8 +414,13 @@ class ViewSchedulingUnit extends Component{
         this.setState({dialogVisible: false, showSpinner: true});
         ScheduleService.createSchedulingUnitBlueprintTree(this.state.scheduleunit.id)
             .then(blueprint => {
-                appGrowl.show({severity: 'success', summary: 'Success', detail: 'Blueprint created successfully!'});
-                this.setState({showSpinner: false, redirect: `/schedulingunit/view/blueprint/${blueprint.id}`, isLoading: true});
+                if (blueprint) {
+                    appGrowl.show({severity: 'success', summary: 'Success', detail: 'Blueprint created successfully!'});
+                    this.setState({showSpinner: false, redirect: `/schedulingunit/view/blueprint/${blueprint.id}`, isLoading: true});
+                }   else {
+                    appGrowl.show({severity: 'error', summary: 'Failed', detail: 'Unable to create blueprint!'});
+                    this.setState({showSpinner: false});
+                }
             });
     }
 

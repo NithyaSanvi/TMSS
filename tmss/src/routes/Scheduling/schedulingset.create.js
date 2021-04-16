@@ -4,8 +4,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import UIConstants from '../../utils/ui.constants';
 import { CustomDialog } from '../../layout/components/CustomDialog';
 import ScheduleService from '../../services/schedule.service';
-import { Growl } from 'primereact/components/growl/Growl';
-import { appGrowl } from './../../layout/components/AppGrowl';
+import { appGrowl } from '../../layout/components/AppGrowl';
 
 export class SchedulingSet extends Component {
 
@@ -28,18 +27,18 @@ export class SchedulingSet extends Component {
         this.actions = [ {id:"yes", title: 'Save', callback: async ()=>{
                             let schedulingSet = this.state.schedulingSet;
                             if (!this.isNotEmpty(schedulingSet.name) || !this.isNotEmpty(schedulingSet.description)){
-                                this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Name and Description are mandatory'});
+                                appGrowl.show({severity: 'error', summary: 'Error Occured', detail: 'Name and Description are mandatory'});
                             }   else {
                                 schedulingSet['generator_doc'] = {};
                                 schedulingSet['scheduling_unit_drafts'] = [];
                                 const suSet = await ScheduleService.saveSchedulingSet(schedulingSet);                         
-                                if (suSet.id && suSet.id !== null) {
+                                if (suSet.id !== null) {
                                     appGrowl.show({severity: 'success', summary: 'Success', detail: 'Scheduling Set is created successfully.'});
                                     this.setState({suSet: suSet, dialogVisible: true, });
                                     this.props.onCancel();
-                                } /*  else {
-                                    this.growl.show({severity: 'error', summary: 'Error Occured', detail: schedulingSet.message || 'Unable to save Scheduling Set'});
-                                } */
+                                }   else {
+                                    appGrowl.show({severity: 'error', summary: 'Error Occured', detail: schedulingSet.message || 'Unable to save Scheduling Set'});
+                                }
                             }
                         }},
                          {id:"no", title: 'Cancel', callback: this.props.onCancel} ];
@@ -79,21 +78,7 @@ export class SchedulingSet extends Component {
                     }
                 }
             }
-        }  /* else {
-            errors = {};
-            validFields = {};
-            for (const fieldName in this.formRules) {
-                const rule = this.formRules[fieldName];
-                const fieldValue = this.state.schedulingSet[fieldName];
-                if (rule.required) {
-                    if (!fieldValue) {
-                        errors[fieldName] = rule.message?rule.message:`${fieldName} is required`;
-                    }   else {
-                        validFields[fieldName] = true;
-                    }
-                }
-            }
-        }*/
+        } 
         this.setState({errors: errors, validFields: validFields});
         if (Object.keys(validFields).length === Object.keys(this.formRules).length) {
             validForm = true;
@@ -112,7 +97,6 @@ export class SchedulingSet extends Component {
         let schedulingSet = this.state.schedulingSet;
         schedulingSet[key] = value;
         let isValid = this.validateForm(key);
-       // isValid= this.validateForm('project');
         this.setState({schedulingSet: schedulingSet, validForm: isValid});
     }
 
@@ -129,7 +113,7 @@ export class SchedulingSet extends Component {
             const dialog = {header: 'Success', detail: 'Scheduling Set is created successfully.'};
             this.setState({suSet: suSet, dialogVisible: false, dialog: dialog});
         }   else {
-            this.growl.show({severity: 'error', summary: 'Error Occured', detail: schedulingSet.message || 'Unable to save Scheduling Set'});
+            appGrowl.show({severity: 'error', summary: 'Error Occured', detail: schedulingSet.message || 'Unable to save Scheduling Set'});
         }
     }
 
@@ -148,10 +132,10 @@ export class SchedulingSet extends Component {
             return true;
         }
     }
+
     render() {
         return (
             <>
-                <Growl ref={(el) => this.growl = el} />
                 <CustomDialog type="success" visible={this.state.dialogVisible} width="60vw"
                     header={'Add Scheduling Set'} 
                     message=  {

@@ -21,6 +21,7 @@ const Validator = {
         }
         return false;
     },
+
     /**
      * Validates whether any of the given property values is modified comparing the old and new object.
      * @param {Object} oldObject - old object that is already existing in the state list

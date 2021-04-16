@@ -1,23 +1,21 @@
 import React, { Component } from 'react';
 import { Redirect } from 'react-router-dom';
 import _ from 'lodash';
-import { publish } from '../../App';
 import moment from 'moment';
 import { Growl } from 'primereact/components/growl/Growl';
-import AppLoader from '../../layout/components/AppLoader';
-import PageHeader from '../../layout/components/PageHeader';
-import UIConstants from '../../utils/ui.constants';
-import Flatpickr from "react-flatpickr";
-import { InputMask } from 'primereact/inputmask';
 import { Dropdown } from 'primereact/dropdown';
 import {InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/components/dialog/Dialog';
+import Flatpickr from "react-flatpickr";
+import AppLoader from '../../layout/components/AppLoader';
+import PageHeader from '../../layout/components/PageHeader';
+import UIConstants from '../../utils/ui.constants';
 import { CustomDialog } from '../../layout/components/CustomDialog';
+
 import ProjectService from '../../services/project.service';
 import ReservationService from '../../services/reservation.service';
-import UnitService from '../../utils/unit.converter';
 import Jeditor from '../../components/JSONEditor/JEditor';
 import UtilService from '../../services/util.service';
 
@@ -46,6 +44,9 @@ export class ReservationCreate extends Component {
                 stop_time: null,
                 project: (props.match?props.match.params.project:null) || null,
             },
+            reservationStrategy: {
+                id: null,
+            },
             errors: {},                             // Validation Errors
             validFields: {},                        // For Validation
             validForm: false,                       // To enable Save Button
@@ -53,13 +54,14 @@ export class ReservationCreate extends Component {
         };
         this.projects = [];                         // All projects to load project dropdown
         this.reservationTemplates = [];
+        this.reservationStrategies = [];
 
         // Validateion Rules
         this.formRules = {
             name: {required: true, message: "Name can not be empty"},
             description: {required: true, message: "Description can not be empty"},
            // project: {required: true, message: "Project can not be empty"},
-            start_time: {required: true, message: "From Date can not be empty"},
+            start_time: {required: true, message: "Start Time can not be empty"},
         };
         this.tooltipOptions = UIConstants.tooltipOptions;
         this.setEditorOutput = this.setEditorOutput.bind(this);
@@ -69,6 +71,8 @@ export class ReservationCreate extends Component {
         this.checkIsDirty = this.checkIsDirty.bind(this);
         this.close = this.close.bind(this);
         this.initReservation = this.initReservation.bind(this);
+        this.changeStrategy = this.changeStrategy.bind(this);
+        this.setEditorFunction = this.setEditorFunction.bind(this);
     }
 
     async componentDidMount() {
@@ -76,19 +80,20 @@ export class ReservationCreate extends Component {
     }
     
     /**
-     * Initialized the reservation template
+     * Initialize the reservation and relevant details
      */
     async initReservation() {
         const promises = [  ProjectService.getProjectList(),
                             ReservationService.getReservationTemplates(),
-                            UtilService.getUTC()
+                            UtilService.getUTC(),
+                            ReservationService.getReservationStrategyTemplates()
                         ];
         let emptyProjects = [{url: null, name: "Select Project"}];
-       Promise.all(promises).then(responses => {
-            let systemTime = moment.utc(responses[2]);
+        Promise.all(promises).then(responses => {
             this.projects = emptyProjects.concat(responses[0]);
             this.reservationTemplates = responses[1];
-
+            let systemTime = moment.utc(responses[2]);
+            this.reservationStrategies = responses[3];
             let reservationTemplate = this.reservationTemplates.find(reason => reason.name === 'resource reservation');
             let schema = {
                 properties: {}
@@ -100,12 +105,35 @@ export class ReservationCreate extends Component {
                 paramsSchema: schema,
                 isLoading: false,
                 reservationTemplate: reservationTemplate,
-                systemTime: systemTime
+                systemTime: systemTime,
             });
         });    
         
     }
     
+    /**
+     * 
+     * @param {Id} strategyId - id value of reservation strategy template
+     */
+    async changeStrategy(strategyId) {
+        this.setState({isLoading: true});
+        const reservationStrategy = _.find(this.reservationStrategies, {'id': strategyId});
+        let paramsOutput = {};
+        if(reservationStrategy.template.parameters) {
+            //if reservation strategy has parameter then prepare output parameter
+
+        }   else {
+            paramsOutput = _.cloneDeep(reservationStrategy.template);
+            delete paramsOutput["$id"];
+        }
+        this.setState({ 
+                isLoading: false,
+                reservationStrategy: reservationStrategy,
+                paramsOutput: paramsOutput,
+                isDirty: true});
+        this.initReservation();
+    }
+
     /**
      * Function to set form values to the Reservation object
      * @param {string} key 
@@ -118,15 +146,13 @@ export class ReservationCreate extends Component {
             this.setState({reservation: reservation, validForm: this.validateForm(key), validEditor: this.validateEditor(), touched: { 
                 ...this.state.touched,
                 [key]: true
-            }, isDirty: true},() => publish('edit-dirty', true));
+            }, isDirty: true});
         }   else {
             this.setState({reservation: reservation, validForm: this.validateForm(key), validEditor: this.validateEditor(),touched: { 
                 ...this.state.touched,
                 [key]: true
             }});
         }
-
-        
     }
 
      /**
@@ -153,7 +179,7 @@ export class ReservationCreate extends Component {
                 break;
             }
         }
-        this.setState({reservation: reservation, validForm: this.validateForm(key), isDirty: true},() => publish('edit-dirty', true));
+        this.setState({reservation: reservation, validForm: this.validateForm(key), isDirty: true});
     }
      
     /**
@@ -203,11 +229,11 @@ export class ReservationCreate extends Component {
         if (!this.validateDates(this.state.reservation.start_time, this.state.reservation.stop_time)) {
             validForm = false;
             if (!fieldName || fieldName === 'start_time') {
-                errors['start_time'] = "From Date cannot be same or after To Date";
+                errors['start_time'] = "Start Time cannot be same or after End Time";
                 delete errors['stop_time'];
             }
             if (!fieldName || fieldName === 'stop_time') {
-                errors['stop_time'] = "To Date cannot be same or before From Date";
+                errors['stop_time'] = "End Time cannot be same or before Start Time";
                 delete errors['start_time'];
             }
             this.setState({errors: errors});
@@ -235,7 +261,7 @@ export class ReservationCreate extends Component {
             this.setState({ paramsOutput: jsonOutput, 
                 validEditor: errors.length === 0,
                 validForm: this.validateForm(),
-                isDirty: true},() => publish('edit-dirty', true));
+                isDirty: true});
         }   else {
             this.setState({ paramsOutput: jsonOutput, 
                 validEditor: errors.length === 0,
@@ -247,17 +273,15 @@ export class ReservationCreate extends Component {
         let reservation = this.state.reservation;
         let project = this.projects.find(project => project.name === reservation.project);
         reservation['start_time'] = moment(reservation['start_time']).format(UIConstants.CALENDAR_DATETIME_FORMAT);
-        reservation['stop_time'] = reservation['stop_time']?moment(reservation['stop_time']).format(UIConstants.CALENDAR_DATETIME_FORMAT):reservation['stop_time'];
+        reservation['stop_time'] = reservation['stop_time']?moment(reservation['stop_time']).format(UIConstants.CALENDAR_DATETIME_FORMAT):null;
         reservation['project']=  project ? project.url: null;
         reservation['specifications_template']= this.reservationTemplates[0].url;
         reservation['specifications_doc']= this.paramsOutput;
         reservation = await ReservationService.saveReservation(reservation); 
         if (reservation && reservation.id){
             const dialog = {header: 'Success', detail: 'Reservation is created successfully. Do you want to create another Reservation?'};
-            this.setState({ dialogVisible: true, dialog: dialog,  paramsOutput: {}, showDialog: false, isDirty: false},() => publish('edit-dirty', false))
-        }/*  else {
-            this.growl.show({severity: 'error', summary: 'Error Occured', detail: 'Unable to save Reservation', showDialog: false, isDirty: false});
-        }*/
+            this.setState({ dialogVisible: true, dialog: dialog,  paramsOutput: {}, showDialog: false, isDirty: false})
+        }
     }
 
     /**
@@ -276,6 +300,9 @@ export class ReservationCreate extends Component {
             dialog: { header: '', detail: ''},      
             errors: [],
             reservation: tmpReservation,
+            reservationStrategy: {
+                id: null,
+            },
             paramsSchema: null, 
             paramsOutput: null,
             validEditor: false,
@@ -310,6 +337,14 @@ export class ReservationCreate extends Component {
         this.setState({showDialog: false});
     }
 
+    /**
+     * JEditor's function that to be called when parent wants to trigger change in the JSON Editor
+     * @param {Function} editorFunction 
+     */
+    setEditorFunction(editorFunction) {
+        this.setState({editorFunction: editorFunction});
+    }
+    
     render() {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -318,6 +353,10 @@ export class ReservationCreate extends Component {
         
         let jeditor = null;
         if (schema) {
+            if (this.state.reservation.specifications_doc) {
+                delete this.state.reservation.specifications_doc.$id;
+                delete this.state.reservation.specifications_doc.$schema;
+            }
 		   jeditor = React.createElement(Jeditor, {title: "Reservation Parameters", 
                                                         schema: schema,
                                                         initValue: this.state.paramsOutput, 
@@ -365,7 +404,7 @@ export class ReservationCreate extends Component {
                                 </div>
                             </div>
                             <div className="p-field p-grid">
-                                    <label className="col-lg-2 col-md-2 col-sm-12">From Date <span style={{color:'red'}}>*</span></label>
+                                    <label className="col-lg-2 col-md-2 col-sm-12">Start Time <span style={{color:'red'}}>*</span></label>
                                     <div className="col-lg-3 col-md-3 col-sm-12">
                                         <Flatpickr data-enable-time data-input options={{
                                                     "inlineHideInput": true,
@@ -393,7 +432,7 @@ export class ReservationCreate extends Component {
                                     </div>
                                     <div className="col-lg-1 col-md-1 col-sm-12"></div>
                              
-                                    <label className="col-lg-2 col-md-2 col-sm-12">To Date</label>
+                                    <label className="col-lg-2 col-md-2 col-sm-12">End Time</label>
                                     <div className="col-lg-3 col-md-3 col-sm-12">
                                         <Flatpickr data-enable-time data-input options={{
                                                     "inlineHideInput": true,
@@ -435,6 +474,19 @@ export class ReservationCreate extends Component {
                                             {(this.state.errors.project && this.state.touched.project) ? this.state.errors.project : "Select Project"}
                                         </label>
                                     </div>
+                                    <div className="col-lg-1 col-md-1 col-sm-12"></div>
+                                    <label htmlFor="strategy" className="col-lg-2 col-md-2 col-sm-12">Reservation Strategy</label>
+                                    <div className="col-lg-3 col-md-3 col-sm-12" data-testid="strategy" >
+                                        <Dropdown inputId="strategy" optionLabel="name" optionValue="id" 
+                                                tooltip="Choose Reservation Strategy Template to set default values for create Reservation" tooltipOptions={this.tooltipOptions}
+                                                value={this.state.reservationStrategy.id} 
+                                                options={this.reservationStrategies} 
+                                                onChange={(e) => {this.changeStrategy(e.value)}} 
+                                                placeholder="Select Strategy" />
+                                        <label className={(this.state.errors.reservationStrategy && this.state.touched.reservationStrategy) ?"error":"info"}>
+                                            {(this.state.errors.reservationStrategy && this.state.touched.reservationStrategy) ? this.state.errors.reservationStrategy : "Select Reservation Strategy Template"}
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <div className="p-grid">
@@ -462,7 +514,7 @@ export class ReservationCreate extends Component {
                     <Dialog header={this.state.dialog.header} visible={this.state.dialogVisible} style={{width: '25vw'}} inputId="confirm_dialog"
                             modal={true}  onHide={() => {this.setState({dialogVisible: false})}} 
                             footer={<div>
-                                <Button key="back" onClick={() => {this.setState({dialogVisible: false, redirect: `/su/timelineview/reservation/reservation/list`});}} label="No" />
+                                <Button key="back" onClick={() => {this.setState({dialogVisible: false, redirect: `/reservation/list`});}} label="No" />
                                 <Button key="submit" type="primary" onClick={this.reset} label="Yes" />
                                 </div>
                             } >

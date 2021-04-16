@@ -34,30 +34,11 @@ export default class CustomDateComp extends Component {
   }
   
   isCancelAfterEnd(){
-    let date = (this.state.date !== '' && this.state.date !== 'undefined')? moment(this.state.date).format(UIConstants.CALENDAR_DATETIME_FORMAT) :'';
+    let date = (this.state.date !== '' && this.state.date !== undefined)? moment(this.state.date).format(UIConstants.CALENDAR_DATETIME_FORMAT) :'';
     this.props.context.componentParent.updateTime(
       this.props.node.rowIndex,this.props.colDef.field, date
     );
   }
-
-  render() {
-    return this.state.systemTime?(
-        <Flatpickr
-            data-enable-time 
-            options={{
-                    "inline": true,
-                    "enableSeconds": true,
-                    "time_24hr": true,
-                    "defaultDate": this.state.systemTime?this.state.systemTime.format(UIConstants.CALENDAR_DEFAULTDATE_FORMAT):"",
-                    "defaultHour": this.state.systemTime?this.state.systemTime.hours():12,
-                    "defaultMinute": this.state.systemTime?this.state.systemTime.minutes():0
-                    }}
-            value={this.state.date}
-            onChange= {value => {this.updateDateChanges(value[0]?value[0]:this.state.date)}}
-        />
-    ):"";
-  }
-
 
   updateDateChanges(e){  
     this.setState({date : e || ''});  
@@ -91,4 +72,29 @@ export default class CustomDateComp extends Component {
       this.props.node.rowIndex,this.props.colDef.field,selectedDates[0]
     );
   };
+
+  render() {
+    return this.state.systemTime?(
+      <>
+        <button class="p-button p-component p-button-icon-only" onClick={() => {this.updateDateChanges(null)}} 
+                title="Clear" style={{left: '190px'}}>
+                <i class="fas fa-times"></i>
+        </button>
+        <Flatpickr
+            data-enable-time 
+            options={{
+                    "inline": true,
+                    "enableSeconds": true,
+                    "time_24hr": true,
+                    "defaultDate": this.state.systemTime?this.state.systemTime.format(UIConstants.CALENDAR_DEFAULTDATE_FORMAT):"",
+                    "defaultHour": this.state.systemTime?this.state.systemTime.hours():12,
+                    "defaultMinute": this.state.systemTime?this.state.systemTime.minutes():0
+                    }}
+            value={this.state.date?this.state.date:''}
+            onChange= {value => {this.updateDateChanges(value[0]?value[0]:this.state.date)}}
+        />
+      </>
+    ):"";
+  }
+  
 }

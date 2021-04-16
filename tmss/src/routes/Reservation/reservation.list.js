@@ -1,15 +1,21 @@
 import React, { Component } from 'react';
-import ReservationService from '../../services/reservation.service'; 
+import _ from 'lodash';
+import moment from 'moment';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { MultiSelect } from 'primereact/multiselect';
+import { Calendar } from 'primereact/calendar';
+
+import { CustomDialog } from '../../layout/components/CustomDialog';
+import { appGrowl } from '../../layout/components/AppGrowl';
 import AppLoader from "../../layout/components/AppLoader";
 import ViewTable from '../../components/ViewTable';
 import PageHeader from '../../layout/components/PageHeader';
-import CycleService from '../../services/cycle.service';
-import _ from 'lodash';
-import moment from 'moment';
-import { MultiSelect } from 'primereact/multiselect';
-import { Calendar } from 'primereact/calendar';
+
 import UnitService from '../../utils/unit.converter';
 import UIConstants from '../../utils/ui.constants';
+import ReservationService from '../../services/reservation.service'; 
+import CycleService from '../../services/cycle.service';
 
 export class ReservationList extends Component{
     constructor(props){
@@ -22,6 +28,7 @@ export class ReservationList extends Component{
             filteredRowsList: [],
             cycle: [],
             errors: {},
+            dialog: {},
             defaultcolumns: [{
                 name:"System Id",
                 description:"Description",
@@ -74,6 +81,7 @@ export class ReservationList extends Component{
                 expert: "Expert",
                 hba_rfi: "HBA-RFI",
                 lba_rfi: "LBA-RFI",
+                actionpath: "actionpath"
             }],
             optionalcolumns:  [{ 
             }],
@@ -95,12 +103,20 @@ export class ReservationList extends Component{
             isLoading: true,
             cycleList: [],
         }
+
         this.formRules = {
            // fStartTime: {required: true, message: "Start Date can not be empty"},
            // fEndTime: {required: true, message: "Stop Date can not be empty"} 
         };
         this.reservations= [];
         this.cycleList= [];
+        this.selectedRows = [];
+        
+        this.onRowSelection = this.onRowSelection.bind(this);
+        this.confirmDeleteReservations = this.confirmDeleteReservations.bind(this);
+        this.deleteReservations = this.deleteReservations.bind(this);
+        this.closeDialog = this.closeDialog.bind(this);
+        this.getReservationDialogContent = this.getReservationDialogContent.bind(this);
     }
     
     async componentDidMount() {
@@ -131,6 +147,8 @@ export class ReservationList extends Component{
                     reservation['stop_time']= moment(reservation['stop_time']).format(UIConstants.CALENDAR_DATETIME_FORMAT);
                 }
                 reservation['start_time']= moment(reservation['start_time']).format(UIConstants.CALENDAR_DATETIME_FORMAT);
+                reservation['actionpath'] = `/reservation/view/${reservation.id}`;
+                reservation['canSelect'] = true;
                 this.reservations.push(reservation);
             };
             this.cycleList.map(cycle => {
@@ -149,7 +167,7 @@ export class ReservationList extends Component{
     mergeResourceWithReservation ( reservation, params) {
         if( params ){
             Object.keys(params).map((key, i) => (
-                key !== 'description'? reservation[key]= params[key] : ''      
+                ['name', 'description'].indexOf(key)<0? reservation[key]= params[key] : ''      
               ));
         }
         return reservation;
@@ -301,11 +319,82 @@ export class ReservationList extends Component{
         return validForm;
     }
     
+    /**
+     * Set selected rows form view table
+     * @param {Row} selectedRows - rows selected in view table
+     */
+    onRowSelection(selectedRows) {
+        this.selectedRows = selectedRows;
+    }
+
+    /**
+     * Callback function to close the dialog prompted.
+     */
+     closeDialog() {
+        this.setState({dialogVisible: false});
+    }
+
+    /**
+     * Create confirmation dialog details
+     */
+    confirmDeleteReservations() {
+        if(this.selectedRows.length === 0) {
+            appGrowl.show({severity: 'info', summary: 'Select Row', detail: 'Select Reservation to delete.'});
+        }   else {
+            let dialog = {};
+            dialog.type = "confirmation";
+            dialog.header= "Confirm to Delete Reservation(s)";
+            dialog.detail = "Do you want to delete the selected Reservation(s)?";
+            dialog.content = this.getReservationDialogContent;
+            dialog.actions = [{id: 'yes', title: 'Yes', callback: this.deleteReservations},
+            {id: 'no', title: 'No', callback: this.closeDialog}];
+            dialog.onSubmit = this.deleteReservations;
+            dialog.width = '55vw';
+            dialog.showIcon = false;
+            this.setState({dialog: dialog, dialogVisible: true});
+        }
+    }
+
+     /**
+     * Prepare Reservation(s) details to show on confirmation dialog
+     */
+      getReservationDialogContent() {
+        return  <>  
+                <DataTable value={this.selectedRows} resizableColumns columnResizeMode="expand" className="card" style={{paddingLeft: '0em'}}>
+                        <Column field="id" header="Reservation Id"></Column>
+                        <Column field="name" header="Name"></Column>
+                        <Column field="start_time" header="Start time"></Column>
+                        <Column field="stop_time" header="End Time"></Column>
+                </DataTable>
+        </>
+    }
+
+    /**
+     * Delete selected Reservation(s)
+     */
+     async deleteReservations() {
+        let hasError = false;
+        for(const reservation of this.selectedRows) {
+            if(!await  ReservationService.deleteReservation(reservation.id)) {
+                hasError = true;
+            }
+        }
+        if(hasError){
+            appGrowl.show({severity: 'error', summary: 'error', detail: 'Error while deleting Reservation(s)'});
+            this.setState({dialogVisible: false});
+        }   else {
+            this.selectedRows = [];
+            this.setState({dialogVisible: false});
+            this.componentDidMount();
+            appGrowl.show({severity: 'success', summary: 'Success', detail: 'Reservation(s) deleted successfully'});
+        }
+    }
+
     render() {
         return ( 
             <React.Fragment>
                 <PageHeader location={this.props.location} title={'Reservation - List'} 
-                           actions={[{icon: 'fa-plus-square', title:'Add Reservation', props : { pathname: `/su/timelineview/reservation/create`}},
+                           actions={[{icon: 'fa-plus-square', title:'Add Reservation', props : { pathname: `/reservation/create`}},
                                      {icon: 'fa-window-close', title:'Click to close Reservation list', props : { pathname: `/su/timelineview`}}]}/>     
                  {this.state.isLoading? <AppLoader /> : (this.state.reservationsList && this.state.reservationsList.length>0) ?
                  <>
@@ -371,23 +460,36 @@ export class ReservationList extends Component{
                         </div>
 
                     </div>
-                     
+                    <div className="delete-option">
+                        <div >
+                            <span className="p-float-label">
+                                <a href="#" onClick={this.confirmDeleteReservations}  title="Delete selected Reservation(s)">
+                                    <i class="fa fa-trash" aria-hidden="true" ></i>
+                                </a>
+                            </span>
+                        </div>                           
+                    </div>
                     <ViewTable 
                         data={this.state.filteredRowsList} 
                         defaultcolumns={this.state.defaultcolumns} 
                         optionalcolumns={this.state.optionalcolumns}
                         columnclassname={this.state.columnclassname}
                         defaultSortColumn={this.state.defaultSortColumn}
-                        showaction="false"
+                        showaction="true"
                         paths={this.state.paths}
-                        keyaccessor="name"
-                        unittest={this.state.unittest}
                         tablename="reservation_list"
                         showCSV= {true}
+                        allowRowSelection={true}
+                        onRowSelection = {this.onRowSelection}
                     />
                 </>
                 : <div>No Reservation found </div>
                 }
+
+                <CustomDialog type="confirmation" visible={this.state.dialogVisible}
+                    header={this.state.dialog.header} message={this.state.dialog.detail} actions={this.state.dialog.actions}
+                    content={this.state.dialog.content} width={this.state.dialog.width} showIcon={this.state.dialog.showIcon}
+                    onClose={this.closeDialog} onCancel={this.closeDialog} onSubmit={this.state.dialog.onSubmit}/>
             </React.Fragment>
         );
     }

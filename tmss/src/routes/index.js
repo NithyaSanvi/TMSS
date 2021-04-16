@@ -14,7 +14,8 @@ import ViewSchedulingUnit from './Scheduling/ViewSchedulingUnit'
 import SchedulingUnitCreate from './Scheduling/create';
 import EditSchedulingUnit from './Scheduling/edit';
 import { CycleList, CycleCreate, CycleView, CycleEdit } from './Cycle';
-import { TimelineView, WeekTimelineView, ReservationCreate, ReservationList } from './Timeline';
+import { TimelineView, WeekTimelineView} from './Timeline';
+import { ReservationCreate, ReservationList, ReservationView, ReservationEdit } from './Reservation';
 import { FindObjectResult } from './Search/'
 import SchedulingSetCreate from './Scheduling/excelview.schedulingset';
 import Workflow from './Workflow';
@@ -53,8 +54,8 @@ export const routes = [
     },{
         path: "/task/view/:type/:id",
         component: TaskView,
-        name: 'Task Details',
-        title: 'Task Details'
+        name: 'Task View',
+        title: 'Task - View'
     },{
         path: "/task/edit",
         component: TaskEdit,
@@ -156,16 +157,28 @@ export const routes = [
        title: 'QA Reporting (TO)'
     },
     {
-        path: "/su/timelineview/reservation/reservation/list",
+        path: "/reservation/list",
         component: ReservationList,
         name: 'Reservation List',
         title:'Reservation List'
     },
     {
-        path: "/su/timelineview/reservation/create",
+        path: "/reservation/create",
         component: ReservationCreate,
         name: 'Reservation Add',
         title: 'Reservation - Add'
+    },
+    {
+        path: "/reservation/view/:id",
+        component: ReservationView,
+        name: 'Reservation View',
+        title: 'Reservation - View'
+    },
+    {
+        path: "/reservation/edit/:id",
+        component: ReservationEdit,
+        name: 'Reservation Edit',
+        title: 'Reservation - Edit'
     },
     {
         path: "/find/object/:type/:id",

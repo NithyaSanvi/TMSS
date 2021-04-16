@@ -150,6 +150,14 @@ function Jeditor(props) {
                         message: 'Not a valid input for Subband List'
                     });
                 }
+            }   else if (schema.validationType === "subband_list_optional") {
+                if (value && !subbandValidator(value)) {
+                    errors.push({
+                        path: path,
+                        property: 'validationType',
+                        message: 'Not a valid input for Subband List'
+                    });
+                }
             }   else if (schema.validationType === "time") {
                 if (!timeValidator(value)) {
                     errors.push({
@@ -288,14 +296,15 @@ function Jeditor(props) {
     function getCustomProperties(properties) {
         for (const propertyKey in properties) {
             const propertyValue = properties[propertyKey];
-            if (propertyKey === 'subbands') {
+            if ((propertyKey === 'subbands' && propertyValue.type=== 'array') ||
+                    propertyKey === 'list' && propertyValue.type=== 'array') {
                 let newProperty = {};
                 newProperty.additionalItems = false;
                 newProperty.title = propertyValue.title;
                 newProperty.type = 'string';
                 newProperty.default = '';
                 newProperty.description = "For Range enter Start and End seperated by 2 dots. Mulitple ranges can be separated by comma. Minimum should be 0 and maximum should be 511. For exmaple 11..20, 30..50";
-                newProperty.validationType = 'subband_list';
+                newProperty.validationType = propertyKey === 'subbands'?'subband_list':'subband_list_optional';
                 properties[propertyKey] = newProperty;
             }   else if (propertyKey.toLowerCase() === 'duration') {
                 let newProperty = {
@@ -367,7 +376,8 @@ function Jeditor(props) {
                 if (_.indexOf(pointingProps, inputKey) >= 0) {
                     inputValue.angle1 = UnitConverter.getAngleInput(inputValue.angle1);
                     inputValue.angle2 = UnitConverter.getAngleInput(inputValue.angle2, true);
-                }  else if (inputKey === 'subbands') {
+                }  else if ((inputKey === 'subbands' && inputValue instanceof Array) ||
+                            (inputKey === 'list' && inputValue instanceof Array)) {
                     editorInput[inputKey] = getSubbandInput(inputValue);
                 }  else {
                     updateInput(inputValue);
@@ -393,7 +403,8 @@ function Jeditor(props) {
                 } else {
                     updateOutput(outputValue);
                 }
-            } else if (outputKey === 'subbands') {
+            } else if ((outputKey === 'subbands' && typeof(outputValue) === 'string') ||
+                        (outputKey === 'list' && typeof(outputValue) === 'string')) {
                 editorOutput[outputKey] = getSubbandOutput(outputValue);
             } else if (outputKey.toLowerCase() === 'duration') {
                 const splitOutput = outputValue.split(':');
@@ -481,7 +492,7 @@ function Jeditor(props) {
      * @param {String} prpOutput 
      */
     function getSubbandOutput(prpOutput) {
-        const subbandArray = prpOutput.split(",");
+        const subbandArray = prpOutput?prpOutput.split(","):[];
         let subbandList = [];
         for (const subband of subbandArray ) {
             const subbandRange = subband.split('..');

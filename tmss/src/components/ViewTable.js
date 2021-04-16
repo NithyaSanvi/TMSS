@@ -86,11 +86,16 @@ Generate and download csv
 */
 function getExportFileBlob({ columns, data, fileType, fileName }) {
   if (fileType === "csv") {
-    // CSV example
+    // CSV download
     const headerNames = columns.map((col) => col.exportValue);
+    // remove actionpath column in csv export
+    var index = headerNames.indexOf('actionpath');
+    if (index > -1) {
+      headerNames.splice(index, 1);
+    }
     const csvString = Papa.unparse({ fields: headerNames, data });
     return new Blob([csvString], { type: "text/csv" });
-  } //PDF example
+  } //PDF download
   else if (fileType === "pdf") {
     const headerNames = columns.map((column) => column.exportValue);
     const doc = new JsPDF();
@@ -801,7 +806,7 @@ function Table({ columns, data, defaultheader, optionalheader, tablename, defaul
 
         </div>
         {showCSV &&
-          <div className="total_records_top_label" style={{ marginTop: '20px' }} >
+          <div className="total_records_top_label" style={{ marginTop: '3px', marginRight: '5px' }} >
             <a href="#" onClick={() => { exportData("csv", false); }} title="Download CSV" style={{ verticalAlign: 'middle' }}>
               <i class="fas fa-file-csv" style={{ color: 'green', fontSize: '20px' }} ></i>
             </a>
@@ -958,7 +963,7 @@ function ViewTable(props) {
       },
       disableFilters: true,
       disableSortBy: true,
-      isVisible: defaultdataheader.includes(props.keyaccessor),
+      isVisible: true,
     });
   }
 

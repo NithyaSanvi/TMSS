@@ -253,7 +253,7 @@ export class TaskView extends Component {
                         }
                     </div>
                     </div> */}
-                <PageHeader location={this.props.location} title={'Task - View'} 
+                <PageHeader location={this.props.location} title={'Task - Details'} 
                             actions={actions}/>
                 { this.state.isLoading? <AppLoader /> : this.state.task &&
                     <React.Fragment>

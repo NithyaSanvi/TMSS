@@ -474,10 +474,13 @@ const ScheduleService = {
                 // Create task drafts with updated requirement_doc
                 schedulingUnit = await this.createSUTaskDrafts(schedulingUnit);
                 if (schedulingUnit && schedulingUnit.task_drafts.length > 0) {
+                    schedulingUnit['isSUUpdated'] = true;
+                    schedulingUnit['taskName'] = '(Tasks)';
                     return schedulingUnit;
                 }
             }
             return {
+                taskName: '(Tasks)',
                 error: true,
                 message: 'Unable to Create Task Drafts'
             };
@@ -491,6 +494,7 @@ const ScheduleService = {
     },
     
     updateSUDraftFromObservStrategy: async function(observStrategy,schedulingUnit,tasks,tasksToUpdate,station_groups) {
+        let taskName = '';
         try {
             delete schedulingUnit['duration'];
             schedulingUnit['isSUUpdated'] = false;
@@ -499,25 +503,37 @@ const ScheduleService = {
                 schedulingUnit['isSUUpdated'] = true;
                 for (const taskToUpdate in tasksToUpdate) {
                     let task = tasks.find(task => { return task.name === taskToUpdate});
-                    task.specifications_doc = observStrategy.template.tasks[taskToUpdate].specifications_doc;
-                    if (task.specifications_doc.station_groups) {
-                        task.specifications_doc.station_groups = station_groups;
-                    }
-                    delete task['duration'];
-                    delete task['relative_start_time'];
-                    delete task['relative_stop_time'];
-                    task = await TaskService.updateTask('draft', task);
-                    if (task.error) {
-                        schedulingUnit = task;
+                    taskName = taskToUpdate;
+                    if(task) {
+                        task.specifications_doc = observStrategy.template.tasks[taskToUpdate].specifications_doc;
+                        if (task.specifications_doc.station_groups) {
+                            task.specifications_doc.station_groups = station_groups;
+                        }
+                        delete task['duration'];
+                        delete task['relative_start_time'];
+                        delete task['relative_stop_time'];
+                        task = await TaskService.updateTask('draft', task);
+                        if (task.error) {
+                            schedulingUnit = task;
+                        }
+                    }   else {
+                        return {
+                            taskName: taskName,
+                            error: true,
+                            message: 'Unable to Update Task Drafts'
+                        }
                     }
                 }
-                
+            }   else {
+                schedulingUnit['isSUUpdated'] = false;
             }
+            schedulingUnit['taskName'] = taskName;
             return schedulingUnit;
         }   catch(error) {
             console.error(error);
             schedulingUnit['isSUUpdated'] = false;
             return {
+                taskName: taskName,
                 error: true,
                 message: 'Unable to Update Task Drafts'
             }
@@ -539,7 +555,8 @@ const ScheduleService = {
             return suCreateTaskResponse.data;
         }   catch(error) {
             console.error(error);
-            return null;
+            schedulingUnit['isSUUpdated'] = false;
+            return schedulingUnit;
         }
     },
     getSchedulingListByProject: async function(project){
@@ -595,6 +612,7 @@ const ScheduleService = {
             return response.data;
           } catch(error) {
               console.error(error);
+              console.log(error.response);
           }
       },
       getStationGroup: async function() {

@@ -69,6 +69,35 @@
     // width: auto !important;
 }
 
+.timeline-filters .p-calendar .p-inputtext {
+    font-size: 12px;
+}
+
+.calendar-input {
+    width: 75% !important;
+    border-top-right-radius: 0px !important;
+    border-bottom-right-radius: 0px !important;
+    font-size:12px !important;
+    height: 29px;
+}
+
+.calendar-button {
+    position: relative;
+    width: 20px !important;
+    height: 29px;
+    margin-left: -2px !important;
+    border-radius: 0px !important;
+}
+
+.calendar-reset {
+    position: relative;
+    width: 20px !important;
+    height: 29px;
+    margin-left: 0px !important;
+    border-top-left-radius: 0px !important;
+    border-bottom-left-radius: 0px !important;
+}
+
 .timeline-week-span {
     margin-left: 5px;
     margin-right: 5px;
@@ -149,6 +178,22 @@
     color: orange;
 }
 
+.su-visible {
+    margin-top: 30px;
+    // margin-left: -59px !important;
+}
+
+.su-hidden {
+    margin-left: -20px !important;
+    z-index: 0 !important;
+    margin-top:40px;
+}
+
+.su-hidden>button {
+    width: 80px;
+    transform: translateX(-50%) translateY(-50%) rotate(-90deg);
+    height: 20px;
+}
 .resize-div,
 .resize-div-min,
 .resize-div-avg,
@@ -389,4 +434,12 @@ body .p-multiselect-panel .p-multiselect-header .p-multiselect-filter-container 
     width: 3em;
     height: 1.75em;
   //  top: -3px;
+}
+.toggle-btn {
+    height: 20px;
+    font-size: 12px !important;
+    bottom: 8px !important;
+}
+.toggle-btn>span {
+    padding: 0em 0.25em !important;
 }

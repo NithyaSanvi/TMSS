@@ -64,7 +64,7 @@ export class DataProduct extends Component{
             for(const id of subTaskIds){
               let storageLocation = '';
               await DataProductService.getSubtask(id).then( subtask =>{
-                storageLocation = subtask.data.cluster_value;
+                storageLocation = subtask.data.cluster_name;
               })
               //Fetch data product for Input Subtask and Output Subtask
               await DataProductService.getSubtaskInputDataproduct(id).then(async inputdata =>{

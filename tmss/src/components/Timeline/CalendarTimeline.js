@@ -18,10 +18,11 @@ import { Dropdown } from 'primereact/dropdown';
 import UtilService from '../../services/util.service';
 
 import 'react-calendar-timeline/lib/Timeline.css';
-import { Calendar } from 'primereact/calendar';
+import "flatpickr/dist/flatpickr.css";
 import { Checkbox } from 'primereact/checkbox';
 import { ProgressSpinner } from 'primereact/progressspinner';
-import { CustomPageSpinner } from '../CustomPageSpinner';
+// import { CustomPageSpinner } from '../CustomPageSpinner';
+import Flatpickr from "react-flatpickr";
 import UIConstants from '../../utils/ui.constants';
 
 // Label formats for day headers based on the interval label width
@@ -69,9 +70,11 @@ export class CalendarTimeline extends Component {
           group = group.concat(props.group);
       }
       const defaultZoomLevel = _.find(ZOOM_LEVELS, {name: DEFAULT_ZOOM_LEVEL});
+      const defaultStartTime = props.startTime?props.startTime.clone():null || moment().utc().add(-1 * defaultZoomLevel.value/2, 'seconds');
+      const defaultEndTime = props.endTime?props.endTime.clone():null || moment().utc().add(1 * defaultZoomLevel.value/2, 'seconds');
       this.state = {
-        defaultStartTime: props.startTime?props.startTime.clone():null || moment().utc().add(-1 * defaultZoomLevel.value/2, 'seconds'),
-        defaultEndTime: props.endTime?props.endTime.clone():null || moment().utc().add(1 * defaultZoomLevel.value/2, 'seconds'),
+        defaultStartTime: defaultStartTime,
+        defaultEndTime: defaultEndTime,
         group: group,
         items: props.items || [],
         //>>>>>> Properties to pass to react-calendar-timeline component
@@ -81,7 +84,7 @@ export class CalendarTimeline extends Component {
         maxZoom: props.maxZoom || (32 * 24 * 60 * 60 * 1000),       // 32 hours
         zoomLevel: props.zoomLevel || DEFAULT_ZOOM_LEVEL,
         isTimelineZoom: true,
-        zoomRange: null,
+        zoomRange: this.getZoomRange(defaultStartTime, defaultEndTime),
         prevZoomRange: null,
         lineHeight: props.rowHeight || 50,                          // Row line height
         sidebarWidth: props.sidebarWidth || 200,
@@ -141,6 +144,7 @@ export class CalendarTimeline extends Component {
       this.zoomIn = this.zoomIn.bind(this);
       this.zoomOut = this.zoomOut.bind(this);
       this.setZoomRange = this.setZoomRange.bind(this);
+      this.getZoomRangeTitle = this.getZoomRangeTitle.bind(this);
       //<<<<<< Functions of this component
       
       //>>>>>> Public functions of the component
@@ -193,6 +197,9 @@ export class CalendarTimeline extends Component {
         }
         if (this.state.isLive) {
             this.changeDateRange(this.state.defaultStartTime.add(1, 'second'), this.state.defaultEndTime.add(1, 'second'));
+            if (systemClock) {
+                this.setState({zoomRange: this.getZoomRange(this.state.defaultStartTime, this.state.defaultEndTime)});
+            }
             // const result = this.props.dateRangeCallback(this.state.defaultStartTime.add(1, 'second'), this.state.defaultEndTime.add(1, 'second'));
             // let group = DEFAULT_GROUP.concat(result.group);
         }
@@ -259,7 +266,7 @@ export class CalendarTimeline extends Component {
             monthDuration = `(${startMonth}-${endMonth})`;
         }
         return (<div {...getRootProps()} className="sidebar-header"
-                    style={{width: `${this.state.sidebarWidth}px`}}>
+                    style={{width: `${this.props.sidebarWidth?this.props.sidebarWidth:this.state.sidebarWidth}px`}}>
                     <div className="sidebar-header-row">{this.state.viewType===UIConstants.timeline.types.NORMAL?
                                     (this.state.dayHeaderVisible?`Day${monthDuration}`:`Week${monthDuration}`)
                                     :`Week (${this.state.timelineStartDate.week()}) / Day`}</div> 
@@ -800,7 +807,8 @@ export class CalendarTimeline extends Component {
         updateScrollCanvas(newVisibleTimeStart.valueOf(), newVisibleTimeEnd.valueOf());
         this.changeDateRange(newVisibleTimeStart, newVisibleTimeEnd);
         // this.setState({defaultStartTime: moment(visibleTimeStart), defaultEndTime: moment(visibleTimeEnd)})
-        this.setState({defaultStartTime: newVisibleTimeStart, defaultEndTime: newVisibleTimeEnd});
+        this.setState({defaultStartTime: newVisibleTimeStart, defaultEndTime: newVisibleTimeEnd,
+                        zoomRange: this.getZoomRange(newVisibleTimeStart, newVisibleTimeEnd)});
     }
 
     /**
@@ -1066,7 +1074,8 @@ export class CalendarTimeline extends Component {
             const endTime = moment().utc().add(24, 'hours');
             let result = await this.changeDateRange(startTime, endTime);
             let group = DEFAULT_GROUP.concat(result.group);
-            this.setState({defaultStartTime: startTime, defaultEndTime: endTime, 
+            this.setState({defaultStartTime: startTime, defaultEndTime: endTime,
+                            zoomRange: this.getZoomRange(startTime, endTime), 
                             zoomLevel: DEFAULT_ZOOM_LEVEL, dayHeaderVisible: true, 
                             weekHeaderVisible: false, lstDateHeaderUnit: "hour",
                             group: group, items: result.items});
@@ -1122,7 +1131,8 @@ export class CalendarTimeline extends Component {
             let result = await this.changeDateRange(startTime, endTime);
             let group = DEFAULT_GROUP.concat(result.group);
             this.setState({zoomLevel: zoomLevel, defaultStartTime: startTime, defaultEndTime: endTime, 
-                            isTimelineZoom: true, zoomRange: null, 
+                            isTimelineZoom: true, 
+                            zoomRange: this.getZoomRange(startTime, endTime), 
                             dayHeaderVisible: true, weekHeaderVisible: false, lstDateHeaderUnit: 'hour',
                             group: group, items: result.items});
         }
@@ -1148,6 +1158,7 @@ export class CalendarTimeline extends Component {
         let group = DEFAULT_GROUP.concat(result.group);
         this.setState({defaultStartTime: newVisibleTimeStart,
                         defaultEndTime: newVisibleTimeEnd,
+                        zoomRange: this.getZoomRange(newVisibleTimeStart, newVisibleTimeEnd), 
                         group: group, items: result.items});
     }
 
@@ -1171,6 +1182,7 @@ export class CalendarTimeline extends Component {
         let group = DEFAULT_GROUP.concat(result.group);
         this.setState({defaultStartTime: newVisibleTimeStart,
                         defaultEndTime: newVisibleTimeEnd,
+                        zoomRange: this.getZoomRange(newVisibleTimeStart, newVisibleTimeEnd), 
                         group: group, items: result.items});
     }
 
@@ -1206,11 +1218,11 @@ export class CalendarTimeline extends Component {
      */
     async setZoomRange(value){
         let startDate, endDate = null;
-        if (value) {
+        if (value && value.length>0) {
             // Set all values only when both range values available in the array else just set the value to reflect in the date selection component
-            if (value[1]!==null) {
-                startDate = moment.utc(moment(value[0]).format("YYYY-MM-DD"));
-                endDate = moment.utc(moment(value[1]).format("YYYY-MM-DD 23:59:59"));
+            if (value[1]) {
+                startDate = moment.utc(moment(value[0]).format("YYYY-MM-DD HH:mm:ss"));
+                endDate = moment.utc(moment(value[1]).format("YYYY-MM-DD HH:mm:ss"));
                 let dayHeaderVisible = this.state.dayHeaderVisible;
                 let weekHeaderVisible = this.state.weekHeaderVisible;
                 let lstDateHeaderUnit = this.state.lstDateHeaderUnit;
@@ -1231,12 +1243,49 @@ export class CalendarTimeline extends Component {
             }   else {
                 this.setState({zoomRange: value});
             }
+        }   else if (value && value.length===0) {
+            this.setState({zoomRange: this.getZoomRange(this.state.defaultStartTime, this.state.defaultEndTime)});
         }   else {
             this.resetToCurrentTime();
         }
     }
 
-  async changeWeek(direction) {
+    /**
+     * Function to set previous selected or zoomed range if only one date is selected and 
+     * closed the caldendar without selecting second date.
+     * @param {Array} value - array of Date object.
+     */
+    validateRange(value) {
+        if (value && value.length===1) {
+            this.setState({zoomRange: this.getZoomRange(this.state.defaultStartTime, this.state.defaultEndTime)});
+        }
+    }
+
+    /**
+     * Function to convert moment objects of the zoom range start and end time to Date object array.
+     * @param {moment} startTime 
+     * @param {moment} endTime 
+     * @returns Array of Date object
+     */
+    getZoomRange(startTime, endTime) {
+        return [moment(startTime.format(UIConstants.CALENDAR_DATETIME_FORMAT)).toDate(),
+            moment(endTime.format(UIConstants.CALENDAR_DATETIME_FORMAT)).toDate()];
+    }
+
+    /**
+     * Function to get the formatted string of zoom range times.
+     * @returns String - formatted string with start time and end time in the zoom range
+     */
+    getZoomRangeTitle() {
+        const zoomRange = this.state.zoomRange;
+        if (zoomRange && zoomRange.length === 2) {
+            return `${moment(zoomRange[0]).format(UIConstants.CALENDAR_DATETIME_FORMAT)} to ${moment(zoomRange[1]).format(UIConstants.CALENDAR_DATETIME_FORMAT)}`;
+        }   else {
+            return 'Select Date Range'
+        }
+    }
+
+    async changeWeek(direction) {
         this.setState({isWeekLoading: true});
         let startDate = this.state.group[1].value.clone().add(direction * 7, 'days');
         let endDate = this.state.group[this.state.group.length-1].value.clone().add(direction * 7, 'days').hours(23).minutes(59).seconds(59);
@@ -1314,13 +1363,32 @@ export class CalendarTimeline extends Component {
                     <div className="p-col-4 timeline-filters">
                         {this.state.allowDateSelection &&
                         <>
-                        {/* <span className="p-float-label"> */}
-                        <Calendar id="range" placeholder="Select Date Range" selectionMode="range" dateFormat="yy-mm-dd" showIcon={!this.state.zoomRange}
-                                value={this.state.zoomRange} onChange={(e) => this.setZoomRange( e.value )} readOnlyInput />
-                        {/* <label htmlFor="range">Select Date Range</label>
-                        </span> */}
-                        {this.state.zoomRange && <i className="pi pi-times pi-primary" style={{position: 'relative', left:'90%', bottom:'20px', cursor:'pointer'}} 
-                                                    onClick={() => {this.setZoomRange( null)}}></i>}
+                        <Flatpickr data-enable-time 
+                                    data-input options={{
+                                                    "inlineHideInput": true,
+                                                    "wrap": true,
+                                                    "enableSeconds": true,
+                                                    "time_24hr": true,
+                                                    "minuteIncrement": 1,
+                                                    "allowInput": true,
+                                                    "mode": "range",
+                                                    "defaultHour": 0
+                                                    }}
+                                    title=""
+                                    value={this.state.zoomRange}
+                                    onChange={value => {this.setZoomRange(value)}} 
+                                    onClose={value => {this.validateRange(value)}}>
+                            <input type="text" data-input className={`p-inputtext p-component calendar-input`} title={this.getZoomRangeTitle()} />
+                            <button class="p-button p-component p-button-icon-only calendar-button" data-toggle
+                                    title="Reset to the default date range" >
+                                    <i class="fas fa-calendar"></i>
+                            </button>
+                            <button class="p-button p-component p-button-icon-only calendar-reset" onClick={() => {this.setZoomRange( null)}} 
+                                    title="Reset to the default date range" >
+                                    <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </Flatpickr>
+                        <span>Showing Date Range</span>
                         </>}
                         {this.state.viewType===UIConstants.timeline.types.WEEKVIEW &&
                             <>
@@ -1398,7 +1466,7 @@ export class CalendarTimeline extends Component {
                     minZoom={this.state.minZoom}
                     maxZoom={this.state.maxZoom}
                     lineHeight={this.props.rowHeight || 50} itemHeightRatio={0.95}
-                    sidebarWidth={this.state.sidebarWidth}
+                    sidebarWidth={this.props.sidebarWidth?this.props.sidebarWidth:this.state.sidebarWidth}
                     timeSteps={this.state.timeSteps}
                     onZoom={this.onZoom}
                     onBoundsChange={this.onBoundsChange}

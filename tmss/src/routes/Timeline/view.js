@@ -6,7 +6,6 @@ import Websocket from 'react-websocket';
 
 // import SplitPane, { Pane }  from 'react-split-pane';
 import { InputSwitch } from 'primereact/inputswitch';
-import { CustomPageSpinner } from '../../components/CustomPageSpinner';
 
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
@@ -22,12 +21,13 @@ import TaskService from '../../services/task.service';
 import UnitConverter from '../../utils/unit.converter';
 import Validator from '../../utils/validator';
 import SchedulingUnitSummary from '../Scheduling/summary';
-import ReservationSummary from './reservation.summary';
+import ReservationSummary from '../Reservation/reservation.summary';
 import { Dropdown } from 'primereact/dropdown';
 import { OverlayPanel } from 'primereact/overlaypanel';
 import { RadioButton } from 'primereact/radiobutton';
 import { TieredMenu } from 'primereact/tieredmenu';
 import { MultiSelect } from 'primereact/multiselect';
+import { Button } from 'primereact/button';
 //import { TRUE } from 'node-sass';
 
 
@@ -63,6 +63,7 @@ export class TimelineView extends Component {
             isTaskDetsVisible: false,
             canExtendSUList: true,
             canShrinkSUList: false,
+            isSUListVisible: true,
             selectedItem: null,
             mouseOverItem: null,
             suTaskList:[],
@@ -71,7 +72,8 @@ export class TimelineView extends Component {
             selectedStationGroup: [], //Station Group(core,international,remote)
             reservationFilter: null,
             showSUs: true,
-            showTasks: false
+            showTasks: false,
+            groupByProject: false
         }
         this.STATUS_BEFORE_SCHEDULED = ['defining', 'defined', 'schedulable'];  // Statuses before scheduled to get station_group
         this.allStationsGroup = [];
@@ -147,7 +149,8 @@ export class TimelineView extends Component {
                                  moment.utc(suBlueprint.stop_time).isSameOrAfter(defaultEndTime)))) {
                             items.push(this.getTimelineItem(suBlueprint));
                             if (!_.find(group, {'id': suDraft.id})) {
-                                group.push({'id': suDraft.id, title: suDraft.name});
+                                group.push({'id': this.state.groupByProject?suBlueprint.project:suDraft.id, 
+                                            title: this.state.groupByProject?suBlueprint.project:suDraft.name});
                             }
                             suList.push(suBlueprint);
                         }
@@ -213,7 +216,7 @@ export class TimelineView extends Component {
             }
         }
         let item = { id: suBlueprint.id, 
-            group: suBlueprint.suDraft.id,
+            group: this.state.groupByProject?suBlueprint.project:suBlueprint.suDraft.id,
             //title: `${suBlueprint.project} - ${suBlueprint.suDraft.name} - ${(suBlueprint.durationInSec/3600).toFixed(2)}Hrs`,
             title: "",
             project: suBlueprint.project, type: 'SCHEDULE',
@@ -256,7 +259,7 @@ export class TimelineView extends Component {
                                     suId: suBlueprint.id,
                                     taskId: task.id,
                                     controlId: controlId,
-                                    group: `${suBlueprint.suDraft.id}_${task.draft_id}`,
+                                    group: `${this.state.groupByProject?suBlueprint.project:suBlueprint.suDraft.id}_${this.state.groupByProject?'observations':task.draft_id}`,
                                     // group: `${suBlueprint.suDraft.id}_Tasks`,    // For single row task grouping
                                     title: '',
                                     project: suBlueprint.project, type: 'TASK',
@@ -272,8 +275,10 @@ export class TimelineView extends Component {
                                     status: task.status.toLowerCase()};
                         items.push(item);
                         if (!_.find(itemGroup, ['id', `${suBlueprint.suDraft.id}_${task.draft_id}`])) {
-                            itemGroup.push({'id': `${suBlueprint.suDraft.id}_${task.draft_id}`, parent: suBlueprint.suDraft.id, 
-                                            start: start_time, title: `${!this.state.showSUs?suBlueprint.suDraft.name:""} -- ${task.name}`});
+                            itemGroup.push({'id': `${this.state.groupByProject?suBlueprint.project:suBlueprint.suDraft.id}_${this.state.groupByProject?'observations':task.draft_id}`, 
+                                            parent: this.state.groupByProject?suBlueprint.project:suBlueprint.suDraft.id, 
+                                            start: start_time, 
+                                            title: `${!this.state.showSUs?(this.state.groupByProject?suBlueprint.project:suBlueprint.suDraft.name):""} -- ${this.state.groupByProject?'observations':task.name}`});
                         }
                         /* >>>>>> If all tasks should be shown in single row remove the above 2 lines and uncomment these lines
                         if (!_.find(itemGroup, ['id', `${suBlueprint.suDraft.id}_Tasks`])) {
@@ -412,7 +417,7 @@ export class TimelineView extends Component {
         }   else {
             const reservation = _.find(this.reservations, {'id': parseInt(item.id.split("-")[1])});
             const reservStations = reservation.specifications_doc.resources.stations;
-            const reservStationGroups = this.groupSUStations(reservStations);
+            // const reservStationGroups = this.groupSUStations(reservStations);
             item.name = reservation.name;
             item.contact = reservation.specifications_doc.activity.contact
             item.activity_type = reservation.specifications_doc.activity.type;
@@ -458,8 +463,10 @@ export class TimelineView extends Component {
                             items.push(timelineItem);
                             if (!_.find(group, {'id': suBlueprint.suDraft.id})) {
                                 /* parent and start properties are added to order and display task rows below the corresponding SU row */
-                                group.push({'id': suBlueprint.suDraft.id, parent: suBlueprint.suDraft.id, 
-                                            start: moment.utc("1900-01-01", "YYYY-MM-DD"), title: suBlueprint.suDraft.name});
+                                group.push({'id': this.state.groupByProject?suBlueprint.project:suBlueprint.suDraft.id, 
+                                            parent: this.state.groupByProject?suBlueprint.project:suBlueprint.suDraft.id, 
+                                            start: moment.utc("1900-01-01", "YYYY-MM-DD"), 
+                                            title: this.state.groupByProject?suBlueprint.project:suBlueprint.suDraft.name});
                             }
                         }
                         // Add task item only in timeline view and when show task is enabled
@@ -665,8 +672,10 @@ export class TimelineView extends Component {
                     items.push(timelineItem);
                     if (!_.find(group, {'id': suBlueprint.suDraft.id})) {
                         /* parent and start properties are added to order and list task rows below the SU row */
-                        group.push({'id': suBlueprint.suDraft.id, parent: suBlueprint.suDraft.id, 
-                                    start: moment.utc("1900-01-01", "YYYY-MM-DD"), title: suBlueprint.suDraft.name});
+                        group.push({'id': this.state.groupByProject?suBlueprint.project:suBlueprint.suDraft.id, 
+                                    parent: this.state.groupByProject?suBlueprint.project:suBlueprint.suDraft.id, 
+                                    start: moment.utc("1900-01-01", "YYYY-MM-DD"), 
+                                    title: this.state.groupByProject?suBlueprint.project:suBlueprint.suDraft.name});
                     }
                 }
                 if (this.state.showTasks && !this.state.stationView) {
@@ -706,11 +715,11 @@ export class TimelineView extends Component {
     selectOptionMenu(menuName) {
         switch(menuName) {
             case 'Reservation List': {
-                this.setState({redirect: `/su/timelineview/reservation/reservation/list`});
+                this.setState({redirect: `/reservation/list`});
                 break;
             }
             case 'Add Reservation': {
-                this.setState({redirect: `/su/timelineview/reservation/create`});
+                this.setState({redirect: `/reservation/create`});
                 break;
             }
             default: {
@@ -872,6 +881,7 @@ export class TimelineView extends Component {
         //  if (this.state.loader) {
         //     return <AppLoader />
         // }
+        const isSUListVisible = this.state.isSUListVisible;
         const isSUDetsVisible = this.state.isSUDetsVisible;
         const isReservDetsVisible = this.state.isReservDetsVisible;
         const isTaskDetsVisible = this.state.isTaskDetsVisible;
@@ -898,8 +908,10 @@ export class TimelineView extends Component {
                 { this.state.isLoading ? <AppLoader /> :
                         <div className="p-grid">
                             {/* SU List Panel */}
-                            <div className={isSUDetsVisible || isReservDetsVisible || isTaskDetsVisible || (canExtendSUList && !canShrinkSUList)?"col-lg-4 col-md-4 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":"col-lg-6 col-md-6 col-sm-12")}
-                                 style={{position: "inherit", borderRight: "5px solid #efefef", paddingTop: "10px"}}>
+                            <div className={isSUListVisible && (isSUDetsVisible || isReservDetsVisible || isTaskDetsVisible || 
+                                            (canExtendSUList && !canShrinkSUList)?"col-lg-4 col-md-4 col-sm-12":
+                                            ((canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":"col-lg-6 col-md-6 col-sm-12"))}
+                                 style={isSUListVisible?{position: "inherit", borderRight: "3px solid #efefef", paddingTop: "10px"}:{display: 'none'}}>
                                 <ViewTable 
                                     viewInNewWindow
                                     data={this.state.suBlueprintList} 
@@ -924,8 +936,14 @@ export class TimelineView extends Component {
                                 />
                             </div>
                             {/* Timeline Panel */}
-                            <div className={isSUDetsVisible || isReservDetsVisible || isTaskDetsVisible || (!canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-7 col-md-7 col-sm-12":"col-lg-8 col-md-8 col-sm-12")}>
+                            <div className={isSUListVisible?((isSUDetsVisible || isReservDetsVisible)?"col-lg-5 col-md-5 col-sm-12":
+                                                (!canExtendSUList && canShrinkSUList)?"col-lg-6 col-md-6 col-sm-12":
+                                                ((canExtendSUList && canShrinkSUList)?"col-lg-7 col-md-7 col-sm-12":"col-lg-8 col-md-8 col-sm-12")):
+                                                ((isSUDetsVisible || isReservDetsVisible || isTaskDetsVisible)?"col-lg-9 col-md-9 col-sm-12":"col-lg-12 col-md-12 col-sm-12")}
+                                // style={{borderLeft: "3px solid #efefef"}}
+                                >
                                 {/* Panel Resize buttons */}
+                                {isSUListVisible &&
                                 <div className="resize-div">
                                     <button className="p-link resize-btn" disabled={!this.state.canShrinkSUList} 
                                             title="Shrink List/Expand Timeline"
@@ -933,12 +951,28 @@ export class TimelineView extends Component {
                                         <i className="pi pi-step-backward"></i>
                                     </button>
                                     <button className="p-link resize-btn" disabled={!this.state.canExtendSUList} 
-                                            title="Expandd List/Shrink Timeline"
+                                            title="Expand List/Shrink Timeline"
                                             onClick={(e)=> { this.resizeSUList(1)}}>
                                         <i className="pi pi-step-forward"></i>
                                     </button>
                                 </div> 
-                            
+                                }
+                                <div className={isSUListVisible?"resize-div su-visible":"resize-div su-hidden"}>
+                                    {isSUListVisible &&
+                                    <button className="p-link resize-btn" 
+                                            title="Hide List"
+                                            onClick={(e)=> { this.setState({isSUListVisible: false})}}>
+                                        <i className="pi pi-eye-slash"></i>
+                                    </button>
+                                    }
+                                    {!isSUListVisible &&
+                                    <button className="p-link resize-btn"
+                                            title="Show List"
+                                            onClick={(e)=> { this.setState({isSUListVisible: true})}}>
+                                        <i className="pi pi-eye"> Show List</i>
+                                    </button>
+                                    }
+                                </div>
                                 <div className={`timeline-view-toolbar ${this.state.stationView && 'alignTimeLineHeader'}`}>
                                     <div  className="sub-header">
                                         <label >Station View</label>
@@ -980,6 +1014,13 @@ export class TimelineView extends Component {
                                         <label htmlFor="suOnly">Only Task</label>
                                         <RadioButton value="suTask" name="Both" inputId="bothSuTask" onChange={(e) => this.showTimelineItems(e.value)} checked={this.state.showSUs && this.state.showTasks} />
                                         <label htmlFor="suOnly">Both</label>
+
+                                        <div className="sub-header">
+                                            {this.state.groupByProject &&
+                                            <Button className="p-button-rounded toggle-btn" label="Group By SU" onClick={e => this.setState({groupByProject: false})} /> }
+                                            {!this.state.groupByProject &&
+                                            <Button className="p-button-rounded toggle-btn" label="Group By Project" onClick={e => this.setState({groupByProject: true})} /> }
+                                        </div>
                                     </>
                                     }
                                 </div>
@@ -989,6 +1030,7 @@ export class TimelineView extends Component {
                                         items={this.state.items}
                                         currentUTC={this.state.currentUTC}
                                         rowHeight={this.state.stationView?50:50} 
+                                        sidebarWidth={!this.state.showSUs?250:200}
                                         itemClickCallback={this.onItemClick}
                                         itemMouseOverCallback={this.onItemMouseOver}
                                         itemMouseOutCallback={this.onItemMouseOut}
@@ -1067,7 +1109,7 @@ export class TimelineView extends Component {
                         <div className="col-7">{mouseOverItem.duration}</div>
                     </div>
                 }
-                {(mouseOverItem && mouseOverItem.type == "RESERVATION") &&
+                {(mouseOverItem && mouseOverItem.type === "RESERVATION") &&
                     <div className={`p-grid`} style={{width: '350px', backgroundColor: mouseOverItem.bgColor, color: mouseOverItem.color}}>
                         <h3 className={`col-12`}>Reservation Overview</h3>
                         <hr></hr>

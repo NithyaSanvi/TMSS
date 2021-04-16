@@ -25,7 +25,7 @@ import { OverlayPanel } from 'primereact/overlaypanel';
 import { TieredMenu } from 'primereact/tieredmenu';
 import { InputSwitch } from 'primereact/inputswitch';
 import { Dropdown } from 'primereact/dropdown';
-import ReservationSummary from './reservation.summary';
+import ReservationSummary from '../Reservation/reservation.summary';
 
 // Color constant for status
 const STATUS_COLORS = { "ERROR": "FF0000", "CANCELLED": "#00FF00", "DEFINED": "#00BCD4", 
@@ -50,6 +50,7 @@ export class WeekTimelineView extends Component {
             suBlueprintList: [],    // SU Blueprints filtered to view
             group:[],               // Timeline group from scheduling unit draft name
             items:[],               // Timeline items from scheduling unit blueprints grouped by scheduling unit draft
+            isSUListVisible: true,
             isSUDetsVisible: false,
             canExtendSUList: true,
             canShrinkSUList: false,
@@ -332,7 +333,7 @@ export class WeekTimelineView extends Component {
         }   else {
             const reservation = _.find(this.reservations, {'id': parseInt(item.id.split("-")[1])});
             const reservStations = reservation.specifications_doc.resources.stations;
-            const reservStationGroups = this.groupSUStations(reservStations);
+            // const reservStationGroups = this.groupSUStations(reservStations);
             item.name = reservation.name;
             item.contact = reservation.specifications_doc.activity.contact
             item.activity_type = reservation.specifications_doc.activity.type;
@@ -490,11 +491,11 @@ export class WeekTimelineView extends Component {
     selectOptionMenu(menuName) {
         switch(menuName) {
             case 'Reservation List': {
-                this.setState({redirect: `/su/timelineview/reservation/reservation/list`});
+                this.setState({redirect: `/reservation/list`});
                 break;
             }
             case 'Add Reservation': {
-                this.setState({redirect: `/su/timelineview/reservation/create`});
+                this.setState({redirect: `/reservation/create`});
                 break;
             }
             default: {
@@ -771,6 +772,7 @@ export class WeekTimelineView extends Component {
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
         }
+        const isSUListVisible = this.state.isSUListVisible;
         const isSUDetsVisible = this.state.isSUDetsVisible;
         const isReservDetsVisible = this.state.isReservDetsVisible;
         const canExtendSUList = this.state.canExtendSUList;
@@ -803,8 +805,10 @@ export class WeekTimelineView extends Component {
                         </div> */}
                         <div className="p-grid">
                             {/* SU List Panel */}
-                            <div className={isSUDetsVisible || isReservDetsVisible || (canExtendSUList && !canShrinkSUList)?"col-lg-4 col-md-4 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":"col-lg-6 col-md-6 col-sm-12")}
-                                 style={{position: "inherit", borderRight: "5px solid #efefef", paddingTop: "10px"}}>
+                            <div className={isSUListVisible && (isSUDetsVisible || isReservDetsVisible || 
+                                                (canExtendSUList && !canShrinkSUList)?"col-lg-4 col-md-4 col-sm-12":
+                                                ((canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":"col-lg-6 col-md-6 col-sm-12"))}
+                                 style={isSUListVisible?{position: "inherit", borderRight: "5px solid #efefef", paddingTop: "10px"}:{display: "none"}}>
                                 <ViewTable viewInNewWindow
                                     data={this.state.suBlueprintList} 
                                     defaultcolumns={[{name: "Name",
@@ -822,8 +826,14 @@ export class WeekTimelineView extends Component {
                                 />
                             </div>
                             {/* Timeline Panel */}
-                            <div className={isSUDetsVisible || isReservDetsVisible || (!canExtendSUList && canShrinkSUList)?"col-lg-5 col-md-5 col-sm-12":((canExtendSUList && canShrinkSUList)?"col-lg-7 col-md-7 col-sm-12":"col-lg-8 col-md-8 col-sm-12")}>
+                            <div className={isSUListVisible?((isSUDetsVisible || isReservDetsVisible)?"col-lg-5 col-md-5 col-sm-12": 
+                                                (!canExtendSUList && canShrinkSUList)?"col-lg-6 col-md-6 col-sm-12":
+                                                ((canExtendSUList && canShrinkSUList)?"col-lg-7 col-md-7 col-sm-12":"col-lg-8 col-md-8 col-sm-12")):
+                                                ((isSUDetsVisible || isReservDetsVisible)?"col-lg-9 col-md-9 col-sm-12":"col-lg-12 col-md-12 col-sm-12")}
+                                // style={{borderLeft: "3px solid #efefef"}}
+                                >
                                 {/* Panel Resize buttons */}
+                                {isSUListVisible &&
                                 <div className="resize-div">
                                     <button className="p-link resize-btn" disabled={!this.state.canShrinkSUList} 
                                             title="Shrink List/Expand Timeline"
@@ -835,7 +845,24 @@ export class WeekTimelineView extends Component {
                                             onClick={(e)=> { this.resizeSUList(1)}}>
                                         <i className="pi pi-step-forward"></i>
                                     </button>
-                                </div> 
+                                </div>
+                                }
+                                <div className={isSUListVisible?"resize-div su-visible":"resize-div su-hidden"}>
+                                    {isSUListVisible &&
+                                    <button className="p-link resize-btn" 
+                                            title="Hide List"
+                                            onClick={(e)=> { this.setState({isSUListVisible: false})}}>
+                                        <i className="pi pi-eye-slash"></i>
+                                    </button>
+                                    }
+                                    {!isSUListVisible &&
+                                    <button className="p-link resize-btn"
+                                            title="Show List"
+                                            onClick={(e)=> { this.setState({isSUListVisible: true})}}>
+                                        <i className="pi pi-eye"> Show List</i>
+                                    </button>
+                                    }
+                                </div>
                                 <div className={`timeline-view-toolbar ${this.state.reservationEnabled && 'alignTimeLineHeader'}`}>
                                     <div  className="sub-header">
                                         <label >Show Reservations</label>
@@ -902,7 +929,7 @@ export class WeekTimelineView extends Component {
                 }
                 {/* SU Item Tooltip popover with SU status color */}
                 <OverlayPanel className="timeline-popover" ref={(el) => this.popOver = el} dismissable>
-                {mouseOverItem  && mouseOverItem.type == "SCHEDULE" &&
+                {mouseOverItem  && mouseOverItem.type === "SCHEDULE" &&
                     <div className={`p-grid su-${mouseOverItem.status}`} style={{width: '350px'}}>
                         <label className={`col-5 su-${mouseOverItem.status}-icon`}>Project:</label>
                         <div className="col-7">{mouseOverItem.project}</div>
@@ -924,7 +951,7 @@ export class WeekTimelineView extends Component {
                         <div className="col-7">{mouseOverItem.duration}</div>
                     </div>
                 }
-                {(mouseOverItem && mouseOverItem.type == "RESERVATION") &&
+                {(mouseOverItem && mouseOverItem.type === "RESERVATION") &&
                     <div className={`p-grid`} style={{width: '350px', backgroundColor: mouseOverItem.bgColor, color: mouseOverItem.color}}>
                         <h3 className={`col-12`}>Reservation Overview</h3>
                         <hr></hr>
