@@ -3,7 +3,7 @@ import axios from 'axios'
 import TaskService from './task.service';
 import moment from 'moment';
 import DataProductService from './data.product.service';
-
+import UtilService from './util.service';
 const ScheduleService = { 
     getSchedulingUnitDraft: async function (){
         let res = [];
@@ -361,6 +361,26 @@ const ScheduleService = {
         });
         return res.data;
     },
+    getTaskConnectorType: async function(id) {
+        let res;
+        await axios.get(`/api/task_connector_type/${id}`)
+        .then(response => {
+            res= response;
+        }).catch(function(error) {
+            console.error('[schedule.services.getTaskConnectorType]',error);
+        });
+        return res.data;
+    },
+    getTaskRelationDraft: async function(params) {
+        let res;
+        await axios.post(`/api/task_relation_draft/`,params)
+        .then(response => {
+            res= response;
+        }).catch(function(error) {
+            console.error('[schedule.services.getTaskRelationDraft]',error);
+        });
+        return res.data;
+    },
     getTaskBlueprints: async function (){
         let res=[];
         await axios.get('/api/task_blueprint/?ordering=id')
@@ -692,6 +712,32 @@ const ScheduleService = {
         } catch(error) {
             console.error(error);
             return false;
+        }
+    },
+    /* get All Task Relation Draft*/
+    getAllTaskRelationDraft: async function (){
+        try {
+            const response = await axios.get('/api/task_relation_draft/');
+            return response.data.results;
+        }catch (error) {
+            
+        }
+    },
+    /* Create Task Relation Draft based on consumer(Ingest) and producer */
+    createTaskRelationDraft: async function (taskRelDraftObj){
+        let taskRelDraftPromises=[]; 
+        try {
+            if(taskRelDraftObj){
+                taskRelDraftObj.forEach((tObj)=>{
+                    taskRelDraftPromises.push(this.getTaskRelationDraft(tObj));
+                });
+                const taskRelDrafts = await Promise.all(taskRelDraftPromises);
+                console.log(taskRelDrafts);
+                return taskRelDrafts;
+            }
+        }catch (error) {
+            console.log(error.response.data);
+            return error.response.data;
         }
     }
 }

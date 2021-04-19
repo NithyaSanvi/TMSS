@@ -14,7 +14,7 @@ import moment from 'moment';
 import _, { initial } from 'lodash';
 import SchedulingConstraint from './Scheduling.Constraints';
 import { Dialog } from 'primereact/dialog';
-import TaskStatusLogs from '../Task/state_logs';
+import TaskStatusLogs from '../Task/state_logs'; 
 import Stations from './Stations';
 import { Redirect } from 'react-router-dom';
 import { CustomDialog } from '../../layout/components/CustomDialog';
@@ -24,6 +24,7 @@ import Schedulingtaskrelation from './Scheduling.task.relation';
 import UnitConverter from '../../utils/unit.converter';
 import TaskService from '../../services/task.service';
 import UIConstants from '../../utils/ui.constants';
+import UtilService from '../../services/util.service';
 
 class ViewSchedulingUnit extends Component{
     constructor(props){
@@ -139,7 +140,8 @@ class ViewSchedulingUnit extends Component{
             stationGroup: [],
             dialog: {header: 'Confirm', detail: 'Do you want to create a Scheduling Unit Blueprint?'},
             dialogVisible: false,
-            actions: []
+            actions: [],
+            dataformat: ["MeasurementSet"]
         }
         this.actions = [];
         this.stations = [];
@@ -180,6 +182,7 @@ class ViewSchedulingUnit extends Component{
             this.subtaskTemplates = await TaskService.getSubtaskTemplates();
             this.getSchedulingUnitDetails(schedule_type, schedule_id);
 		}
+        UtilService.localStore({type:'set',key:'taskRelDraftData',value:null}); 
     }
 
     subtaskComponent = (task)=> {
@@ -204,7 +207,7 @@ class ViewSchedulingUnit extends Component{
                         });
                     }
                     let tasks = schedulingUnit.task_drafts?(await this.getFormattedTaskDrafts(schedulingUnit)):this.getFormattedTaskBlueprints(schedulingUnit);
-                    let ingestGroup = tasks.map(task => ({name: task.name, canIngest: task.canIngest, type_value: task.type_value, id: task.id }));
+                    let ingestGroup = tasks.map(task => ({name: task.name, canIngest: task.canIngest||false, type_value: task.type_value, id: task.id }));
                     ingestGroup = _.groupBy(_.filter(ingestGroup, 'type_value'), 'type_value');
                     await Promise.all(tasks.map(async task => {
                         task.status_logs = task.tasktype === "Blueprint"?this.subtaskComponent(task):"";
@@ -289,6 +292,11 @@ class ViewSchedulingUnit extends Component{
      * @param {Object} schedulingUnit - scheduling_unit_draft object from extended API call loaded with tasks(draft & blueprint) along with their template and subtasks
      */
     async getFormattedTaskDrafts(schedulingUnit) {
+        const taskRelDraft = UtilService.localStore({type:'get',key:'taskRelDraftData'});
+        if(!taskRelDraft){
+            let taskRelDraftData = await ScheduleService.getAllTaskRelationDraft();
+            UtilService.localStore({type:'set',key:'taskRelDraftData',value:taskRelDraftData});
+        }
         let scheduletasklist=[];
         // Common keys for Task and Blueprint
         let commonkeys = ['id','created_at','description','name','tags','updated_at','url','do_cancel','relative_start_time','relative_stop_time','start_time','stop_time','duration','status'];
@@ -338,12 +346,15 @@ class ViewSchedulingUnit extends Component{
             scheduletasklist.push(scheduletask);
         }
         //Ingest Task Relation 
+        //console.log('scheduletasklist',scheduletasklist)
         const ingestTask = scheduletasklist.find(task => task.type_value === 'ingest' && task.tasktype.toLowerCase() === 'draft');
-        if (ingestTask) {
+        if (ingestTask) {//console.log('ingestTask',ingestTask)
             for (const producer_id of ingestTask.produced_by_ids) {
                 const taskRelation = await ScheduleService.getTaskRelation(producer_id);
-                const producerTask = scheduletasklist.find(task => task.id === taskRelation.producer_id && task.tasktype.toLowerCase() === 'draft');
-                producerTask.canIngest = true;
+                let producerTask = scheduletasklist.find(task => task.id === taskRelation.producer_id && task.tasktype.toLowerCase() === 'draft');
+                if(producerTask!=undefined){
+                    producerTask.canIngest = true;  
+                }
             }
         }
         return scheduletasklist;
@@ -543,7 +554,64 @@ class ViewSchedulingUnit extends Component{
             this.setState({dialogVisible: false, redirect: '/schedulingunit'});
         }
     }
-        
+    async submitTRDToIngest(data){
+        //console.log(data); //debugger;
+        if(data.length){
+            let consumer = data[0].ingest||[];
+            const getTRDData = UtilService.localStore({type:'get',key:'taskRelDraftData'});
+            let taskRelDraft=data;
+            const propPromises = [],propConPromises = [],taskRelObj={
+                "consumer": "/api/task_draft",//8
+                "dataformat": "/api/dataformat/MeasurementSet",
+                "input_role": "/api/task_connector_type",//id
+                "output_role": "/api/task_connector_type",//id
+                "producer": "/api/task_draft",//id
+                "related_task_relation_blueprint": [],
+                "selection_doc": {},
+                "selection_template": "/api/task_relation_selection_template/2",
+                "tags": []
+            },taskRelDraftObj=[],taskRelDraftPromises=[];
+            if(getTRDData){
+                const consumerData = await ScheduleService.getTaskDraft(consumer.id);
+                //console.log(consumerData);
+                taskRelObj["consumer"]=`${taskRelObj.consumer}/${consumer.id}`;
+                const consConnData = await ScheduleService.getTaskConnectorType(consumerData.specifications_template_id);
+                //console.log(consConnData);
+                taskRelObj["input_role"]=`${taskRelObj.input_role}/${consConnData.task_template_id}`;
+                taskRelDraft.map((obj) => {
+                    let task = obj.task;
+                    propPromises.push(ScheduleService.getTaskDraft(task.id))
+                });
+                const producerData = await Promise.all(propPromises);
+                //console.log(producerData);
+                if(producerData){
+                    producerData.forEach((pd)=>{
+                        taskRelObj["producer"]=`${taskRelObj.producer}/${pd.id}`;
+                        propConPromises.push(ScheduleService.getTaskConnectorType(pd.specifications_template_id))
+                    });
+                    const prodConnData = await Promise.all(propConPromises);
+                    prodConnData.forEach((pc)=>{
+                        taskRelObj["output_role"]=`${taskRelObj.output_role}/${pc.task_template_id}`;
+                    });
+                    taskRelDraftObj.push(taskRelObj);
+                    //console.log(prodConnData);
+                    //console.log(taskRelObj);
+                    //console.log(taskRelDrafts);
+                    if(taskRelDraftObj){
+                        const getTRelDraftData = await ScheduleService.createTaskRelationDraft(taskRelDraftObj);//'dataFormat':this.state.dataformat
+                       if (getTRelDraftData) {
+                            const dialog = {header: 'Success', detail: 'Task Relation Draft is created successfully.'};
+                            this.setState({dialogVisible: false, dialog: dialog});
+                        }   else {
+                            appGrowl.show({severity: 'error', summary: 'Error Occured', detail: getTRelDraftData.message || 'Unable to save Task Relation Draft Set'});
+                        }
+                    }
+                    
+                } 
+            }
+            
+        }
+    }    
     render(){
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -709,7 +777,7 @@ class ViewSchedulingUnit extends Component{
                       showTaskRelationDialog={this.state.showTaskRelationDialog}
                       ingestGroup={this.state.ingestGroup}
                       toggle={this.showTaskRelationDialog}
-                     
+                      submitTRDToIngest={ (trDraft)=> this.submitTRDToIngest(trDraft) }
                       />
                 )}
               </>

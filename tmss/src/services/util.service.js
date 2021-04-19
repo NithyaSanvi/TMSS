@@ -161,6 +161,16 @@ const UtilService = {
           schema["items"] = resolvedItems;
       }
       return schema;
+  },
+  localStore:function(data){
+    const {type,key,value}=data;
+    if(type=='set'){
+      localStorage.setItem(key,JSON.stringify(value));
+    }else if(type=='get'){
+      return JSON.parse(localStorage.getItem(key));
+    }else if(type=='remove'){
+      localStorage.removeItem(key);
+    }
   }
 }
 
