@@ -1,5 +1,6 @@
 import $RefParser from "@apidevtools/json-schema-ref-parser";
 import _ from 'lodash';
+import { FindObjectResult } from "../routes/Search";
 const axios = require('axios');
 
 /**
@@ -171,6 +172,12 @@ const UtilService = {
     }else if(type=='remove'){
       localStorage.removeItem(key);
     }
+  },
+  findObject:function(arrObj,obj,aoProp,oProp){
+    return arrObj.find((ao)=>ao[aoProp]==obj[oProp]);
+  },
+  findObjectIndex:function(arrObj,obj,aoProp,oProp){
+    return arrObj.findIndex((ao)=>ao[aoProp]==obj[oProp]);
   }
 }
 

@@ -24,7 +24,6 @@ import Schedulingtaskrelation from './Scheduling.task.relation';
 import UnitConverter from '../../utils/unit.converter';
 import TaskService from '../../services/task.service';
 import UIConstants from '../../utils/ui.constants';
-import UtilService from '../../services/util.service';
 
 class ViewSchedulingUnit extends Component{
     constructor(props){
@@ -182,7 +181,6 @@ class ViewSchedulingUnit extends Component{
             this.subtaskTemplates = await TaskService.getSubtaskTemplates();
             this.getSchedulingUnitDetails(schedule_type, schedule_id);
 		}
-        UtilService.localStore({type:'set',key:'taskRelDraftData',value:null}); 
     }
 
     subtaskComponent = (task)=> {
@@ -207,7 +205,7 @@ class ViewSchedulingUnit extends Component{
                         });
                     }
                     let tasks = schedulingUnit.task_drafts?(await this.getFormattedTaskDrafts(schedulingUnit)):this.getFormattedTaskBlueprints(schedulingUnit);
-                    let ingestGroup = tasks.map(task => ({name: task.name, canIngest: task.canIngest||false, type_value: task.type_value, id: task.id }));
+                    let ingestGroup = tasks.map(task => ({name: task.name, canIngest: task.canIngest, type_value: task.type_value, id: task.id }));
                     ingestGroup = _.groupBy(_.filter(ingestGroup, 'type_value'), 'type_value');
                     await Promise.all(tasks.map(async task => {
                         task.status_logs = task.tasktype === "Blueprint"?this.subtaskComponent(task):"";
@@ -292,11 +290,6 @@ class ViewSchedulingUnit extends Component{
      * @param {Object} schedulingUnit - scheduling_unit_draft object from extended API call loaded with tasks(draft & blueprint) along with their template and subtasks
      */
     async getFormattedTaskDrafts(schedulingUnit) {
-        const taskRelDraft = UtilService.localStore({type:'get',key:'taskRelDraftData'});
-        if(!taskRelDraft){
-            let taskRelDraftData = await ScheduleService.getAllTaskRelationDraft();
-            UtilService.localStore({type:'set',key:'taskRelDraftData',value:taskRelDraftData});
-        }
         let scheduletasklist=[];
         // Common keys for Task and Blueprint
         let commonkeys = ['id','created_at','description','name','tags','updated_at','url','do_cancel','relative_start_time','relative_stop_time','start_time','stop_time','duration','status'];
@@ -556,30 +549,30 @@ class ViewSchedulingUnit extends Component{
     }
     async submitTRDToIngest(data){
         //console.log(data); //debugger;
-        if(data.length){
-            let consumer = data[0].ingest||[];
-            const getTRDData = UtilService.localStore({type:'get',key:'taskRelDraftData'});
-            let taskRelDraft=data;
+        if(data){
+            let consumer = data.ingest;
+            let taskRelAddDraft = data.taskRelationDraft.filter((trd)=>trd.action=='add');
+            let taskRelDelDraft = data.taskRelationDraft.filter((trd)=>trd.action=='delete');
             const propPromises = [],propConPromises = [],taskRelObj={
-                "consumer": "/api/task_draft",//8
+                "consumer": "/api/task_draft",
                 "dataformat": "/api/dataformat/MeasurementSet",
-                "input_role": "/api/task_connector_type",//id
-                "output_role": "/api/task_connector_type",//id
-                "producer": "/api/task_draft",//id
+                "input_role": "/api/task_connector_type",
+                "output_role": "/api/task_connector_type",
+                "producer": "/api/task_draft",
                 "related_task_relation_blueprint": [],
                 "selection_doc": {},
                 "selection_template": "/api/task_relation_selection_template/2",
                 "tags": []
-            },taskRelDraftObj=[],taskRelDraftPromises=[];
-            if(getTRDData){
+            },taskRelAddDraftObj=[];
+            let getCreatedTaskRes=[],getDeletedTaskRes=[];
+            if(taskRelAddDraft.length){
                 const consumerData = await ScheduleService.getTaskDraft(consumer.id);
                 //console.log(consumerData);
                 taskRelObj["consumer"]=`${taskRelObj.consumer}/${consumer.id}`;
                 const consConnData = await ScheduleService.getTaskConnectorType(consumerData.specifications_template_id);
                 //console.log(consConnData);
                 taskRelObj["input_role"]=`${taskRelObj.input_role}/${consConnData.task_template_id}`;
-                taskRelDraft.map((obj) => {
-                    let task = obj.task;
+                taskRelAddDraft.map((task) => {
                     propPromises.push(ScheduleService.getTaskDraft(task.id))
                 });
                 const producerData = await Promise.all(propPromises);
@@ -593,22 +586,39 @@ class ViewSchedulingUnit extends Component{
                     prodConnData.forEach((pc)=>{
                         taskRelObj["output_role"]=`${taskRelObj.output_role}/${pc.task_template_id}`;
                     });
-                    taskRelDraftObj.push(taskRelObj);
+                    taskRelAddDraftObj.push(taskRelObj);
                     //console.log(prodConnData);
                     //console.log(taskRelObj);
-                    //console.log(taskRelDrafts);
-                    if(taskRelDraftObj){
-                        const getTRelDraftData = await ScheduleService.createTaskRelationDraft(taskRelDraftObj);//'dataFormat':this.state.dataformat
-                       if (getTRelDraftData) {
+                    if(taskRelAddDraftObj){
+                        getCreatedTaskRes = await ScheduleService.createTaskRelationDraft(taskRelAddDraftObj);//'dataFormat':this.state.dataformat
+                        if (getCreatedTaskRes) {
                             const dialog = {header: 'Success', detail: 'Task Relation Draft is created successfully.'};
-                            this.setState({dialogVisible: false, dialog: dialog});
+                            this.setState({dialogVisible: true, dialog: dialog});
                         }   else {
-                            appGrowl.show({severity: 'error', summary: 'Error Occured', detail: getTRelDraftData.message || 'Unable to save Task Relation Draft Set'});
+                            appGrowl.show({severity: 'error', summary: 'Error Occured', detail: getCreatedTaskRes.message || 'Unable to save Task Relation Draft Set'});
                         }
                     }
                     
-                } 
+                }
             }
+            if(taskRelDelDraft.length){
+                let taskRelDraftData = await ScheduleService.getAllTaskRelationDraft(); 
+                let getDelTRelDrafts = taskRelDraftData.filter(obj1 => {
+                    return obj1.consumer_id==consumer.id 
+                    && (taskRelDelDraft.some(obj2 => obj1.producer_id == obj2.id)) 
+                }  );
+                console.log(getDelTRelDrafts);
+                getDeletedTaskRes = await ScheduleService.deleteTaskRelationDraft(getDelTRelDrafts);
+                console.log('getDeletedTaskRes',getDeletedTaskRes);
+                if (getDeletedTaskRes) {
+                    const dialog = {header: 'Success', detail: 'Task Relation Draft is deleted successfully.'};
+                    this.setState({dialogVisible: true, dialog: dialog});
+                }   else {
+                    appGrowl.show({severity: 'error', summary: 'Error Occured', detail: getDeletedTaskRes.message || 'Unable to save Task Relation Draft Set'});
+                }
+            }
+
+             
             
         }
     }    

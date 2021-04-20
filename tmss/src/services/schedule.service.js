@@ -381,6 +381,17 @@ const ScheduleService = {
         });
         return res.data;
     },
+    removeTaskRelationDraft: async function(id) {
+        let res;
+        await axios.delete(`/api/task_relation_draft/${id}/`)
+        .then(response => {
+            res= {id:id,status:true};
+        }).catch(function(error) {
+            res= {id:id,status:false};
+            console.error('[schedule.services.getTaskRelationDraft]',error);
+        });
+        return res;
+    },
     getTaskBlueprints: async function (){
         let res=[];
         await axios.get('/api/task_blueprint/?ordering=id')
@@ -734,6 +745,23 @@ const ScheduleService = {
                 const taskRelDrafts = await Promise.all(taskRelDraftPromises);
                 console.log(taskRelDrafts);
                 return taskRelDrafts;
+            }
+        }catch (error) {
+            console.log(error.response.data);
+            return error.response.data;
+        }
+    },
+    /* Delete Task Relation Draft based on consumer(Ingest) and producer */
+    deleteTaskRelationDraft: async function (taskRelDelDraft){
+        let taskRelDelDraftPromises=[]; 
+        try {
+            if(taskRelDelDraft){
+                taskRelDelDraft.forEach((tObj)=>{
+                    taskRelDelDraftPromises.push(this.removeTaskRelationDraft(tObj.id));
+                });
+                const taskRelDelDrafts = await Promise.all(taskRelDelDraftPromises);
+                console.log(taskRelDelDrafts);
+                return taskRelDelDrafts;
             }
         }catch (error) {
             console.log(error.response.data);
