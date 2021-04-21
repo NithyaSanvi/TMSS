@@ -371,26 +371,31 @@ const ScheduleService = {
         });
         return res.data;
     },
-    getTaskRelationDraft: async function(params) {
-        let res;
-        await axios.post(`/api/task_relation_draft/`,params)
-        .then(response => {
-            res= response;
-        }).catch(function(error) {
-            console.error('[schedule.services.getTaskRelationDraft]',error);
-        });
-        return res.data;
+    getTaskRelationDraft: async function(params,name) {
+        try {
+            const response =await axios.post((`/api/task_relation_draft/`),params);
+            return {status:true,action:'Create','name':name,'msg':response.data};
+        } catch (error) {
+            //console.log(error.response.data);
+            return {status:false,action:'Create','name':name,'msg':error.response.data};
+        }
     },
-    removeTaskRelationDraft: async function(id) {
+    removeTaskRelationDraft: async function(id,name) { 
         let res;
-        await axios.delete(`/api/task_relation_draft/${id}/`)
+        try {
+            const response = await axios.delete(`/api/task_relation_draft/${id}/`);
+            return {'name':name,action:'Delete','status':true,msg:response.data};
+        }catch (error) {
+            //console.log(error.response.data);
+            return {'name':name,action:'Delete','status':false,msg:error.response.data};
+        }/* 
         .then(response => {
-            res= {id:id,status:true};
+            return {'name':name,action:'Delete','status':true};
         }).catch(function(error) {
-            res= {id:id,status:false};
-            console.error('[schedule.services.getTaskRelationDraft]',error);
-        });
-        return res;
+            return {'name':name,action:'Delete','status':false};
+            //console.error('[schedule.services.removeTaskRelationDraft]',error);
+        }); */
+        
     },
     getTaskBlueprints: async function (){
         let res=[];
@@ -735,16 +740,16 @@ const ScheduleService = {
         }
     },
     /* Create Task Relation Draft based on consumer(Ingest) and producer */
-    createTaskRelationDraft: async function (taskRelDraftObj){
-        let taskRelDraftPromises=[]; 
+    createTaskRelationDraft: async function (taskRelDraftObj,obj){
+        let taskRelDraftPromises=[],taskRelAddDraftObj=[]; 
         try {
             if(taskRelDraftObj){
-                taskRelDraftObj.forEach((tObj)=>{
-                    taskRelDraftPromises.push(this.getTaskRelationDraft(tObj));
+                taskRelDraftObj.forEach((tObj,i)=>{
+                    taskRelDraftPromises.push(this.getTaskRelationDraft(tObj,obj[i].name));
                 });
-                const taskRelDrafts = await Promise.all(taskRelDraftPromises);
-                console.log(taskRelDrafts);
-                return taskRelDrafts;
+                const taskRelAddDrafts = await Promise.all(taskRelDraftPromises);
+                console.log(taskRelAddDrafts);
+                return taskRelAddDrafts;
             }
         }catch (error) {
             console.log(error.response.data);
@@ -752,12 +757,12 @@ const ScheduleService = {
         }
     },
     /* Delete Task Relation Draft based on consumer(Ingest) and producer */
-    deleteTaskRelationDraft: async function (taskRelDelDraft){
+    deleteTaskRelationDraft: async function (taskRelDelDraft,obj){
         let taskRelDelDraftPromises=[]; 
         try {
             if(taskRelDelDraft){
-                taskRelDelDraft.forEach((tObj)=>{
-                    taskRelDelDraftPromises.push(this.removeTaskRelationDraft(tObj.id));
+                taskRelDelDraft.forEach((tObj,i)=>{ 
+                    taskRelDelDraftPromises.push(this.removeTaskRelationDraft(tObj.id,obj[i].name));
                 });
                 const taskRelDelDrafts = await Promise.all(taskRelDelDraftPromises);
                 console.log(taskRelDelDrafts);

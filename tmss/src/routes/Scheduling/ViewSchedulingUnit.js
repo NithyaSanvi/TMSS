@@ -140,12 +140,19 @@ class ViewSchedulingUnit extends Component{
             dialog: {header: 'Confirm', detail: 'Do you want to create a Scheduling Unit Blueprint?'},
             dialogVisible: false,
             actions: [],
-            dataformat: ["MeasurementSet"]
+            dataformat: ["MeasurementSet"],
+            taskStatus:[]
         }
         this.actions = [];
         this.stations = [];
         this.constraintTemplates = [];
         this.selectedRows = [];
+        this.dialogWidth = "40vw";
+        this.dialogType = "";
+        this.dialogHeight = 'auto';
+        this.dialogHeader = "";
+        this.dialogMsg = "";
+        this.dialogContent = "";
 
         this.confirmDeleteTasks = this.confirmDeleteTasks.bind(this);
         this.onRowSelection = this.onRowSelection.bind(this);
@@ -174,7 +181,7 @@ class ViewSchedulingUnit extends Component{
 
     async componentDidMount(){ 
         let schedule_id = this.props.match.params.id;
-        let schedule_type = this.props.match.params.type;
+        let schedule_type = this.props.match.params.type; 
         if (schedule_type && schedule_id) {
             this.stations = await ScheduleService.getStationGroup();
             this.setState({stationOptions: this.stations});
@@ -191,7 +198,7 @@ class ViewSchedulingUnit extends Component{
         );
     };
 
-    getSchedulingUnitDetails(schedule_type, schedule_id) {
+    getSchedulingUnitDetails(schedule_type, schedule_id) { 
         ScheduleService.getSchedulingUnitExtended(schedule_type, schedule_id)
             .then(async(schedulingUnit) =>{
                 if (schedulingUnit) {
@@ -548,7 +555,8 @@ class ViewSchedulingUnit extends Component{
         }
     }
     async submitTRDToIngest(data){
-        //console.log(data); //debugger;
+        //console.log(data); 
+        //debugger;
         if(data){
             let consumer = data.ingest;
             let taskRelAddDraft = data.taskRelationDraft.filter((trd)=>trd.action=='add');
@@ -564,14 +572,14 @@ class ViewSchedulingUnit extends Component{
                 "selection_template": "/api/task_relation_selection_template/2",
                 "tags": []
             },taskRelAddDraftObj=[];
-            let getCreatedTaskRes=[],getDeletedTaskRes=[];
+            let getCreatedTaskRes=[],getDeletedTaskRes=[],getUpdateTaskRelObj=[];
             if(taskRelAddDraft.length){
                 const consumerData = await ScheduleService.getTaskDraft(consumer.id);
                 //console.log(consumerData);
-                taskRelObj["consumer"]=`${taskRelObj.consumer}/${consumer.id}`;
+                //taskRelObj["consumer"]=`${taskRelObj.consumer}/${consumer.id}`;
                 const consConnData = await ScheduleService.getTaskConnectorType(consumerData.specifications_template_id);
                 //console.log(consConnData);
-                taskRelObj["input_role"]=`${taskRelObj.input_role}/${consConnData.task_template_id}`;
+                //taskRelObj["input_role"]=`${taskRelObj.input_role}/${consConnData.task_template_id}`;
                 taskRelAddDraft.map((task) => {
                     propPromises.push(ScheduleService.getTaskDraft(task.id))
                 });
@@ -579,24 +587,30 @@ class ViewSchedulingUnit extends Component{
                 //console.log(producerData);
                 if(producerData){
                     producerData.forEach((pd)=>{
-                        taskRelObj["producer"]=`${taskRelObj.producer}/${pd.id}`;
+                        //taskRelObj["producer"]=`${taskRelObj.producer}/${pd.id}`;
                         propConPromises.push(ScheduleService.getTaskConnectorType(pd.specifications_template_id))
                     });
                     const prodConnData = await Promise.all(propConPromises);
-                    prodConnData.forEach((pc)=>{
-                        taskRelObj["output_role"]=`${taskRelObj.output_role}/${pc.task_template_id}`;
+                    prodConnData.forEach((pc,i)=>{
+                        let tempTaskRelObj=_.cloneDeep(taskRelObj);
+                        tempTaskRelObj.consumer=`${taskRelObj.consumer}/${consumer.id}`;
+                        tempTaskRelObj.producer=`${taskRelObj.producer}/${producerData[i].id}`;
+                        tempTaskRelObj.input_role=`${taskRelObj.input_role}/${consConnData.task_template_id}`;
+                        tempTaskRelObj.output_role=`${taskRelObj.output_role}/${pc.task_template_id}`;
+                        taskRelAddDraftObj.push(tempTaskRelObj);
                     });
-                    taskRelAddDraftObj.push(taskRelObj);
+                    //console.log(taskRelAddDraftObj);
                     //console.log(prodConnData);
                     //console.log(taskRelObj);
                     if(taskRelAddDraftObj){
-                        getCreatedTaskRes = await ScheduleService.createTaskRelationDraft(taskRelAddDraftObj);//'dataFormat':this.state.dataformat
-                        if (getCreatedTaskRes) {
+                        getCreatedTaskRes = await ScheduleService.createTaskRelationDraft(taskRelAddDraftObj,taskRelAddDraft);//'dataFormat':this.state.dataformat
+                        getUpdateTaskRelObj=[...getUpdateTaskRelObj,...getCreatedTaskRes];
+                        /* if (getCreatedTaskRes) {
                             const dialog = {header: 'Success', detail: 'Task Relation Draft is created successfully.'};
                             this.setState({dialogVisible: true, dialog: dialog});
                         }   else {
                             appGrowl.show({severity: 'error', summary: 'Error Occured', detail: getCreatedTaskRes.message || 'Unable to save Task Relation Draft Set'});
-                        }
+                        } */
                     }
                     
                 }
@@ -607,21 +621,75 @@ class ViewSchedulingUnit extends Component{
                     return obj1.consumer_id==consumer.id 
                     && (taskRelDelDraft.some(obj2 => obj1.producer_id == obj2.id)) 
                 }  );
-                console.log(getDelTRelDrafts);
-                getDeletedTaskRes = await ScheduleService.deleteTaskRelationDraft(getDelTRelDrafts);
-                console.log('getDeletedTaskRes',getDeletedTaskRes);
-                if (getDeletedTaskRes) {
+                //console.log(getDelTRelDrafts);
+                getDeletedTaskRes = await ScheduleService.deleteTaskRelationDraft(getDelTRelDrafts,taskRelDelDraft);
+                //console.log('getDeletedTaskRes',getDeletedTaskRes);
+                getUpdateTaskRelObj=[...getUpdateTaskRelObj,...getDeletedTaskRes];
+                /* if (getDeletedTaskRes) {
                     const dialog = {header: 'Success', detail: 'Task Relation Draft is deleted successfully.'};
                     this.setState({dialogVisible: true, dialog: dialog});
                 }   else {
                     appGrowl.show({severity: 'error', summary: 'Error Occured', detail: getDeletedTaskRes.message || 'Unable to save Task Relation Draft Set'});
-                }
+                } */
             }
-
-             
+            if(getUpdateTaskRelObj.length){
+                console.log('getUpdateTaskRelObj',getUpdateTaskRelObj); 
+                this.getSchedulingUnitDetails(this.props.match.params.type, this.props.match.params.id);
+                    
+                    this.setState({
+                        confirmDialogVisible: false,
+                        showSpinner: true
+                    });
+                    let taskStatus = [];
+                    getUpdateTaskRelObj.forEach((task)=>{
+                        let tempTask = {};
+                        tempTask['name'] = task.name;
+                        tempTask['action'] = task.action;
+                        tempTask['status'] = task.status?'Success':"Failed";
+                        taskStatus.push(tempTask);
+                    });
+                    //console.log(taskStatus);
+                    this.setState({taskStatus:taskStatus});
+                    this.showIcon = true;
+                    this.dialogType = "success";
+                    this.dialogHeader = "Status";
+                    this.dialogWidth = "60vw";
+                    this.dialogHeight = 'auto';
+                    this.onCancel = this.cancelDialog;
+                    this.onClose = this.cancelDialog;
+                    this.callBackFunction = this.cancelDialog;
+                    this.dialogContent = this.getTasksDialogContent;
+                    this.setState({isDirty : false, showSpinner: false, confirmDialogVisible: true});
+                
+            }else  {
+                this.setState({isDirty: false, showSpinner: false});
+                appGrowl.show({severity: 'error', summary: 'Warning', detail: 'No Tasks create/update '});
+            }
             
         }
-    }    
+        
+    } 
+    cancelDialog=()=> {
+        this.setState({
+            confirmDialogVisible: false,
+            isDirty: false
+        });
+    }
+    getTasksDialogContent=()=> { 
+        let taskStatus = this.state.taskStatus;
+       return  <> 
+                    {taskStatus.length > 0 &&
+                       <div style={{marginTop: '1em'}}>
+                           <b>Task(s) status</b>
+                           <DataTable value={taskStatus} resizableColumns columnResizeMode="expand" className="card" style={{paddingLeft: '0em'}}>
+                               <Column field="name" header="Task Name"></Column>
+                               <Column field="action" header="Action"></Column>
+                               <Column field="status" header="Task(s) Status"></Column>
+                           </DataTable>
+                       </div>
+                   } 
+               </>
+   }   
     render(){
         if (this.state.redirect) {
             return <Redirect to={ {pathname: this.state.redirect} }></Redirect>
@@ -790,6 +858,12 @@ class ViewSchedulingUnit extends Component{
                       submitTRDToIngest={ (trDraft)=> this.submitTRDToIngest(trDraft) }
                       />
                 )}
+                <CustomDialog type={this.dialogType} visible={this.state.confirmDialogVisible} width={this.dialogWidth} height={this.dialogHeight}
+                    header={this.dialogHeader} message={this.dialogMsg} 
+                    content={this.dialogContent} 
+                    showIcon={this.showIcon} onClose={this.cancelDialog} onCancel={this.cancelDialog} onSubmit={this.callBackFunction}>
+                </CustomDialog>
+                <CustomPageSpinner visible={this.state.showSpinner} />
               </>
         )
     }

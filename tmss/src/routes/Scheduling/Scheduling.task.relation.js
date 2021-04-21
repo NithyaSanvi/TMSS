@@ -16,7 +16,7 @@ export default (props) => {
     console.log('ingestRelation',ingestRelation);
     const isAllTaskChecked = (groupName) => !ingestRelation[groupName].filter(task => !task.canIngest).length;
 
-    const addOrDeleteAction = (tempTask,task,isGroup)=>{ 
+    const addOrDeleteAction = (tempTask,task,isGroup)=>{  
         let tcanIngest = task.canIngest ;
         let tpCanIngest = tempTask.canIngest;
         if((tpCanIngest && !tcanIngest && isGroup) || (tpCanIngest && !tcanIngest && !isGroup) ){
@@ -74,15 +74,16 @@ export default (props) => {
         console.log('taskRelationDraft',taskRelationDraft); 
     };
     const submitToIngest = ()=>{
+        setToggle(true);
         console.log('taskRelationDraft',taskRelationDraft);
         props.submitTRDToIngest({'ingest':ingestRelation.ingest[0],'taskRelationDraft':taskRelationDraft});//addTaskRelationDraft
-        setTaskRelationDraft([]);
+        //setTaskRelationDraft([...allTasksRel]);
         //setAddTaskRelationDraft([]);
     };
-    const setAllTasks = (group,task)=>{ 
-        if (!allTasksRel.some(item => item.id === task.id)) {
+    const setAllTasks = (group,task)=>{ console.log('called')
+        if (!allTasksRel.some(item => item.id === task.id)) { 
             setAllTasksRel(allTasksRel.concat(task));
-            setTaskRelationDraft(taskRelationDraft.concat(task));
+            setTaskRelationDraft(allTasksRel.concat(task));
         }
     };
     useEffect(() => {
@@ -93,9 +94,10 @@ export default (props) => {
         <Dialog header="Data Product To Ingest"
             visible={props.showTaskRelationDialog} maximizable maximized={false} position="center" style={{ width: '50vw' }}
             onHide={props.toggle} >
-            <label><h3>From Task</h3></label>
-            <div>
-            {Object.keys(ingestRelation).sort().map(group => (
+                <div class="p-grid">
+                <div class="p-col-10 p-offset-2"><h3>From Task</h3></div>
+                <div class="p-col-9 p-offset-2">
+                    {Object.keys(ingestRelation).sort().map(group => (
                     <>
                         {group !== 'ingest' && (
                             <>
@@ -117,11 +119,16 @@ export default (props) => {
                         )}
                     </>
                     ))}
-                     <div className="p-grid p-justify-end">
+                </div>
+                <div class="p-col-10 p-offset-2 p-mr-2">
+                    <div className="p-grid p-justify-start">
                             <Button label="Save" className="p-button-primary p-mr-2" icon="pi pi-check" disabled={isToggle} onClick={submitToIngest}  data-testid="save-btn" />
                             <Button label="Cancel" className="p-button-danger" icon="pi pi-times" onClick={props.toggle} />
-                    </div>
-            </div>
+                    </div>                   
+                </div>
+                </div>
+            
+            
         </Dialog>
     )
 };
