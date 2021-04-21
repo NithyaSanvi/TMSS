@@ -92,7 +92,7 @@ class CycleList extends Component{
                                     "Lofar Observing Time Prio A (Hrs)" : "filter-input-75",
                                     "Lofar Observing Time Prio B (Hrs)" : "filter-input-75" }];
                                      
-        this.defaultSortColumn = [{id: "Cycle Code", desc: false}];                          
+        this.defaultSortColumn = [{name: "Start Date", desc: true}];                          
     }
     getUnitConvertedQuotaValue(cycle, cycleQuota, resourceName) {
         const quota = _.find(cycleQuota, {'cycle_id': cycle.name, 'resource_type_id': resourceName});
