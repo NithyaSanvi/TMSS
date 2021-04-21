@@ -28,7 +28,7 @@ export default (props) => {
         }
         return tempTask;
     }
-    const processTasks = (taskRelationDraft,task,isGroup)=>{
+    const processTasks = (taskRelationDraft,task,isGroup)=>{ 
         let tempTask = UtilService.findObject(taskRelationDraft,task,'id','id');
         let tpTaskPos = UtilService.findObjectIndex(taskRelationDraft,task,'id','id');
         let taskAction = addOrDeleteAction(tempTask,task,isGroup);
@@ -45,9 +45,9 @@ export default (props) => {
         //console.log('relationGroup',relationGroup)
         //let ingestType = relationGroup[group][index].canIngest;
         setInjestRelation({...relationGroup}); 
-        task.canIngest=tasCanIngest;
+        task.canIngest=tasCanIngest; 
         processTasks(taskRelationDraft,task,false,'');//false-Group
-        console.log('taskRelationDraft',taskRelationDraft); 
+        console.log('taskRelationDraft:Togg',taskRelationDraft); 
         /* if(!ingestType && addTaskRelationDraft){
             let taskRelationDraft = addTaskRelationDraft.filter((rt)=> rt.task.id !== task.id);
             setAddTaskRelationDraft([...taskRelationDraft]);
@@ -75,19 +75,24 @@ export default (props) => {
     };
     const submitToIngest = ()=>{
         setToggle(true);
-        console.log('taskRelationDraft',taskRelationDraft);
+        //console.log('taskRelationDraft0',taskRelationDraft);
         props.submitTRDToIngest({'ingest':ingestRelation.ingest[0],'taskRelationDraft':taskRelationDraft});//addTaskRelationDraft
-        //setTaskRelationDraft([...allTasksRel]);
+        //console.log('taskRelationDraft2',taskRelationDraft);
         //setAddTaskRelationDraft([]);
-    };
-    const setAllTasks = (group,task)=>{ console.log('called')
-        if (!allTasksRel.some(item => item.id === task.id)) { 
-            setAllTasksRel(allTasksRel.concat(task));
-            setTaskRelationDraft(allTasksRel.concat(task));
-        }
     };
     useEffect(() => {
         setInjestRelation(_.cloneDeep(props.ingestGroup));
+        const ingestGroup = props.ingestGroup,tempIngestData=[];
+        Object.keys(ingestGroup).sort().map(group =>{
+            if(group !== 'ingest'){
+                ingestRelation[group].map((task, index)=>{ 
+                    tempIngestData.push(task);
+                })
+            }
+        }); 
+        setAllTasksRel(_.cloneDeep(tempIngestData));
+        setTaskRelationDraft(_.cloneDeep(tempIngestData)); 
+        
     }, [props.ingestGroup]);
 
     return (
@@ -110,7 +115,7 @@ export default (props) => {
                                     (
                                         <div className="p-col-12 pl-3">
                                             <Checkbox inputId={task.name} onL onChange={() => toggleCheckItem(group,task, index)} checked={task.canIngest}></Checkbox>
-                                            <label htmlFor={task.name} className="p-checkbox-label">{task.name}{setAllTasks(group,task)}</label>
+                                            <label htmlFor={task.name} className="p-checkbox-label">{task.name}</label>
                                         </div>
                                     ))}
                                 </div>
