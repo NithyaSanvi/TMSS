@@ -599,7 +599,7 @@ const IndeterminateCheckbox = React.forwardRef(
 )
 
 // Our table component
-function Table({ columns, data, defaultheader, optionalheader, tablename, defaultSortColumn, defaultpagesize, columnOrders, showAction }) {
+function Table({ columns, data, defaultheader, optionalheader, tablename, defaultSortColumn, defaultpagesize, columnOrders, showAction,toggleBySorting }) {
 
   const filterTypes = React.useMemo(
     () => ({
@@ -773,7 +773,7 @@ function Table({ columns, data, defaultheader, optionalheader, tablename, defaul
                           <div key={column.id} style={{ 'display': column.id !== 'actionpath' ? 'block' : 'none' }}>
                             <input type="checkbox" {...column.getToggleHiddenProps()}
                               id={(defaultheader[column.id]) ? defaultheader[column.id] : (optionalheader[column.id] ? optionalheader[column.id] : column.id)}
-                              onClick={onToggleChange}
+                              onClick={(e)=>onToggleChange(e)}
                             /> {
                               (defaultheader[column.id]) ? defaultheader[column.id] : (optionalheader[column.id] ? optionalheader[column.id] : column.id)}
                           </div>
@@ -827,8 +827,8 @@ function Table({ columns, data, defaultheader, optionalheader, tablename, defaul
             {headerGroups.map(headerGroup => (
               <tr {...headerGroup.getHeaderGroupProps()}>
                 {headerGroup.headers.map(column => (
-                  <th>
-                    <div {...column.getHeaderProps(column.getSortByToggleProps())}>
+                  <th onClick={() => toggleBySorting({'id':column.id,desc:(column.isSortedDesc!= undefined? !column.isSortedDesc:false)}) }>
+                    <div {...column.getHeaderProps(column.getSortByToggleProps())} >
                       {column.Header !== 'actionpath' && column.render('Header')}
                       {column.Header !== 'Action' ?
                         column.isSorted ? (column.isSortedDesc ? <i className="pi pi-sort-down" aria-hidden="true"></i> : <i className="pi pi-sort-up" aria-hidden="true"></i>) : ""
@@ -1079,7 +1079,7 @@ function ViewTable(props) {
   return (
     <div>
       <Table columns={columns} data={tbldata} defaultheader={defaultheader[0]} optionalheader={optionalheader[0]} showAction={props.showaction}
-        defaultSortColumn={defaultSortColumn} tablename={tablename} defaultpagesize={defaultpagesize} columnOrders={props.columnOrders} />
+        defaultSortColumn={defaultSortColumn} tablename={tablename} defaultpagesize={defaultpagesize} columnOrders={props.columnOrders} toggleBySorting={(sortData)=>props.toggleBySorting(sortData)}/>
     </div>
   )
 }

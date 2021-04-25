@@ -4,6 +4,8 @@ import ViewTable from '../../components/ViewTable';
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
 import CycleService from '../../services/cycle.service';
+import UtilService from '../../services/util.service';
+/* eslint-disable no-unused-expressions */
 
 export class ProjectList extends Component{
     constructor(props){
@@ -100,6 +102,8 @@ export class ProjectList extends Component{
             isLoading: true
         }
         this.getPopulatedProjectList = this.getPopulatedProjectList.bind(this);
+        this.toggleBySorting = this.toggleBySorting.bind(this); 
+        this.setToggleBySorting = this.setToggleBySorting.bind(this); 
     }
 
     getPopulatedProjectList(cycleId) {
@@ -137,8 +141,15 @@ export class ProjectList extends Component{
         // Show Project for the Cycle, This request will be coming from Cycle View. Otherwise it is consider as normal Project List.
         let cycle = this.props.cycle;
         this.getPopulatedProjectList(cycle);
+        this.setToggleBySorting();  
     }
-   
+    setToggleBySorting(){ 
+        let sortData = UtilService.localStore({type:'get',key:'proSortData'});
+        sortData?this.setState({defaultSortColumn:[{...sortData}]}):UtilService.localStore({type:'set',key:'proSortData',value:[...this.defaultSortColumn]});
+    }
+	toggleBySorting(sortData){  
+       UtilService.localStore({type:'set',key:'proSortData',value:sortData});
+    }
     render(){
         return(
             <>
@@ -172,6 +183,7 @@ export class ProjectList extends Component{
                         keyaccessor="name"
                         unittest={this.state.unittest}
                         tablename="project_list"
+                        toggleBySorting={(sortData)=> this.toggleBySorting(sortData)}
                     />
                     : <div>No project found </div>
                 }

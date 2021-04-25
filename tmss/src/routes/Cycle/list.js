@@ -8,6 +8,8 @@ import UnitConversion from '../../utils/unit.converter';
 import AppLoader from '../../layout/components/AppLoader';
 import PageHeader from '../../layout/components/PageHeader';
 import UIConstants from '../../utils/ui.constants';
+import UtilService from '../../services/util.service';
+/* eslint-disable no-unused-expressions */
 
 class CycleList extends Component{
 	 constructor(props){
@@ -92,7 +94,9 @@ class CycleList extends Component{
                                     "Lofar Observing Time Prio A (Hrs)" : "filter-input-75",
                                     "Lofar Observing Time Prio B (Hrs)" : "filter-input-75" }];
                                      
-        this.defaultSortColumn = [{name: "Start Date", desc: true}];                          
+        this.defaultSortColumn = [{id: "Start Date", desc: true}]; 
+        this.toggleBySorting = this.toggleBySorting.bind(this); 
+        this.setToggleBySorting = this.setToggleBySorting.bind(this);                         
     }
     getUnitConvertedQuotaValue(cycle, cycleQuota, resourceName) {
         const quota = _.find(cycleQuota, {'cycle_id': cycle.name, 'resource_type_id': resourceName});
@@ -139,9 +143,16 @@ class CycleList extends Component{
             CycleService.getAllCycles().then(cyclelist => {
                 this.getCycles(cyclelist, cycleQuota)
             });
-        });  
+        }); 
+        this.setToggleBySorting();  
     }
-	
+    setToggleBySorting(){
+        let sortData = UtilService.localStore({type:'get',key:'cycleSortData'});
+        sortData?this.defaultSortColumn = [{...sortData}]:UtilService.localStore({type:'set',key:'cycleSortData',value:[...this.defaultSortColumn]});
+    }
+	toggleBySorting(sortData){ 
+       UtilService.localStore({type:'set',key:'cycleSortData',value:sortData});
+    }
 	render(){
         return (
             <>
@@ -182,6 +193,7 @@ class CycleList extends Component{
                         showaction="true"
                         paths={this.state.paths}
                         tablename="cycle_list"
+                        toggleBySorting={(sortData)=> this.toggleBySorting(sortData)}
                  />  : <></>
                  } 
                 
